@@ -53,7 +53,9 @@ describe("the activity recorder", () => {
     mountCMB(wescheme);
     jest.spyOn(console, "log").mockImplementation(() => {});
     jest.spyOn(console, "error").mockImplementation(() => {});
-    logResults(new Error("it broke"));
+    act(() => {
+      logResults(new Error("it broke"));
+    });
     teardown();
     expect(getLastError()?.message).toBe("it broke");
     expect(getLastError()?.stack).toContain("it broke");

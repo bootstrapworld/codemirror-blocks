@@ -36,36 +36,36 @@ type BugButtonProps = {
   /** the document, as it is now */
   code: string;
 };
-export const BugButton = (props: BugButtonProps) => {
-  const openBugWindow = () => {
-    const { dropped, baseCode } = getActivityBase();
-    const report: BugReport = {
-      format: 2,
-      version: VERSION,
-      language: props.language,
-      blockMode: props.blockMode,
-      userAgent: navigator.userAgent,
-      code: props.code,
-      startCode: baseCode,
-      actions: toReportActions(getLog()),
-      droppedActions: dropped,
-      error: getLastError(),
-    };
-    const { url, trimmed } = buildIssue(report);
-    if (trimmed) {
-      // (a failure to copy is not worth stopping for)
-      navigator.clipboard?.writeText(fence(report)).catch(() => {});
-    }
-    window.open(url, "_blank");
+/** Open a pre-filled GitHub issue with everything needed to replay what happened. */
+export const openBugReport = (props: BugButtonProps) => {
+  const { dropped, baseCode } = getActivityBase();
+  const report: BugReport = {
+    format: 2,
+    version: VERSION,
+    language: props.language,
+    blockMode: props.blockMode,
+    userAgent: navigator.userAgent,
+    code: props.code,
+    startCode: baseCode,
+    actions: toReportActions(getLog()),
+    droppedActions: dropped,
+    error: getLastError(),
   };
-  return (
-    <button
-      className="bug-btn btn btn-default btn-sm"
-      onClick={openBugWindow}
-      tabIndex={0}
-    >
-      <span aria-hidden="true">&#128030;</span>
-      <span className="btn-title screenreader-only">Report a Bug</span>
-    </button>
-  );
+  const { url, trimmed } = buildIssue(report);
+  if (trimmed) {
+    // (a failure to copy is not worth stopping for)
+    navigator.clipboard?.writeText(fence(report)).catch(() => {});
+  }
+  window.open(url, "_blank");
 };
+
+export const BugButton = (props: BugButtonProps) => (
+  <button
+    className="bug-btn btn btn-default btn-sm"
+    onClick={() => openBugReport(props)}
+    tabIndex={0}
+  >
+    <span aria-hidden="true">&#128030;</span>
+    <span className="btn-title screenreader-only">Report a Bug</span>
+  </button>
+);

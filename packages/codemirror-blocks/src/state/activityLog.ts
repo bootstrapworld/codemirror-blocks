@@ -75,7 +75,12 @@ const noteStart = () => {
   }
 };
 
+let lastActivityAt = 0;
+/** @internal whether a person has done something to the editor in the last couple of seconds */
+export const wasRecentlyActive = () => Date.now() - lastActivityAt < 2000;
+
 const push = (activity: LogEntry) => {
+  lastActivityAt = Date.now();
   log.push(activity);
   if (log.length > MAX_ACTIVITIES) {
     const [old] = log.splice(0, 1);
@@ -104,6 +109,15 @@ export const recordError = (exception: unknown) => {
     exception instanceof Error
       ? { message: exception.message, stack: exception.stack }
       : { message: String(exception) };
+  errorListeners.forEach((listener) => listener());
+};
+const errorListeners = new Set<() => void>();
+/** @internal call `listener` whenever an error is recorded; returns how to stop */
+export const onErrorRecorded = (listener: () => void) => {
+  errorListeners.add(listener);
+  return () => {
+    errorListeners.delete(listener);
+  };
 };
 /** @internal */
 export const getLastError = () => lastError;

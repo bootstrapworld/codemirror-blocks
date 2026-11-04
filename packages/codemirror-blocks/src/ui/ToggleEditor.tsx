@@ -12,6 +12,7 @@ import TextEditor from "./TextEditor";
 import Dialog from "../components/Dialog";
 import Toolbar from "./Toolbar";
 import { ToggleButton, BugButton } from "./EditorButtons";
+import { ErrorNotice } from "./ErrorNotice";
 import { mountAnnouncer, say } from "../announcer";
 import TrashCan from "./TrashCan";
 import type { Language, Options } from "../CodeMirrorBlocks";
@@ -167,6 +168,13 @@ function ToggleEditor(props: ToggleEditorProps) {
       <div className={classes} ref={editorElementRef}>
         {blockMode ? (
           <BugButton
+            language={props.language.id}
+            blockMode={blockMode}
+            code={code}
+          />
+        ) : null}
+        {blockMode ? (
+          <ErrorNotice
             language={props.language.id}
             blockMode={blockMode}
             code={code}
