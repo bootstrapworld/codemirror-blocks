@@ -1,5 +1,10 @@
 # wescheme-blocks
 
+This package is the build of the WeScheme language for wescheme.org (and a dev
+page to try it). The language itself, its parser and its tests are in
+[`packages/codemirror-blocks/src/languages/wescheme`](../codemirror-blocks/src/languages/wescheme/),
+so there is one copy to fix and test.
+
 A screenreader-accessible, hybrid block and text editor for a subset of the [Racket programming language](https://www.racket-lang.org), which is used on [WeScheme.org](https://www.WeScheme.org/).
 
 ## Usage

@@ -61,7 +61,7 @@ if (node instanceof structures.defVar) {
 
 #### _Defining your own AST Nodes_
 
-You can also define your own node types. A node type is described by a spec that lists the fields of the node, and a node is created by `makeNode`, which takes the functions that say how the node is pretty-printed, rendered as a block, and described to a screenreader. [Here is one example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/wescheme-blocks/src/ast.tsx) of a language defining custom nodes.
+You can also define your own node types. A node type is described by a spec that lists the fields of the node, and a node is created by `makeNode`, which takes the functions that say how the node is pretty-printed, rendered as a block, and described to a screenreader. [Here is one example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/src/languages/wescheme/ast.tsx) of a language defining custom nodes.
 
 Every node type **must** have:
 
@@ -75,7 +75,7 @@ See the [language guide](../../doc/language.md) for a complete walkthrough.
 
 ### Tell CMB about the Language
 
-Create an `index.ts` file ([see this example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/wescheme-blocks/src/index.ts)) that hooks up your language to the CMB library by calling `Languages.addLanguage({id, name, parse, ...})`.
+Create an `index.ts` file ([see this example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/src/languages/wescheme/index.ts)) that hooks up your language to the CMB library by calling `Languages.addLanguage({id, name, parse, ...})`.
 
 ### Style Your Blocks
 
@@ -87,4 +87,4 @@ Obviously, if you've added new AST node types, you'll have to provide the stylin
 
 In `spec/languages/YourFavLang`, add some unit tests for your parser! Make sure you test all the fields, but _especially_ the `ariaLabel` option and the `longDescription()` return values.
 
-You may find it useful to check out [this example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/wescheme-blocks/spec/WeschemeParser-test.js).
+You may find it useful to check out [this example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/spec/languages/wescheme-node-conversion-test.js).

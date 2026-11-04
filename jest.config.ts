@@ -164,13 +164,9 @@ export default {
       displayName: "toolkit-webpack",
       testEnvironment: "node",
       setupFilesAfterEnv: [],
-      testMatch: ["<rootDir>/packages/cmb-toolkit/spec/webpack-test.ts"],
-    },
-    {
-      ...sharedConfig,
-      displayName: "wescheme",
       testMatch: [
-        "<rootDir>/packages/wescheme-blocks/**/?(*-)+(spec|test).[tj]s?(x)",
+        "<rootDir>/packages/cmb-toolkit/spec/webpack-test.ts",
+        "<rootDir>/packages/codemirror-blocks/spec/bundle-contents-test.ts",
       ],
     },
   ],

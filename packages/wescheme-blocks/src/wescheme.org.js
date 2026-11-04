@@ -8,7 +8,7 @@ import {
   setLogReporter,
 } from "@bootstrapworld/codemirror-blocks";
 import "codemirror/lib/codemirror.css";
-import "./less/example.less";
+import "@bootstrapworld/codemirror-blocks/lib/less/example.less";
 
 const errorForm = document.createElement("div");
 errorForm.innerHTML = `<iframe

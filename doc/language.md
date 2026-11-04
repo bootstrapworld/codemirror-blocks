@@ -3,7 +3,7 @@
 This is a guide to adding support for a new language to CodeMirror-Blocks
 (CMB). The code in each section is type-checked against the current API, and
 the [`lambda`](../packages/codemirror-blocks/src/languages/lambda/) and
-[`wescheme`](../packages/wescheme-blocks/src/) languages in this repository are
+[`wescheme`](../packages/codemirror-blocks/src/languages/wescheme/) languages in this repository are
 complete examples to read alongside it.
 
 ## Logistics
@@ -113,7 +113,7 @@ export default Languages.addLanguage({
   `String(e)`.
 - `primitivesFn(): PrimitiveGroup` is optional. It supplies the primitives shown
   in the toolbar. Use `PrimitiveGroup.fromConfig(name, config)` to build one
-  from a plain description (see `wescheme-blocks/src/primitives-config.ts`).
+  from a plain description (see `codemirror-blocks/src/languages/wescheme/primitives-config.ts`).
   If you supply it, also supply `getASTNodeForPrimitive` and
   `getLiteralNodeForPrimitive`, which turn a primitive into the block that is
   dropped into the editor.
