@@ -411,11 +411,18 @@
   position: absolute;
   display: inline-block !important;
   left: 100%;
-  bottom: 0px;
-  margin: 0 0 -5px 15px;
+  // (it widens as the text is typed, up to its maximum, and then grows
+  // downwards: it is held at the top, so that the lines added go below)
+  top: 0px;
+  bottom: auto;
+  margin: 0 0 0 15px;
   padding: 2px 10px;
   min-width: 2em;
+  width: max-content;
+  // (a name being edited has a fixed height in some languages)
+  height: auto !important;
   max-width: 300px;
+  overflow-wrap: anywhere;
   // (the language styles of a name being edited are !important)
   background: @comment-background-color !important;
   color: @comment-color !important;
@@ -431,6 +438,8 @@
 }
 .blocks-comment.blocks-comment-editing.blocks-literal::before {
   display: block;
+  top: 6px;
+  bottom: auto;
 }
 .blocks-comment.blocks-comment-editing.blocks-literal::selection {
   background: #6a7fb5;
