@@ -64,6 +64,21 @@ function getNodeElementId(node: { id: string }) {
 // markers whose widget has a changed() call waiting
 const pendingChanged = new Set<BlockNodeMarker>();
 
+/**
+ * What a screen reader says for a block: what the node says it is, then the
+ * text of the comment that goes with it (once), then a comma to pause.
+ */
+export function spokenLabel(
+  node: Pick<ASTNode, "shortDescription" | "options">
+): string {
+  const comment = node.options.comment;
+  return (
+    node.shortDescription() +
+    (comment ? ` with comment: ${String(comment.fields.comment).trim()}` : "") +
+    ","
+  );
+}
+
 const Node = ({ expandable = true, ...props }: Props) => {
   const isCollapsed = useSelector((state: RootState) =>
     selectors.isCollapsed(state, props.node)
@@ -240,12 +255,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
     id: nodeElemId,
     tabIndex: -1,
     "aria-selected": isSelected,
-    "aria-label":
-      props.node.shortDescription() +
-      (comment
-        ? ` with comment: ${String(comment.fields.comment).trim()}`
-        : "") +
-      ",",
+    "aria-label": spokenLabel(props.node),
     "aria-labelledby": nodeElemId,
     "aria-disabled": locked ? true : undefined,
     "aria-expanded": expandable && !locked ? !isCollapsed : undefined,

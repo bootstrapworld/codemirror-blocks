@@ -1,0 +1,319 @@
+## wescheme: definitions, functions and conditionals
+variableDefinition: x: value definition,
+  long: define x to be  5
+literal: x,
+literal: 5,
+functionDefinition: area: function definition with 2 arguments: w and h,
+  long: define area to be a function of 
+                w and h, with body:
+                multiply of w, h
+literal: area,
+identifierList: 2 arguments: w and h,
+  long: w and h
+literal: w,
+literal: h,
+functionApp: multiply expression, 2 inputs,
+  long: multiply of w, h
+literal: multiply,
+literal: w,
+literal: h,
+structDefinition: pt: structure definition with 2 fields: x and y,
+  long: define pt to be a structure with x and y
+literal: pt,
+identifierList: 2 fields: x and y,
+  long: x and y
+literal: x,
+literal: y,
+variableDefinition: sq: value definition,
+  long: define sq to be the result of: an anonymous function of 1 argument: 
+            n, with body:
+            multiply of n, n
+literal: sq,
+lambdaExpression: anonymous function with 1 argument: n,
+  long: an anonymous function of 1 argument: 
+            n, with body:
+            multiply of n, n
+identifierList: 1 argument: n,
+  long: n
+literal: n,
+functionApp: multiply expression, 2 inputs,
+  long: multiply of n, n
+literal: multiply,
+literal: n,
+literal: n,
+ifExpression: if-then-else expression,
+  long: an if expression: if > of x, 3, then then, big, a String else else, small, a String
+functionApp: if, > expression, 2 inputs,
+  long: > of x, 3
+literal: >,
+literal: x,
+literal: 3,
+literal: then, big, a String,
+literal: else, small, a String,
+condExpression: conditional expression with 3 clauses,
+  long: a conditional expression with 3 conditions: 
+                condition: if < of x, 0, then, unsupported expression,condition: if = of x, 0, then, unsupported expression,condition: if else, then, unsupported expression
+condClause: condition 1,
+  long: condition: if < of x, 0, then, unsupported expression
+functionApp: < expression, 2 inputs,
+  long: < of x, 0
+literal: <,
+literal: x,
+literal: 0,
+literal: unsupported expression,
+condClause: condition 2,
+  long: condition: if = of x, 0, then, unsupported expression
+functionApp: = expression, 2 inputs,
+  long: = of x, 0
+literal: =,
+literal: x,
+literal: 0,
+literal: unsupported expression,
+condClause: condition 3,
+  long: condition: if else, then, unsupported expression
+literal: else,
+literal: unsupported expression,
+letLikeExpr: let expression with 2 bindings,
+  long: a let expression with 2 bindings
+sequence: 2 bindings,
+  long: a sequence containing define a to be  1 and define b to be  2
+literal: bindings,
+variableDefinition: a bound to 1,
+  long: define a to be  1
+literal: a,
+literal: 1,
+variableDefinition: b bound to 2,
+  long: define b to be  2
+literal: b,
+literal: 2,
+functionApp: + expression, 2 inputs,
+  long: + of a, b
+literal: +,
+literal: a,
+literal: b,
+unknown: invalid expression,
+  long: an unknown expression with 4 children 1: let, 2: loop, 3: i of 0 of , 4: an if expression: if < of i, 3, then loop of + of i, 1 else else, i
+literal: let,
+literal: loop,
+functionApp: anonymous function expression, 0 inputs,
+  long: i of 0 of 
+functionApp: i expression, 1 input,
+  long: i of 0
+literal: i,
+literal: 0,
+ifExpression: if-then-else expression,
+  long: an if expression: if < of i, 3, then loop of + of i, 1 else else, i
+functionApp: if, < expression, 2 inputs,
+  long: < of i, 3
+literal: <,
+literal: i,
+literal: 3,
+functionApp: then, loop expression, 1 input,
+  long: loop of + of i, 1
+literal: loop,
+functionApp: + expression, 2 inputs,
+  long: + of i, 1
+literal: +,
+literal: i,
+literal: 1,
+literal: else, i,
+sequence: sequence containing 2 expressions,
+  long: a sequence containing f of 1 and g of 2
+literal: begin,
+functionApp: f expression, 1 input,
+  long: f of 1
+literal: f,
+literal: 1,
+functionApp: g expression, 1 input,
+  long: g of 2
+literal: g,
+literal: 2,
+functionApp: and expression, 2 inputs,
+  long: and of > of x, 1, or of < of x, 9, true, a Boolean
+literal: and,
+functionApp: > expression, 2 inputs,
+  long: > of x, 1
+literal: >,
+literal: x,
+literal: 1,
+functionApp: or expression, 2 inputs,
+  long: or of < of x, 9, true, a Boolean
+literal: or,
+functionApp: < expression, 2 inputs,
+  long: < of x, 9
+literal: <,
+literal: x,
+literal: 9,
+literal: true, a Boolean,
+functionApp: area expression, 2 inputs,
+  long: area of 3, 4
+literal: area,
+literal: 3,
+literal: 4,
+summary: At the top level, this program contains 2 value definitions, 1 function definition, 1 structure definition, 1 if-then-else expression, 1 conditional expression, 1 let expression, 1 invalid expression, 1 sequence, and 2 function applications.
+
+## wescheme: comments that go with a node, and comments that don't
+functionDefinition: f: function definition with 1 argument: x with comment: about f,
+  long: define f to be a function of 
+                x, with body:
+                x
+literal: f,
+identifierList: 1 argument: x,
+  long: x
+literal: x,
+literal: x,
+comment: comment: on its own,
+functionApp: f expression, 1 input with comment: after the call,
+  long: f of 1
+literal: f,
+literal: 1,
+functionApp: g expression, 1 input with comment: above g,
+  long: g of 2
+literal: g,
+literal: 2,
+functionApp: + expression, 2 inputs,
+  long: + of 1, 2
+literal: +,
+literal: 1 with comment: between,
+literal: 2,
+summary: At the top level, this program contains 1 function definition, 1 comment, and 3 function applications.
+
+## lambda: expressions
+prog: program,
+  long: a program with 1 expressions
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+call: function call,
+  long: a call to literal with 2 arguments
+literal: literal,
+literal: literal,
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+lambda: lambda expression,
+  long: a lambda expression with 1 parameters
+literal: literal,
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+conditional: conditional expression,
+  long: an if expression: if literal, then literal
+literal: literal,
+literal: literal,
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+binary: binary operation,
+  long: literal + literal * literal
+literal: literal,
+binary: binary operation,
+  long: literal * literal
+literal: literal,
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+assignment: assignment,
+  long: literal = literal
+literal: literal,
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+letExpr: let expression,
+  long: a let expression with 2 variables
+vardef: variable definition,
+  long: a definition of literal
+literal: literal,
+literal: literal,
+vardef: variable definition,
+  long: a definition of literal
+literal: literal,
+binary: binary operation,
+  long: literal * literal
+literal: literal,
+literal: literal,
+binary: binary operation,
+  long: literal + literal
+literal: literal,
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+letExpr: let expression,
+  long: a let loop with 1 variables
+literal: literal,
+vardef: variable definition,
+  long: a definition of literal
+literal: literal,
+literal: literal,
+binary: binary operation,
+  long: literal + literal
+literal: literal,
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+not: not expression,
+  long: the negation of literal
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+## lambda: comments
+prog: program,
+  long: a program with 1 expressions
+call: function call with comment: about f,
+  long: a call to literal with 1 arguments
+literal: literal,
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+comment: comment: on its own,
+call: function call,
+  long: a call to literal with 1 arguments
+literal: literal,
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+call: function call with comment: after,
+  long: a call to literal with 2 arguments
+literal: literal,
+literal: literal,
+literal: literal,
+summary: At the top level, this program contains 1 program.
+
+prog: program,
+  long: a program with 1 expressions
+call: function call,
+  long: a call to literal with 2 arguments
+literal: literal,
+literal: literal with comment: between,
+literal: literal,
+summary: At the top level, this program contains 1 program.
