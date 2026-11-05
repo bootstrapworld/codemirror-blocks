@@ -15,3 +15,19 @@ ddb81c3c (hub), 5645c691 (hub + activity log).
 | edit: `speculateChanges` (full parse) | 139 | 142 | 150 |
 | edit: Redux self time | 134 | 23 | 18 |
 | arrow x50: `areNodesEqualish` | 740 | 738 | 747 |
+
+## Arrow keys after the id-walk is kept (this branch, on top of 5645c691)
+
+The block memo compared every block's old node against the current one on each focus
+change, walking all descendants' ids (~0.75 s of 50 arrow-downs at 3000 lines). The answer
+for a pair of node objects is now kept, and a node compared with itself is equal without a
+walk. Trace busy ms, 5 runs each, two back-to-back series per build:
+
+| | 5645c691 | with the kept answer |
+|---|---|---|
+| arrow down x50 | 1200, 1184 | 177, 177 |
+| edit | 306, 411 | 347, 346 |
+| undo | 300, 298 | 297, 313 |
+| redo | 296, 289 | 299, 299 |
+
+Profile, arrow x50: `areNodesEqualish` 747 -> 12 ms. Edit/undo/redo walks (~18 ms) are unchanged.
