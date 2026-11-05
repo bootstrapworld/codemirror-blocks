@@ -320,8 +320,10 @@ function parse(input: TokenStream): LambdaNode {
     };
   }
   function maybeCall(exprFn: () => LambdaNode): LambdaNode {
-    const expr = exprFn();
-    return isPunc("(") ? parseCall(expr) : expr;
+    // (a call can be called: `f()()`, and still be an operand: `f()() + 1`)
+    let expr = exprFn();
+    while (isPunc("(")) expr = parseCall(expr);
+    return expr;
   }
   function parseAtom(): LambdaNode {
     return withLeadingComments(parseAtomNode);

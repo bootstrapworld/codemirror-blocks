@@ -74,7 +74,10 @@ function makeLambdaNode<T extends keyof typeof LambdaAST.config>(
  * is printed back out.
  */
 function atomic(node: ASTNode): P.DocLike {
-  return node.type === "literal" || node.type === "call"
+  // (a comment above a node makes it more than an atom: it is in parentheses)
+  const above =
+    node.options.comment && poscmp(node.options.comment.from, node.from) < 0;
+  return (node.type === "literal" || node.type === "call") && !above
     ? node
     : P.horz("(", node, ")");
 }
