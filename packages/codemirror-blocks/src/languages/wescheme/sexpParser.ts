@@ -20,6 +20,14 @@ type Sexp = any;
 // structures are also constructed dynamically with varying argument shapes
 const structures: Sexp = structuresModule;
 
+// What the lexer calls the mark of a quote written as `'x`, `` `x ``, `,x` or `,@x`
+const QUOTE_NAMES = new Set([
+  "quote",
+  "quasiquote",
+  "unquote",
+  "unquote-splicing",
+]);
+
 /**
  * The lexer gives a form the comment on the line above it, but it forgets the
  * comment only when a form on the next line takes it. A comment followed by
@@ -37,6 +45,7 @@ function dropStaleComments(sexps: Sexp) {
     list.length === 2 &&
     list[1]?.comment &&
     !list.comment &&
+    QUOTE_NAMES.has(String(list[0]?.val)) &&
     list[0]?.location &&
     list.location &&
     list[0].location.startChar === list.location.startChar &&

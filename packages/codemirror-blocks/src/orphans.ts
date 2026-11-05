@@ -129,12 +129,19 @@ export type ScannedComment = {
  * follows code on its line is one of its own.
  */
 export function scanSchemeComments(code: string): ScannedComment[] {
-  const found: (ScannedComment & { trailing: boolean })[] = [];
+  const found: (ScannedComment & { trailing: boolean; codeAfter?: boolean })[] =
+    [];
   let line = 0;
   let col = 0;
   let hasCode = false;
   let i = 0;
   const pos = (): Pos => ({ line, ch: col });
+  // (code after a comment on its line ends the row of comments it is in)
+  const code_ = () => {
+    hasCode = true;
+    const last = found[found.length - 1];
+    if (last && last.to.line === line) last.codeAfter = true;
+  };
   const step = (n = 1) => {
     for (let k = 0; k < n && i < code.length; k++, i++) {
       if (code[i] === "\n") {
@@ -171,19 +178,19 @@ export function scanSchemeComments(code: string): ScannedComment[] {
       step(end - i);
       found.push({ from, to: pos(), lastFrom: from, text, trailing });
     } else if (c === '"') {
-      hasCode = true;
+      code_();
       step();
       while (i < code.length && code[i] !== '"') step(code[i] === "\\" ? 2 : 1);
       step();
     } else if (c === "#" && (code[i + 1] === "\\" || code[i + 1] === ";")) {
-      hasCode = hasCode || code[i + 1] === "\\";
+      if (code[i + 1] === "\\") code_();
       step(2);
     } else if (c === "|") {
-      hasCode = true;
+      code_();
       const end = code.indexOf("|", i + 1);
       step(end < 0 ? code.length - i : end + 1 - i);
     } else {
-      if (!/\s/.test(c)) hasCode = true;
+      if (!/\s/.test(c)) code_();
       step();
     }
   }
@@ -196,6 +203,7 @@ export function scanSchemeComments(code: string): ScannedComment[] {
       previous &&
       !c.trailing &&
       !previous.trailing &&
+      !previous.codeAfter &&
       c.from.line === previous.to.line + 1
     ) {
       group.to = c.to;

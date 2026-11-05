@@ -96,6 +96,19 @@ describe("which comments go with a node, and which are orphans", () => {
         "functionApp literal literal comment*"
       );
     });
+    it("a comment above a node goes with it, after a form as short as a quote mark", () => {
+      // (two forms in a program, the first one or two characters long, are not
+      // a quote mark and the form it quotes)
+      expect(shapeOf("b\n#| note |#\nc")).toBe("literal literal+");
+      expect(shapeOf("7\n; note\nzzz")).toBe("literal literal+");
+      expect(shapeOf("#| c |#\n'x")).toBe("literal+");
+    });
+    it("a comment before a form on its line is not in a row with the comment on the next line", () => {
+      expect(shapeOf("#| c |# z\n#| d |# y")).toBe("literal+ literal+");
+      expect(shapeOf("#| c |# z\n#| c |# z\n(f x)")).toBe(
+        "literal+ literal+ functionApp literal literal"
+      );
+    });
     it("a program of only a comment is a program of an orphan", () => {
       expect(shapeOf("#| only |#")).toBe("comment*");
     });
