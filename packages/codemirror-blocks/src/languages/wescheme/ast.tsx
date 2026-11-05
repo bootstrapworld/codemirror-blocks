@@ -93,7 +93,11 @@ export function LetLikeExpr(
                     `Expected letLikeExpr to have sequence of variableDefinition nodes`
                   );
                 }
-                return P.standardSexpr(expr.fields.name, [expr.fields.body]);
+                return Nodes.withComment(
+                  P.standardSexpr(expr.fields.name, [expr.fields.body]),
+                  expr.options.comment,
+                  expr as unknown as Parameters<typeof Nodes.withComment>[2]
+                );
               }),
               " "
             ),

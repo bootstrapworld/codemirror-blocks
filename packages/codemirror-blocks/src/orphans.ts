@@ -190,7 +190,9 @@ export function scanSchemeComments(code: string): ScannedComment[] {
       const end = code.indexOf("|", i + 1);
       step(end < 0 ? code.length - i : end + 1 - i);
     } else {
-      if (!/\s/.test(c)) code_();
+      // (an opening bracket does not make a comment after it trail: the
+      // comment is above what follows, as a lexer reads it)
+      if (!/[\s([{]/.test(c)) code_();
       step();
     }
   }

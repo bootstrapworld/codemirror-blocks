@@ -683,10 +683,16 @@ export function Comment(
       ...options,
     },
     pretty: (node) => {
-      const words = node.fields.comment.trim().split(/\s+/);
-      const wrapped = P.wrap(words);
       // Normalize all comments to block comments
       const { open, close } = node.options.blockComment ?? SCHEME_COMMENT;
+      // (a comment cannot hold the marks that open and close one: a line
+      // comment may, and they would end or nest the block comment it becomes)
+      const safe = (node.fields.comment as string)
+        .split(close)
+        .join(close[0] + " " + close.slice(1))
+        .split(open)
+        .join(open[0] + " " + open.slice(1));
+      const wrapped = P.wrap(safe.trim().split(/\s+/));
       const doc = P.concat(open + " ", wrapped, " " + close);
       // An orphan is followed by a blank line, which is what makes it read
       // back as an orphan (a comment on the line above a node goes with it);

@@ -5,6 +5,7 @@ import {
   WESCHEME_BLOCK_COMMENT,
 } from "./parseNode";
 import { Comment } from "../../nodes";
+import { poscmp } from "../../utils";
 import { placeOrphans, scanSchemeComments } from "../../orphans";
 
 import { lex } from "wescheme-js/src/lex";
@@ -35,12 +36,14 @@ const QUOTE_NAMES = new Set([
  * which then claims a comment with a form in between: its block would swallow
  * that form. Take back any comment that has a sibling between it and its form.
  */
-function dropStaleComments(sexps: Sexp) {
-  if (!(sexps instanceof Array)) return;
-  // The lexer gives the comment above `'x` to the x, which has no block of
-  // its own: it goes with the whole quote. (A quote mark is one or two
-  // characters long: `(quote x)` written out is not one.)
-  const list: Sexp = sexps; // (the lexer's lists carry a location and a comment)
+/**
+ * The lexer gives the comment above `'x` to the x, which has no block of its
+ * own: it goes with the whole quote. (A quote mark is one or two characters
+ * long: `(quote x)` written out is not one.)
+ */
+function hoistQuoteComment(sexp: Sexp) {
+  if (!(sexp instanceof Array)) return;
+  const list: Sexp = sexp; // (the lexer's lists carry a location and a comment)
   if (
     list.length === 2 &&
     list[1]?.comment &&
@@ -54,7 +57,12 @@ function dropStaleComments(sexps: Sexp) {
     list.comment = list[1].comment;
     list[1].comment = undefined;
   }
+}
+
+function dropStaleComments(sexps: Sexp) {
+  if (!(sexps instanceof Array)) return;
   sexps.forEach((sexp: Sexp, i: number) => {
+    hoistQuoteComment(sexp);
     const prev = sexps[i - 1];
     const next = sexps[i + 1];
     const comment = sexp?.comment;
@@ -897,7 +905,12 @@ export function parse(code: string) {
       const comment = node.options.comment;
       // (the lexer gives a list the last comment before it, however far above
       // it was: one with a blank line between them goes with it no longer)
-      if (comment && comment.to.line < node.from.line - 1) {
+      // (nor does it go with the node it is inside of: it is among its parts)
+      const inside =
+        comment &&
+        poscmp(comment.from, node.from) > 0 &&
+        poscmp(comment.to, node.to) < 0;
+      if (comment && (comment.to.line < node.from.line - 1 || inside)) {
         node.options.comment = undefined;
       } else if (comment) {
         attached.add(key(comment.from));

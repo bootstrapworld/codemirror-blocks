@@ -55,7 +55,20 @@ export function findInvariantViolations(): string[] {
   //     around them are checked above, against the text.)
   if (reparsed) {
     // (the spacing in a comment is not part of it)
-    const words = (c: unknown) => String(c).trim().replace(/\s+/g, " ");
+    // (nor are the marks that open and close a comment: printing one that
+    // holds them, which a line comment may, splits them: `|#` is `| #`)
+    const { open, close } = ast.language.blockComment ?? {
+      open: "#|",
+      close: "|#",
+    };
+    const words = (c: unknown) =>
+      String(c)
+        .split(close)
+        .join(close[0] + " " + close.slice(1))
+        .split(open)
+        .join(open[0] + " " + open.slice(1))
+        .trim()
+        .replace(/\s+/g, " ");
     // (which of two nested nodes that start at the same place a comment above
     // them goes with is not kept: the text of both is the same)
     const comments = (a: AST) => {

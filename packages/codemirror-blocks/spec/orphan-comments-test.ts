@@ -152,6 +152,10 @@ describe("printing and reading back", () => {
     ["wescheme", "(begin\n\n; first\n\n; second\n\na)"],
     ["wescheme", "(f a\n\n; last\n\n)"],
     ["wescheme", "(cond\n[a b\n\n; c\n\nd])"],
+    // (found by random runs)
+    ["wescheme", "#| c |# z\n'sym"],
+    ["wescheme", "(let (#| c |# [a 1]) a)"],
+    ["lambda", "x = (#| true |#\n 1)"],
   ];
   it.each(programs)("%s: %j keeps its orphans", (name, code) => {
     const { ast } = roundTrips(name, code);
@@ -162,6 +166,30 @@ describe("printing and reading back", () => {
       orphans(ast).length +
         [...ast.getAllNodes()].filter((n) => n.options.comment).length
     ).toBe(comments.length);
+  });
+
+  it("comments between the parts of a structure definition read back as they were", () => {
+    roundTrips(
+      "wescheme",
+      '(define-struct posn\n  (#| note |#\n   #| "hi" |#\n   g\n   w))'
+    );
+  });
+
+  it("a comment with the marks of a block comment in it is printed so that it reads back", () => {
+    // (a line comment may hold them: `; a #| b |# c`)
+    const ast = wescheme.buildAST("a\n; note #| b |# c\nd");
+    const text = ast.toString();
+    const again = wescheme.buildAST(text);
+    expect(again.toString()).toBe(text);
+    expect(shape(again)).toBe(shape(ast));
+  });
+
+  it("lambda: a call of a call is an operand, and prints so that it reads back", () => {
+    // (found by random runs: `f()() + 1` was not read)
+    for (const code of ["f()() + 1", "(f())() + 1", '1 + "hi"()()']) {
+      const once = lambda.buildAST(code).toString();
+      expect(lambda.buildAST(once).toString()).toBe(once);
+    }
   });
 
   it("an orphan is printed with a blank line after it", () => {
