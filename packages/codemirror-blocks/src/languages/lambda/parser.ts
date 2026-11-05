@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Pos } from "../../ast";
+import { poscmp } from "../../utils";
 
 //adapted from http://lisperator.net/pltut/
 
@@ -18,8 +19,17 @@ export type LambdaNode = {
   [field: string]: any;
 };
 
-/** A comment: `# to the end of the line`, or `#| ... |#` */
-export type LambdaComment = { text: string; from: Pos; to: Pos };
+/**
+ * A comment: `# to the end of the line`, or `#| ... |#`. One that starts on the
+ * line where the code before it ends is trailing, and refers to that (the node
+ * before it); any other refers to the node that comes after it.
+ */
+export type LambdaComment = {
+  text: string;
+  from: Pos;
+  to: Pos;
+  trailing: boolean;
+};
 
 type Token = {
   from: Pos;
@@ -40,6 +50,8 @@ type InputStream = {
 
 type TokenStream = {
   pos(): { from: Pos; to: Pos };
+  /** the comments after the last token, which no token carries */
+  leftover(): LambdaComment[];
   next(): Token | null;
   peek(): Token | null;
   eof(): boolean;
@@ -71,6 +83,8 @@ function parse(input: TokenStream): LambdaNode {
     "%": 20,
   };
   const FALSE = { type: "bool", value: false };
+  // the node most recently parsed in full: what a trailing comment refers to
+  let lastCompleted: LambdaNode | undefined;
   function nextToken(): Token {
     return input.next() ?? input.croak("Unexpected end of input");
   }
@@ -161,6 +175,9 @@ function parse(input: TokenStream): LambdaNode {
     };
   }
   function parseVarname(): LambdaNode {
+    return withLeadingComments(parseVarnameNode);
+  }
+  function parseVarnameNode(): LambdaNode {
     const from = input.pos().from;
     const name = nextToken();
     const to = input.pos().to;
@@ -262,6 +279,9 @@ function parse(input: TokenStream): LambdaNode {
     return isPunc("(") ? parseCall(expr) : expr;
   }
   function parseAtom(): LambdaNode {
+    return withLeadingComments(parseAtomNode);
+  }
+  function parseAtomNode(): LambdaNode {
     fromLocation = input.pos().from;
     return maybeCall(function () {
       if (isPunc("(")) {
@@ -286,6 +306,15 @@ function parse(input: TokenStream): LambdaNode {
         input.next();
         return parseLambda();
       }
+      if (isOp("-")) {
+        // a negative number (the language has no other use of - in front)
+        const minus = nextToken();
+        const num = nextToken();
+        if (num.type != "num") {
+          input.croak("A - there has to be followed by a number");
+        }
+        return { from: minus.from, to: num.to, type: "num", value: -num.value };
+      }
       const tok = nextToken();
       if (tok.type == "var" || tok.type == "num" || tok.type == "str") {
         return tok;
@@ -299,6 +328,9 @@ function parse(input: TokenStream): LambdaNode {
       prog.push(parseExpression());
       if (!input.eof()) skipPunc(";");
     }
+    // comments at the end go with the last thing before them
+    const rest = input.leftover();
+    if (rest.length && lastCompleted) attachComments(lastCompleted, rest);
     return {
       from: input.pos().from,
       to: input.pos().to,
@@ -309,7 +341,7 @@ function parse(input: TokenStream): LambdaNode {
   function parseProg(): LambdaNode {
     const from = fromLocation;
     const prog = delimited("{", "}", ";", parseExpression);
-    if (prog.length == 0) return FALSE;
+    if (prog.length == 0) return { ...FALSE };
     if (prog.length == 1) return prog[0];
     toLocation = input.pos().to;
     return { from: from, to: toLocation, type: "prog", prog: prog }; //return { type: "prog", prog: prog };
@@ -321,21 +353,34 @@ function parse(input: TokenStream): LambdaNode {
       })
     );
   }
-  // the comments before a node go with it
+  // The comments that come before a node go with it, unless they trail the
+  // node before it (they started on the line where it ended), and then they
+  // go with that one.
   function withLeadingComments(parseNode: () => LambdaNode): LambdaNode {
     const first = input.peek();
-    const comments = first?.comments;
-    if (first) first.comments = undefined;
-    let node = parseNode();
-    if (comments?.length) {
-      if (node === FALSE) node = { ...FALSE }; // (FALSE is shared)
-      node.comment = {
-        text: comments.map((c) => c.text).join(" "),
-        from: comments[0].from,
-        to: comments[comments.length - 1].to,
-      };
+    const comments = first?.comments ?? [];
+    if (first) delete first.comments;
+    const trailing = lastCompleted ? comments.filter((c) => c.trailing) : [];
+    if (lastCompleted && trailing.length) {
+      attachComments(lastCompleted, trailing);
     }
+    const node = parseNode();
+    const leading = comments.filter((c) => !trailing.includes(c));
+    if (leading.length) attachComments(node, leading);
+    lastCompleted = node;
     return node;
+  }
+  function attachComments(node: LambdaNode, comments: LambdaComment[]) {
+    const all = node.comment ? [node.comment, ...comments] : comments;
+    node.comment = {
+      text: all.map((c) => c.text).join(" "),
+      from: all.reduce(
+        (a, c) => (poscmp(c.from, a) < 0 ? c.from : a),
+        all[0].from
+      ),
+      to: all.reduce((a, c) => (poscmp(c.to, a) > 0 ? c.to : a), all[0].to),
+      trailing: all.every((c) => c.trailing),
+    };
   }
 }
 
@@ -384,9 +429,11 @@ function tokenStream(input: InputStream): TokenStream {
   let fromLocation = input.inputPos(),
     toLocation = input.inputPos();
   const pending: LambdaComment[] = [];
+  let lastEnd: Pos | null = null; // (where the last token ended)
   const keywords = " let if then else lambda λ true false js:raw ";
   return {
     pos: pos,
+    leftover: () => pending.splice(0),
     next: next,
     peek: peek,
     eof: eof,
@@ -494,12 +541,14 @@ function tokenStream(input: InputStream): TokenStream {
       text: text.trim().replace(/\s+/g, " "),
       from,
       to: input.inputPos(),
+      trailing: lastEnd !== null && from.line === lastEnd.line,
     });
   }
   // a token carries the comments that came before it
   function readNext(): Token | null {
     const token = readToken();
     if (token && pending.length) token.comments = pending.splice(0);
+    if (token) lastEnd = input.inputPos();
     return token;
   }
   function readToken(): Token | null {
@@ -542,7 +591,19 @@ function tokenStream(input: InputStream): TokenStream {
   function next() {
     const tok = current;
     current = null;
-    return tok || readNext();
+    const taken = tok || readNext();
+    // comments that nothing claimed (they came before an operator or a
+    // closing bracket) go on to the next token, and so to what it starts
+    if (taken?.comments?.length) {
+      const following = peek();
+      if (following) {
+        following.comments = [...taken.comments, ...(following.comments ?? [])];
+      } else {
+        pending.unshift(...taken.comments);
+      }
+      delete taken.comments;
+    }
+    return taken;
   }
   function eof() {
     return peek() == null;

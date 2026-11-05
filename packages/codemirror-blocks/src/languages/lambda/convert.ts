@@ -56,8 +56,8 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
       // what it holds, or its block would not cover its own children
       const body = all(node.prog);
       return body.length
-        ? Prog(body[0].from, body[body.length - 1].to, body)
-        : Prog(from, to, body);
+        ? Prog(body[0].from, body[body.length - 1].to, body, options)
+        : Prog(from, to, body, options);
     }
     case "num":
       return Literal(from, to, String(node.value), "number", options);

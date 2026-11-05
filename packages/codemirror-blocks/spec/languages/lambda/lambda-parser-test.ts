@@ -196,7 +196,7 @@ const testData: { input: string; output: any }[] = [
         value: "x",
       },
       right: {
-        from: { line: 0, ch: 2 },
+        from: { line: 0, ch: 4 },
         to: { line: 0, ch: 9 },
         type: "binary",
         operator: "*",
@@ -250,7 +250,7 @@ a + b;`,
           value: "b",
         },
         right: {
-          from: { line: 1, ch: 2 },
+          from: { line: 1, ch: 4 },
           to: { line: 1, ch: 9 },
           type: "binary",
           operator: "*",

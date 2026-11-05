@@ -5,6 +5,7 @@ import Args from "../../components/Args";
 import Node from "../../components/Node";
 import * as Spec from "../../nodeSpec";
 import { CoreAST, createASTSpec } from "../../nodes";
+import { poscmp } from "../../utils";
 
 /** How the language writes a comment, when it writes one back out */
 export const LAMBDA_BLOCK_COMMENT = { open: "#|", close: "|#" };
@@ -42,8 +43,7 @@ export const LambdaAST = createASTSpec({
 });
 
 /**
- * Makes a node of the language, printed with the comment that goes with it:
- * always above it, because a comment belongs to what comes after it
+ * Makes a node of the language, printed with the comment that goes with it
  */
 function makeLambdaNode<T extends keyof typeof LambdaAST.config>(
   props: Parameters<typeof LambdaAST.makeNode<T>>[0]
@@ -51,10 +51,16 @@ function makeLambdaNode<T extends keyof typeof LambdaAST.config>(
   const { pretty } = props;
   return LambdaAST.makeNode<T>({
     ...props,
-    pretty: (node) =>
-      node.options.comment
-        ? P.vert(node.options.comment, pretty(node))
-        : pretty(node),
+    pretty: (node) => {
+      const doc = pretty(node);
+      const comment = node.options.comment;
+      if (!comment) return doc;
+      // above what it comes before; after what it trails (on the same line if
+      // it fits there)
+      return poscmp(comment.from, node.from) < 0
+        ? P.vert(comment, doc)
+        : P.ifFlat(P.horz(doc, " ", comment), P.vert(doc, comment));
+    },
   });
 }
 
