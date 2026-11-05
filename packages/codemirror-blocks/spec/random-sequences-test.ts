@@ -727,25 +727,23 @@ const operations: Operation[] = [
           // text changed through the API inside the collapsed block
           const inner = pick([...node.descendants()].slice(1), r[3]);
           if (!inner) return `collapse ${label(node)}`;
+          // (text written right against a comment, as in `zzz#| c |#`, is a
+          // symbol with bars in it to a reader, which is no program to keep)
+          const lines = w.cmb.getValue().split("\n");
+          const after = (lines[inner.to.line] ?? "").slice(inner.to.ch);
+          const before = (lines[inner.from.line] ?? "").slice(0, inner.from.ch);
+          if (
+            after.startsWith("#|") ||
+            after.startsWith(";") ||
+            before.endsWith("|#")
+          ) {
+            return `collapse ${label(node)}`;
+          }
           try {
             w.cmb.replaceRange(pick(texts, r[0])!, inner.from, inner.to);
           } catch (e) {
-            // (lambda refuses text that does not parse in that place; so does
-            // any language text written against a comment, as in `7#| c |#`)
-            const lines = w.cmb.getValue().split("\n");
-            const after = (lines[inner.to.line] ?? "").slice(inner.to.ch);
-            const before = (lines[inner.from.line] ?? "").slice(
-              0,
-              inner.from.ch
-            );
-            const touchesComment =
-              after.startsWith("#|") ||
-              after.startsWith(";") ||
-              before.endsWith("|#");
-            if (
-              (w.cmb.getAst().language.id !== "lambda" && !touchesComment) ||
-              !isRefusal(e)
-            ) {
+            // (lambda refuses text that does not parse in that place)
+            if (w.cmb.getAst().language.id !== "lambda" || !isRefusal(e)) {
               throw e;
             }
           }
