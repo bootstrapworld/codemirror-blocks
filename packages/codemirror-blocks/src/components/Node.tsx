@@ -2,6 +2,7 @@ import React, {
   useCallback,
   use,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -346,6 +347,21 @@ const Node = ({ expandable = true, ...props }: Props) => {
       nodeElementRef.current?.focus();
     }
   }, [editor, isFocused, editable]);
+
+  // The popup with this node's comment is held at its bottom edge, and so
+  // grows upwards; where that would put it above the top of the editor (and
+  // out of sight), it is held at its top edge instead, and grows downwards.
+  const commentText = comment ? String(comment.fields.comment) : "";
+  useLayoutEffect(() => {
+    const node = nodeElementRef.current;
+    const popup = node?.querySelector<HTMLElement>(":scope > .blocks-comment");
+    if (!node || !popup) return;
+    popup.classList.remove("blocks-comment-below");
+    const top = node.closest(".CodeMirror")?.getBoundingClientRect().top;
+    if (top !== undefined && popup.getBoundingClientRect().top < top) {
+      popup.classList.add("blocks-comment-below");
+    }
+  }, [isFocused, commentText]);
 
   // An edit can re-create this node's codemirror widget without changing its
   // id (e.g. dropping a node elsewhere). The browser then drops focus, and

@@ -371,6 +371,17 @@
   visibility: visible;
 }
 
+// (the popup is held at its top edge when it would go off the top of the editor)
+.blocks-comment.blocks-comment-below:not(.blocks-comment-editing) {
+  top: 0;
+  bottom: auto;
+  margin-bottom: 0;
+}
+.blocks-comment.blocks-comment-below:not(.blocks-comment-editing)::before {
+  top: 6px;
+  bottom: auto;
+}
+
 // A comment that goes with no node is a block of its own: the whole block
 // looks like a comment (dark, light text, no outline of a code block)
 .blocks-node.blocks-comment {
