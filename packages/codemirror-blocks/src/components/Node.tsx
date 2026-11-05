@@ -129,6 +129,12 @@ const Node = ({ expandable = true, ...props }: Props) => {
       return;
     }
     const node = currentNode();
+    if (node.options.orphan) {
+      // (a comment block is edited like any block, with Enter)
+      say("Press Enter to edit a comment block");
+      playSound(BEEP);
+      return;
+    }
     if (!selectors.getAST(store.getState()).language.blockComment) {
       say("This language has no comments");
       playSound(BEEP);

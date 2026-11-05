@@ -96,14 +96,18 @@ test.describe("a comment that goes with no block", () => {
     await expect(apart(page)).toHaveAttribute("aria-setsize", "3");
   });
 
-  test("is edited with the same shortcut, on itself", async ({ page }) => {
+  test("is edited with Enter, not with the comment shortcut", async ({
+    page,
+  }) => {
     await openInBlockMode(page, "(f x)\n\n#| apart |#\n\n(g y)");
     await apart(page).click({ position: { x: 4, y: 4 } });
     await page.keyboard.press(COMMENT_KEY);
     await expect
-      .poll(() => editing(page))
-      .toEqual({ editable: "true", text: "apart", selected: "apart" });
-    await page.keyboard.type("elsewhere");
+      .poll(async () => (await editing(page)).editable)
+      .not.toBe("true");
+    await page.keyboard.press("Enter");
+    await expect.poll(() => editing(page)).toMatchObject({ editable: "true" });
+    await page.keyboard.type("#| elsewhere |#");
     await page.keyboard.press("Enter");
     await expect
       .poll(() => source(page))

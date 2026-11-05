@@ -8,7 +8,7 @@ A comment is one of two things.
 - **Orphan**: it goes with no node. It is a real `comment` node
   (`options.orphan`), a sibling among the nodes of a list that can hold it. It
   is focusable (a tree item), reads as `comment: <text>`, is edited with
-  Shift-Ctrl-] and deleted like any block.
+  Enter (not Shift-Ctrl-]) and deleted like any block.
 
 ## The rule
 
@@ -48,8 +48,9 @@ binding list, which shares `sequence` with `begin`). The top level always can.
 
 ## Editing
 
-- Shift-Ctrl-] on an owner edits its comment; on an orphan, itself. Emptying
-  either removes it.
+- Shift-Ctrl-] on an owner edits its comment; emptying it removes it. On an
+  orphan it only says to press Enter: an orphan is edited like any block.
+- An owner's comment is a small 💬 badge on the top-right corner of the node.
 - Deleting an owner leaves its comment behind as an orphan. Cutting or moving
   one takes the comment along. Moving an orphan moves only the orphan.
 

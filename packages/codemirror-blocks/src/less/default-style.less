@@ -371,29 +371,37 @@
   visibility: visible;
 }
 
-// The comment that goes with a node is a small badge on it (its text is in the
-// box that opens to edit it)
+// The comment that goes with a node is a small badge in the top-right corner
+// of the node (its text is in the box that opens to edit it)
+.blocks-node:has(> .blocks-comment-badge) {
+  position: relative;
+}
 .blocks-comment.blocks-comment-badge {
   visibility: visible;
-  position: relative;
-  display: inline-block !important;
+  position: absolute;
+  display: block !important;
+  top: -0.7em;
+  right: -0.5em;
   left: auto;
   bottom: auto;
-  margin: 0 0 0 4px;
-  padding: 0 2px;
+  margin: 0;
+  padding: 0;
   max-width: none;
-  font-size: 0.8em;
-  line-height: inherit;
+  font-size: 0.7em;
+  line-height: 1;
   background: none;
   border: none;
   box-shadow: none;
-  z-index: auto;
+  text-shadow: none;
+  pointer-events: none;
+  z-index: 1;
 }
 .blocks-comment.blocks-comment-badge::before {
   display: none;
 }
 
-// A comment that goes with no node is a block of its own, in line with the rest
+// A comment that goes with no node is a block of its own: the whole block
+// looks like a comment (dark, light text, no outline of a code block)
 .blocks-node.blocks-comment {
   visibility: visible;
   position: static;
@@ -401,13 +409,28 @@
   left: auto;
   bottom: auto;
   margin: 2px;
+  padding: 2px 10px;
   max-width: 400px;
   box-shadow: none;
-  white-space: normal;
+  white-space: pre-line;
+  font-style: italic;
+  background-color: @comment-background-color;
+  color: @comment-color;
+  border: 1px solid @comment-border-color;
+  border-radius: 5px;
   z-index: auto;
 }
 .blocks-node.blocks-comment::before {
   display: none;
+}
+.blocks-node.blocks-comment:focus,
+.blocks-node.blocks-comment[aria-selected^="true"] {
+  background-color: @comment-background-color;
+  outline: 2px solid @editing-border-color;
+}
+.blocks-node.blocks-comment > .blocks-comment-text {
+  color: inherit;
+  background: none;
 }
 
 // (the block around it cannot be selected, but its comment has to be typed in)

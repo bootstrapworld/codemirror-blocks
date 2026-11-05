@@ -566,8 +566,6 @@ export class ReplaceNodeTarget extends Target {
 // Target the comment of a node, or the place for one: the node is replaced,
 // comment and all, by the new comment followed by the node's own text (which
 // is the text of the node without its comment, taken before the edit starts).
-// For an orphan comment, which is a node of its own, it is the comment that is
-// replaced (and removed, if nothing is left of it).
 export class CommentTarget extends Target {
   node: ASTNode;
   ownText: string;
@@ -579,12 +577,8 @@ export class CommentTarget extends Target {
     this.ownText = ownText;
   }
 
-  private get isOrphan() {
-    return Boolean(this.node.options.orphan);
-  }
-
   getText() {
-    const comment = this.isOrphan ? this.node : this.node.options.comment;
+    const comment = this.node.options.comment;
     return comment ? String(comment.fields.comment).trim() : "";
   }
 
@@ -601,21 +595,6 @@ export class CommentTarget extends Target {
       .join(close[0] + " " + close.slice(1))
       .trim();
     const node = ast.getNodeByIdOrThrow(this.node.id);
-    if (this.isOrphan) {
-      if (!words) {
-        return edit_delete(ast, node);
-      }
-      // (inside something, the blank line after it has to be made; at the top
-      // level the one that is there stays)
-      const comment = Comment(dummy, dummy, words, { blockComment });
-      return edit_replace(
-        ast.getNodeParent(node)
-          ? comment.toString() + "\n"
-          : comment.toString(),
-        ast,
-        node
-      );
-    }
     if (!words) {
       return edit_replace(this.ownText, ast, node);
     }

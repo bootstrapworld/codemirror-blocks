@@ -247,15 +247,26 @@ describe("deleting", () => {
 });
 
 describe("Edit Comment on an orphan", () => {
-  it("opens the box for the orphan's own text", () => {
+  it("does nothing: a comment block is edited with Enter", () => {
     const { cmb } = mountCMB(wescheme);
     cmb.setValue("; c\n\n(f x)");
     const orphan = cmb.getAst().rootNodes[0];
     expect(orphan.options.orphan).toBe(true);
     mouseDown(orphan);
     keyDown("]", { ctrlKey: true, shiftKey: true }, orphan);
-    const box = document.activeElement as HTMLElement;
-    expect(box.getAttribute("contenteditable")).toBe("true");
-    expect(box.textContent).toBe("c");
+    expect(document.activeElement?.getAttribute("contenteditable")).not.toBe(
+      "true"
+    );
+  });
+
+  it("is edited with Enter, like any block", () => {
+    const { cmb } = mountCMB(wescheme);
+    cmb.setValue("; c\n\n(f x)");
+    const orphan = cmb.getAst().rootNodes[0];
+    mouseDown(orphan);
+    keyDown("Enter", {}, orphan);
+    expect(document.activeElement?.getAttribute("contenteditable")).toBe(
+      "true"
+    );
   });
 });

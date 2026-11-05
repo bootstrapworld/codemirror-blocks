@@ -443,7 +443,7 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    if (env.normallyEditable) {
+    if (env.normallyEditable || env.node.options.orphan) {
       env.handleMakeEditable(e);
       e.preventDefault();
     } else if (env.expandable && !env.node.options.isNotEditable) {
