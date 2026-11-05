@@ -6,7 +6,7 @@ import {
 } from "./parseNode";
 import { Comment } from "../../nodes";
 import { poscmp } from "../../utils";
-import { placeOrphans, scanSchemeComments } from "../../orphans";
+import { addComment, placeOrphans, scanSchemeComments } from "../../orphans";
 
 import { lex } from "wescheme-js/src/lex";
 import * as types from "wescheme-js/src/runtime/types";
@@ -925,5 +925,22 @@ export function parse(code: string) {
         orphan: true,
       })
     );
-  return placeOrphans(rootNodes, orphans, WESCHEME_BLOCK_COMMENT);
+  const placed = placeOrphans(rootNodes, orphans, WESCHEME_BLOCK_COMMENT);
+  // A list of names has no brackets of its own (the form that holds it prints
+  // them), so a comment on it would print inside them, and read back as one on
+  // the first name: it is one on the first name.
+  for (const root of placed) {
+    for (const node of root.descendants()) {
+      const comment = node.options.comment;
+      const first =
+        node.type === "identifierList"
+          ? (node.fields.ids as ASTNode[])[0]
+          : null;
+      if (comment && first && poscmp(comment.to, first.from) <= 0) {
+        addComment(first, comment, WESCHEME_BLOCK_COMMENT);
+        node.options.comment = undefined;
+      }
+    }
+  }
+  return placed;
 }

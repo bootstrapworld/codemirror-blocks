@@ -19,7 +19,7 @@ const contains = (node: ASTNode, c: ASTNode) => {
 };
 
 /** One comment that goes with `node`, made of the one it has and `extra` */
-function addComment(
+export function addComment(
   node: ASTNode,
   extra: ASTNode,
   blockComment?: BlockComment

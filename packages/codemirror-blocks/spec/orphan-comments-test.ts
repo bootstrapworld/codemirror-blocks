@@ -361,4 +361,16 @@ describe("printing what was found in the soak", () => {
       { line: 1, ch: 0 },
     ]);
   });
+
+  it("a comment above a list of names is one on its first name, and prints once", () => {
+    // (the list has no brackets of its own: printed above it, it was inside
+    // them, and read back a third time)
+    const code = "(define-struct\n posn\n #| note |#\n (#| note |#\n w))";
+    const { ast, once } = roundTrips("wescheme", code);
+    expect(once.match(/note/g)).toHaveLength(2);
+    expect(
+      [...ast.getAllNodes()].filter((n) => n.type === "identifierList")[0]
+        .options.comment
+    ).toBeUndefined();
+  });
 });
