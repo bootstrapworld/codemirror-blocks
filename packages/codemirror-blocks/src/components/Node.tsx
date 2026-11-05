@@ -64,6 +64,9 @@ function getNodeElementId(node: { id: string }) {
 // markers whose widget has a changed() call waiting
 const pendingChanged = new Set<BlockNodeMarker>();
 
+/** What is said just before the text of a comment that goes with a node */
+export const COMMENT_PREFIX = "with comment: ";
+
 /**
  * What a screen reader says for a block: what the node says it is, then the
  * text of the comment that goes with it (once), then a comma to pause.
@@ -74,7 +77,9 @@ export function spokenLabel(
   const comment = node.options.comment;
   return (
     node.shortDescription() +
-    (comment ? ` with comment: ${String(comment.fields.comment).trim()}` : "") +
+    (comment
+      ? ` ${COMMENT_PREFIX}${String(comment.fields.comment).trim()}`
+      : "") +
     ","
   );
 }
@@ -255,8 +260,12 @@ const Node = ({ expandable = true, ...props }: Props) => {
     id: nodeElemId,
     tabIndex: -1,
     "aria-selected": isSelected,
-    "aria-label": spokenLabel(props.node),
-    "aria-labelledby": nodeElemId,
+    // (a comment is part of the name through aria-labelledby, which names the
+    // comment's own element: that is how every screen reader has read it)
+    "aria-label": comment
+      ? props.node.shortDescription()
+      : spokenLabel(props.node),
+    "aria-labelledby": comment ? `${nodeElemId} ${commentElemId}` : nodeElemId,
     "aria-disabled": locked ? true : undefined,
     "aria-expanded": expandable && !locked ? !isCollapsed : undefined,
     "aria-setsize": props.node.ariaSetSize,

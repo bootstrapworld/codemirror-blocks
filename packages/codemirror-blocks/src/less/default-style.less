@@ -414,6 +414,20 @@
   color: inherit;
   background: none;
 }
+// Collapsed, a comment block hides its words and keeps its emoji
+.blocks-node.blocks-comment[aria-expanded="false"] {
+  min-width: 0;
+  max-width: none;
+  padding: 2px 6px;
+  background: @comment-background-color;
+}
+.blocks-node.blocks-comment[aria-expanded="false"]::before {
+  display: inline;
+  content: "\1F4AC";
+  position: static;
+  background: none;
+  color: inherit;
+}
 
 // The box a comment is typed in looks like the popup it replaces. (The block
 // around it cannot be selected, but its comment has to be typed in.)

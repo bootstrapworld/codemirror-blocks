@@ -10,7 +10,7 @@ import {
   Pos,
   withoutOrphans,
 } from "./ast";
-import Node from "./components/Node";
+import Node, { COMMENT_PREFIX } from "./components/Node";
 import Args from "./components/Args";
 import { DropTarget } from "./components/DropTarget";
 import * as Spec from "./nodeSpec";
@@ -723,8 +723,9 @@ export function Comment(
           </Node>
         );
       }
-      // (a popup, shown while the node it is on is active; the node's own
-      // label reads the comment, so it is not read a second time)
+      // (a popup, shown while the node it is on is active. The node's
+      // aria-labelledby names it, so a screen reader reads it once, after the
+      // node's own label: hidden, but still part of that name)
       const { node: _node, ...rest } = props;
       return (
         <span
@@ -733,7 +734,9 @@ export function Comment(
           title={node.fields.comment.toString()}
           {...rest}
         >
+          <span className="screenreader-only">{COMMENT_PREFIX}</span>
           {node.fields.comment.toString()}
+          <span className="screenreader-only">,</span>
         </span>
       );
     },

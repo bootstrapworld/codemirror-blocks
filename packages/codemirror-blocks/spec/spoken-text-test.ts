@@ -5,6 +5,8 @@ import lambda from "../src/languages/lambda";
 import { ASTNode } from "../src/ast";
 import { spokenLabel } from "../src/components/Node";
 import { summarizeProgram } from "../src/summary";
+import { computeAccessibleName } from "dom-accessibility-api";
+import { mountCMB, teardown } from "../src/toolkit/test-utils";
 
 /**
  * The words a screen reader says are chosen with care, so any change to them
@@ -122,5 +124,20 @@ describe("what a screen reader says", () => {
       fs.writeFileSync(GOLDEN, text);
     }
     expect(text).toBe(fs.readFileSync(GOLDEN, "utf8"));
+  });
+});
+
+describe("the name a browser computes for a block with a comment", () => {
+  afterEach(teardown);
+  it("has the comment once, after the label, as spokenLabel says", () => {
+    const { cmb } = mountCMB(wescheme);
+    cmb.setValue("; hello there\n(f x)");
+    const el = document.querySelector<HTMLElement>("[role=treeitem]")!;
+    const node = cmb.getAst().rootNodes[0];
+    const name = computeAccessibleName(el)
+      .replace(/\s+/g, " ")
+      .replace(/ ,/g, ",");
+    expect(name).toBe(spokenLabel(node));
+    expect(name.split("hello there")).toHaveLength(2);
   });
 });

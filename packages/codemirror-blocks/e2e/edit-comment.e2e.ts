@@ -149,7 +149,25 @@ test.describe("a comment that goes with no block", () => {
     await expect(popup).toBeHidden();
     await g.click({ position: { x: 4, y: 4 } });
     await expect(popup).toBeVisible();
-    await expect(popup).toHaveText("mine");
+    await expect(popup).toContainText("mine");
+  });
+
+  test("a collapsed comment block hides its words and keeps its emoji", async ({
+    page,
+  }) => {
+    await openInBlockMode(page, "#| apart words |#\n\n(g y)");
+    const c = page.getByRole("treeitem", { name: /^comment: / });
+    await c.click();
+    await page.keyboard.press("ArrowLeft");
+    await expect(c).toHaveAttribute("aria-expanded", "false");
+    await expect(c.locator(".blocks-comment-text")).toBeHidden();
+    const emoji = await c.evaluate(
+      (el) => getComputedStyle(el, "::before").content
+    );
+    expect(emoji).toContain("\u{1F4AC}");
+    expect(
+      await c.evaluate((el) => getComputedStyle(el, "::before").display)
+    ).not.toBe("none");
   });
 
   test("a comment popup that would go off the top of the editor is held at its top", async ({
