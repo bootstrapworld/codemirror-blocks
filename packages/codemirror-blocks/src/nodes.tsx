@@ -699,6 +699,7 @@ export function Comment(
         return (
           <Node {...props}>
             <span className="blocks-comment-text">
+              <span aria-hidden="true">{"\u{1F4AC} "}</span>
               {node.fields.comment.toString()}
             </span>
           </Node>
