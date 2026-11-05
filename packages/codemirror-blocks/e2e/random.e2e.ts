@@ -219,6 +219,10 @@ async function runSequence(page: Page, seed: number) {
       log[log.length - 1] =
         `${what}\n       text: ${JSON.stringify(now.text)} (undo ${now.history.undo}, redo ${now.history.redo})`;
     }
+    // (the last step gets the time the others get: a paste is read from the
+    // clipboard after the key is pressed, and it landing late was taken for
+    // text that undo and redo did not give back)
+    await page.waitForTimeout(500);
     // a quarantine or edit left open would make undo type into it
     await page.keyboard.press("Escape");
     // walk the history one way, a step at a time, letting each one settle
