@@ -753,12 +753,14 @@ const operations: Operation[] = [
           keyDown("Enter", cmd_ctrl, node);
           if (isEditing()) setEditableText(pick(texts, r[3])!);
           keyDown("Enter");
+          w.forgiveRefusal(); // (a line comment written in the box swallows the ")")
           what = "edit it";
           break;
         case 4:
           keyDown("]", { ctrlKey: true }, node);
           if (isEditing()) setEditableText(pick(texts, r[3])!);
           keyDown("Enter");
+          w.forgiveRefusal();
           what = "insert beside it";
           break;
         default:
