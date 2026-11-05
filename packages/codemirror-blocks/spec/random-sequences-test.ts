@@ -732,10 +732,12 @@ const operations: Operation[] = [
           const lines = w.cmb.getValue().split("\n");
           const after = (lines[inner.to.line] ?? "").slice(inner.to.ch);
           const before = (lines[inner.from.line] ?? "").slice(0, inner.from.ch);
+          const text = pick(texts, r[0]) ?? "";
           if (
             after.startsWith("#|") ||
             after.startsWith(";") ||
-            before.endsWith("|#")
+            before.endsWith("|#") ||
+            (text.startsWith("#|") && /[^\s([{]$/.test(before))
           ) {
             return `collapse ${label(node)}`;
           }
