@@ -730,8 +730,22 @@ const operations: Operation[] = [
           try {
             w.cmb.replaceRange(pick(texts, r[0])!, inner.from, inner.to);
           } catch (e) {
-            // (lambda refuses text that does not parse in that place)
-            if (w.cmb.getAst().language.id !== "lambda" || !isRefusal(e)) {
+            // (lambda refuses text that does not parse in that place; so does
+            // any language text written against a comment, as in `7#| c |#`)
+            const lines = w.cmb.getValue().split("\n");
+            const after = (lines[inner.to.line] ?? "").slice(inner.to.ch);
+            const before = (lines[inner.from.line] ?? "").slice(
+              0,
+              inner.from.ch
+            );
+            const touchesComment =
+              after.startsWith("#|") ||
+              after.startsWith(";") ||
+              before.endsWith("|#");
+            if (
+              (w.cmb.getAst().language.id !== "lambda" && !touchesComment) ||
+              !isRefusal(e)
+            ) {
               throw e;
             }
           }

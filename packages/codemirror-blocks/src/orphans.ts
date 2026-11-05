@@ -129,11 +129,15 @@ export type ScannedComment = {
  * follows code on its line is one of its own.
  */
 export function scanSchemeComments(code: string): ScannedComment[] {
-  const found: (ScannedComment & { trailing: boolean; codeAfter?: boolean })[] =
-    [];
+  const found: (ScannedComment & {
+    trailing: boolean;
+    codeAfter?: boolean;
+    opener: boolean;
+  })[] = [];
   let line = 0;
   let col = 0;
   let hasCode = false;
+  let opened = false; // (an opening bracket came before, on this line)
   let i = 0;
   const pos = (): Pos => ({ line, ch: col });
   // (code after a comment on its line ends the row of comments it is in)
@@ -148,6 +152,7 @@ export function scanSchemeComments(code: string): ScannedComment[] {
         line++;
         col = 0;
         hasCode = false;
+        opened = false;
       } else {
         col++;
       }
@@ -165,7 +170,14 @@ export function scanSchemeComments(code: string): ScannedComment[] {
         .replace(/^[;\s]*/, "")
         .trim();
       step(end - i);
-      found.push({ from, to: pos(), lastFrom: from, text, trailing });
+      found.push({
+        from,
+        to: pos(),
+        lastFrom: from,
+        text,
+        trailing,
+        opener: opened,
+      });
     } else if (c === "#" && code[i + 1] === "|") {
       const from = pos();
       const trailing = hasCode;
@@ -176,7 +188,14 @@ export function scanSchemeComments(code: string): ScannedComment[] {
         .trim()
         .replace(/\s+/g, " ");
       step(end - i);
-      found.push({ from, to: pos(), lastFrom: from, text, trailing });
+      found.push({
+        from,
+        to: pos(),
+        lastFrom: from,
+        text,
+        trailing,
+        opener: opened,
+      });
     } else if (c === '"') {
       code_();
       step();
@@ -192,7 +211,8 @@ export function scanSchemeComments(code: string): ScannedComment[] {
     } else {
       // (an opening bracket does not make a comment after it trail: the
       // comment is above what follows, as a lexer reads it)
-      if (!/[\s([{]/.test(c)) code_();
+      if (/[([{]/.test(c)) opened = true;
+      else if (!/\s/.test(c)) code_();
       step();
     }
   }
@@ -204,6 +224,8 @@ export function scanSchemeComments(code: string): ScannedComment[] {
       group &&
       previous &&
       !c.trailing &&
+      !c.opener &&
+      !previous.opener &&
       !previous.trailing &&
       !previous.codeAfter &&
       c.from.line === previous.to.line + 1

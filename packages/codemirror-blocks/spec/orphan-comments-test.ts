@@ -2,6 +2,7 @@ import type { AST, ASTNode } from "../src/ast";
 import lambda from "../src/languages/lambda";
 import wescheme from "../src/languages/wescheme";
 import { select } from "./helpers/gestures";
+import { scanSchemeComments } from "../src/orphans";
 import { summarizeProgram } from "../src/summary";
 import {
   keyDown,
@@ -317,5 +318,15 @@ describe("Edit Comment on an orphan", () => {
     expect(document.activeElement?.getAttribute("contenteditable")).toBe(
       "true"
     );
+  });
+});
+
+describe("a comment after an opening bracket", () => {
+  it("does not join the row of comments above its line", () => {
+    const code = "#| a |#\n#| b |#\n(#| c |#\n w)";
+    const found = scanSchemeComments(code);
+    expect(found.map((c) => c.text)).toEqual(["a b", "c"]);
+    expect(found[0].to.line).toBe(1);
+    roundTrips("wescheme", code);
   });
 });
