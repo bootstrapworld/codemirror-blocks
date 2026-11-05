@@ -376,7 +376,10 @@ export function parseNodeOrNull(
     });
   } else if (node instanceof structures.symbolExpr) {
     if (node.val == "...") {
-      return Blank(from, to, node.val, "symbol", { ariaLabel: "blank" });
+      return Blank(from, to, node.val, "symbol", {
+        ariaLabel: "blank",
+        comment: comment,
+      });
     } else if (["true", "false"].includes(node.val)) {
       return Literal(from, to, node.val, "boolean", {
         ariaLabel: symbolAria(node.val) + ", a Boolean",

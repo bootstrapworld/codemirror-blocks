@@ -103,6 +103,14 @@ describe("which comments go with a node, and which are orphans", () => {
       expect(shapeOf("7\n; note\nzzz")).toBe("literal literal+");
       expect(shapeOf("#| c |#\n'x")).toBe("literal+");
     });
+    it("a blank (...) keeps the comment that goes with it", () => {
+      expect(shapeOf("(f a ... #| c |#)")).toBe(
+        "functionApp literal literal blank+"
+      );
+      expect(shapeOf("(f 1)\n#| c |#\n...")).toBe(
+        "functionApp literal literal blank+"
+      );
+    });
     it("a comment before a form on its line is not in a row with the comment on the next line", () => {
       expect(shapeOf("#| c |# z\n#| d |# y")).toBe("literal+ literal+");
       expect(shapeOf("#| c |# z\n#| c |# z\n(f x)")).toBe(
