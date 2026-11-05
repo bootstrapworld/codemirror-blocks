@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { openInBlockMode } from "./helpers";
+import {
+  dragWithMouse,
+  expectConsistent,
+  openInBlockMode,
+  trashCan,
+} from "./helpers";
 
 const COMMENT_KEY = "Shift+Control+]";
 
@@ -193,4 +198,24 @@ test.describe("a comment that goes with no block", () => {
     await expect.poll(() => source(page)).toContain("#| mine |#");
     await expect.poll(() => source(page)).not.toContain("(g y)");
   });
+});
+
+test("a drop with a comment box that cannot be saved still open leaves focus on a block", async ({
+  page,
+}) => {
+  await openInBlockMode(page, "(f x y)\nw");
+  const items = page.getByRole("treeitem");
+  await items
+    .filter({ hasText: /^y$/ })
+    .first()
+    .click({
+      position: { x: 4, y: 4 },
+    });
+  await page.keyboard.press(COMMENT_KEY);
+  // (a line comment swallows what follows it: this cannot be saved)
+  await page.keyboard.type("; note\n(k 1)");
+  await page.keyboard.press("Enter");
+  await dragWithMouse(page, items.nth(1), trashCan(page));
+  await expect.poll(() => source(page)).toBe("(... x y)\nw");
+  await expectConsistent(page);
 });
