@@ -49,6 +49,43 @@ export function findInvariantViolations(): string[] {
     }
   }
 
+  // 1b. What is printed from the blocks reads back with the same comments: one
+  //     that goes with no block is still a block of its own, and one that goes
+  //     with a block still does. (Only the comments are compared: the blocks
+  //     around them are checked above, against the text.)
+  if (reparsed) {
+    // (the spacing in a comment is not part of it)
+    const words = (c: unknown) => String(c).trim().replace(/\s+/g, " ");
+    // (which of two nested nodes that start at the same place a comment above
+    // them goes with is not kept: the text of both is the same)
+    const comments = (a: AST) => {
+      const nodes = [...a.getAllNodes()];
+      const orphans = nodes
+        .filter((n) => n.options.orphan)
+        .map((n) => `orphan ${words(n.fields.comment)}`);
+      const attached = nodes
+        .filter((n) => n.options.comment)
+        .flatMap((n) => words(n.options.comment!.fields.comment).split(" "))
+        .sort();
+      return [...orphans, `on nodes: ${attached.join(" ")}`];
+    };
+    try {
+      const again = AST.from(
+        ast.language.id,
+        ast.language.parse(ast.toString())
+      );
+      if (JSON.stringify(comments(again)) !== JSON.stringify(comments(ast))) {
+        violations.push(
+          `printing the blocks does not read back with the same comments.\n  printed: ${JSON.stringify(
+            ast.toString()
+          )}\n  blocks:  ${comments(ast)}\n  read:    ${comments(again)}`
+        );
+      }
+    } catch (e) {
+      violations.push(`the printed blocks do not parse: ${e}`);
+    }
+  }
+
   // 2. One block marker per root (plus one for an open quarantine), at the
   //    root's position.
   const markers = cmb.getCM().getAllMarks().filter(isBlockNodeMarker);

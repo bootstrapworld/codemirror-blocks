@@ -79,3 +79,81 @@ test.describe("editing a comment from the keyboard", () => {
       .toBe("(f x #| last |# y)");
   });
 });
+
+test.describe("a comment that goes with no block", () => {
+  const apart = (page: Page) =>
+    page.getByRole("treeitem", { name: /comment: apart/ });
+
+  test("is a block of its own that can be focused and read", async ({
+    page,
+  }) => {
+    await openInBlockMode(page, "(f x)\n\n#| apart |#\n\n(g y)");
+    await apart(page).click({ position: { x: 4, y: 4 } });
+    await expect(apart(page)).toBeFocused();
+    // (it is a block like the others: its place among them is checked in the
+    // jest tests of navigation)
+    await expect(apart(page)).toHaveAttribute("aria-posinset", "2");
+    await expect(apart(page)).toHaveAttribute("aria-setsize", "3");
+  });
+
+  test("is edited with the same shortcut, on itself", async ({ page }) => {
+    await openInBlockMode(page, "(f x)\n\n#| apart |#\n\n(g y)");
+    await apart(page).click({ position: { x: 4, y: 4 } });
+    await page.keyboard.press(COMMENT_KEY);
+    await expect
+      .poll(() => editing(page))
+      .toEqual({ editable: "true", text: "apart", selected: "apart" });
+    await page.keyboard.type("elsewhere");
+    await page.keyboard.press("Enter");
+    await expect
+      .poll(() => source(page))
+      .toBe("(f x)\n\n#| elsewhere |#\n\n(g y)");
+    await expect(
+      page.getByRole("treeitem", { name: /comment: elsewhere/ })
+    ).toBeFocused();
+  });
+
+  test("is deleted like any other block", async ({ page }) => {
+    await openInBlockMode(page, "(f x)\n\n#| apart |#\n\n(g y)");
+    await apart(page).click({ position: { x: 4, y: 4 } });
+    await page.keyboard.press("Space");
+    await page.keyboard.press("Delete");
+    await expect.poll(() => source(page)).not.toContain("apart");
+    await expect(page.getByRole("treeitem", { name: /comment/ })).toHaveCount(
+      0
+    );
+  });
+
+  test("a block's own comment is a badge, not a stop of its own", async ({
+    page,
+  }) => {
+    await openInBlockMode(page, "#| mine |#\n(g y)");
+    const g = page.getByRole("treeitem", {
+      name: /g expression.*with comment/,
+    });
+    await expect(g).toBeVisible();
+    await expect(page.getByRole("treeitem", { name: /comment: / })).toHaveCount(
+      0
+    );
+    await expect(g.locator(".blocks-comment-badge")).toHaveAttribute(
+      "aria-hidden",
+      "true"
+    );
+  });
+
+  test("is left behind when the block it was above is deleted", async ({
+    page,
+  }) => {
+    await openInBlockMode(page, "#| mine |#\n(g y)\n(h z)");
+    await page.getByRole("treeitem", { name: /g expression/ }).click({
+      position: { x: 4, y: 4 },
+    });
+    await page.keyboard.press("Space");
+    await page.keyboard.press("Delete");
+    await expect(
+      page.getByRole("treeitem", { name: /comment: mine/ })
+    ).toBeVisible();
+    await expect.poll(() => source(page)).toContain("#| mine |#");
+    await expect.poll(() => source(page)).not.toContain("(g y)");
+  });
+});

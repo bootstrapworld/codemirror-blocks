@@ -30,7 +30,7 @@ const singleLine = (text: string) => text.replace(/\r?\n/g, "\\n");
 //   the same line). Line comments will stay as line comments _as long as they
 //   fit on the line_. If they don't, they'll be converted into a comment on the
 //   previous line.
-function withComment(
+export function withComment(
   doc: P.Doc,
   comment: ASTNode | undefined,
   container: NodeForSpec
@@ -397,10 +397,14 @@ export function LambdaExpression(
     fields: { body, args },
     options,
     pretty: (node) =>
-      P.lambdaLikeSexpr(
-        "lambda",
-        P.horz("(", node.fields.args, ")"),
-        node.fields.body
+      withComment(
+        P.lambdaLikeSexpr(
+          "lambda",
+          P.horz("(", node.fields.args, ")"),
+          node.fields.body
+        ),
+        node.options.comment,
+        node
       ),
     render(props) {
       const args = props.node.fields.args.reactElement();
@@ -484,10 +488,14 @@ export function CondClause(
     fields: { testExpr, thenExprs },
     options,
     pretty: (node) =>
-      P.horz(
-        "[",
-        P.sepBy([node.fields.testExpr].concat(node.fields.thenExprs), " "),
-        "]"
+      withComment(
+        P.horz(
+          "[",
+          P.sepBy([node.fields.testExpr].concat(node.fields.thenExprs), " "),
+          "]"
+        ),
+        node.options.comment,
+        node
       ),
     render(props) {
       const testExpr = props.node.fields.testExpr.reactElement();
@@ -530,7 +538,12 @@ export function CondExpression(
     type: "condExpression",
     fields: { clauses },
     options,
-    pretty: (node) => P.beginLikeSexpr("cond", node.fields.clauses),
+    pretty: (node) =>
+      withComment(
+        P.beginLikeSexpr("cond", node.fields.clauses),
+        node.options.comment,
+        node
+      ),
     render(props) {
       const clauses = props.node.fields.clauses.map((clause, index) =>
         clause.reactElement({ key: index })
@@ -662,10 +675,11 @@ export function Comment(
     type: "comment",
     fields: { comment },
     options: {
-      isNotEditable: true,
+      // (an orphan is edited with Shift-Ctrl-], and is no more locked than
+      // any other block)
       ...(orphan
         ? { ariaLabel: (n: ASTNode) => `${n.label}: ${n.fields.comment}` }
-        : {}),
+        : { isNotEditable: true }),
       ...options,
     },
     pretty: (node) => {
@@ -719,7 +733,12 @@ export function Blank(
     type: "blank",
     fields: { value: value || "...", dataType },
     options,
-    pretty: (node) => P.txt(singleLine(node.fields.value)),
+    pretty: (node) =>
+      withComment(
+        P.txt(singleLine(node.fields.value)),
+        node.options.comment,
+        node
+      ),
     render(props) {
       return (
         <Node {...props} normallyEditable={true} expandable={false}>
@@ -734,7 +753,11 @@ export type SequenceNode = ReturnType<typeof Sequence>;
 export type NodeForSequenceSpec = NodeForSpec<(typeof specs)["sequence"]>;
 export const SequenceProps = {
   pretty: (node: NodeForSequenceSpec) =>
-    P.vert(node.fields.name || "", ...node.fields.exprs),
+    withComment(
+      P.vert(node.fields.name || "", ...node.fields.exprs),
+      node.options.comment,
+      node
+    ),
   render(props: { node: NodeForSequenceSpec }) {
     return (
       <Node {...props}>

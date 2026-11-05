@@ -53,7 +53,11 @@ export function Sequence<Expr extends ASTNode = ASTNode>(
     options,
     ...Nodes.SequenceProps,
     pretty: (node) =>
-      P.standardSexpr(node.fields.name || "", node.fields.exprs),
+      Nodes.withComment(
+        P.standardSexpr(node.fields.name || "", node.fields.exprs),
+        node.options.comment,
+        node
+      ),
   });
 }
 
@@ -77,24 +81,28 @@ export function LetLikeExpr(
           `Expected letLikeExpr to be constructed with sequence for its binding field`
         );
       }
-      return P.lambdaLikeSexpr(
-        node.fields.form,
-        P.horz(
-          "(",
-          P.sepBy(
-            node.fields.bindings.fields.exprs.map((expr) => {
-              if (!WeSchemeAST.isNodeOfType(expr, "variableDefinition")) {
-                throw new Error(
-                  `Expected letLikeExpr to have sequence of variableDefinition nodes`
-                );
-              }
-              return P.standardSexpr(expr.fields.name, [expr.fields.body]);
-            }),
-            " "
+      return Nodes.withComment(
+        P.lambdaLikeSexpr(
+          node.fields.form,
+          P.horz(
+            "(",
+            P.sepBy(
+              node.fields.bindings.fields.exprs.map((expr) => {
+                if (!WeSchemeAST.isNodeOfType(expr, "variableDefinition")) {
+                  throw new Error(
+                    `Expected letLikeExpr to have sequence of variableDefinition nodes`
+                  );
+                }
+                return P.standardSexpr(expr.fields.name, [expr.fields.body]);
+              }),
+              " "
+            ),
+            ")"
           ),
-          ")"
+          node.fields.expr
         ),
-        node.fields.expr
+        node.options.comment,
+        node
       );
     },
     render(props) {
@@ -139,12 +147,16 @@ export function WhenUnless(
       // printing it would wrap the body in another `begin` each time the
       // program went from blocks to text and back.
       const body = node.fields.exprs;
-      return P.standardSexpr(node.fields.form, [
-        node.fields.predicate,
-        ...(WeSchemeAST.isNodeOfType(body, "sequence")
-          ? body.fields.exprs
-          : [body]),
-      ]);
+      return Nodes.withComment(
+        P.standardSexpr(node.fields.form, [
+          node.fields.predicate,
+          ...(WeSchemeAST.isNodeOfType(body, "sequence")
+            ? body.fields.exprs
+            : [body]),
+        ]),
+        node.options.comment ?? body.options.comment,
+        node
+      );
     },
     render(props) {
       return (

@@ -175,16 +175,31 @@ const toolbarEntries = () =>
 
 /** What goes between the text of a document and a statement added after it */
 const separator = (w: World) =>
-  w.cmb.getAst().language.id === "lambda" && w.cmb.getValue().trim() !== ""
-    ? ";\n"
-    : "\n";
+  w.cmb.getAst().language.id === "lambda" && hasStatements(w) ? ";\n" : "\n";
+
+/** (a program of only comments has no statement to separate from) */
+const hasStatements = (w: World) =>
+  w.cmb
+    .getValue()
+    .replace(/#\|[\s\S]*?\|#|#[^\n]*/g, "")
+    .trim() !== "";
 
 /** The language's refusal of text it cannot parse, as the editor reports it */
 const isRefusal = (e: unknown) =>
   /An invalid change was rejected/.test(String(e));
 
 /** Things to type, paste and drop in: one block, a few blocks, or a list */
-const schemeTexts = ["zzz", "7", "(g w)", "(h 1 2)", "foo bar", '"hi"'];
+const schemeTexts = [
+  "zzz",
+  "7",
+  "(g w)",
+  "(h 1 2)",
+  "foo bar",
+  '"hi"',
+  // (a comment on its own, and one with the block it goes with)
+  "#| note |#\n",
+  "; note\n(g w)",
+];
 /** (lambda has no lists, and two names in a row are not a program) */
 const lambdaTexts = ["zzz", "7", "x + 1", "!x", "true", '"hi"'];
 /** the pool for the language of the sequence that is running */
@@ -366,6 +381,35 @@ const operations: Operation[] = [
       keyDown("Enter");
       w.forgiveRefusal(); // (comments are written for wescheme: lambda refuses them)
       return `comment ${label(node)}: "${text}"`;
+    },
+  },
+  {
+    name: "clear a comment",
+    run: (w, r) => {
+      stopEditing(); // (clicking away commits an edit box: pick the blocks after)
+      const node = pick(visibleNodes(w), r[1]);
+      if (!node) return;
+      mouseDown(node);
+      keyDown("]", { ctrlKey: true, shiftKey: true }, node);
+      if (!isEditing())
+        return `Shift-Ctrl-] on ${label(node)} (no comment box)`;
+      setEditableText("");
+      keyDown("Enter");
+      w.forgiveRefusal();
+      return `clear the comment of ${label(node)}`;
+    },
+  },
+  {
+    // (a comment on its own is a block that is deleted like any other)
+    name: "delete a comment block",
+    run: (w, r) => {
+      stopEditing();
+      const comments = visibleNodes(w).filter((n) => n.options.orphan);
+      const node = pick(comments, r[1]);
+      if (!node) return;
+      select(node);
+      keyDown("Delete", {}, node);
+      return `delete the comment block ${label(node)}`;
     },
   },
   {
@@ -1000,6 +1044,11 @@ const documents: Doc[] = [
   { code: nested(8) },
   { code: Array.from({ length: 30 }, (_, i) => `(r${i} ${i})`).join("\n") },
   { code: `(${"long-name ".repeat(25)}end) ${"word ".repeat(40)}` },
+  // (comments that go with no block: among the blocks, in a list, alone)
+  { code: "(f x)\n\n; apart\n\n(g y)\n\n#| end |#" },
+  { code: "(f a\n\n; between\n\nb)\n; with g\n(g z)" },
+  { code: "(begin a\n\n#| in |#\n\nb)\n\n#| last |#" },
+  { code: "#| only |#" },
   { code: "; before\n(f x) ; after\n#| two |# (g y) ; tail\n; last" },
   { code: '"two words" "say \\"hi\\" now" "tab\\there" "" (f "x y")' },
   { code: "'(a b) `(x ,y ,@z) (quote q) 'sym" },
@@ -1017,6 +1066,9 @@ const documents: Doc[] = [
   { code: "let (a = 1, b = 2) a + b", language: "lambda" },
   { code: "if a then b else c", language: "lambda" },
   { code: "x = 1", language: "lambda" },
+  // (lambda, with comments that go with no block)
+  { code: "# only", language: "lambda" },
+  { code: "x = 1\n\n# apart\n\n;y = 2", language: "lambda" },
   // (not "# a comment\n1 + 2": lambda drops a comment when it makes blocks, so
   // the text and the blocks' positions part ways)
 ];

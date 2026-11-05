@@ -232,11 +232,18 @@ export class AST {
   toString() {
     const lines: string[] = [];
     let prevNode: ASTNode | null = null;
-    for (const node of this.rootNodes) {
+    const roots = this.rootNodes;
+    // (comments after the last real root need a blank line before them: right
+    // after it they would be read as going with it)
+    let lastReal = roots.length - 1;
+    while (lastReal >= 0 && roots[lastReal].options.orphan) lastReal--;
+    for (const [i, node] of roots.entries()) {
       // (an orphan comment is followed by a blank line already)
       const numBlankLines = prevNode
         ? Math.max(
-            0,
+            node.options.orphan && !prevNode.options.orphan && i > lastReal
+              ? 1
+              : 0,
             node.srcRange().from.line -
               prevNode.srcRange().to.line -
               1 -

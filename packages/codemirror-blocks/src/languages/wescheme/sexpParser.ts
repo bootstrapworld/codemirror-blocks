@@ -29,6 +29,22 @@ const structures: Sexp = structuresModule;
  */
 function dropStaleComments(sexps: Sexp) {
   if (!(sexps instanceof Array)) return;
+  // The lexer gives the comment above `'x` to the x, which has no block of
+  // its own: it goes with the whole quote. (A quote mark is one or two
+  // characters long: `(quote x)` written out is not one.)
+  const list: Sexp = sexps; // (the lexer's lists carry a location and a comment)
+  if (
+    list.length === 2 &&
+    list[1]?.comment &&
+    !list.comment &&
+    list[0]?.location &&
+    list.location &&
+    list[0].location.startChar === list.location.startChar &&
+    list[0].location.endChar - list[0].location.startChar <= 2
+  ) {
+    list.comment = list[1].comment;
+    list[1].comment = undefined;
+  }
   sexps.forEach((sexp: Sexp, i: number) => {
     const prev = sexps[i - 1];
     const next = sexps[i + 1];

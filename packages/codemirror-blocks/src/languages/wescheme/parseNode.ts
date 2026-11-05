@@ -344,11 +344,13 @@ export function parseNodeOrNull(
         pluralize("argument", node.args) +
         ": " +
         enumerateIdentifierList(node.args),
+      comment: comment,
     });
   } else if (node instanceof structures.condExpr) {
     return CondExpression(from, to, node.clauses.map(parseNode), {
       ariaLabel: (n: ASTNode) =>
         `${n.label} with ` + pluralize("clause", node.clauses),
+      comment: comment,
     });
   } else if (node instanceof structures.couple) {
     return CondClause(
@@ -429,6 +431,7 @@ export function parseNodeOrNull(
       {
         ariaLabel: (n: ASTNode) =>
           `${n.label} containing ${pluralize("expression", node.exprs)}`,
+        comment: comment,
       }
     );
   } else if (
@@ -462,6 +465,7 @@ export function parseNodeOrNull(
         "binding",
         node.bindings
       )}`,
+      comment: comment,
     });
   } else if (node instanceof structures.whenUnlessExpr) {
     const loc = locationFromNode(node.exprs),
@@ -486,7 +490,7 @@ export function parseNodeOrNull(
           ariaLabel: `${pluralize("expression", node.exprs)}`,
         }
       ),
-      { ariaLabel: `${symbolAria(form)} expression` }
+      { ariaLabel: `${symbolAria(form)} expression`, comment: comment }
     );
   } else if (node instanceof structures.unsupportedExpr) {
     if (node.val.constructor !== Array) {

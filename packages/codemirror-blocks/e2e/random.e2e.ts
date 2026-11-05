@@ -40,8 +40,9 @@ const SEEDS = (
   .map((s) => Number(s.trim()));
 // (each step makes at most one undo step, and undoAll() presses undo ten times)
 const STEPS = 9;
-const PROGRAM = "(f x y)\n(g (h 1 2) z)\nw";
-const TEXTS = ["zzz", "7", "(k 1)", "foo bar"];
+// (with a comment that goes with no block, and one that goes with `g`)
+const PROGRAM = "(f x y)\n\n#| apart |#\n\n; with g\n(g (h 1 2) z)\nw";
+const TEXTS = ["zzz", "7", "(k 1)", "foo bar", "#| note |#\n", "; note\n(k 1)"];
 
 /** mulberry32: the same sequence for the same seed */
 const seededRandom = (seed: number) => {
@@ -135,6 +136,27 @@ const steps: Record<string, Step> = {
     await page.keyboard.type(text);
     await page.keyboard.press("Enter");
     return `comment ${label}: "${text}"`;
+  },
+  "clear a comment": async (page, n) => {
+    const label = await pick(page, n[0] % (await blocks(page).count()));
+    await page.keyboard.press("Shift+Control+]");
+    if (!(await isEditing(page))) return `Shift-Ctrl-] on ${label} (no box)`;
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Enter");
+    return `clear the comment of ${label}`;
+  },
+  "delete a comment block": async (page) => {
+    const comments = page.locator('[role="treeitem"][aria-label^="comment: "]');
+    const count = await comments.count();
+    if (!count) return "no comment block to delete";
+    const label =
+      (await comments.first().getAttribute("aria-label")) ?? "a comment";
+    await comments
+      .first()
+      .click({ position: { x: 4, y: 4 }, timeout: ACTION_TIMEOUT });
+    await page.keyboard.press("Space");
+    await page.keyboard.press("Delete");
+    return `select and delete ${label}`;
   },
   "insert beside": async (page, n) => {
     const label = await pick(page, n[0] % (await blocks(page).count()));
