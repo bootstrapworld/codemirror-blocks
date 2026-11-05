@@ -241,7 +241,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
     tabIndex: -1,
     "aria-selected": isSelected,
     "aria-label":
-      props.node.shortDescription() + (comment ? " with comment" : "") + ",",
+      props.node.shortDescription() +
+      (comment
+        ? ` with comment: ${String(comment.fields.comment).trim()}`
+        : "") +
+      ",",
     "aria-labelledby": nodeElemId,
     "aria-disabled": locked ? true : undefined,
     "aria-expanded": expandable && !locked ? !isCollapsed : undefined,

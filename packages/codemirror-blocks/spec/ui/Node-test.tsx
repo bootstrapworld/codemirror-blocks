@@ -67,7 +67,7 @@ it("renders a comment that is associated with a node", () => {
    <div>
      <span
        aria-expanded="true"
-       aria-label="the someVar variable with comment,"
+       aria-label="the someVar variable with comment: hello,"
        aria-labelledby="block-node-1"
        aria-level="1"
        aria-posinset="1"

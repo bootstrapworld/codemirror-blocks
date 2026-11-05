@@ -705,8 +705,8 @@ export function Comment(
           </Node>
         );
       }
-      // (a popup, shown while the node it is on is active; the node says
-      // that it has a comment, so it is not read a second time)
+      // (a popup, shown while the node it is on is active; the node's own
+      // label reads the comment, so it is not read a second time)
       const { node: _node, ...rest } = props;
       return (
         <span

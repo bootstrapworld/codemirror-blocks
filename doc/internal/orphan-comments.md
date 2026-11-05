@@ -4,7 +4,7 @@ A comment is one of two things.
 
 - **Attached**: it goes with a node. It is data (`node.options.comment`), shown
   in a popup while the node is active (`aria-hidden`, not a tab stop), and the node's spoken
-  description gains "with comment".
+  description gains "with comment: <text>".
 - **Orphan**: it goes with no node. It is a real `comment` node
   (`options.orphan`), a sibling among the nodes of a list that can hold it. It
   is focusable (a tree item), reads as `comment: <text>`, is edited with
@@ -56,8 +56,8 @@ binding list, which shares `sequence` with `begin`). The top level always can.
 
 ## Spoken text (needs the user's eye)
 
-- Owner: "…, with comment" (before: the comment text was read after the node).
-  The text of an attached comment is no longer read; the popup shows it.
+- Owner: "…, with comment: <text>" (the comment text is read once, after the
+  node, as before the popup; the popup itself is `aria-hidden`).
 - Orphan: "comment: <text>".
 - "with N arguments", "N expressions" and WeScheme's "applying f to N
   arguments" do not count orphans. The summary counts them as "comments".
