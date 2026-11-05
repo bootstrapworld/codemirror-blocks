@@ -675,6 +675,12 @@ function tokenStream(input: InputStream): TokenStream {
         type: "punc",
         value: input.next(),
       };
+    if (ch == "!") {
+      // a ! is a prefix of its own, so !!a is two of them: only != is longer
+      input.next();
+      const value = input.peek() == "=" ? "!" + readWhite(isOpChar) : "!";
+      return { from: fromLocation, to: toLocation, type: "op", value };
+    }
     if (isOpChar(ch))
       return {
         from: fromLocation,

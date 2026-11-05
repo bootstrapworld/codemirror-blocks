@@ -498,18 +498,36 @@ const commandMap: {
     if (!env.isNodeEnv) {
       return;
     }
-    if (!env.setRight(selectors.getAST(getState()))) {
-      env.editor.focus();
-      env.editor.setCursor(env.node.srcRange().to);
+    const ast = selectors.getAST(getState());
+    if (!env.setRight(ast)) {
+      const pos = env.node.srcRange().to;
+      if (ast.getNodeParent(env.node)) {
+        env.editor.focus();
+        env.editor.setCursor(pos);
+      } else {
+        // a top-level block has no parent to hold a drop target: open an
+        // insertion box in the text beside it
+        env.editor.setCursor(pos);
+        dispatch(actions.setQuarantine(pos, pos, ""));
+      }
     }
   },
   "Insert Left": (env, _) => (dispatch, getState) => {
     if (!env.isNodeEnv) {
       return;
     }
-    if (!env.setLeft(selectors.getAST(getState()))) {
-      env.editor.focus();
-      env.editor.setCursor(env.node.srcRange().from);
+    const ast = selectors.getAST(getState());
+    if (!env.setLeft(ast)) {
+      const pos = env.node.srcRange().from;
+      if (ast.getNodeParent(env.node)) {
+        env.editor.focus();
+        env.editor.setCursor(pos);
+      } else {
+        // a top-level block has no parent to hold a drop target: open an
+        // insertion box in the text beside it
+        env.editor.setCursor(pos);
+        dispatch(actions.setQuarantine(pos, pos, ""));
+      }
     }
   },
 
