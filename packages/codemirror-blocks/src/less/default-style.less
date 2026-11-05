@@ -371,35 +371,6 @@
   visibility: visible;
 }
 
-// The comment that goes with a node is a small badge in the top-right corner
-// of the node (its text is in the box that opens to edit it)
-.blocks-node:has(> .blocks-comment-badge) {
-  position: relative;
-}
-.blocks-comment.blocks-comment-badge {
-  visibility: visible;
-  position: absolute;
-  display: block !important;
-  top: -0.7em;
-  right: -0.5em;
-  left: auto;
-  bottom: auto;
-  margin: 0;
-  padding: 0;
-  max-width: none;
-  font-size: 0.7em;
-  line-height: 1;
-  background: none;
-  border: none;
-  box-shadow: none;
-  text-shadow: none;
-  pointer-events: none;
-  z-index: 1;
-}
-.blocks-comment.blocks-comment-badge::before {
-  display: none;
-}
-
 // A comment that goes with no node is a block of its own: the whole block
 // looks like a comment (dark, light text, no outline of a code block)
 .blocks-node.blocks-comment {

@@ -657,7 +657,7 @@ const SCHEME_COMMENT = { open: "#|", close: "|#" };
 
 /**
  * A comment. One that goes with a node is kept as data (`options.comment` of
- * that node) and drawn as a small badge on it. One that goes with none of
+ * that node) and shown in a popup while it is active. One that goes with none of
  * them is an *orphan* (`options.orphan`): a node of its own, which can be
  * focused, read and edited like any other, and which is a sibling of the
  * nodes beside it.
@@ -704,16 +704,17 @@ export function Comment(
           </Node>
         );
       }
-      // (a badge: the node it is on says that it has a comment)
+      // (a popup, shown while the node it is on is active; the node says
+      // that it has a comment, so it is not read a second time)
       const { node: _node, ...rest } = props;
       return (
         <span
-          className="blocks-comment blocks-comment-badge"
+          className="blocks-comment"
           aria-hidden="true"
           title={node.fields.comment.toString()}
           {...rest}
         >
-          {"\u{1F4AC}"}
+          {node.fields.comment.toString()}
         </span>
       );
     },

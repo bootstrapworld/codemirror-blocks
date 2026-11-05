@@ -128,7 +128,7 @@ test.describe("a comment that goes with no block", () => {
     );
   });
 
-  test("a block's own comment is a badge, not a stop of its own", async ({
+  test("a block's own comment is a popup while it is active, not a stop of its own", async ({
     page,
   }) => {
     await openInBlockMode(page, "#| mine |#\n(g y)");
@@ -139,10 +139,12 @@ test.describe("a comment that goes with no block", () => {
     await expect(page.getByRole("treeitem", { name: /comment: / })).toHaveCount(
       0
     );
-    await expect(g.locator(".blocks-comment-badge")).toHaveAttribute(
-      "aria-hidden",
-      "true"
-    );
+    const popup = g.locator("> .blocks-comment");
+    await expect(popup).toHaveAttribute("aria-hidden", "true");
+    await expect(popup).toBeHidden();
+    await g.click({ position: { x: 4, y: 4 } });
+    await expect(popup).toBeVisible();
+    await expect(popup).toHaveText("mine");
   });
 
   test("is left behind when the block it was above is deleted", async ({

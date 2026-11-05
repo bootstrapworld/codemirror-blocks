@@ -83,11 +83,11 @@ it("renders a comment that is associated with a node", () => {
        This is a literal for someVar
        <span
          aria-hidden="true"
-         class="blocks-comment blocks-comment-badge"
+         class="blocks-comment"
          id="block-node-1-comment"
          title="hello"
        >
-         💬
+         hello
        </span>
      </span>
    </div>

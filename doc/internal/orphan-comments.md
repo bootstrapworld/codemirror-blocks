@@ -2,8 +2,8 @@
 
 A comment is one of two things.
 
-- **Attached**: it goes with a node. It is data (`node.options.comment`), drawn
-  as a small badge (`aria-hidden`, not a tab stop), and the node's spoken
+- **Attached**: it goes with a node. It is data (`node.options.comment`), shown
+  in a popup while the node is active (`aria-hidden`, not a tab stop), and the node's spoken
   description gains "with comment".
 - **Orphan**: it goes with no node. It is a real `comment` node
   (`options.orphan`), a sibling among the nodes of a list that can hold it. It
@@ -50,14 +50,14 @@ binding list, which shares `sequence` with `begin`). The top level always can.
 
 - Shift-Ctrl-] on an owner edits its comment; emptying it removes it. On an
   orphan it only says to press Enter: an orphan is edited like any block.
-- An owner's comment is a small 💬 badge on the top-right corner of the node.
+- An owner's comment shows in a popup beside the node while it is active; there is no badge. Only orphans are always visible.
 - Deleting an owner leaves its comment behind as an orphan. Cutting or moving
   one takes the comment along. Moving an orphan moves only the orphan.
 
 ## Spoken text (needs the user's eye)
 
 - Owner: "…, with comment" (before: the comment text was read after the node).
-  The text of an attached comment is no longer read; the badge has a tooltip.
+  The text of an attached comment is no longer read; the popup shows it.
 - Orphan: "comment: <text>".
 - "with N arguments", "N expressions" and WeScheme's "applying f to N
   arguments" do not count orphans. The summary counts them as "comments".
