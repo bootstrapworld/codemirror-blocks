@@ -147,6 +147,37 @@ test.describe("a comment that goes with no block", () => {
     await expect(popup).toHaveText("mine");
   });
 
+  test("a comment popup that would go off the top of the editor is held at its top", async ({
+    page,
+  }) => {
+    const words = Array.from({ length: 30 }, (_, i) => `word${i}`).join(" ");
+    await openInBlockMode(page, `#| ${words} |#\n(g y)\n\n\n(f x)`);
+    const top = (selector: string) =>
+      page.evaluate(
+        (sel) =>
+          document.querySelector(sel)?.getBoundingClientRect().top ?? NaN,
+        selector
+      );
+    const g = page.getByRole("treeitem", { name: /g expression/ });
+    const popup = g.locator("> .blocks-comment");
+    await g.click({ position: { x: 4, y: 4 } });
+    await expect(popup).toBeVisible();
+    await expect(popup).toHaveClass(/blocks-comment-below/);
+    expect(await top(".blocks-comment")).toBeGreaterThanOrEqual(
+      await top(".CodeMirror")
+    );
+    // (one with room above it keeps growing upwards)
+    const f = page.getByRole("treeitem", { name: /f expression/ });
+    await f.click({ position: { x: 4, y: 4 } });
+    await page.keyboard.press(COMMENT_KEY);
+    await page.keyboard.type("short");
+    await page.keyboard.press("Enter");
+    await f.click({ position: { x: 4, y: 4 } });
+    await expect(f.locator("> .blocks-comment")).not.toHaveClass(
+      /blocks-comment-below/
+    );
+  });
+
   test("is left behind when the block it was above is deleted", async ({
     page,
   }) => {
