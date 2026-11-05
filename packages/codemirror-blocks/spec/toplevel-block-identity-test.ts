@@ -105,11 +105,10 @@ describe("areNodesEqualish on the same node", () => {
   it("is true after the node has been changed in place, as the full comparison says too", () => {
     const ast = wesch(60);
     const root = ast.rootNodes[0];
-    // what annotateNodes does when a node object is put into another tree
+    // what annotateNodes does when a node object is put into another tree (not the id: see below)
     root.level = 7;
     root.ariaPosInset = 99;
     root.ariaSetSize = 3;
-    root.id = "renamed";
     expect(haveSameDrawing(root, root)).toBe(true);
     expect(areNodesEqualish(root, root)).toBe(true);
   });
@@ -190,4 +189,57 @@ describe("the kept comparison of ids across edits", () => {
       expect(keptEqual).toBeGreaterThan(0);
     }
   );
+});
+
+describe("the id of a node", () => {
+  it("can be set while the tree is made, even after an AST was made of it", () => {
+    const nodes = wescheme.parse("(f 1)");
+    nodes[0].id = "a"; // (as patchAst does)
+    nodes[0].id = "b";
+    AST.from("wescheme", nodes); // (the AST speculateChanges makes)
+    nodes[0].id = "c"; // (patchAst, before commitChanges makes the AST that is used)
+    expect(nodes[0].id).toBe("c");
+  });
+
+  it("cannot be changed once a kept answer depends on it", () => {
+    const sameIds = (code: string, ids: string[]) => {
+      const root = wescheme.parse(code)[0];
+      [...root.descendants()].forEach((n, i) => (n.id = ids[i]));
+      AST.from("wescheme", [root]);
+      return root;
+    };
+    const ids = [
+      ...wescheme.buildAST("(f (g 1))").rootNodes[0].descendants(),
+    ].map((n) => n.id);
+    const a = sameIds("(f (g 1))", ids);
+    const b = sameIds("(f (g 1))", ids);
+    expect(areNodesEqualish(a, b)).toBe(true);
+    const inner = [...a.descendants()].pop()!;
+    expect(() => {
+      inner.id = "x";
+    }).toThrow(/Cannot change the id of a node that has been relied on/);
+    const same = inner.id;
+    inner.id = same; // (saying the same thing is no change)
+  });
+});
+
+describe("the kept answers about ids, when the tests check them", () => {
+  it("fail loudly if the children of a node change after the answer was kept", () => {
+    const ids = [
+      ...wescheme.buildAST("(f 1 2)").rootNodes[0].descendants(),
+    ].map((n) => n.id);
+    const make = () => {
+      const root = wescheme.parse("(f 1 2)")[0];
+      [...root.descendants()].forEach((n, i) => (n.id = ids[i]));
+      AST.from("wescheme", [root]);
+      return root;
+    };
+    const before = make();
+    const fresh = make();
+    expect(areNodesEqualish(before, fresh)).toBe(true);
+    // break the rule: a child of `fresh` is removed in place
+    const fields = fresh.fields as { args: ASTNode[] };
+    fields.args.pop();
+    expect(() => areNodesEqualish(before, fresh)).toThrow(/ids inside a node/);
+  });
 });

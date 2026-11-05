@@ -9,7 +9,7 @@ import React, {
 import ReactDOM from "react-dom";
 import { useStore } from "react-redux";
 import { poscmp } from "../utils";
-import { ASTNode, Pos, currentNode, nodeElementMap } from "../ast";
+import { ASTNode, Pos, currentNode, fixId, nodeElementMap } from "../ast";
 import * as selectors from "../state/selectors";
 import type { RootState } from "../state/reducers";
 import { BlockNodeMarker, CMBEditor } from "../editor";
@@ -178,14 +178,22 @@ export function haveSameDrawing(prevNode: ASTNode, nextNode: ASTNode) {
 // after an edit every unchanged block is compared, on each later render (a
 // focus change, say), as its old node object against the current one. Those
 // are two objects for the same code, and walking them is the cost of the
-// render, so the answer is kept. It cannot go stale: haveSameIds reads only the
-// ids of the nodes inside, and a node's id and its children are set before it
-// is put into an AST (annotateNodes only gives an id to a node that has none;
-// patchAst copies ids onto a new tree before the AST is made; edits change
-// copies, not the nodes of the AST), and not after. Everything that can
-// change in place (the node's own id, hash, level, place among its siblings,
-// where it ends) is compared every time, outside this cache.
+// render, so the answer is kept. It cannot go stale as long as the ids of the
+// nodes inside, and which nodes they are, stay as they were when it was worked
+// out. Ids are made final when an answer is kept (see fixId), and changing one
+// after that throws. The children are not guarded: the tests check every kept
+// answer again when it is used (see keptAnswerCheck). Everything else that can
+// change in place (the node's own hash, level, place among its siblings, where
+// it ends) is compared every time, outside this cache.
 const sameIdsCache = new WeakMap<ASTNode, WeakMap<ASTNode, boolean>>();
+
+/**
+ * @internal
+ * The tests turn this on, and then every kept answer is checked against a new
+ * walk. Code that changes the children of a node in an AST (an id cannot be
+ * changed, see ASTNode.id) makes some answer wrong, and fails the tests here.
+ */
+export const keptAnswerCheck = { enabled: false };
 
 // (the hashes are equal, so the nodes inside line up one to one)
 function haveSameIds(prevNode: ASTNode, nextNode: ASTNode) {
@@ -195,15 +203,27 @@ function haveSameIds(prevNode: ASTNode, nextNode: ASTNode) {
   if (same === undefined) {
     same = walkSameIds(prevNode, nextNode);
     answers.set(nextNode, same);
+  } else if (
+    keptAnswerCheck.enabled &&
+    walkSameIds(prevNode, nextNode) !== same
+  ) {
+    throw new Error(
+      "The ids inside a node changed after they were compared (see sameIdsCache)"
+    );
   }
   return same;
 }
 
 function walkSameIds(prevNode: ASTNode, nextNode: ASTNode) {
+  const seen: ASTNode[] = [];
   const next = nextNode.descendants()[Symbol.iterator]();
   for (const prev of prevNode.descendants()) {
-    if (prev.id !== next.next().value?.id) return false;
+    const other = next.next().value;
+    if (prev.id !== other?.id) return false;
+    seen.push(prev, other);
   }
+  // (the ids this answer depends on cannot change from here on)
+  seen.forEach(fixId);
   return true;
 }
 

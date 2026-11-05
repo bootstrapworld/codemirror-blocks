@@ -31,3 +31,9 @@ walk. Trace busy ms, 5 runs each, two back-to-back series per build:
 | redo | 296, 289 | 299, 299 |
 
 Profile, arrow x50: `areNodesEqualish` 747 -> 12 ms. Edit/undo/redo walks (~18 ms) are unchanged.
+
+With the id guard and the test-time check of kept answers (final build; trace busy ms, 5 runs,
+two series): arrow x50 177, 180; edit 357, 351; undo 318, 317; redo 314, 312. Profile:
+`haveSameIds` 22 ms in an edit (the walk, which now also fixes the ids it relied on in the same
+pass), 1 ms in arrow x50. A first version that fixed the ids in two extra passes doubled that to
+39 ms; fixing them while walking brought it back.
