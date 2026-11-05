@@ -138,8 +138,19 @@ export class FakeAstReplacement {
     }
   }
 
-  deleteChild(clonedParent: ASTNode) {
-    if (this.spec instanceof List) {
+  deleteChild(clonedParent: ASTNode, keepComment = true) {
+    const comment = keepComment ? this.child.options.comment : undefined;
+    if (this.spec instanceof List && this.spec.orphans && comment) {
+      // The comment that went with the node stays, as an orphan: it is
+      // followed by a blank line, which is what makes it one.
+      const orphan = fakeInsertNode(
+        this.child.from,
+        this.child.to,
+        comment.toString() + "\n",
+        { orphan: true }
+      );
+      this.spec.getField(clonedParent)[this.index] = orphan;
+    } else if (this.spec instanceof List) {
       this.spec.getField(clonedParent).splice(this.index, 1); // Remove the i'th element.
     } else if (this.spec instanceof Optional) {
       this.spec.setField(clonedParent, null);

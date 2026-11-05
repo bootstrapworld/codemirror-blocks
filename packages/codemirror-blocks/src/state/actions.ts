@@ -313,14 +313,19 @@ export const insert =
 // Delete the given nodes.
 // 'delete' is a reserved word, hence the trailing underscore
 export const delete_ =
-  (editor: CMBEditor, nodes: ASTNode[], editWord?: string): AppThunk =>
+  (
+    editor: CMBEditor,
+    nodes: ASTNode[],
+    editWord?: string,
+    keepComments = true
+  ): AppThunk =>
   (dispatch, getState) => {
     if (nodes.length === 0) {
       return;
     }
     nodes.sort((a, b) => poscmp(b.from, a.from)); // To focus before first deletion
     const ast = selectors.getAST(getState());
-    const edits = nodes.map((node) => edit_delete(ast, node));
+    const edits = nodes.map((node) => edit_delete(ast, node, keepComments));
     let annt: string | undefined = undefined;
     if (editWord) {
       annt = createEditAnnouncement(nodes, editWord);
@@ -381,7 +386,8 @@ export function drop(
     // Assuming it did not come from the toolbar...
     // (1) Delete the text of the dragged node, (2) and save the id and hash
     if (srcNode) {
-      edits.push(edit_delete(ast, ast.getNodeByIdOrThrow(srcNode.id)));
+      // (the node takes its comment along)
+      edits.push(edit_delete(ast, ast.getNodeByIdOrThrow(srcNode.id), false));
       droppedHash = ast.getNodeByIdOrThrow(srcNode.id).hash;
     }
 
@@ -560,6 +566,8 @@ export class ReplaceNodeTarget extends Target {
 // Target the comment of a node, or the place for one: the node is replaced,
 // comment and all, by the new comment followed by the node's own text (which
 // is the text of the node without its comment, taken before the edit starts).
+// For an orphan comment, which is a node of its own, it is the comment that is
+// replaced (and removed, if nothing is left of it).
 export class CommentTarget extends Target {
   node: ASTNode;
   ownText: string;
@@ -571,8 +579,12 @@ export class CommentTarget extends Target {
     this.ownText = ownText;
   }
 
+  private get isOrphan() {
+    return Boolean(this.node.options.orphan);
+  }
+
   getText() {
-    const comment = this.node.options.comment;
+    const comment = this.isOrphan ? this.node : this.node.options.comment;
     return comment ? String(comment.fields.comment).trim() : "";
   }
 
@@ -588,12 +600,27 @@ export class CommentTarget extends Target {
       .split(close)
       .join(close[0] + " " + close.slice(1))
       .trim();
+    const node = ast.getNodeByIdOrThrow(this.node.id);
+    if (this.isOrphan) {
+      if (!words) {
+        return edit_delete(ast, node);
+      }
+      // (inside something, the blank line after it has to be made; at the top
+      // level the one that is there stays)
+      const comment = Comment(dummy, dummy, words, { blockComment });
+      return edit_replace(
+        ast.getNodeParent(node)
+          ? comment.toString() + "\n"
+          : comment.toString(),
+        ast,
+        node
+      );
+    }
+    if (!words) {
+      return edit_replace(this.ownText, ast, node);
+    }
     const comment = Comment(dummy, dummy, words, { blockComment }).toString();
-    return edit_replace(
-      `${comment}\n${this.ownText}`,
-      ast,
-      ast.getNodeByIdOrThrow(this.node.id)
-    );
+    return edit_replace(`${comment}\n${this.ownText}`, ast, node);
   }
 }
 

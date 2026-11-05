@@ -68,12 +68,26 @@ export function edit_overwrite(
   return new OverwriteEdit(text, from, to);
 }
 
-export function edit_delete(ast: AST, node: ASTNode): EditInterface {
+/**
+ * Construct an edit to delete `node`. The comment that goes with it stays, as
+ * an orphan comment, unless `keepComment` is false (as it is when the node is
+ * moved or cut, and so takes its comment along).
+ */
+export function edit_delete(
+  ast: AST,
+  node: ASTNode,
+  keepComment = true
+): EditInterface {
   const parent = ast.getNodeParent(node);
   if (parent) {
-    return new DeleteChildEdit(node, parent, ast.getNodeBefore(node));
+    return new DeleteChildEdit(
+      node,
+      parent,
+      ast.getNodeBefore(node),
+      keepComment
+    );
   } else {
-    return new DeleteRootEdit(node);
+    return new DeleteRootEdit(node, keepComment);
   }
 }
 
@@ -375,13 +389,25 @@ class OverwriteEdit extends Edit {
 }
 
 class DeleteRootEdit extends Edit {
-  constructor(node: ASTNode) {
+  private keepComment: boolean;
+  constructor(node: ASTNode, keepComment = true) {
     const range = node.srcRange();
     super(range.from, range.to);
     this.node = node;
+    this.keepComment = keepComment;
   }
 
   toChangeObject(_ast: AST, text: ReadonlyRangedText) {
+    // A comment that went with the node does not go with it: it is left
+    // where it was, as an orphan (a blank line after it makes it one).
+    const comment = this.keepComment ? this.node?.options.comment : undefined;
+    if (comment) {
+      return makeChangeObject({
+        text: [...comment.toString().split("\n"), ""],
+        from: this.from,
+        to: this.to,
+      });
+    }
     const { from, to } = removeWhitespace(this.from, this.to, text);
     return makeChangeObject({
       text: [""],
@@ -488,10 +514,17 @@ class DeleteChildEdit extends AstEdit {
   node: ASTNode;
   private prevId?: string;
   fakeAstReplacement: FakeAstReplacement;
-  constructor(node: ASTNode, parent: ASTNode, prev: ASTNode | null) {
+  private keepComment: boolean;
+  constructor(
+    node: ASTNode,
+    parent: ASTNode,
+    prev: ASTNode | null,
+    keepComment = true
+  ) {
     const range = node.srcRange();
     super(range.from, range.to, parent);
     this.node = node;
+    this.keepComment = keepComment;
     this.prevId = prev?.id;
     this.fakeAstReplacement = new FakeAstReplacement(parent, node);
   }
@@ -502,7 +535,7 @@ class DeleteChildEdit extends AstEdit {
 
   makeAstEdit(clonedAncestor: ASTNode) {
     const clonedParent = findDescendantNode(clonedAncestor, this.parent.id);
-    this.fakeAstReplacement.deleteChild(clonedParent);
+    this.fakeAstReplacement.deleteChild(clonedParent, this.keepComment);
   }
 
   toString() {

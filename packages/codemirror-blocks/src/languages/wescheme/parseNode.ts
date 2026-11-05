@@ -454,6 +454,7 @@ export function parseNodeOrNull(
       ),
       {
         ariaLabel: `${pluralize("binding", node.bindings)}`,
+        noOrphans: true,
       }
     );
     return LetLikeExpr(from, to, form, sequence, parseNode(node.body), {

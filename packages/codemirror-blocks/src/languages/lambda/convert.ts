@@ -1,6 +1,6 @@
 import type { ASTNode, Pos } from "../../ast";
 import { Comment, Literal } from "../../nodes";
-import { parseToIntermediateAST } from "./parser";
+import { attachComments, parseToIntermediateAST } from "./parser";
 import type { LambdaNode } from "./parser";
 import {
   Assignment,
@@ -39,24 +39,38 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
   };
   const { from, to } = loc;
   const all = (nodes: LambdaNode[]) => nodes.map((n) => convert(n, loc));
+  // (comments that no list of orphans took go with the node they were before)
+  if (node.before) {
+    attachComments(node, node.before);
+    delete node.before;
+  }
   // (whatever comment came before the node goes with it)
-  const options = node.comment
+  const { comment } = node;
+  const options = comment
     ? {
-        comment: Comment(
-          node.comment.from,
-          node.comment.to,
-          node.comment.text,
-          { blockComment: LAMBDA_BLOCK_COMMENT }
-        ),
+        comment: Comment(comment.from, comment.to, comment.text, {
+          blockComment: LAMBDA_BLOCK_COMMENT,
+        }),
       }
     : {};
   switch (node.type) {
+    case "orphan":
+      return Comment(from, to, comment!.text, {
+        blockComment: LAMBDA_BLOCK_COMMENT,
+        orphan: true,
+      });
     case "prog": {
       // the parser gives a program the location of its last token: it spans
       // what it holds, or its block would not cover its own children
       const body = all(node.prog);
+      // (a comment that goes with the first or the last is in the program too)
       return body.length
-        ? Prog(body[0].from, body[body.length - 1].to, body, options)
+        ? Prog(
+            body[0].srcRange().from,
+            body[body.length - 1].srcRange().to,
+            body,
+            options
+          )
         : Prog(from, to, body, options);
     }
     case "num":
@@ -137,7 +151,7 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
 export default function parseString(code: string): ASTNode[] {
   const root = parseToIntermediateAST(code);
   const origin = { line: 0, ch: 0 };
-  // a program of nothing (or only comments) has no block to draw
+  // a program of nothing has no block to draw (one of only comments has one)
   if (root.type === "prog" && root.prog.length === 0) return [];
   return [convert(root, { from: origin, to: origin })];
 }

@@ -1,0 +1,261 @@
+import type { AST, ASTNode } from "../src/ast";
+import lambda from "../src/languages/lambda";
+import wescheme from "../src/languages/wescheme";
+import { select } from "./helpers/gestures";
+import { summarizeProgram } from "../src/summary";
+import {
+  keyDown,
+  mountCMB,
+  mouseDown,
+  teardown,
+} from "../src/toolkit/test-utils";
+
+afterEach(teardown);
+
+const languages = { lambda, wescheme };
+type Name = keyof typeof languages;
+
+/** What kind of node each node is, `*` for an orphan comment, `+` for one with a comment */
+const shape = (ast: AST) =>
+  [...ast.getAllNodes()]
+    .map(
+      (n) =>
+        n.type + (n.options.orphan ? "*" : "") + (n.options.comment ? "+" : "")
+    )
+    .join(" ");
+const orphans = (ast: AST) =>
+  [...ast.getAllNodes()].filter((n) => n.options.orphan);
+
+/** Printing and reading what was printed gives the same program again */
+function roundTrips(name: Name, code: string) {
+  const lang = languages[name];
+  const ast = lang.buildAST(code);
+  const once = ast.toString();
+  const again = lang.buildAST(once);
+  expect(again.toString()).toBe(once);
+  expect(shape(again)).toBe(shape(ast));
+  return { ast, once };
+}
+
+describe("which comments go with a node, and which are orphans", () => {
+  describe("in lambda", () => {
+    const shapeOf = (code: string) => shape(lambda.buildAST(code));
+    it("a comment on the line above goes with the node", () => {
+      expect(shapeOf("# c\nx = 1")).toBe("prog assignment+ literal literal");
+    });
+    it("a comment with a blank line between it and the node is an orphan", () => {
+      expect(shapeOf("# c\n\nx = 1")).toBe(
+        "prog comment* assignment literal literal"
+      );
+    });
+    it("a comment after code, on its line, goes with that code", () => {
+      expect(shapeOf("x = 1 # c\n;y = 2")).toBe(
+        "prog assignment+ literal literal assignment literal literal"
+      );
+    });
+    it("a comment at the end goes with the last node, unless a blank line is between", () => {
+      expect(shapeOf("x = 1\n# c")).toBe("prog assignment+ literal literal");
+      expect(shapeOf("x = 1\n\n# c")).toBe(
+        "prog assignment literal literal comment*"
+      );
+    });
+    it("a program of only a comment is a program of an orphan", () => {
+      expect(shapeOf("# only")).toBe("prog comment*");
+    });
+    it("an orphan can be in a block and in an argument list", () => {
+      expect(shapeOf("{ a;\n\n# c\n\nb }")).toBe(
+        "prog prog literal comment* literal"
+      );
+      expect(shapeOf("f(a,\n\n# c\n\nb)")).toBe(
+        "prog call literal literal comment* literal"
+      );
+    });
+    it("goes with the next node where the list cannot hold one", () => {
+      expect(shapeOf("let (a = 1,\n\n# c\n\nb = 2) a")).toBe(
+        "prog letExpr vardef literal literal vardef+ literal literal literal"
+      );
+    });
+  });
+
+  describe("in WeScheme", () => {
+    const shapeOf = (code: string) => shape(wescheme.buildAST(code));
+    it("a comment on the line above goes with the node", () => {
+      expect(shapeOf("; c\n(f x)")).toBe("functionApp+ literal literal");
+    });
+    it("a comment with a blank line between it and the node is an orphan", () => {
+      expect(shapeOf("; c\n\n(f x)")).toBe(
+        "comment* functionApp literal literal"
+      );
+    });
+    it("a comment after code, on its line, goes with that code", () => {
+      expect(shapeOf("(f x) ; c")).toBe("functionApp+ literal literal");
+    });
+    it("a comment at the end goes with the last node, unless a blank line is between", () => {
+      expect(shapeOf("(f x)\n; c")).toBe("functionApp+ literal literal");
+      expect(shapeOf("(f x)\n\n; c")).toBe(
+        "functionApp literal literal comment*"
+      );
+    });
+    it("a program of only a comment is a program of an orphan", () => {
+      expect(shapeOf("#| only |#")).toBe("comment*");
+    });
+    it("an orphan can be among the arguments and the expressions of a begin", () => {
+      expect(shapeOf("(f a\n\n; c\n\nb)")).toBe(
+        "functionApp literal literal comment* literal"
+      );
+      expect(shapeOf("(begin a\n\n; c\n\nb)")).toBe(
+        "sequence literal literal comment* literal"
+      );
+    });
+    it("goes with the next node where the list cannot hold one", () => {
+      expect(shapeOf("(let ((a 1)\n\n; c\n\n(b 2)) a)")).toBe(
+        "letLikeExpr sequence literal variableDefinition literal literal variableDefinition+ literal literal literal"
+      );
+    });
+  });
+});
+
+describe("printing and reading back", () => {
+  const programs: [Name, string][] = [
+    ["lambda", "# only"],
+    ["lambda", "# a\n\nx = 1;\n\n# b\n\ny = 2\n\n# end"],
+    ["lambda", "x = 1\n\n# end"],
+    ["lambda", "f(a,\n\n# c\n\nb)"],
+    ["lambda", "f(a,\n\n# first\n\n# second\n\nb)"],
+    ["lambda", "{ a;\n\n# c\n\nb }"],
+    ["lambda", "f(a\n\n# last\n\n)"],
+    ["lambda", "f(# c\n a)"],
+    ["wescheme", "; only"],
+    ["wescheme", "; a\n\n(define x 1)\n\n; b\n\n(define y 2)\n\n; end"],
+    ["wescheme", "(f a\n\n; c\n\nb)"],
+    ["wescheme", "(begin\n\n; first\n\n; second\n\na)"],
+    ["wescheme", "(f a\n\n; last\n\n)"],
+    ["wescheme", "(cond\n[a b\n\n; c\n\nd])"],
+  ];
+  it.each(programs)("%s: %j keeps its orphans", (name, code) => {
+    const { ast } = roundTrips(name, code);
+    const comments =
+      languages[name].buildAST(code).toString().match(/#\|/g) ?? [];
+    expect(comments.length).toBeGreaterThan(0);
+    expect(
+      orphans(ast).length +
+        [...ast.getAllNodes()].filter((n) => n.options.comment).length
+    ).toBe(comments.length);
+  });
+
+  it("an orphan is printed with a blank line after it", () => {
+    expect(wescheme.buildAST("(f a\n\n; c\n\nb)").toString()).toBe(
+      "(f\n a\n #| c |#\n \n b)"
+    );
+  });
+
+  it("an orphan in an argument list does not become an argument", () => {
+    const ast = lambda.buildAST("f(a,\n\n# c\n\nb)");
+    const [prog] = ast.rootNodes;
+    const call = [...prog.children()][0];
+    expect(call.describe(call.level)).toBe(
+      "a call to literal with 2 arguments"
+    );
+    expect(prog.describe(prog.level)).toBe("a program with 1 expressions");
+  });
+});
+
+describe("a comment and the node it goes with", () => {
+  it("is data on the node, not a node of the tree", () => {
+    const ast = wescheme.buildAST("; c\n(f x)");
+    expect(orphans(ast)).toHaveLength(0);
+    expect(
+      ast.getAllNodes().next().value?.options.comment?.fields.comment
+    ).toBe("c");
+    expect([...ast.getAllNodes()].map((n) => n.type)).toEqual([
+      "functionApp",
+      "literal",
+      "literal",
+    ]);
+  });
+});
+
+describe("orphans in the tree", () => {
+  const ast = () => wescheme.buildAST("(f a\n\n; c\n\nb)\n\n; d\n\n(g)");
+  const nodes = (a: AST) => [...a.getAllNodes()];
+
+  it("are siblings: they have places among the nodes beside them", () => {
+    const a = ast();
+    const [f, fn, x, c, b, d] = nodes(a);
+    expect([f.type, c.type, d.type]).toEqual([
+      "functionApp",
+      "comment",
+      "comment",
+    ]);
+    expect(c.ariaSetSize).toBe(4); // (the function, a, the comment, b)
+    expect(c.ariaPosInset).toBe(3);
+    expect(a.getNodeParent(c)).toBe(f);
+    expect(a.getNodeAfter(x)).toBe(c);
+    expect(a.getNodeAfter(c)).toBe(b);
+    expect(a.getNodeBefore(b)).toBe(c);
+    expect(a.rootNodes[1]).toBe(d);
+    expect(fn.type).toBe("literal");
+  });
+
+  it("read as their text", () => {
+    const a = ast();
+    expect(nodes(a)[3].shortDescription()).toBe("comment: c");
+  });
+
+  it("are counted in a summary of the program, as comments", () => {
+    expect(summarizeProgram(ast().rootNodes)).toBe(
+      "At the top level, this program contains 2 function applications and 1 comment."
+    );
+  });
+
+  it("are not counted as arguments", () => {
+    const f = ast().rootNodes[0];
+    expect(f.describe(f.level)).toBe(
+      "applying the function f to 2 arguments 1: a, 2: b"
+    );
+  });
+});
+
+describe("deleting", () => {
+  /** the text after pressing Delete on the nth node (counting all of them) */
+  const afterDeleting = (name: Name, code: string, n: number) => {
+    const { cmb } = mountCMB(languages[name]);
+    cmb.setValue(code);
+    const node: ASTNode = [...cmb.getAst().getAllNodes()][n];
+    select(node);
+    keyDown("Delete", {}, node);
+    return cmb.getValue();
+  };
+
+  it("an orphan deletes it", () => {
+    expect(afterDeleting("wescheme", "(f a\n\n; c\n\nb)", 3)).toBe("(f a b)");
+  });
+
+  it("an owner with a comment leaves the comment, as an orphan", () => {
+    const text = afterDeleting("wescheme", "(f\n; c\na b)", 2);
+    expect(text).not.toContain("a");
+    const ast = wescheme.buildAST(text);
+    expect(orphans(ast).map((o) => o.fields.comment)).toEqual(["c"]);
+  });
+
+  it("a root owner with a comment leaves the comment, as an orphan", () => {
+    const text = afterDeleting("lambda", "# c\nx = 1;\ny = 2", 1);
+    const ast = lambda.buildAST(text);
+    expect(orphans(ast).map((o) => o.fields.comment)).toEqual(["c"]);
+    expect(text).not.toContain("x");
+  });
+});
+
+describe("Edit Comment on an orphan", () => {
+  it("opens the box for the orphan's own text", () => {
+    const { cmb } = mountCMB(wescheme);
+    cmb.setValue("; c\n\n(f x)");
+    const orphan = cmb.getAst().rootNodes[0];
+    expect(orphan.options.orphan).toBe(true);
+    mouseDown(orphan);
+    keyDown("]", { ctrlKey: true, shiftKey: true }, orphan);
+    const box = document.activeElement as HTMLElement;
+    expect(box.getAttribute("contenteditable")).toBe("true");
+    expect(box.textContent).toBe("c");
+  });
+});

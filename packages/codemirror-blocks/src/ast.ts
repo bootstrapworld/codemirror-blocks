@@ -18,8 +18,15 @@ import { getLanguage } from "./languages";
  * given a list of ASTNodes and a depth level, generate
  * a description of the collection suitable for screenreaders
  */
+/** The nodes of a list that are not orphan comments: what a list "has in it" */
+export function withoutOrphans<T extends ASTNode>(lst: readonly T[]): T[] {
+  return lst.filter((n) => !n.options.orphan);
+}
+
 export function enumerateList(lst: ASTNode[], level: number) {
-  const described = lst.map((l) => l.describe(level)).slice(0);
+  const described = withoutOrphans(lst)
+    .map((l) => l.describe(level))
+    .slice(0);
   const last = described.pop();
   return described.length == 0 ? last : described.join(", ") + " and " + last;
 }
@@ -226,10 +233,14 @@ export class AST {
     const lines: string[] = [];
     let prevNode: ASTNode | null = null;
     for (const node of this.rootNodes) {
+      // (an orphan comment is followed by a blank line already)
       const numBlankLines = prevNode
         ? Math.max(
             0,
-            node.srcRange().from.line - prevNode.srcRange().to.line - 1
+            node.srcRange().from.line -
+              prevNode.srcRange().to.line -
+              1 -
+              (prevNode.options.orphan ? 1 : 0)
           )
         : 0;
       lines.push("\n".repeat(numBlankLines) + node.toString());
@@ -516,6 +527,18 @@ export type BlockComment = { open: string; close: string };
 
 export type NodeOptions = {
   comment?: ASTNode;
+
+  /**
+   * For a comment: it goes with no node, and is a node of its own (see
+   * `Comment` in nodes.tsx), rather than the `comment` of the node it is on
+   */
+  orphan?: boolean;
+
+  /**
+   * The lists of this node cannot hold orphan comments, whatever their spec
+   * says (a list of `let` bindings, say, which has to hold only bindings)
+   */
+  noOrphans?: boolean;
 
   /**
    * The aria label for the node: the text itself, or a function that makes it

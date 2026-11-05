@@ -1,5 +1,11 @@
 import type { ASTNode } from "../../ast";
-import { parseNodeOrNull, setSource } from "./parseNode";
+import {
+  parseNodeOrNull,
+  setSource,
+  WESCHEME_BLOCK_COMMENT,
+} from "./parseNode";
+import { Comment } from "../../nodes";
+import { placeOrphans, scanSchemeComments } from "../../orphans";
 
 import { lex } from "wescheme-js/src/lex";
 import * as types from "wescheme-js/src/runtime/types";
@@ -857,5 +863,29 @@ export function parse(code: string) {
   const rootNodes = ast
     .map(parseNodeOrNull)
     .filter((item: ASTNode | null) => item !== null);
-  return rootNodes;
+  // The comments that went with a node are its own. Those that did not are
+  // orphans: nodes of their own, wherever a list can hold them.
+  const key = (p: { line: number; ch: number }) => `${p.line}:${p.ch}`;
+  const attached = new Set<string>();
+  for (const root of rootNodes) {
+    for (const node of root.descendants()) {
+      const comment = node.options.comment;
+      // (the lexer gives a list the last comment before it, however far above
+      // it was: one with a blank line between them goes with it no longer)
+      if (comment && comment.to.line < node.from.line - 1) {
+        node.options.comment = undefined;
+      } else if (comment) {
+        attached.add(key(comment.from));
+      }
+    }
+  }
+  const orphans = scanSchemeComments(code)
+    .filter((c) => !attached.has(key(c.lastFrom)))
+    .map((c) =>
+      Comment(c.from, c.to, c.text, {
+        blockComment: WESCHEME_BLOCK_COMMENT,
+        orphan: true,
+      })
+    );
+  return placeOrphans(rootNodes, orphans, WESCHEME_BLOCK_COMMENT);
 }

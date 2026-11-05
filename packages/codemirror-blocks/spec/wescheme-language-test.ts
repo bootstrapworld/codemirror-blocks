@@ -44,7 +44,7 @@ describe("forms that become blocks", () => {
     ["#\\a", "literal", "#\\a"],
     ["1/2", "literal", "1/2"],
     ["#t", "literal", "#t"],
-    ["#| block comment |# 5", "literal", "5"],
+    ["#| block comment |# 5", "literal", "5 #| block comment |#"],
   ];
 
   it.each(forms)("%s is a %s", (code, type) => {
@@ -149,9 +149,10 @@ describe("a comment and the forms after it", () => {
 
   it("is not given to a later form when another form comes between", () => {
     // (the lexer kept the comment for the form on the next line, whose block
-    // then covered the `z` before it, which was left with no block)
+    // then covered the `z` before it, which was left with no block; the
+    // comment is on `z`'s line, so it goes with `z`)
     const [z, hi] = blocks('#| c |# z\n"hi"');
-    expect(z.text).toBe("z");
+    expect(z.text).toBe("z #| c |#");
     expect(z.at.to).toEqual({ line: 0, ch: 9 });
     expect(hi.text).toBe('"hi"');
     expect(hi.at.from).toEqual({ line: 1, ch: 0 });

@@ -523,7 +523,8 @@ const commandMap: {
       return say("Nothing selected");
     }
     copy(nodesToCut, "cut");
-    dispatch(delete_(env.editor, nodesToCut));
+    // (a cut node takes its comment with it)
+    dispatch(delete_(env.editor, nodesToCut, undefined, false));
   },
 
   Copy: (env, _) => (dispatch, getState) => {

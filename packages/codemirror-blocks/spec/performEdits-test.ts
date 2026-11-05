@@ -288,9 +288,15 @@ describe("applyEdits on small documents", () => {
       expect(edited("a\nb\nc", del(2))).toBe("a\nb\n");
     });
 
-    it("takes a comment above it along", () => {
+    it("leaves the comment above it, as an orphan", () => {
       expect(
         edited("#| n |#\na\nb", (a) => [edit_delete(a, a.rootNodes[0])])
+      ).toBe("#| n |#\n\nb");
+    });
+
+    it("takes a comment above it along when told to", () => {
+      expect(
+        edited("#| n |#\na\nb", (a) => [edit_delete(a, a.rootNodes[0], false)])
       ).toBe("\nb");
     });
   });
@@ -323,12 +329,20 @@ describe("applyEdits on small documents", () => {
       );
     });
 
-    it("takes the node's own trailing comment along", () => {
+    it("takes the node's own trailing comment along when told to", () => {
+      const result = edited("(f x #| c |# y)", (a) => [
+        edit_delete(a, child(a, 1), false),
+      ]);
+      expect(result).not.toContain("x");
+      expect(result).toBe("(f y)");
+    });
+
+    it("leaves the node's comment behind, as an orphan", () => {
       const result = edited("(f x #| c |# y)", (a) => [
         edit_delete(a, child(a, 1)),
       ]);
       expect(result).not.toContain("x");
-      expect(result).toBe("(f y)");
+      expect(result).toBe("(f\n #| c |#\n \n y)");
     });
   });
 

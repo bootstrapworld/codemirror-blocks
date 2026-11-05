@@ -371,6 +371,45 @@
   visibility: visible;
 }
 
+// The comment that goes with a node is a small badge on it (its text is in the
+// box that opens to edit it)
+.blocks-comment.blocks-comment-badge {
+  visibility: visible;
+  position: relative;
+  display: inline-block !important;
+  left: auto;
+  bottom: auto;
+  margin: 0 0 0 4px;
+  padding: 0 2px;
+  max-width: none;
+  font-size: 0.8em;
+  line-height: inherit;
+  background: none;
+  border: none;
+  box-shadow: none;
+  z-index: auto;
+}
+.blocks-comment.blocks-comment-badge::before {
+  display: none;
+}
+
+// A comment that goes with no node is a block of its own, in line with the rest
+.blocks-node.blocks-comment {
+  visibility: visible;
+  position: static;
+  display: inline-block !important;
+  left: auto;
+  bottom: auto;
+  margin: 2px;
+  max-width: 400px;
+  box-shadow: none;
+  white-space: normal;
+  z-index: auto;
+}
+.blocks-node.blocks-comment::before {
+  display: none;
+}
+
 // (the block around it cannot be selected, but its comment has to be typed in)
 .blocks-comment.blocks-comment-editing {
   user-select: text;

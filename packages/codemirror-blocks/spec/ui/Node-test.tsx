@@ -35,7 +35,7 @@ it("renders a draggable span with various aria properties", () => {
      <span
        aria-expanded="true"
        aria-label="the someVar variable,"
-       aria-labelledby="block-node-0 "
+       aria-labelledby="block-node-0"
        aria-level="1"
        aria-posinset="1"
        aria-selected="false"
@@ -67,8 +67,8 @@ it("renders a comment that is associated with a node", () => {
    <div>
      <span
        aria-expanded="true"
-       aria-label="the someVar variable,"
-       aria-labelledby="block-node-1 block-node-1-comment"
+       aria-label="the someVar variable with comment,"
+       aria-labelledby="block-node-1"
        aria-level="1"
        aria-posinset="1"
        aria-selected="false"
@@ -83,18 +83,11 @@ it("renders a comment that is associated with a node", () => {
        This is a literal for someVar
        <span
          aria-hidden="true"
-         class="blocks-comment"
+         class="blocks-comment blocks-comment-badge"
          id="block-node-1-comment"
+         title="hello"
        >
-         <span
-           class="screenreader-only"
-         >
-           Has comment,
-         </span>
-          
-         <span>
-           hello
-         </span>
+         💬
        </span>
      </span>
    </div>

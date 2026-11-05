@@ -8,6 +8,7 @@ import {
   NodeOptions,
   pluralize,
   Pos,
+  withoutOrphans,
 } from "./ast";
 import Node from "./components/Node";
 import Args from "./components/Args";
@@ -99,9 +100,12 @@ const specs = {
   unknown: Spec.nodeSpec([Spec.list("elts")], {
     label: "unknown expression",
   }),
-  functionApp: Spec.nodeSpec([Spec.required("func"), Spec.list("args")], {
-    label: "function application",
-  }),
+  functionApp: Spec.nodeSpec(
+    [Spec.required("func"), Spec.list("args", { orphans: true })],
+    {
+      label: "function application",
+    }
+  ),
   identifierList: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")], {
     label: "identifier list",
   }),
@@ -122,7 +126,7 @@ const specs = {
     { label: "function definition" }
   ),
   condClause: Spec.nodeSpec(
-    [Spec.required("testExpr"), Spec.list("thenExprs")],
+    [Spec.required("testExpr"), Spec.list("thenExprs", { orphans: true })],
     { label: "conditional clause" }
   ),
   condExpression: Spec.nodeSpec([Spec.list("clauses")], {
@@ -147,9 +151,10 @@ const specs = {
     [Spec.value<string, "value">("value"), Spec.value("dataType")],
     { label: "blank" }
   ),
-  sequence: Spec.nodeSpec([Spec.optional("name"), Spec.list("exprs")], {
-    label: "sequence",
-  }),
+  sequence: Spec.nodeSpec(
+    [Spec.optional("name"), Spec.list("exprs", { orphans: true })],
+    { label: "sequence" }
+  ),
 };
 
 export const CoreAST = createASTSpec(specs);
@@ -235,13 +240,15 @@ export function FunctionApp(
       );
     },
     longDescription(node, level) {
+      // (comments among the arguments are not arguments)
+      const args = withoutOrphans(node.fields.args);
       // if it's the top level, enumerate the args
       if (node.level - level == 0) {
         return (
           `applying the function ${node.fields.func.describe(
             level
-          )} to ${pluralize("argument", node.fields.args)} ` +
-          node.fields.args
+          )} to ${pluralize("argument", args)} ` +
+          args
             .map(
               (a, i, args) =>
                 (args.length > 1 ? i + 1 + ": " : "") + a.describe(level)
@@ -253,7 +260,7 @@ export function FunctionApp(
       else
         return (
           `${node.fields.func.describe(level)} of ` +
-          node.fields.args.map((a) => a.describe(level)).join(", ")
+          args.map((a) => a.describe(level)).join(", ")
         );
     },
   });
@@ -506,7 +513,7 @@ export function CondClause(
     longDescription(node, level) {
       return `condition: if ${node.fields.testExpr.describe(
         level
-      )}, then, ${node.fields.thenExprs.map((te) => te.describe(level))}`;
+      )}, then, ${withoutOrphans(node.fields.thenExprs).map((te) => te.describe(level))}`;
     },
   });
 }
@@ -635,30 +642,64 @@ export function Literal(
 /** Scheme's block comment, for a comment whose language does not say */
 const SCHEME_COMMENT = { open: "#|", close: "|#" };
 
+/**
+ * A comment. One that goes with a node is kept as data (`options.comment` of
+ * that node) and drawn as a small badge on it. One that goes with none of
+ * them is an *orphan* (`options.orphan`): a node of its own, which can be
+ * focused, read and edited like any other, and which is a sibling of the
+ * nodes beside it.
+ */
 export function Comment(
   from: Pos,
   to: Pos,
   comment: string,
   options: NodeOptions = {}
 ) {
+  const orphan = Boolean(options.orphan);
   return CoreAST.makeNode({
     from,
     to,
     type: "comment",
     fields: { comment },
-    options: { isNotEditable: true, ...options },
+    options: {
+      isNotEditable: true,
+      ...(orphan
+        ? { ariaLabel: (n: ASTNode) => `${n.label}: ${n.fields.comment}` }
+        : {}),
+      ...options,
+    },
     pretty: (node) => {
       const words = node.fields.comment.trim().split(/\s+/);
       const wrapped = P.wrap(words);
       // Normalize all comments to block comments
       const { open, close } = node.options.blockComment ?? SCHEME_COMMENT;
-      return P.concat(open + " ", wrapped, " " + close);
+      const doc = P.concat(open + " ", wrapped, " " + close);
+      // An orphan is followed by a blank line, which is what makes it read
+      // back as an orphan (a comment on the line above a node goes with it);
+      // that also keeps whatever holds it from printing on one line.
+      return orphan ? P.vert(doc, "") : doc;
     },
-    render({ node, ...props }) {
+    render(props) {
+      const { node } = props;
+      if (node.options.orphan) {
+        return (
+          <Node {...props}>
+            <span className="blocks-comment-text">
+              {node.fields.comment.toString()}
+            </span>
+          </Node>
+        );
+      }
+      // (a badge: the node it is on says that it has a comment)
+      const { node: _node, ...rest } = props;
       return (
-        <span className="blocks-comment" aria-hidden="true" {...props}>
-          <span className="screenreader-only">Has comment,</span>{" "}
-          <span>{node.fields.comment.toString()}</span>
+        <span
+          className="blocks-comment blocks-comment-badge"
+          aria-hidden="true"
+          title={node.fields.comment.toString()}
+          {...rest}
+        >
+          {"\u{1F4AC}"}
         </span>
       );
     },

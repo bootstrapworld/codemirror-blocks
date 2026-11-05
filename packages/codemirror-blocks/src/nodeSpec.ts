@@ -102,8 +102,14 @@ export function optional<FieldName extends string>(fieldName: FieldName) {
 }
 
 // list :: String -> ChildSpec
-export function list<FieldName extends string>(fieldName: FieldName) {
-  return new List(fieldName);
+// `orphans`: the list may hold comments that belong to no node of its own
+// (see {@link orphanSlot}); where it cannot, such a comment goes with a
+// neighbour instead.
+export function list<FieldName extends string>(
+  fieldName: FieldName,
+  { orphans = false }: { orphans?: boolean } = {}
+) {
+  return new List(fieldName, orphans);
 }
 
 // value :: any -> ChildSpec
@@ -287,6 +293,12 @@ export class List<FieldName extends string = string> extends BaseSpec<
   FieldName,
   ASTNode[]
 > {
+  /** Whether the list can hold orphan comments among its elements */
+  readonly orphans: boolean;
+  constructor(fieldName: FieldName, orphans = false) {
+    super(fieldName);
+    this.orphans = orphans;
+  }
   validate(parent: NodeLike) {
     const array = this.getField(parent);
     let valid = true;

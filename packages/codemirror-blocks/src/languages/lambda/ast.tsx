@@ -1,5 +1,6 @@
 import React from "react";
 import * as P from "pretty-fast-pretty-printer";
+import { withoutOrphans } from "../../ast";
 import type { ASTNode, Pos } from "../../ast";
 import Args from "../../components/Args";
 import Node from "../../components/Node";
@@ -18,10 +19,13 @@ const operatorSpec = [
 
 export const LambdaAST = createASTSpec({
   ...CoreAST.config,
-  prog: Spec.nodeSpec([Spec.list("exprs")], { label: "program" }),
-  call: Spec.nodeSpec([Spec.required("func"), Spec.list("args")], {
-    label: "function call",
+  prog: Spec.nodeSpec([Spec.list("exprs", { orphans: true })], {
+    label: "program",
   }),
+  call: Spec.nodeSpec(
+    [Spec.required("func"), Spec.list("args", { orphans: true })],
+    { label: "function call" }
+  ),
   lambda: Spec.nodeSpec(
     [Spec.optional("name"), Spec.list("vars"), Spec.required("body")],
     { label: "lambda expression" }
@@ -76,7 +80,16 @@ function atomic(node: ASTNode): P.DocLike {
 }
 
 function commaSeparated(nodes: ASTNode[]) {
-  return P.horz("(", P.sepBy(nodes, ", ", ", "), ")");
+  if (!nodes.some((n) => n.options.orphan)) {
+    return P.horz("(", P.sepBy(nodes, ", ", ", "), ")");
+  }
+  // Orphan comments are not arguments, so they get no comma; each one is on
+  // a line of its own (it has to be, to read back as one)
+  let remaining = withoutOrphans(nodes).length;
+  const items = nodes.map((n) =>
+    n.options.orphan || --remaining === 0 ? n : P.horz(n, ",")
+  );
+  return P.horz("(", P.vertArray(items), ")");
 }
 
 export function Prog(from: Pos, to: Pos, exprs: ASTNode[], options = {}) {
@@ -87,12 +100,25 @@ export function Prog(from: Pos, to: Pos, exprs: ASTNode[], options = {}) {
     fields: { exprs },
     options,
     pretty(node) {
-      const statements = node.fields.exprs.map((expr, i, all) =>
-        i < all.length - 1 ? P.horz(expr, ";") : expr
+      // (a `;` goes after every statement but the last; a comment has none)
+      let remaining = withoutOrphans(node.fields.exprs).length;
+      const statements = node.fields.exprs.map((expr) =>
+        expr.options.orphan || --remaining === 0 ? expr : P.horz(expr, ";")
       );
       // the top-level program is bare, nested ones are `{ ...; ... }` blocks
-      return node.level <= 1
-        ? P.vertArray(statements)
+      // (a comment is on a line of its own, never after the `{`)
+      if (node.level <= 1) {
+        // (a comment right after the last statement would go with it, so
+        // those at the end are set apart by a blank line)
+        const exprs = node.fields.exprs;
+        let end = exprs.length;
+        while (end > 0 && exprs[end - 1].options.orphan) end--;
+        const lines: P.DocLike[] = [...statements];
+        if (end > 0 && end < exprs.length) lines.splice(end, 0, "");
+        return P.vertArray(lines);
+      }
+      return node.fields.exprs.some((e) => e.options.orphan)
+        ? P.vert("{", P.horz("  ", P.vertArray(statements)), "}")
         : P.horz("{ ", P.vertArray(statements), " }");
     },
     render(props) {
@@ -104,7 +130,7 @@ export function Prog(from: Pos, to: Pos, exprs: ASTNode[], options = {}) {
       );
     },
     longDescription(node) {
-      return `a program with ${node.fields.exprs.length} expressions`;
+      return `a program with ${withoutOrphans(node.fields.exprs).length} expressions`;
     },
   });
 }
@@ -136,7 +162,7 @@ export function Call(
     },
     longDescription: (node, level) =>
       `a call to ${node.fields.func.describe(level)} with ${
-        node.fields.args.length
+        withoutOrphans(node.fields.args).length
       } arguments`,
   });
 }
