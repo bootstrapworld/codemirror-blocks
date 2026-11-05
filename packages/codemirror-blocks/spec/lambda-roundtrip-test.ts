@@ -108,3 +108,13 @@ describe("lambda, more", () => {
     expect(() => lambda.parse("-x")).toThrow(/followed by a number/);
   });
 });
+
+describe("lambda's ! and !=", () => {
+  it("reads !! as two nots", () => {
+    expect(roundTrips("!!a")).toBe("!(!a)");
+  });
+  it("still reads != as one operator", () => {
+    expect(roundTrips("a != b")).toBe("a != b");
+    expect(roundTrips("!(a != b)")).toBe("!(a != b)");
+  });
+});
