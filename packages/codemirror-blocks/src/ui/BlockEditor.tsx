@@ -91,6 +91,8 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const focusedId = useSelector(selectors.getFocusedNode)?.id;
   const focusedIdRef = useRef(focusedId);
   focusedIdRef.current = focusedId;
+  const astRef = useRef(ast);
+  astRef.current = ast;
 
   // only refresh if there is no active quarantine
   useEffect(() => {
@@ -203,6 +205,8 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     // render to notice. Remember who had focus, so that a dropped one (as
     // opposed to the user clicking away) can be told apart.
     let lastFocused: EventTarget | null = null;
+    // (focus is owed to a block that had to be scrolled to first)
+    let owesFocus = false;
     const onFocusIn = (e: FocusEvent) => {
       lastFocused = e.target;
     };
@@ -213,9 +217,25 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         (!active || active === document.body) &&
         lastFocused instanceof Node &&
         !document.contains(lastFocused);
-      if (!parked && !dropped) return;
+      if (!parked && !dropped && !owesFocus) return;
       const id = focusedIdRef.current;
-      if (id) document.getElementById(`block-node-${id}`)?.focus();
+      if (!id) return;
+      const el = document.getElementById(`block-node-${id}`);
+      if (el) {
+        owesFocus = false;
+        el.focus();
+        return;
+      }
+      // The block is not on the page: CodeMirror took it off when the document
+      // got shorter (collapse all) or scrolled. Scroll to it, so that
+      // CodeMirror draws it again; the next update hands it focus.
+      const node = astRef.current.getNodeById(id);
+      // (the AST may be older than the text during an edit: the block may
+      // be gone, with its lines)
+      if (node?.element && node.to.line <= codemirror.lastLine()) {
+        owesFocus = true;
+        editor.scrollASTNodeIntoView(node);
+      }
     };
     codemirror.on("beforeChange", onBeforeChange);
     codemirror.on("change", onChange);
