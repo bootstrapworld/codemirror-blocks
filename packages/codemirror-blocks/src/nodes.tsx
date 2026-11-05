@@ -14,6 +14,7 @@ import Node from "./components/Node";
 import Args from "./components/Args";
 import { DropTarget } from "./components/DropTarget";
 import * as Spec from "./nodeSpec";
+import { poscmp } from "./utils";
 
 /**
  * The pretty printer refuses text with a newline in it. A string literal can
@@ -221,12 +222,23 @@ export function FunctionApp(
     type: "functionApp",
     fields: { func, args },
     options,
-    pretty: (node) =>
-      withComment(
-        P.standardSexpr(node.fields.func, node.fields.args),
+    pretty: (node) => {
+      // An empty pair of brackets with only comments in it has a blank where
+      // the function goes that was never written (it is no wider than nothing):
+      // printing `...` there would make it a call of its own, and a header with
+      // it a different form.
+      const { func, args } = node.fields;
+      const unwritten =
+        func.type === "blank" &&
+        poscmp(func.from, func.to) === 0 &&
+        args.length > 0 &&
+        args.every((a: ASTNode) => a.options.orphan);
+      return withComment(
+        P.standardSexpr(unwritten ? "" : func, args),
         node.options.comment,
         node
-      ),
+      );
+    },
     render(props) {
       return (
         <Node {...props}>

@@ -330,3 +330,35 @@ describe("a comment after an opening bracket", () => {
     roundTrips("wescheme", code);
   });
 });
+
+describe("printing what was found in the soak", () => {
+  it("a comment alone between the brackets of a function header is printed as it was", () => {
+    // (there is no function in `()`: printing `...` there made the header
+    // another form, which read the comment back as one on the body)
+    const { ast, once } = roundTrips(
+      "wescheme",
+      "(define (#| note |# )\n  (...\n   #| 7 |#\n   ))"
+    );
+    expect(orphans(ast).map((o) => o.fields.comment)).toEqual(["note", "7"]);
+    expect(once).not.toMatch(/\(\.\.\.\s+#\| note/);
+  });
+
+  it("a string keeps its escapes", () => {
+    const { once } = roundTrips("wescheme", '(f "say \\"hi\\" now" "a\\tb")');
+    expect(once).toBe('(f "say \\"hi\\" now" "a\\tb")');
+  });
+
+  it("a symbol with bars in it is printed as it was written", () => {
+    const { once } = roundTrips("wescheme", "rotate| note |#\n7");
+    expect(once).toContain("rotate| note |#");
+  });
+
+  it("a call of a parenthesised operand starts where the operand does", () => {
+    const ast = lambda.buildAST("(!x)(y);\n(a)(b)");
+    const calls = [...ast.getAllNodes()].filter((n) => n.type === "call");
+    expect(calls.map((c) => c.srcRange().from)).toEqual([
+      { line: 0, ch: 0 },
+      { line: 1, ch: 0 },
+    ]);
+  });
+});

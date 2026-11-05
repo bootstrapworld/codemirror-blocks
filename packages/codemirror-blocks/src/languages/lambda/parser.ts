@@ -207,8 +207,7 @@ function parse(input: TokenStream): LambdaNode {
     );
     return out;
   }
-  function parseCall(func: LambdaNode): LambdaNode {
-    const from = fromLocation;
+  function parseCall(func: LambdaNode, from: Pos): LambdaNode {
     const args = delimited("(", ")", ",", parseExpression, true);
     toLocation = input.pos().to;
     return {
@@ -321,8 +320,11 @@ function parse(input: TokenStream): LambdaNode {
   }
   function maybeCall(exprFn: () => LambdaNode): LambdaNode {
     // (a call can be called: `f()()`, and still be an operand: `f()() + 1`)
+    // (a call starts where what it calls does, not where the last thing read
+    // inside it did)
+    const start = input.pos().from;
     let expr = exprFn();
-    while (isPunc("(")) expr = parseCall(expr);
+    while (isPunc("(")) expr = parseCall(expr, start);
     return expr;
   }
   function parseAtom(): LambdaNode {

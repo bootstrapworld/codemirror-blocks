@@ -386,7 +386,12 @@ export function parseNodeOrNull(
         comment: comment,
       });
     } else {
-      return Literal(from, to, node.val, "symbol", {
+      // (a symbol with bars in it is printed as it was written: its value
+      // has them in other places than the text does, and does not read back)
+      const text = String(node.val).includes("|")
+        ? sourceText(node.location)
+        : node.val;
+      return Literal(from, to, text, "symbol", {
         ariaLabel: symbolAria(node.val),
         comment: comment,
       });
@@ -398,7 +403,9 @@ export function parseNodeOrNull(
     if (isString(node.val)) {
       dataType = "string";
       aria = `${node.val}, a String`;
-      value = '"' + node.val + '"'; // use the raw value, plus the quotes (for unicode symbols)
+      // (the string as it was written: its escapes are part of what it says,
+      // and without them what is printed reads back as something else)
+      value = sourceText(node.location);
     } else if (isChar(node.val)) {
       dataType = "character";
       aria = `${node.val.val}, a Character`;
