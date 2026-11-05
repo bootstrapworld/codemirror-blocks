@@ -2,13 +2,17 @@ import { act } from "@testing-library/react";
 import wescheme from "../src/languages/wescheme";
 import { mountCMB, teardown } from "../src/toolkit/test-utils";
 import {
+  BIG_DOCUMENT,
   MAX_ACTIVITIES,
+  MAX_UNPRINTED,
   getActivityBase,
+  getLog,
   getLastError,
   getReducerActivities,
   resetActivityLog,
 } from "../src/state/activityLog";
 import * as actions from "../src/state/actions";
+import { AST } from "../src/ast";
 import { logResults } from "../src/utils";
 import {
   BugReport,
@@ -47,6 +51,44 @@ describe("the activity recorder", () => {
     expect(dropped).toBeGreaterThan(50);
     expect(baseCode).toBe("(f x)\n(g y)");
     teardown();
+  });
+
+  describe("in a big document", () => {
+    const big = Array.from(
+      { length: BIG_DOCUMENT / 3 + 50 },
+      (_, i) => `(f ${i} y)`
+    ).join("\n");
+
+    it("does not print the document on every change, but can when asked", () => {
+      const { cmb } = mountCMB(wescheme);
+      cmb.setValue(big);
+      const print = jest.spyOn(AST.prototype, "toString");
+      const before = print.mock.calls.length;
+      cmb.setValue(big + "\n(g z)");
+      cmb.setValue(big + "\n(g w)");
+      expect(print.mock.calls.length).toBe(before);
+      const last = getLog()
+        .filter((e) => e.type === "SET_AST")
+        .pop() as { code: string };
+      expect(last.code.endsWith("(g w)")).toBe(true);
+      print.mockRestore();
+      teardown();
+    });
+
+    it("keeps only the latest few, each starting from a whole document", () => {
+      const { cmb } = mountCMB(wescheme);
+      for (let i = 0; i < MAX_UNPRINTED + 8; i++) {
+        cmb.setValue(big + `\n(g ${i})`);
+      }
+      const states = getLog().filter((e) => e.type === "SET_AST");
+      expect(states.length).toBeLessThanOrEqual(MAX_UNPRINTED);
+      expect(getLog()[0].type).toBe("SET_AST");
+      expect(getActivityBase().dropped).toBeGreaterThan(0);
+      expect((states[states.length - 1] as { code: string }).code).toMatch(
+        new RegExp(`\\(g ${MAX_UNPRINTED + 7}\\)$`)
+      );
+      teardown();
+    });
   });
 
   it("remembers the exception that was reported", () => {

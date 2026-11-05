@@ -64,14 +64,32 @@ const log: LogEntry[] = [];
  */
 export const MAX_ACTIVITIES = 200;
 let dropped = 0;
-/** the document as of the last activity that was dropped (undefined if none was) */
-let baseCode: string | undefined;
+/**
+ * the document as of the last activity that was dropped (undefined if none was)
+ * or the SET_AST that holds it, which prints it only when it is asked for
+ */
+let baseSource: string | { code: string } | undefined;
+const baseCodeOf = () =>
+  typeof baseSource === "string" ? baseSource : baseSource?.code;
+
+/**
+ * A document with more nodes than this is not printed whenever it changes
+ * (printing a big one costs tens of milliseconds an edit): the log holds the
+ * parsed document, and prints it if the log is ever read. So that holding them
+ * costs little, at most MAX_UNPRINTED of them are held, and what came before
+ * the oldest is forgotten (it starts the log, whole, so nothing is needed of
+ * what was before it).
+ */
+export const BIG_DOCUMENT = 3000;
+export const MAX_UNPRINTED = 12;
+const unprinted: LogEntry[] = [];
+const isUnprinted = new WeakSet<object>();
 
 /** Tells the log what the document is now, so it can say where its record starts. */
 let currentCode: (() => string) | undefined;
 const noteStart = () => {
-  if (!log.length && dropped === 0 && baseCode === undefined) {
-    baseCode = currentCode?.();
+  if (!log.length && dropped === 0 && baseSource === undefined) {
+    baseSource = currentCode?.();
   }
 };
 
@@ -85,8 +103,42 @@ const push = (activity: LogEntry) => {
   if (log.length > MAX_ACTIVITIES) {
     const [old] = log.splice(0, 1);
     dropped++;
-    if (old.type === "SET_AST") baseCode = old.code;
+    if (old.type === "SET_AST") baseSource = old;
+    const at = unprinted.indexOf(old);
+    if (at >= 0) unprinted.splice(at, 1);
   }
+};
+
+/** A SET_AST whose code is printed when it is first read, not before */
+const unprintedSetAst = (ast: ASTData): Activity => {
+  let data: ASTData | undefined = ast;
+  let code: string | undefined;
+  const activity = { type: "SET_AST" } as Activity & { code: string };
+  Object.defineProperty(activity, "code", {
+    enumerable: true,
+    get() {
+      if (code === undefined) {
+        code = new AST(data!).toString();
+        data = undefined;
+      }
+      return code;
+    },
+  });
+  isUnprinted.add(activity);
+  return activity;
+};
+
+/** Forget what came before the oldest of the unprinted documents that are kept */
+const forgetBeforeOldestKept = () => {
+  if (unprinted.length <= MAX_UNPRINTED) return;
+  unprinted.splice(0, unprinted.length - MAX_UNPRINTED);
+  const first = log.indexOf(unprinted[0]);
+  if (first > 0) {
+    log.splice(0, first);
+    dropped += first;
+  }
+  // (the first thing in the log is a whole document, so it needs no base)
+  baseSource = undefined;
 };
 
 /** @internal record something a person did (see UIEvent); costs nothing until they do it */
@@ -100,7 +152,7 @@ export const recordEvent = (event: UIEvent) => {
  * How many of the oldest activities have been forgotten, and the document as
  * it was just after them, which is where the remaining ones start from.
  */
-export const getActivityBase = () => ({ dropped, baseCode });
+export const getActivityBase = () => ({ dropped, baseCode: baseCodeOf() });
 
 let lastError: { message: string; stack?: string } | undefined;
 /** @internal remember the latest exception that was reported, for bug reports */
@@ -126,7 +178,8 @@ export const getLastError = () => lastError;
 export const resetActivityLog = () => {
   log.length = 0;
   dropped = 0;
-  baseCode = undefined;
+  baseSource = undefined;
+  unprinted.length = 0;
   lastError = undefined;
 };
 
@@ -148,7 +201,9 @@ function toActivity(action: AppAction, ast: ASTData): Activity {
   // Replace focusId with nid
   switch (action.type) {
     case "SET_AST":
-      return { type: action.type, code: new AST(ast).toString() };
+      return ast.nodeIdMap.size > BIG_DOCUMENT
+        ? unprintedSetAst(ast)
+        : { type: action.type, code: new AST(ast).toString() };
     case "SET_FOCUS":
       return {
         type: action.type,
@@ -178,7 +233,12 @@ export const activityLogger: Middleware<unknown, RootState> = (store) => {
   return (next) => (action) => {
     noteStart();
     const result = next(action);
-    push(toActivity(action as AppAction, store.getState().astData));
+    const activity = toActivity(action as AppAction, store.getState().astData);
+    push(activity);
+    if (isUnprinted.has(activity)) {
+      unprinted.push(activity);
+      forgetBeforeOldestKept();
+    }
     return result;
   };
 };
