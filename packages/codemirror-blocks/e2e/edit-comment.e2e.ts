@@ -136,9 +136,9 @@ test.describe("a comment that goes with no block", () => {
       name: /g expression.*with comment/,
     });
     await expect(g).toBeVisible();
-    await expect(page.getByRole("treeitem", { name: /comment: / })).toHaveCount(
-      0
-    );
+    await expect(
+      page.getByRole("treeitem", { name: /^comment: / })
+    ).toHaveCount(0);
     const popup = g.locator("> .blocks-comment");
     await expect(popup).toHaveAttribute("aria-hidden", "true");
     await expect(popup).toBeHidden();
