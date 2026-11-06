@@ -65,6 +65,8 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const quarantine = useSelector(selectors.getQuarantine);
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
   const newASTRef = useRef<AST | undefined>(undefined);
+  // (an undo or redo is between two of its changes, at a text that is no program)
+  const halfUndoneRef = useRef(false);
 
   // When the last block goes away (deleted, dragged to the trash, undone...),
   // keyboard focus has nowhere to go and falls to the page body, so typing and
@@ -115,6 +117,15 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
       // Success! Save the parsed AST for handleChange
       if (result.successful) {
         newASTRef.current = result.value;
+        halfUndoneRef.current = false;
+      } else if (change.origin === "undo" || change.origin === "redo") {
+        // One history item can hold several changes, and it is applied one
+        // change at a time: between two of them the text can be one that
+        // is no program (as `true()` can be in a language of strict syntax),
+        // though the text before the item and the text after it both are. An
+        // undo is never refused: the AST waits for the change that ends it
+        // (handleChanges says so if there is none that does).
+        halfUndoneRef.current = true;
       } else {
         change.cancel();
         throw new BlockError(
@@ -133,6 +144,9 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const handleChange = (editor: CMBEditor, change: CodeMirror.EditorChange) => {
     if (isChangeObject(change)) {
       return; // trust our own changeObjects
+    }
+    if (halfUndoneRef.current) {
+      return; // (the text is between two changes of one undo or redo)
     }
 
     // This change did NOT originate from us, but it passed the
@@ -170,6 +184,14 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     const which = changes[0]?.origin;
     if (which !== "undo" && which !== "redo") {
       return;
+    }
+    if (halfUndoneRef.current) {
+      halfUndoneRef.current = false;
+      throw new BlockError(
+        "An invalid change was rejected",
+        "Invalid Edit",
+        changes[changes.length - 1]
+      );
     }
     dispatch(focusAfterUndoOrRedo(which, editor, changes));
     dispatch(actions.finishUndoOrRedo(which, editor));

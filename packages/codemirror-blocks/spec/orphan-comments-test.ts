@@ -415,3 +415,22 @@ describe("an edit that is refused in a collapsed block that holds a comment", ()
     expect(cmb.getValue()).toContain("(b (c");
   });
 });
+
+describe("undoing a change made in several parts", () => {
+  it("is not refused when the text between two of its parts is no program", () => {
+    // (deleting two blocks at once is one history item of two changes; undoing
+    // it puts one back first, and `true()` after `true` ...)
+    const { cmb } = mountCMB(lambda);
+    const code = 'true\n("hi") + 1;\ntrue';
+    cmb.setValue(code);
+    const nodes = [...cmb.getAst().getAllNodes()];
+    const last = nodes.filter((n) => n.toString() === "true").pop()!;
+    const hi = nodes.find((n) => n.toString() === '"hi"')!;
+    select(last);
+    select(hi);
+    keyDown("Delete", {}, hi);
+    expect(cmb.getValue()).not.toBe(code);
+    expect(() => cmb.undo()).not.toThrow();
+    expect(cmb.getValue()).toBe(code);
+  });
+});
