@@ -305,6 +305,20 @@ Instead, use `ASTNode.describe(level)`. This will automatically use a shorter
 description for deeply nested nodes. (Specifically, it will use
 `node.options.ariaLabel`.)
 
+To say what a list of children is made of, without naming each one, use
+`describeKinds(nodes)`: it counts them by kind, by what each kind's `label` and
+`pluralLabel` say, and reads as part of a sentence:
+
+```ts
+longDescription: (node) =>
+  `a when expression, with ${describeKinds(node.fields.body)}`,
+// "a when expression, with 2 definitions, 1 call, and 3 literals"
+```
+
+A comment that goes with no node is left out unless you ask for it
+(`describeKinds(nodes, { orphans: "count" })`, which is what the editor says of
+the top of a program when it opens it as blocks). It says "nothing" for no nodes.
+
 ### Rendering as Text
 
 Nodes need to know how to render themselves as text. Furthermore, the _best_

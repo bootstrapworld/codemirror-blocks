@@ -7,6 +7,7 @@ import Args, { listItems } from "../../components/Args";
 import { DropTarget } from "../../components/DropTarget";
 import Node, { useNodeState } from "../../components/Node";
 import { defineNode, field } from "../../defineNode";
+import { describeKinds } from "../../summary";
 import * as Spec from "../../nodeSpec";
 import type { RootState } from "../../state/reducers";
 import * as selectors from "../../state/selectors";
@@ -24,22 +25,6 @@ export const ROUTINE_BLOCK_COMMENT = { open: "#|", close: "|#" };
 
 // ---------------------------------------------------------------------------
 // What the editor says out loud, made from the labels
-
-/** "2 definitions and a calculation": what a list of nodes is made of */
-export function summarize(nodes: readonly ASTNode[]): string {
-  const counts = new Map<string, { node: ASTNode; count: number }>();
-  for (const node of withoutOrphans([...nodes])) {
-    const seen = counts.get(node.label);
-    if (seen) seen.count++;
-    else counts.set(node.label, { node, count: 1 });
-  }
-  const parts = [...counts.values()].map(({ node, count }) =>
-    count === 1 ? `a ${node.label}` : `${count} ${node.pluralLabel}`
-  );
-  if (parts.length === 0) return "nothing";
-  const last = parts.pop();
-  return parts.length ? `${parts.join(", ")} and ${last}` : String(last);
-}
 
 // ---------------------------------------------------------------------------
 // Scope: a name's block can show what is defined before it
@@ -225,7 +210,7 @@ export const Repeat = defineNode({
         )
       : P.horz("(repeat ", node.fields.times, ")"),
   longDescription: (node, level) =>
-    `a ${node.label}, ${node.fields.times.describe(level)} times, of ${summarize(node.fields.steps)}`,
+    `a ${node.label}, ${node.fields.times.describe(level)} times, of ${describeKinds(node.fields.steps)}`,
   render: (props) => {
     const { times, steps } = props.node.fields;
     return (
@@ -314,7 +299,7 @@ export const Call = defineNode({
   pretty: (node) => P.standardSexpr(node.fields.op, node.fields.args),
   ariaLabel: (node) => `${node.label} ${node.fields.op}`,
   longDescription: (node, level) =>
-    `a ${node.label} with ${node.fields.op} of ${summarize(node.fields.args)}${
+    `a ${node.label} with ${node.fields.op} of ${describeKinds(node.fields.args)}${
       node.fields.args.length
         ? `: ${node.fields.args.map((a) => a.describe(level)).join(", ")}`
         : ""

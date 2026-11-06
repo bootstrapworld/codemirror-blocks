@@ -4,7 +4,7 @@ import wescheme from "../src/languages/wescheme";
 import { WeSchemeAST } from "../src/languages/wescheme/ast";
 import { nodeSpec } from "../src/nodeSpec";
 import { ASTNode } from "../src/ast";
-import { labelFromType, pluralOf } from "../src/naming";
+import { joinWithAnd, labelFromType, pluralize, pluralOf } from "../src/naming";
 
 type SpecTable = { config: Record<string, ReturnType<typeof nodeSpec>> };
 
@@ -99,6 +99,20 @@ describe("a language's own names", () => {
 describe("naming", () => {
   it("splits camelCase into words", () => {
     expect(labelFromType("functionApp")).toBe("function app");
+  });
+  it("counts and pluralizes a noun, from a number or from the things", () => {
+    expect(pluralize("argument", 0)).toBe("0 arguments");
+    expect(pluralize("argument", 1)).toBe("1 argument");
+    expect(pluralize("argument", [1, 2, 3])).toBe("3 arguments");
+    // (a noun that takes more than an s)
+    expect(pluralize("category", 2)).toBe("2 categories");
+    expect(pluralize("box", [1, 2])).toBe("2 boxes");
+  });
+  it("joins what is said as it is spoken, with the comma before the last and", () => {
+    expect(joinWithAnd([])).toBe("");
+    expect(joinWithAnd(["a"])).toBe("a");
+    expect(joinWithAnd(["a", "b"])).toBe("a and b");
+    expect(joinWithAnd(["a", "b", "c"])).toBe("a, b, and c");
   });
   it("pluralizes", () => {
     expect(pluralOf("category")).toBe("categories");

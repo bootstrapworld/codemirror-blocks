@@ -1,4 +1,5 @@
 import * as structures from "wescheme-js/src/structures";
+import { pluralize } from "../../ast";
 import type { ASTNode } from "../../ast";
 import * as Nodes from "../../nodes";
 import { LetLikeExpr, WhenUnless, Sequence } from "./ast";
@@ -57,10 +58,6 @@ export function symbolAria(str: string): string {
     str = str.replace("[", " open bracket").replace("]", " close bracket");
     return str;
   }
-}
-
-function pluralize(noun: string, set: unknown[]) {
-  return set.length + " " + noun + (set.length != 1 ? "s" : "");
 }
 
 // expressionAria: String Array -> String

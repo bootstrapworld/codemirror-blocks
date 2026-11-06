@@ -111,6 +111,9 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   program their places among the nodes a parser made, so that a parser has only
   to skip them. `scanComments` finds them for a comment syntax of the language's
   own (`scanSchemeComments` is as it was).
+- `describeKinds(nodes)` says what a list of nodes is made of ("2 definitions,
+  1 call, and 3 literals") from the labels of their kinds, for a long
+  description; the summary of a program uses it.
 - Routine (`lib/languages/routine`), a small example language that uses the
   newer API, and `?lang=routine` on the example page.
 - `<DropTarget field="init" />` with no `index` fills an empty `optional` field

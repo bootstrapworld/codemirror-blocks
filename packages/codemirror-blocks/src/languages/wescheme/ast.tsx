@@ -1,19 +1,11 @@
 import React from "react";
 import * as P from "pretty-fast-pretty-printer";
-import { ASTNode } from "../../ast";
+import { ASTNode, pluralize } from "../../ast";
 import type { Pos } from "../../ast";
 import Node from "../../components/Node";
 import * as Spec from "../../nodeSpec";
 import * as Nodes from "../../nodes";
 import { CoreAST, createASTSpec } from "../../nodes";
-
-/**
- * given a noun and an array, generate a (possibly-plural)
- * version of that noun
- */
-function pluralize(noun: string, set: unknown[]) {
-  return set.length + " " + noun + (set.length != 1 ? "s" : "");
-}
 
 export const WeSchemeAST = createASTSpec({
   ...CoreAST.config,

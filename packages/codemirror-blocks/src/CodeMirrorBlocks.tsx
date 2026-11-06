@@ -6,6 +6,8 @@ import Modal from "react-modal";
 import ToggleEditor from "./ui/ToggleEditor";
 import Args, { listItems } from "./components/Args";
 import { defineNode, field } from "./defineNode";
+import { describeKinds } from "./summary";
+import { joinWithAnd, pluralize } from "./naming";
 export type { ListItem } from "./components/Args";
 import * as DropTarget from "./components/DropTarget";
 import Node, { useNodeState } from "./components/Node";
@@ -116,6 +118,9 @@ export {
   Args,
   listItems,
   defineNode,
+  describeKinds,
+  joinWithAnd,
+  pluralize,
   field,
   DropTarget as DT,
   ASTNode,

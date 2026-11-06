@@ -171,7 +171,7 @@ describe("what is said about a node comes from its label", () => {
       "(repeat 4\n  (let a 1)\n  (let b 2)\n  (show a)\n  (+ a b)\n  (show b))"
     );
     expect(root().describe(5)).toBe(
-      "a repeat loop, number 4 times, of 2 definitions, 2 show steps and a calculation"
+      "a repeat loop, number 4 times, of 2 definitions, 2 show steps, and 1 calculation"
     );
   });
 });

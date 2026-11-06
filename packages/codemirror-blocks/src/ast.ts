@@ -8,7 +8,7 @@ import {
 } from "./utils";
 import * as P from "pretty-fast-pretty-printer";
 import type { FieldsForSpec, NodeSpec } from "./nodeSpec";
-import { labelFromType, pluralOf } from "./naming";
+import { joinWithAnd, labelFromType, pluralOf } from "./naming";
 import type React from "react";
 import type { Props as NodeProps } from "./components/Node";
 import { getLanguage } from "./languages";
@@ -24,21 +24,12 @@ export function withoutOrphans<T extends ASTNode>(lst: readonly T[]): T[] {
 }
 
 export function enumerateList(lst: ASTNode[], level: number) {
-  const described = withoutOrphans(lst)
-    .map((l) => l.describe(level))
-    .slice(0);
-  const last = described.pop();
-  return described.length == 0 ? last : described.join(", ") + " and " + last;
+  const described = withoutOrphans(lst).map((l) => l.describe(level) ?? "");
+  // (nothing at all is no description, as it was)
+  return described.length ? joinWithAnd(described) : undefined;
 }
 
-/**
- * @internal
- * given a noun and an array, generate a (possibly-plural)
- * version of that noun
- */
-export function pluralize(noun: string, set: unknown[]) {
-  return set.length + " " + noun + (set.length != 1 ? "s" : "");
-}
+export { pluralize } from "./naming";
 
 /**
  * @internal

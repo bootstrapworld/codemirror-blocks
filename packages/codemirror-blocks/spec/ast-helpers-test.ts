@@ -7,13 +7,13 @@ const pos = (line: number, ch: number) => ({ line, ch });
 const lit = (text: string) => Literal(pos(0, 0), pos(0, text.length), text);
 
 describe("describing lists and counts for a screenreader", () => {
-  it("enumerateList joins descriptions with commas and 'and'", () => {
+  it("enumerateList joins descriptions with commas, and 'and' before the last", () => {
     expect(enumerateList([lit("a")], 0)).toBe(lit("a").describe(0));
     expect(enumerateList([lit("a"), lit("b")], 0)).toBe(
       `${lit("a").describe(0)} and ${lit("b").describe(0)}`
     );
     expect(enumerateList([lit("a"), lit("b"), lit("c")], 0)).toBe(
-      `${lit("a").describe(0)}, ${lit("b").describe(0)} and ${lit("c").describe(0)}`
+      `${lit("a").describe(0)}, ${lit("b").describe(0)}, and ${lit("c").describe(0)}`
     );
   });
 
