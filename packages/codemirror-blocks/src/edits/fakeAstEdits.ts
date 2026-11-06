@@ -1,5 +1,5 @@
 import * as P from "pretty-fast-pretty-printer";
-import { warn, poscmp } from "../utils";
+import { warn } from "../utils";
 import { Required, Optional, List, Value, nodeSpec, value } from "../nodeSpec";
 import { ASTNode } from "../ast";
 import type { AST, Pos } from "../ast";
@@ -36,14 +36,28 @@ import { playSound, BEEP } from "../utils";
 
 // Knows how to perform a fake insertion operation, and how to find the inserted
 // child after the AST is re-parsed.
+/** Where in the text element `index` of `list` would go (an empty list has no place of its own: its parent's start) */
+export function insertionPos(
+  parent: ASTNode,
+  list: readonly ASTNode[],
+  index: number
+): Pos {
+  if (index > 0 && list[index - 1]) return list[index - 1].srcRange().to;
+  if (list[0]) return list[0].srcRange().from;
+  return parent.srcRange().from;
+}
+
 export class FakeAstInsertion {
   parent: ASTNode;
   pos: Pos;
   spec: List;
   index: number;
-  constructor(parent: ASTNode, fieldName: string, pos: Pos) {
+  /**
+   * Insert as element `index` of the list field `fieldName` of `parent` (an
+   * index past the end is the end). The position is where that is in the text.
+   */
+  constructor(parent: ASTNode, fieldName: string, index: number) {
     this.parent = parent;
-    this.pos = pos;
     // Find the spec that matches the supplied field name.
     let spec: List | null = null;
     for (const s of parent.spec.childSpecs) {
@@ -57,23 +71,9 @@ export class FakeAstInsertion {
       );
     }
     this.spec = spec;
-    // If `pos` is null, that means the list is empty.
-    if (pos === null) {
-      this.index = 0;
-      return;
-    }
-    // `pos` lies inside the list. Find out where.
     const list = spec.getField(parent);
-    // ideally, we'd use for(i in list) {...} here, but some badly-behaved
-    // IDEs monkeypatch the Array prototype, causing that to fail
-    for (let i = 0; i < list.length; i++) {
-      if (poscmp(pos, list[i].srcRange().from) <= 0) {
-        this.index = i;
-        return;
-      }
-    }
-    this.index = list.length;
-    return;
+    this.index = Math.max(0, Math.min(Math.trunc(index), list.length));
+    this.pos = insertionPos(parent, list, this.index);
   }
 
   insertChild(clonedParent: ASTNode, text: string) {

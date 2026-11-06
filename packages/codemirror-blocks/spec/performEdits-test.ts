@@ -167,8 +167,8 @@ foo
     const node = [...ast.rootNodes[1].children()][1];
     expect(node.type).toBe("functionApp");
 
-    const edit = edit_insert("foo", node, "args", { line: 2, ch: 19 });
-    expect(edit.toString()).toEqual("InsertChild 2:19-2:19");
+    const edit = edit_insert("foo", node, "args", 1);
+    expect(edit.toString()).toEqual("InsertChild 2:20-2:20");
     const result = apply([edit]);
     expect(result.successful).toBe(true);
     expect(editor.getValue()).toEqual(`
@@ -184,7 +184,7 @@ foo
     expect(node.type).toBe("functionApp");
 
     const edits = [
-      edit_insert("foo", node, "args", { line: 2, ch: 19 }),
+      edit_insert("foo", node, "args", 1),
       edit_replace("bar", ast, children[2]),
       edit_delete(ast, ast.rootNodes[0]),
     ];
@@ -369,20 +369,20 @@ describe("applyEdits on small documents", () => {
   });
 
   describe("inserting a child", () => {
-    const insert = (text: string, ch: number) => (a: AST) => [
-      edit_insert(text, a.rootNodes[0], "args", { line: 0, ch }),
+    const insert = (text: string, index: number) => (a: AST) => [
+      edit_insert(text, a.rootNodes[0], "args", index),
     ];
     it("at the start, the end, and into an empty argument list", () => {
-      expect(edited("(f x y)", insert("z", 3))).toBe("(f z x y)");
-      expect(edited("(f x y)", insert("z", 6))).toBe("(f x y z)");
-      expect(edited("(f)", insert("z", 2))).toBe("(f z)");
+      expect(edited("(f x y)", insert("z", 0))).toBe("(f z x y)");
+      expect(edited("(f x y)", insert("z", 2))).toBe("(f x y z)");
+      expect(edited("(f)", insert("z", 0))).toBe("(f z)");
     });
 
     it("inserting an empty or blank string changes nothing", () => {
-      expect(edited("(f x y)", insert("", 6))).toBe("(f x y)");
-      expect(edited("(f x y)", insert("", 3))).toBe("(f x y)");
-      expect(edited("(f)", insert("", 2))).toBe("(f)");
-      expect(edited("(f x y)", insert("  ", 3))).toBe("(f x y)");
+      expect(edited("(f x y)", insert("", 2))).toBe("(f x y)");
+      expect(edited("(f x y)", insert("", 0))).toBe("(f x y)");
+      expect(edited("(f)", insert("", 0))).toBe("(f)");
+      expect(edited("(f x y)", insert("  ", 0))).toBe("(f x y)");
     });
   });
 
@@ -550,17 +550,13 @@ describe("focusHint", () => {
   describe("InsertChildEdit", () => {
     it("points at the inserted node", () => {
       expect(
-        hints("(f x y)", (a) => [
-          edit_insert("z", a.rootNodes[0], "args", { line: 0, ch: 3 }),
-        ])
+        hints("(f x y)", (a) => [edit_insert("z", a.rootNodes[0], "args", 0)])
       ).toEqual(["z"]);
     });
 
     it("falls back when there was nothing to insert", () => {
       expect(
-        hints("(f x y)", (a) => [
-          edit_insert("", a.rootNodes[0], "args", { line: 0, ch: 3 }),
-        ])
+        hints("(f x y)", (a) => [edit_insert("", a.rootNodes[0], "args", 0)])
       ).toEqual(["fallback"]);
     });
   });

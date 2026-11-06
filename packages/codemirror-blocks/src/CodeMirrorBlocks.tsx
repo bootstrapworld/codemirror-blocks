@@ -4,7 +4,8 @@ import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import Modal from "react-modal";
 import ToggleEditor from "./ui/ToggleEditor";
-import Args from "./components/Args";
+import Args, { listItems } from "./components/Args";
+export type { ListItem } from "./components/Args";
 import * as DropTarget from "./components/DropTarget";
 import Node, { useNodeState } from "./components/Node";
 export type { NodeState } from "./components/Node";
@@ -112,6 +113,7 @@ export { setLogReporter } from "./utils";
 export {
   CodeMirrorBlocks,
   Args,
+  listItems,
   DropTarget as DT,
   ASTNode,
   Node,

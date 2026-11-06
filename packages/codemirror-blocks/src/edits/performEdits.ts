@@ -55,9 +55,9 @@ export function edit_insert(
   text: string,
   parent: ASTNode,
   field: string,
-  pos: Pos
+  index: number
 ): EditInterface {
-  return new InsertChildEdit(text, parent, field, pos);
+  return new InsertChildEdit(text, parent, field, index);
 }
 
 export function edit_overwrite(
@@ -478,11 +478,13 @@ class InsertChildEdit extends AstEdit {
   text: string;
   pos: Pos;
   fakeAstInsertion: FakeAstInsertion;
-  constructor(text: string, parent: ASTNode, field: string, pos: Pos) {
+  constructor(text: string, parent: ASTNode, field: string, index: number) {
+    const fakeAstInsertion = new FakeAstInsertion(parent, field, index);
+    const { pos } = fakeAstInsertion;
     super(pos, pos, parent);
     this.text = text;
     this.pos = pos;
-    this.fakeAstInsertion = new FakeAstInsertion(this.parent, field, pos);
+    this.fakeAstInsertion = fakeAstInsertion;
   }
 
   // Inserting nothing changes nothing (a blank child would only add a space)

@@ -497,11 +497,14 @@ export function CondClause(
                 // by place, not id: ids change with every parse
                 // eslint-disable-next-line @eslint-react/no-array-index-key
                 <span key={index}>
-                  <DropTarget field="thenExprs" />
+                  <DropTarget field="thenExprs" index={index} />
                   {thenExpr.reactElement()}
                 </span>
               ))}
-              <DropTarget field="thenExprs" />
+              <DropTarget
+                field="thenExprs"
+                index={props.node.fields.thenExprs.length}
+              />
             </div>
           </div>
         </Node>

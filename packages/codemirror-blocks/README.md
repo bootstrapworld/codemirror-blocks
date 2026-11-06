@@ -67,7 +67,7 @@ Every node type **must** have:
 
 1. A spec, declared with `Nodes.createASTSpec`, which defines the type of every field of the node. These specifications are [documented here](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/src/nodeSpec.ts). Note: failing to properly list all the fields of the node can leave the editor in an unstable state, and result in unspecified behavior.
 2. `pretty()` - A function that describes how the node should be pretty-printed. Pretty-printing options are [documented here](https://www.npmjs.com/package/pretty-fast-pretty-printer). A language that has a printer of its own can return the text instead of a doc.
-3. `render()` - A function that produces the node (usually in JSX) to be rendered. Note: all DropTargets in a node's `render()` function must declare a `field` property, corresponding to one of the list fields of the node that are defined in the spec. This tells CMB what part of the node is modified when the DropTarget is edited.
+3. `render()` - A function that produces the node (usually in JSX) to be rendered. Note: all DropTargets in a node's `render()` function must declare a `field` property, corresponding to one of the list fields of the node that are defined in the spec, and an `index`, the place in that list that a node dropped there goes (`Args` does both for you). This tells CMB what part of the node is modified when the DropTarget is edited.
 
 and, optionally, `longDescription()` - a function that dynamically computes a detailed description of the node (optionally referring to its children, for example), and produces a string that will be read aloud to the user.
 

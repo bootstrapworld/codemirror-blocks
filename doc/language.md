@@ -366,11 +366,42 @@ horizontally among `elts` (which should be an array of nodes, or elements).
 type `Spec.list`.
 
 However, if you want to put drop targets in a more interesting arrangement than
-`Args` gives you, you have a second option: you can use `DT.DropTarget`s
-directly. Simply construct them with `<DT.DropTarget field="FIELDNAME"/>`
-anywhere in your node. Every drop target must declare a `field`, corresponding
-to one of the list fields of the node, so that CMB knows what part of the node
-is modified when the drop target is edited.
+`Args` gives you, you have a second option: you can use `DropTarget`s directly
+(exported as `DT`). Every one says where it goes with two props:
+
+- `field`: the list field of the node that a node dropped (or typed) there
+  joins;
+- `index`: its place in that list. A drop target with `index={i}` inserts as
+  element `i`, before the element that is there now, and the one after the last
+  element has `index={list.length}`.
+
+Where the drop target is in the page does not matter, so a layout can put it
+anywhere (in a gutter, a footer, a nested container), and an empty list needs
+only the target with `index={0}`:
+
+```tsx
+<ul>
+  {listItems(statements).map(({ node, index, number }) => (
+    <li key={index}>
+      <DT field="statements" index={index} />
+      <span className="line-number">{number}</span>
+      {node.reactElement()}
+    </li>
+  ))}
+</ul>
+<DT field="statements" index={statements.length} />
+```
+
+The index counts every element of the array, **including orphan comments** if
+the list can hold them. `listItems` gives each element its `index` and, for a
+layout that shows numbers, its `number`, which skips the comments (`null` for
+a comment). Do not number the rows from `index`, and do not leave the comments
+out of the layout: the targets after one would get an index that is too low.
+(A drop target says what is wrong, in the console, if its field is not a list
+of the node or its index is not a whole number from 0 to the length of the list.)
+
+A child that holds one node (a `required` or `optional` field) does not take
+drop targets: the node in it is replaced by dropping on it.
 
 ---
 

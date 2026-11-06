@@ -15,6 +15,7 @@ import {
   EditInterface,
   PerformEditsResult,
 } from "../edits/performEdits";
+import { FakeAstInsertion } from "../edits/fakeAstEdits";
 import { AST, ASTNode, Pos } from "../ast";
 import {
   CMBEditor,
@@ -523,14 +524,19 @@ export abstract class Target {
 }
 
 // Insert at a location inside the AST.
+// It is element `index` of the list field `fieldName` of `parentNode` (the
+// index of the element it goes before, or the length of the list for the end).
 export class InsertTarget extends Target {
   parent: ASTNode;
   field: string;
+  index: number;
   pos: Pos;
-  constructor(parentNode: ASTNode, fieldName: string, pos: Pos) {
+  constructor(parentNode: ASTNode, fieldName: string, index: number) {
+    const pos = new FakeAstInsertion(parentNode, fieldName, index).pos;
     super(pos, pos);
     this.parent = parentNode;
     this.field = fieldName;
+    this.index = index;
     this.pos = pos;
   }
 
@@ -539,7 +545,7 @@ export class InsertTarget extends Target {
   }
 
   toEdit(ast: AST, text: string): EditInterface {
-    return edit_insert(text, this.parent, this.field, this.pos);
+    return edit_insert(text, this.parent, this.field, this.index);
   }
 }
 
