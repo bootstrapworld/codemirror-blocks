@@ -720,6 +720,10 @@ const operations: Operation[] = [
       if (!node) return;
       mouseDown(node);
       keyDown("ArrowLeft", {}, node);
+      // (Left on a block that is already collapsed moves focus to its parent,
+      // and keys go to the block that has focus: a user pressing Enter now would
+      // be pressing it on the parent, so go back to the block, as they would)
+      mouseDown(node);
       const then = r[2] % 6;
       let what: string;
       switch (then) {

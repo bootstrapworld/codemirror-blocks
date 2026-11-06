@@ -2,9 +2,12 @@ import type { AST, ASTNode } from "../src/ast";
 import lambda from "../src/languages/lambda";
 import wescheme from "../src/languages/wescheme";
 import { select } from "./helpers/gestures";
+import { allowConsoleErrors } from "./globalSetup";
+import { setEditableText } from "./helpers/editing";
 import { scanSchemeComments } from "../src/orphans";
 import { summarizeProgram } from "../src/summary";
 import {
+  cmd_ctrl,
   keyDown,
   mountCMB,
   mouseDown,
@@ -386,5 +389,29 @@ describe("the badge of a node that has a comment", () => {
     expect(badge.getAttribute("aria-hidden")).toBe("true");
     expect(badge.previousElementSibling?.getAttribute("role")).toBe("treeitem");
     expect(badge.closest('[role="treeitem"]')).toBeNull();
+  });
+});
+
+describe("an edit that is refused in a collapsed block that holds a comment", () => {
+  it("keeps its box open, with what was typed", () => {
+    const { cmb } = mountCMB(wescheme);
+    cmb.setValue("(a (b (c #| note |#\n d)))");
+    const find = () =>
+      [...cmb.getAst().getAllNodes()].find((n) =>
+        n.toString().startsWith("(b ")
+      )!;
+    mouseDown(find());
+    keyDown("ArrowLeft", {}, find()); // (collapse it)
+    mouseDown(find()); // (the keys that follow are the ones of the block with focus)
+    keyDown("Enter", cmd_ctrl, find());
+    expect(document.activeElement?.getAttribute("contenteditable")).toBe(
+      "true"
+    );
+    // (a line comment swallows the bracket that closes the block: refused)
+    setEditableText("; note\n(g w)");
+    allowConsoleErrors(); // (the refusal is logged)
+    keyDown("Enter");
+    expect(document.querySelector('[contenteditable="true"]')).not.toBeNull();
+    expect(cmb.getValue()).toContain("(b (c");
   });
 });
