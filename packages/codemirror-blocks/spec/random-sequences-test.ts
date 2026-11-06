@@ -603,9 +603,11 @@ const operations: Operation[] = [
       // left open at the end of the document would end up inside it)
       // (and a root that takes in the comments before it also takes in a box
       // left open among them: only a program change can do that, not a user)
+      // (nor does a root that comes to take in the comments that are added)
       if (
         w.cmb.getAst().language.id === "lambda" ||
-        /;|#\|/.test(w.cmb.getValue())
+        /;|#\|/.test(w.cmb.getValue()) ||
+        /;|#\|/.test(text)
       )
         stopEditing();
       const line = w.cmb.lastLine();
