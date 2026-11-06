@@ -79,9 +79,34 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   `act()`.
 - `skipWhile` (in `utils`) no longer calls its callbacks with `null` or
   `undefined`.
+- **Breaking: a `DropTarget` says its place in a list with an `index`.**
+  `<DropTarget field="body" index={i} />` inserts as element `i` of the list
+  field (before the element that is there now; `list.length` is the end), wherever
+  the layout puts it: a drop target no longer has to be a sibling of an element
+  of the list, and one in an empty list works. A language module that draws its
+  own drop targets must add the prop (`Args`, which most use, does it for you).
+  The index counts every element of the array, orphan comments included. A drop
+  target logs what is wrong with its field or index. `InsertTarget` and
+  `edit_insert` take an index in place of a text position. For a node that is
+  not an element of a list (the operator of a call), Ctrl-[, Ctrl-] and paste use
+  the nearest drop target of its parent.
+- A node's `pretty()` may return its text instead of a pretty-printer `Doc`, for
+  a language that has a printer of its own; the text is not reflowed, and the
+  node's comment is printed above it (or beside it, if it was).
+- An `optional` field in a node spec may be `undefined` (or left out) as well as
+  `null`, and an `undefined` `value` field no longer breaks hashing.
+- The toolbar's plus, minus and clear-search icons are inline SVG: the
+  Glyphicons font is no longer loaded from a CDN.
 
 ### Added
 
+- `<DropTarget field="init" />` with no `index` fills an empty `optional` field
+  (the initializer of `let x;`): a node typed or dropped there becomes the field.
+- `listItems(list)` gives a hand-made layout the `index`, whether it is an orphan
+  comment and the number to show for each element of a list.
+- `useNodeState()` lets a component drawn inside a `<Node>` read whether its
+  block is focused, selected, collapsed, being dragged, dragged over, the one
+  whose edit was refused, or in the toolbar, without knowing about redux.
 - Search is back. F3, Ctrl-F (Cmd-F on a Mac) opens the Search Settings dialog,
   with two ways to search: by text (case, whole word and regular expression
   options) and by kind of block. Enter closes the dialog and goes to the first
