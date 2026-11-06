@@ -1,7 +1,5 @@
 import type { ASTNode, Pos } from "../../ast";
-import { Comment } from "../../nodes";
-import { addComment, placeOrphans, scanSchemeComments } from "../../orphans";
-import { poscmp } from "../../utils";
+import { attachComments } from "../../orphans";
 import {
   Call,
   Choice,
@@ -207,42 +205,7 @@ function build(s: Sexp): ASTNode {
   }
 }
 
-type Placed = { node: ASTNode; parent: ASTNode | null };
-const walk = (node: ASTNode, parent: ASTNode | null, into: Placed[]) => {
-  into.push({ node, parent });
-  for (const child of node.children()) walk(child, node, into);
-};
-
-/**
- * A comment on the lines just above a node, in the same list, goes with it;
- * any other is a block of its own, in the list that holds it.
- */
-function placeComments(code: string, roots: ASTNode[]): ASTNode[] {
-  const all: Placed[] = [];
-  for (const root of roots) walk(root, null, all);
-  const orphans: ASTNode[] = [];
-  for (const c of scanSchemeComments(code)) {
-    const comment = Comment(c.from, c.to, c.text, {
-      blockComment: ROUTINE_BLOCK_COMMENT,
-      orphan: true,
-    });
-    const next = all.find(({ node }) => poscmp(node.from, c.to) >= 0);
-    const adjacent = next && next.node.from.line - c.to.line <= 1;
-    const sameList =
-      next &&
-      (!next.parent ||
-        (poscmp(next.parent.from, c.from) <= 0 &&
-          poscmp(c.to, next.parent.to) <= 0));
-    if (next && adjacent && sameList) {
-      addComment(next.node, comment, ROUTINE_BLOCK_COMMENT);
-    } else {
-      orphans.push(comment);
-    }
-  }
-  return placeOrphans(roots, orphans, ROUTINE_BLOCK_COMMENT);
-}
-
 export function parse(code: string): ASTNode[] {
   const roots = read(code).map(build);
-  return placeComments(code, roots);
+  return attachComments(code, roots, { blockComment: ROUTINE_BLOCK_COMMENT });
 }

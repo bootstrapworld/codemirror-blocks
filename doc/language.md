@@ -155,7 +155,8 @@ Every node also takes an `options` object. The ones you will use are:
 - `ariaLabel`: a short description of the node, read by screen readers when
   the node is deeply nested (see "Speaking out Loud").
 - `comment`: a `Nodes.Comment` for the comment that goes with this node. Your
-  parser is responsible for pairing comments with the nodes they describe.
+  parser is responsible for pairing comments with the nodes they describe (see
+  below for how to leave that to the editor).
 - `isNotEditable`: prevents the node from being edited.
 
 The core node types (`Nodes.Literal`, `Nodes.FunctionApp`,
@@ -168,6 +169,31 @@ Nodes.VariableDefinition(from, to, name, body, {
   comment,
 });
 ```
+
+### Comments
+
+Your reader has only to skip the comments as it reads. Then give the root nodes
+it made to `attachComments`, with the text and how the language writes a comment:
+
+```ts
+import { attachComments } from "@bootstrapworld/codemirror-blocks/lib/orphans";
+
+const COMMENTS = { line: "//", block: { open: "/*", close: "*/" } };
+
+parse(code) {
+  const roots = readNodes(code); // skips comments; every node has its range
+  return attachComments(code, roots, {
+    blockComment: COMMENTS.block, // how the editor writes a comment back
+    syntax: COMMENTS, // how to find them (Scheme's, `;` and `#| |#`, if left out)
+  });
+}
+```
+
+A comment on the line above a node, or on its line, in the same list, goes with
+that node (`options.comment`). Any other comment is a block of its own, put among
+the elements of the nearest list around it that was declared with
+`Spec.list(name, { orphans: true })`, or, where there is none, with the node
+beside it.
 
 ## Defining Node Types
 

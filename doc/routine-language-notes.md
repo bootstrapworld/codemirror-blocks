@@ -90,13 +90,11 @@ editingHint={...}>`, a slot drawn beside the edit box, or the children kept.
    round trip keeps but is untidy. _Want:_ a `P.formSexpr(keyword, header,
 bodies)`, and a printer that drops whitespace-only lines.
 
-9. **Comments in the parser are a second parser.** Reading `;` and `#| |#` (so
-   the reader skips them, nested), finding them again with `scanSchemeComments`,
-   deciding which node each goes with (the lines just above it, in the same
-   list), and giving the rest to `placeOrphans` is about 40 lines, and the WeScheme
-   and lambda parsers each did their own. `scanSchemeComments` knows only Scheme's
-   comments. _Want:_ `attachComments(roots, comments, { blockComment })` that does
-   the choosing, and a scanner that takes the comment syntax.
+9. **Comments in the parser were a second parser.** Finding the comments again,
+   deciding which node each goes with, and giving the rest to `placeOrphans` was
+   about 40 lines, and the WeScheme and lambda parsers each did their own. It is
+   now `attachComments(code, roots, { blockComment, syntax })`, which Routine
+   uses (#818): the reader only skips comments.
 
 10. **Types are heavy at the edges.** `Spec.value<number, "value">("value")`
     (the type parameters are in the wrong order for what a person knows: the

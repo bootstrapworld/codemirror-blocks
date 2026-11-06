@@ -115,6 +115,9 @@ export function placeOrphans(
   return result;
 }
 
+const escapeRegExp = (text: string) =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export type ScannedComment = {
   from: Pos;
   to: Pos;
@@ -122,13 +125,44 @@ export type ScannedComment = {
   text: string;
 };
 
+/** How a language writes a comment */
+export type CommentSyntax = {
+  /** what starts a comment that runs to the end of the line (`;`, `//`) */
+  line?: string;
+  /** what starts and ends a comment that can be many lines (`#|` and `|#`) */
+  block?: BlockComment;
+  /**
+   * Whether the code has Scheme's other ways of writing things that look like
+   * the start of a comment: `#\;` (a character), `#;` (a comment of a form) and
+   * `|a;b|` (a symbol with bars). They are not comments, and are left alone.
+   */
+  scheme?: boolean;
+};
+
+/** Scheme's comments: `; line` and `#| block |#` */
+export const SCHEME_COMMENTS: CommentSyntax = {
+  line: ";",
+  block: { open: "#|", close: "|#" },
+  scheme: true,
+};
+
 /**
- * The comments in Scheme-like source text, with the ones in a row (on lines one
- * after the other) as one, as a lexer that gives a node the comments above it
- * sees them: `lastFrom` is where the last of them starts. A comment that
- * follows code on its line is one of its own.
+ * The comments in Scheme-like source text (see {@link scanComments})
  */
 export function scanSchemeComments(code: string): ScannedComment[] {
+  return scanComments(code, SCHEME_COMMENTS);
+}
+
+/**
+ * The comments in source text, with the ones in a row (on lines one after the
+ * other) as one, as a lexer that gives a node the comments above it sees them:
+ * `lastFrom` is where the last of them starts. A comment that follows code on
+ * its line is one of its own. Text in `"quotes"` holds no comment.
+ */
+export function scanComments(
+  code: string,
+  syntax: CommentSyntax
+): ScannedComment[] {
   const found: (ScannedComment & {
     trailing: boolean;
     codeAfter?: boolean;
@@ -160,14 +194,14 @@ export function scanSchemeComments(code: string): ScannedComment[] {
   };
   while (i < code.length) {
     const c = code[i];
-    if (c === ";") {
+    if (syntax.line && code.startsWith(syntax.line, i)) {
       const from = pos();
       const trailing = hasCode;
       let end = code.indexOf("\n", i);
       if (end < 0) end = code.length;
       const text = code
         .slice(i, end)
-        .replace(/^[;\s]*/, "")
+        .replace(new RegExp(`^(${escapeRegExp(syntax.line)}|\\s)*`), "")
         .trim();
       step(end - i);
       found.push({
@@ -178,13 +212,14 @@ export function scanSchemeComments(code: string): ScannedComment[] {
         trailing,
         opener: opened,
       });
-    } else if (c === "#" && code[i + 1] === "|") {
+    } else if (syntax.block && code.startsWith(syntax.block.open, i)) {
+      const { open, close } = syntax.block;
       const from = pos();
       const trailing = hasCode;
-      let end = code.indexOf("|#", i + 2);
-      end = end < 0 ? code.length : end + 2;
+      let end = code.indexOf(close, i + open.length);
+      end = end < 0 ? code.length : end + close.length;
       const text = code
-        .slice(i + 2, end - 2)
+        .slice(i + open.length, end - close.length)
         .trim()
         .replace(/\s+/g, " ");
       step(end - i);
@@ -201,10 +236,14 @@ export function scanSchemeComments(code: string): ScannedComment[] {
       step();
       while (i < code.length && code[i] !== '"') step(code[i] === "\\" ? 2 : 1);
       step();
-    } else if (c === "#" && (code[i + 1] === "\\" || code[i + 1] === ";")) {
+    } else if (
+      syntax.scheme &&
+      c === "#" &&
+      (code[i + 1] === "\\" || code[i + 1] === ";")
+    ) {
       if (code[i + 1] === "\\") code_();
       step(2);
-    } else if (c === "|") {
+    } else if (syntax.scheme && c === "|") {
       code_();
       const end = code.indexOf("|", i + 1);
       step(end < 0 ? code.length - i : end + 1 - i);
@@ -244,4 +283,55 @@ export function scanSchemeComments(code: string): ScannedComment[] {
     previous = c;
   }
   return groups;
+}
+
+type Placed = { node: ASTNode; parent: ASTNode | null };
+const walk = (node: ASTNode, parent: ASTNode | null, into: Placed[]) => {
+  into.push({ node, parent });
+  for (const child of node.children()) walk(child, node, into);
+};
+
+/**
+ * Gives every comment in `code` its place among the nodes a parser has made
+ * (`roots`, with positions), and returns the root nodes, now with comments
+ * among them. A comment on the line just above a node, or on its line, in the
+ * same list, goes with that node (its `options.comment`); any other is a node
+ * of its own, among the elements of the nearest list around it that can hold
+ * one (see {@link placeOrphans}).
+ *
+ * The parser has only to skip comments as it reads (they are found again here,
+ * in `code`), and the language has to say how it writes them.
+ */
+export function attachComments(
+  code: string,
+  roots: ASTNode[],
+  {
+    blockComment,
+    syntax = SCHEME_COMMENTS,
+  }: { blockComment: BlockComment; syntax?: CommentSyntax }
+): ASTNode[] {
+  const all: Placed[] = [];
+  for (const root of roots) walk(root, null, all);
+  const orphans: ASTNode[] = [];
+  for (const c of scanComments(code, syntax)) {
+    const comment = Comment(c.from, c.to, c.text, {
+      blockComment,
+      orphan: true,
+    });
+    // (the nodes are in the order of their starts: the first that starts after
+    // the comment is the one below it)
+    const next = all.find(({ node }) => poscmp(node.from, c.to) >= 0);
+    const adjacent = next && next.node.from.line - c.to.line <= 1;
+    const sameList =
+      next &&
+      (!next.parent ||
+        (poscmp(next.parent.from, c.from) <= 0 &&
+          poscmp(c.to, next.parent.to) <= 0));
+    if (next && adjacent && sameList) {
+      addComment(next.node, comment, blockComment);
+    } else {
+      orphans.push(comment);
+    }
+  }
+  return placeOrphans(roots, orphans, blockComment);
 }
