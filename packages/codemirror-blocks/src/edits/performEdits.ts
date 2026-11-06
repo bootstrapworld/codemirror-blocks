@@ -598,7 +598,13 @@ class EditGroup {
     // Perform the edits on a copy of the shared ancestor node.
     const range = this.ancestor.srcRange();
     const clonedAncestor = cloneNode(this.ancestor);
-    for (const edit of this.edits) {
+    // The deepest first: an edit inside a node is made before the edit that
+    // deletes or replaces that node, which would take away what it works on.
+    // (Edits at one depth keep the order they came in.)
+    const deepestFirst = [...this.edits].sort(
+      (a, b) => b.parent.level - a.parent.level
+    );
+    for (const edit of deepestFirst) {
       edit.makeAstEdit(clonedAncestor);
     }
     // Pretty-print to determine the new text.
@@ -617,6 +623,24 @@ class EditGroup {
  * Group edits by shared ancestor, so that edits so grouped can be made with a
  * single text replacement. Returns a Map from Edit to EditGroup.
  */
+/**
+ * Whether `outer` holds `inner`: the same node, or one of its descendants. The
+ * source ranges alone do not tell, as a node and the one inside it can have the
+ * same range (a call of a call, in a language without brackets of its own).
+ */
+function holds(outer: ASTNode, inner: ASTNode) {
+  if (outer.id === inner.id) return true;
+  if (!srcRangeIncludes(outer.srcRange(), inner.srcRange())) return false;
+  const a = outer.srcRange();
+  const b = inner.srcRange();
+  const same = poscmp(a.from, b.from) === 0 && poscmp(a.to, b.to) === 0;
+  if (!same) return true;
+  for (const node of outer.descendants()) {
+    if (node.id === inner.id) return true;
+  }
+  return false;
+}
+
 function groupEditsByAncestor(edits: AstEdit[]) {
   const editToEditGroup: Map<AstEdit, EditGroup> = new Map();
   // Group n AstEdits into m EditGroups (m <= n)
@@ -626,19 +650,13 @@ function groupEditsByAncestor(edits: AstEdit[]) {
     editToEditGroup.set(edit, group);
     // Check if any existing ancestors are below the parent.
     for (const [e, g] of editToEditGroup) {
-      if (
-        e !== edit &&
-        srcRangeIncludes(edit.parent.srcRange(), g.ancestor.srcRange())
-      ) {
+      if (e !== edit && holds(edit.parent, g.ancestor)) {
         editToEditGroup.set(e, group);
       }
     }
     // Check if the parent is below an existing ancestor.
     for (const [e, g] of editToEditGroup) {
-      if (
-        e !== edit &&
-        srcRangeIncludes(g.ancestor.srcRange(), edit.parent.srcRange())
-      ) {
+      if (e !== edit && holds(g.ancestor, edit.parent)) {
         editToEditGroup.set(edit, g);
         break; // Ancestors are disjoint; can only be contained in one.
       }

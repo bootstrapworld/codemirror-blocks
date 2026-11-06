@@ -10,6 +10,7 @@ import {
   edit_replace,
   performEdits,
 } from "../src/edits/performEdits";
+import lambda from "../src/languages/lambda";
 import wescheme from "../src/languages/wescheme";
 import { AppStore, createAppStore } from "../src/state/store";
 import * as actions from "../src/state/actions";
@@ -601,5 +602,36 @@ describe("focusHint", () => {
         ])
       ).toEqual([undefined, "B"]);
     });
+  });
+});
+
+describe("applyEdits on nodes that have the range of the node that holds them", () => {
+  // (in `f()()` a call holds a call that holds a literal, all of one range: the
+  // edits of such nodes are grouped by the tree, as the ranges say nothing)
+  const code = "f()()";
+  const nodesOf = () => {
+    ast = lambda.buildAST(code);
+    editor.setValue(code);
+    const nodes = [...ast.descendants()];
+    const outer = nodes.find((n) => n.type === "call")!;
+    const inner = [...outer.children()].find((n) => n.type === "call")!;
+    const leaf = [...inner.children()][0];
+    return { outer, inner, leaf };
+  };
+
+  it("really has nodes of one range, one in the other", () => {
+    const { outer, inner, leaf } = nodesOf();
+    expect(inner.srcRange()).toEqual(outer.srcRange());
+    expect(leaf.srcRange()).toEqual(inner.srcRange());
+  });
+
+  it("groups the edits of a node and of the node that holds it, in either order", () => {
+    // (lambda refuses the text that is left, a blank where `f` was: what is
+    // wrong is a refusal, and not an error from the grouping)
+    for (const first of [true, false]) {
+      const { inner, leaf } = nodesOf();
+      const edits = [edit_delete(ast, leaf), edit_delete(ast, inner)];
+      expect(() => apply(first ? edits : edits.reverse())).not.toThrow();
+    }
   });
 });
