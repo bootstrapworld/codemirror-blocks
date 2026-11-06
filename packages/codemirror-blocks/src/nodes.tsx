@@ -8,6 +8,7 @@ import {
   NodeOptions,
   pluralize,
   Pos,
+  withComment,
   withoutOrphans,
 } from "./ast";
 import Node, { COMMENT_PREFIX } from "./components/Node";
@@ -22,31 +23,7 @@ import { poscmp } from "./utils";
  */
 const singleLine = (text: string) => text.replace(/\r?\n/g, "\\n");
 
-// Displays a comment according to specific rules.
-//
-// - `doc` is what's being commented.
-// - `comment` is the comment itself. If it is falsy, there is no comment.
-// - `container` is the ast node that owns the comment. This argument is used to
-//   determine if the comment is a line comment (appears after `container` on
-//   the same line). Line comments will stay as line comments _as long as they
-//   fit on the line_. If they don't, they'll be converted into a comment on the
-//   previous line.
-export function withComment(
-  doc: P.Doc,
-  comment: ASTNode | undefined,
-  container: NodeForSpec
-): P.Doc {
-  if (comment) {
-    // This comment was on the same line as the node. Keep it that way, as long as it fits on a line.
-    if (container && container.to.line == comment.from.line) {
-      return P.ifFlat(P.horz(doc, " ", comment), P.vert(comment, doc));
-    } else {
-      return P.vert(comment, doc);
-    }
-  } else {
-    return doc;
-  }
-}
+export { withComment };
 
 type ASTSpecConfig = { [key: string]: Spec.NodeSpec };
 

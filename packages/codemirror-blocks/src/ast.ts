@@ -62,6 +62,44 @@ export const prettyPrintingWidth = 80;
 // edited between prints (see fakeAstEdits), so nothing is kept after.
 let sharedDocs: Map<object, P.Doc> | null = null;
 
+// Displays a comment according to specific rules.
+//
+// - `doc` is what's being commented.
+// - `comment` is the comment itself. If it is falsy, there is no comment.
+// - `container` is the ast node that owns the comment. This argument is used to
+//   determine if the comment is a line comment (appears after `container` on
+//   the same line). Line comments will stay as line comments _as long as they
+//   fit on the line_. If they don't, they'll be converted into a comment on the
+//   previous line.
+export function withComment(
+  doc: P.Doc,
+  comment: ASTNode | undefined,
+  container: NodeForSpec
+): P.Doc {
+  if (comment) {
+    // This comment was on the same line as the node. Keep it that way, as long as it fits on a line.
+    if (container && container.to.line == comment.from.line) {
+      return P.ifFlat(P.horz(doc, " ", comment), P.vert(comment, doc));
+    } else {
+      return P.vert(comment, doc);
+    }
+  } else {
+    return doc;
+  }
+}
+
+/**
+ * What a node's pretty() gives: a doc, or text that is laid out already (the
+ * printer refuses a newline inside a text, so each line is a text of its own)
+ */
+function docOf(node: ASTNode): P.Doc {
+  const made = node._pretty(node as NodeForSpec);
+  if (typeof made !== "string") return made;
+  const lines = made.split(/\r?\n/).map((line) => P.txt(line));
+  const doc = lines.length === 1 ? lines[0] : P.vertArray(lines);
+  return withComment(doc, node.options.comment, node as NodeForSpec);
+}
+
 type Edges = { parentId?: string; nextId?: string; prevId?: string };
 
 /**
@@ -589,7 +627,10 @@ export type ASTNodeProps<Spec extends NodeSpec = NodeSpec> = {
 
   // Pretty-printing is node-specific, and must be implemented by
   // the ASTNode itself
-  pretty: (node: NodeForSpec<Spec>) => P.Doc;
+  // (or the text itself, when the language has a printer of its own: it is
+  // laid out already, so it is not reflowed to fit the width; its comment is
+  // printed above it, or beside it when it was beside it before)
+  pretty: (node: NodeForSpec<Spec>) => P.Doc | string;
 
   render: (
     props: Omit<NodeProps, "node"> & { node: NodeForSpec<Spec> }
@@ -782,14 +823,14 @@ export class ASTNode<
     if (sharedDocs) {
       let doc = sharedDocs.get(this);
       if (!doc) {
-        doc = this._pretty(this as NodeForSpec);
+        doc = docOf(this);
         sharedDocs.set(this, doc);
       }
       return doc;
     }
     sharedDocs = new Map();
     try {
-      return this._pretty(this as NodeForSpec);
+      return docOf(this);
     } finally {
       sharedDocs = null;
     }
