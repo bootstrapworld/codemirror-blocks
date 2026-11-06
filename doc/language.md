@@ -271,6 +271,15 @@ tree**. If your syntax isn't an s-expression, build a `Doc` with `P.horz`,
 [`ast.tsx`](../packages/codemirror-blocks/src/languages/lambda/ast.tsx) has
 infix operators, calls, and blocks as examples.
 
+If your language already has a printer of its own, `pretty` may return the text
+itself instead of a `Doc`. The text is taken as laid out already (it is not
+reflowed to fit the width, and keeps its own line breaks), and the node's
+comment is printed above it, or beside it if it was beside it before:
+
+```ts
+pretty: (node) => myPrinter.print(node.fields.statement),
+```
+
 To learn how to write `pretty` in general, see the documentation for the
 [pretty printing library](https://github.com/brownplt/pretty-fast-pretty-printer).
 It is exported from `@bootstrapworld/codemirror-blocks` as `Pretty`, so you don't need to
