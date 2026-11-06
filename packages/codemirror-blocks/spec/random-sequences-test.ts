@@ -117,14 +117,18 @@ const blockElement = (node: ASTNode) =>
   document.getElementById(`block-node-${node.id}`);
 
 /** The blocks a user could click on right now: not hidden inside a collapsed block */
-const visibleNodes = (w: World) =>
-  w.cmb
+const visibleNodes = (w: World) => {
+  // (a box left open is committed when the pointer goes down elsewhere, and
+  // the text it adds makes every node picked before that out of date)
+  stopEditing();
+  return w.cmb
     .getAst()
     .rootNodes.flatMap((root) => [...root.descendants()])
     .filter((node) => {
       const el = blockElement(node);
       return !!el && !el.parentElement?.closest('[aria-expanded="false"]');
     });
+};
 
 /** Blocks that can be picked up: not one that is open for editing */
 const draggableNodes = (w: World) =>
@@ -132,13 +136,18 @@ const draggableNodes = (w: World) =>
     (node) => blockElement(node)?.getAttribute("draggable") === "true"
   );
 
-const visibleDropTargets = (w: World) =>
-  dropTargets(w.cmb.getWrapperElement()).filter(
+const visibleDropTargets = (w: World) => {
+  stopEditing(); // (as for visibleNodes)
+  return dropTargets(w.cmb.getWrapperElement()).filter(
     (el) => !el.closest('[aria-expanded="false"]')
   );
+};
 
 /** Everywhere in the document that is not inside a root: where whitespace is */
 const whitespacePositions = (w: World) => {
+  // (a box left open is committed when the pointer goes down elsewhere, and
+  // the text it adds moves everything below it: pick the spots after that)
+  stopEditing();
   const roots = w.cmb.getAst().rootNodes.map((n) => n.srcRange());
   // (a comment is plain text: typing in the middle of `#| c |#` makes a
   // comment that never ends, and the language reports that, as it should; a
