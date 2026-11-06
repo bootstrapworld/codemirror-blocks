@@ -6,7 +6,7 @@ import Args, { listItems } from "../../src/components/Args";
 import Node from "../../src/components/Node";
 import { addLanguage, removeLanguage } from "../../src/languages";
 import { Comment, Literal, createASTSpec } from "../../src/nodes";
-import { list, nodeSpec } from "../../src/nodeSpec";
+import { list, nodeSpec, optional, required } from "../../src/nodeSpec";
 
 /**
  * A small language whose nodes lay their lists out in ways that put drop
@@ -70,6 +70,13 @@ const specs = {
   two: nodeSpec([list("args"), list("body")], { label: "two lists" }),
   plain: nodeSpec([list("args", { orphans: true })], { label: "plain list" }),
   bad: nodeSpec([list("items")], { label: "bad drop target" }),
+  let: nodeSpec([required("symbol"), optional("init")], { label: "let" }),
+  letbody: nodeSpec([required("symbol"), optional("init"), list("body")], {
+    label: "let with a body",
+  }),
+  badopt: nodeSpec([optional("init"), list("items")], {
+    label: "bad optional drop target",
+  }),
 };
 const Layout = createASTSpec(specs);
 
@@ -80,6 +87,14 @@ const Layout = createASTSpec(specs);
 export const bad: { field: string; index: number } = {
   field: "items",
   index: 0,
+};
+
+/**
+ * What the `(badopt)` node draws as its drop target (set by a test before it
+ * parses a program with a `(badopt)` in it): the index can be left out
+ */
+export const badopt: { field: string; index?: number } = {
+  field: "init",
 };
 
 export const Block = (from: Pos, to: Pos, statements: ASTNode[]) =>
@@ -147,6 +162,115 @@ export const Two = (from: Pos, to: Pos, args: ASTNode[], body: ASTNode[]) =>
             ))}
             <DropTarget field="body" index={body.length} />
           </div>
+        </Node>
+      );
+    },
+  });
+
+/** `(let x)` and `(let x 1)`: the initializer is optional, and null when it is not there */
+export const Let = (
+  from: Pos,
+  to: Pos,
+  symbol: ASTNode,
+  init: ASTNode | null | undefined
+) =>
+  Layout.makeNode({
+    from,
+    to,
+    type: "let",
+    fields: { symbol, init },
+    options: {},
+    pretty: (node) =>
+      P.standardSexpr(
+        "let",
+        node.fields.init
+          ? [node.fields.symbol, node.fields.init]
+          : [node.fields.symbol]
+      ),
+    render(props) {
+      const { symbol, init } = props.node.fields;
+      return (
+        <Node {...props}>
+          <span className="let-symbol">{symbol.reactElement()}</span>
+          {init ? (
+            <span className="let-init">{init.reactElement()}</span>
+          ) : (
+            <span className="let-slot">
+              <DropTarget field="init" />
+            </span>
+          )}
+        </Node>
+      );
+    },
+  });
+
+/**
+ * `(letbody x 1 ; a b)`: an optional initializer (undefined, not null, when it
+ * is not there) and a list, side by side in the one node
+ */
+export const LetBody = (
+  from: Pos,
+  to: Pos,
+  symbol: ASTNode,
+  init: ASTNode | null | undefined,
+  body: ASTNode[]
+) =>
+  Layout.makeNode({
+    from,
+    to,
+    type: "letbody",
+    fields: { symbol, init, body },
+    options: {},
+    pretty: (node) =>
+      `(letbody ${[node.fields.symbol, node.fields.init]
+        .filter(Boolean)
+        .map(String)
+        .join(" ")} ; ${node.fields.body.map(String).join(" ")})`,
+    render(props) {
+      const { symbol, init, body } = props.node.fields;
+      return (
+        <Node {...props}>
+          <span className="let-symbol">{symbol.reactElement()}</span>
+          {init ? (
+            <span className="let-init">{init.reactElement()}</span>
+          ) : (
+            <span className="let-slot">
+              <DropTarget field="init" />
+            </span>
+          )}
+          <ul className="let-body">
+            {body.map((item, index) => (
+              // eslint-disable-next-line @eslint-react/no-array-index-key
+              <li key={index}>
+                <DropTarget field="body" index={index} />
+                {item.reactElement()}
+              </li>
+            ))}
+          </ul>
+          <footer className="let-end">
+            <DropTarget field="body" index={body.length} />
+          </footer>
+        </Node>
+      );
+    },
+  });
+
+/** `(badopt)` or `(badopt 1)`: a drop target that a test makes wrong */
+export const BadOpt = (from: Pos, to: Pos, init: ASTNode | null) =>
+  Layout.makeNode({
+    from,
+    to,
+    type: "badopt",
+    fields: { init, items: [] },
+    options: {},
+    pretty: (node) =>
+      node.fields.init ? `(badopt ${node.fields.init})` : "(badopt)",
+    render(props) {
+      const { init } = props.node.fields;
+      return (
+        <Node {...props}>
+          {init ? init.reactElement() : null}
+          <DropTarget field={badopt.field} index={badopt.index} />
         </Node>
       );
     },
@@ -240,6 +364,21 @@ const parse = (code: string): ASTNode[] => {
         return Plain(token.from, close.to, items);
       case "bad":
         return Bad(token.from, close.to);
+      case "badopt":
+        return BadOpt(token.from, close.to, items[0] ?? null);
+      case "let": {
+        if (inBody || items.length < 1 || items.length > 2) {
+          throw new Error("(let name) or (let name value)");
+        }
+        // (null, where the next form has undefined: both are an empty field)
+        return Let(token.from, close.to, items[0], items[1] ?? null);
+      }
+      case "letbody": {
+        if (items.length < 1 || items.length > 2) {
+          throw new Error("(letbody name [value] ; body...)");
+        }
+        return LetBody(token.from, close.to, items[0], items[1], body);
+      }
       default:
         throw new Error(`unknown form ${head.text}`);
     }
@@ -275,6 +414,12 @@ export const shape = (node: ASTNode): string => {
       return `(two ${all(node.fields.args)} ; ${all(node.fields.body)})`;
     case "plain":
       return `(plain ${all(node.fields.args)})`.replace(" )", ")");
+    case "let":
+      return `(let ${all([node.fields.symbol, node.fields.init].filter(Boolean))})`;
+    case "letbody":
+      return `(letbody ${all([node.fields.symbol, node.fields.init].filter(Boolean))} ; ${all(node.fields.body)})`;
+    case "badopt":
+      return "(badopt)";
     default:
       return String(node.fields.value ?? node.type);
   }

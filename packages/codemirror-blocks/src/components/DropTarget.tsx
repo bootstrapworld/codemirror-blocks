@@ -16,7 +16,7 @@ import * as actions from "../state/actions";
 import * as selectors from "../state/selectors";
 import { currentNode } from "../ast";
 import type { ASTNode, AST, DrawnNode } from "../ast";
-import { List } from "../nodeSpec";
+import { List, Optional } from "../nodeSpec";
 import { EditorContext } from "./Context";
 import { useIdState } from "../state/nodeSubscriptions";
 import type { RootState } from "../state/reducers";
@@ -111,17 +111,29 @@ export function findAdjacentDropTargetId(
 function dropTargetMistake(
   node: ASTNode,
   field: string,
-  index: number
+  index: number | undefined
 ): string | null {
   const where = `A DropTarget in the render() of '${node.type}'`;
   if (!field) {
-    return `${where} needs a 'field': the list field of the node that a node dropped there joins.`;
+    return `${where} needs a 'field': the list or optional field of the node that a node dropped there goes in.`;
   }
   const spec = node.spec.childSpecs.find((s) => s.fieldName === field);
+  if (spec instanceof Optional) {
+    if (index !== undefined) {
+      return `${where} names the field '${field}', which holds one node, so its target takes no index (it is for a list).`;
+    }
+    if (spec.getField(node) != null) {
+      return `${where} for the optional field '${field}' is drawn while the field holds a node: draw it only when it is empty.`;
+    }
+    return null;
+  }
   if (!(spec instanceof List)) {
-    return `${where} names the field '${field}', which is not a list field of '${node.type}'. Its fields are ${node.spec.fieldNames().join(", ")}.`;
+    return `${where} names the field '${field}', which is not a list or optional field of '${node.type}'. Its fields are ${node.spec.fieldNames().join(", ")}.`;
   }
   const length = spec.getField(node).length;
+  if (index === undefined) {
+    return `${where} for the list '${field}' needs an index: the place in the list it goes (0 to ${length}).`;
+  }
   if (!Number.isInteger(index) || index < 0 || index > length) {
     return `${where} for the list '${field}' has the index ${String(index)}, which is not a whole number from 0 to ${length}: it is the place in the list it goes (the element it goes before, or ${length} for the end, counting any orphan comments in the list).`;
   }
@@ -129,14 +141,18 @@ function dropTargetMistake(
 }
 
 type DropTargetProps = {
-  /** the list field of the node this is drawn in, that a node dropped here joins */
+  /**
+   * The field of the node this is drawn in that a node dropped here goes in: a
+   * list, or an optional field that is empty.
+   */
   field: string;
   /**
-   * Where in that list it goes: as element `index`, so before the element that
-   * is there now. The end of the list is `list.length`. (The place of a drop
-   * target in the page does not say anything about this.)
+   * For a list: where in it the node goes, as element `index`, so before the
+   * element that is there now. The end of the list is `list.length`. (The place
+   * of a drop target in the page does not say anything about this.) An optional
+   * field has no index.
    */
-  index: number;
+  index?: number;
 };
 
 export const DropTarget = (props: DropTargetProps) => {

@@ -525,13 +525,14 @@ export abstract class Target {
 
 // Insert at a location inside the AST.
 // It is element `index` of the list field `fieldName` of `parentNode` (the
-// index of the element it goes before, or the length of the list for the end).
+// index of the element it goes before, or the length of the list for the end),
+// or, for an optional field that is empty, what it holds (and `index` is left out).
 export class InsertTarget extends Target {
   parent: ASTNode;
   field: string;
-  index: number;
+  index?: number;
   pos: Pos;
-  constructor(parentNode: ASTNode, fieldName: string, index: number) {
+  constructor(parentNode: ASTNode, fieldName: string, index?: number) {
     const pos = new FakeAstInsertion(parentNode, fieldName, index).pos;
     super(pos, pos);
     this.parent = parentNode;

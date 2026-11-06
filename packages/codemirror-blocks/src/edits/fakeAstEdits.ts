@@ -34,8 +34,6 @@ import { playSound, BEEP } from "../utils";
 //
 // This file knows how to perform fake AST edits (steps 2&3).
 
-// Knows how to perform a fake insertion operation, and how to find the inserted
-// child after the AST is re-parsed.
 /** Where in the text element `index` of `list` would go (an empty list has no place of its own: its parent's start) */
 export function insertionPos(
   parent: ASTNode,
@@ -47,30 +45,48 @@ export function insertionPos(
   return parent.srcRange().from;
 }
 
+// Knows how to perform a fake insertion operation, and how to find the inserted
+// child after the AST is re-parsed.
 export class FakeAstInsertion {
   parent: ASTNode;
   pos: Pos;
-  spec: List;
+  spec: List | Optional;
   index: number;
   /**
    * Insert as element `index` of the list field `fieldName` of `parent` (an
-   * index past the end is the end). The position is where that is in the text.
+   * index past the end is the end), or, for an optional field, as what it
+   * holds (it must be empty: `index` is not used). The position is where that
+   * is in the text.
    */
-  constructor(parent: ASTNode, fieldName: string, index: number) {
+  constructor(parent: ASTNode, fieldName: string, index = 0) {
     this.parent = parent;
     // Find the spec that matches the supplied field name.
-    let spec: List | null = null;
+    let spec: List | Optional | null = null;
     for (const s of parent.spec.childSpecs) {
-      if (s instanceof List && s.fieldName === fieldName) {
+      if (
+        (s instanceof List || s instanceof Optional) &&
+        s.fieldName === fieldName
+      ) {
         spec = s;
       }
     }
     if (spec === null) {
       throw new Error(
-        "fakeAstEdits: Failed to find list to insert child into."
+        "fakeAstEdits: Failed to find list or optional field to insert child into."
       );
     }
     this.spec = spec;
+    if (spec instanceof Optional) {
+      if (spec.getField(parent) != null) {
+        throw new Error(
+          `fakeAstEdits: the optional field '${fieldName}' of '${parent.type}' holds a node already.`
+        );
+      }
+      // (an empty slot has no place of its own in the text: the end of its parent)
+      this.index = 0;
+      this.pos = parent.srcRange().to;
+      return;
+    }
     const list = spec.getField(parent);
     this.index = Math.max(0, Math.min(Math.trunc(index), list.length));
     this.pos = insertionPos(parent, list, this.index);
@@ -78,7 +94,11 @@ export class FakeAstInsertion {
 
   insertChild(clonedParent: ASTNode, text: string) {
     const newChildNode = fakeInsertNode(this.pos, this.pos, text);
-    this.spec.getField(clonedParent).splice(this.index, 0, newChildNode);
+    if (this.spec instanceof Optional) {
+      this.spec.setField(clonedParent, newChildNode);
+    } else {
+      this.spec.getField(clonedParent).splice(this.index, 0, newChildNode);
+    }
   }
 
   // Find the inserted child. If more than one was inserted at once, find the
@@ -90,6 +110,9 @@ export class FakeAstInsertion {
     try {
       const newParent = newAST.getNodeById(this.parent.id);
       if (!newParent) return null;
+      if (this.spec instanceof Optional) {
+        return this.spec.getField(newParent) ?? false;
+      }
       const indexFromEnd = this.spec.getField(this.parent).length - this.index;
       const newIndex = this.spec.getField(newParent).length - indexFromEnd - 1;
       return this.spec.getField(newParent)[newIndex];

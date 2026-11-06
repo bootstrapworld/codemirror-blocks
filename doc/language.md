@@ -200,7 +200,7 @@ const MyLangAST = Nodes.createASTSpec({
 There are four kinds of field specs:
 
 - `Spec.required`: the field stores an `ASTNode`, and it must always be present.
-- `Spec.optional`: the field stores either an `ASTNode`, or `null`.
+- `Spec.optional`: the field stores either an `ASTNode`, or nothing (`null`, or `undefined`: a field that is left out is the same).
 - `Spec.list`: the field stores an array of `ASTNode`s.
 - `Spec.value`: the field stores any other kind of value, that does not contain
   any `ASTNode`s. Give it its type with, e.g., `Spec.value<string, "form">("form")`.
@@ -370,7 +370,7 @@ However, if you want to put drop targets in a more interesting arrangement than
 (exported as `DT`). Every one says where it goes with two props:
 
 - `field`: the list field of the node that a node dropped (or typed) there
-  joins;
+  joins (or an empty `optional` field: see below);
 - `index`: its place in that list. A drop target with `index={i}` inserts as
   element `i`, before the element that is there now, and the one after the last
   element has `index={list.length}`.
@@ -400,8 +400,25 @@ out of the layout: the targets after one would get an index that is too low.
 (A drop target says what is wrong, in the console, if its field is not a list
 of the node or its index is not a whole number from 0 to the length of the list.)
 
-A child that holds one node (a `required` or `optional` field) does not take
-drop targets: the node in it is replaced by dropping on it.
+An `optional` field that holds one node (the initializer of `let x;`, say) takes a
+drop target when it is empty. It has no place in a list, so it takes no `index`:
+
+```tsx
+render: (props) => {
+  const { symbol, init } = props.node.fields;
+  return (
+    <Node {...props}>
+      let {symbol.reactElement()}
+      {init ? <> = {init.reactElement()}</> : <DT field="init" />};
+    </Node>
+  );
+};
+```
+
+A node dropped or typed there becomes the field. Draw the target only while the
+field is empty (a filled one is replaced by dropping on its node), and leave the
+`index` off: a drop target says what is wrong, in the console, if it is given an
+index for an optional field, or none for a list.
 
 ---
 

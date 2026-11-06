@@ -55,7 +55,7 @@ export function edit_insert(
   text: string,
   parent: ASTNode,
   field: string,
-  index: number
+  index?: number
 ): EditInterface {
   return new InsertChildEdit(text, parent, field, index);
 }
@@ -478,7 +478,7 @@ class InsertChildEdit extends AstEdit {
   text: string;
   pos: Pos;
   fakeAstInsertion: FakeAstInsertion;
-  constructor(text: string, parent: ASTNode, field: string, index: number) {
+  constructor(text: string, parent: ASTNode, field: string, index?: number) {
     const fakeAstInsertion = new FakeAstInsertion(parent, field, index);
     const { pos } = fakeAstInsertion;
     super(pos, pos, parent);

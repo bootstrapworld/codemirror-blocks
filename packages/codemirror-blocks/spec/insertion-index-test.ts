@@ -2,9 +2,18 @@ import CodeMirror from "codemirror";
 import { AST, ASTNode } from "../src/ast";
 import { findInsertionPlace } from "../src/components/DropTarget";
 import { CodeMirrorFacade } from "../src/editor";
-import { applyEdits, edit_insert } from "../src/edits/performEdits";
+import {
+  applyEdits,
+  edit_insert,
+  performEdits,
+} from "../src/edits/performEdits";
+import type { EditInterface } from "../src/edits/performEdits";
 import { FakeAstInsertion, insertionPos } from "../src/edits/fakeAstEdits";
 import wescheme from "../src/languages/wescheme";
+import { makeLayoutLanguage } from "./helpers/layoutLanguage";
+import * as actions from "../src/state/actions";
+import * as selectors from "../src/state/selectors";
+import { createAppStore } from "../src/state/store";
 import { InsertTarget } from "../src/state/actions";
 
 /**
@@ -215,5 +224,207 @@ describe("findInsertionPlace", () => {
     const ast = build("(f x\n\n#| c |#\n\ny)");
     const list = args(ast.rootNodes[0]);
     expect(findInsertionPlace(ast, list[2])).toMatchObject({ index: 2 });
+  });
+});
+
+describe("an optional field", () => {
+  let editor!: CodeMirrorFacade;
+  let language!: ReturnType<typeof makeLayoutLanguage>;
+  beforeEach(() => {
+    language = makeLayoutLanguage();
+    editor = new CodeMirrorFacade(CodeMirror(document.body, { value: "" }));
+  });
+  afterEach(() => {
+    editor.codemirror.getWrapperElement().remove();
+    language.remove();
+  });
+
+  const parse = (code: string) => language.language.buildAST(code);
+  const init = (node: ASTNode) =>
+    (node.fields as { init?: ASTNode | null }).init;
+
+  /** perform an edit made by `make` on `code`; the text after, and what its focusHint said */
+  const performed = (
+    code: string,
+    make: (ast: AST) => EditInterface
+  ): { text: string; hint: unknown; ast: AST; edit: EditInterface } => {
+    editor.setValue(code);
+    const ast = parse(code);
+    const store = createAppStore();
+    store.dispatch(actions.setAST(ast));
+    const edit = make(ast);
+    const spy = jest.spyOn(edit, "focusHint");
+    const result = store.dispatch(performEdits([edit], editor));
+    if (!result.successful) throw result.exception;
+    return {
+      text: editor.getValue(),
+      hint: spy.mock.results[0]?.value,
+      ast: selectors.getAST(store.getState()),
+      edit,
+    };
+  };
+
+  describe("FakeAstInsertion", () => {
+    it("is for an empty field: index 0, at the end of the parent", () => {
+      const ast = parse("  (let x)");
+      const parent = ast.rootNodes[0];
+      const insertion = new FakeAstInsertion(parent, "init");
+      expect(insertion.index).toBe(0);
+      expect(insertion.pos).toEqual(parent.srcRange().to);
+    });
+
+    it("leaves out an index that is given: there is only the one place", () => {
+      const ast = parse("(let x)");
+      for (const given of [0, 1, 5, -2]) {
+        const insertion = new FakeAstInsertion(ast.rootNodes[0], "init", given);
+        expect(insertion.index).toBe(0);
+        expect(insertion.pos).toEqual(ast.rootNodes[0].srcRange().to);
+      }
+    });
+
+    it("is the same for a field that is undefined, not null", () => {
+      const ast = parse("(letbody x ; a)");
+      expect(init(ast.rootNodes[0])).toBeUndefined();
+      const insertion = new FakeAstInsertion(ast.rootNodes[0], "init");
+      expect(insertion.pos).toEqual(ast.rootNodes[0].srcRange().to);
+    });
+
+    it("throws for a field that holds a node already", () => {
+      const ast = parse("(let x 1)");
+      expect(() => new FakeAstInsertion(ast.rootNodes[0], "init")).toThrow(
+        /optional field 'init' of 'let' holds a node already/
+      );
+    });
+
+    it("throws for a field that is neither a list nor optional", () => {
+      const ast = parse("(let x)");
+      expect(() => new FakeAstInsertion(ast.rootNodes[0], "symbol")).toThrow(
+        /Failed to find list or optional field/
+      );
+    });
+
+    it("still finds the list of a node that has both", () => {
+      const ast = parse("(letbody x ; a b)");
+      const insertion = new FakeAstInsertion(ast.rootNodes[0], "body", 1);
+      expect(insertion.index).toBe(1);
+    });
+
+    it("sets the field of a clone, and finds what it set", () => {
+      const ast = parse("(let x)");
+      const insertion = new FakeAstInsertion(ast.rootNodes[0], "init");
+      const clone = ast.rootNodes[0];
+      insertion.insertChild(clone, "1");
+      expect(init(clone)?.toString()).toBe("1");
+      // (found by the parent, in the AST that has it)
+      expect(insertion.findChild(ast)).toBe(init(clone));
+    });
+
+    it("finds nothing in an AST that has no such parent", () => {
+      const ast = parse("(let x)");
+      const insertion = new FakeAstInsertion(ast.rootNodes[0], "init");
+      expect(insertion.findChild(parse("(let y)"))).toBeNull();
+    });
+  });
+
+  describe("edit_insert", () => {
+    it("sets an empty field", () => {
+      expect(
+        performed("(let x)", (a) => edit_insert("1", a.rootNodes[0], "init"))
+          .text
+      ).toBe("(let x 1)");
+    });
+
+    it("sets a field that is undefined", () => {
+      expect(
+        performed("(letbody x ; a)", (a) =>
+          edit_insert("1", a.rootNodes[0], "init")
+        ).text
+      ).toBe("(letbody x 1 ; a)");
+    });
+
+    it("sets it to an expression", () => {
+      expect(
+        performed("(let x)", (a) =>
+          edit_insert("(plain a b)", a.rootNodes[0], "init")
+        ).text
+      ).toBe("(let x (plain a b))");
+    });
+
+    it("sets a field of a node that is inside another", () => {
+      const { text } = performed("(block a (let x) b)", (a) =>
+        edit_insert(
+          "1",
+          (a.rootNodes[0].fields as { statements: ASTNode[] }).statements[1],
+          "init"
+        )
+      );
+      expect(text).toBe("(block a (let x 1) b)");
+    });
+
+    it("throws for a field that holds a node, as the edit is made", () => {
+      const ast = parse("(let x 1)");
+      expect(() => edit_insert("2", ast.rootNodes[0], "init")).toThrow(
+        /holds a node already/
+      );
+    });
+
+    it("inserting nothing changes nothing, and points nowhere in particular", () => {
+      const done = performed("(let x)", (a) =>
+        edit_insert("  ", a.rootNodes[0], "init")
+      );
+      expect(done.text).toBe("(let x)");
+      expect(done.hint).toBe("fallback");
+    });
+
+    it("points the focus at the node that was set", () => {
+      const { hint } = performed("(let x)", (a) =>
+        edit_insert("1", a.rootNodes[0], "init")
+      );
+      expect((hint as ASTNode).toString()).toBe("1");
+    });
+
+    it("finds the node it set in the AST that results", () => {
+      const { ast, edit } = performed("(let x)", (a) =>
+        edit_insert("1", a.rootNodes[0], "init")
+      );
+      const found = (
+        edit as unknown as { fakeAstInsertion: FakeAstInsertion }
+      ).fakeAstInsertion.findChild(ast);
+      expect(found && (found as ASTNode).toString()).toBe("1");
+      expect(init(ast.rootNodes[0])).toBe(found);
+    });
+  });
+
+  describe("InsertTarget", () => {
+    it("has no index, and the position at the end of its parent", () => {
+      const ast = parse("(let x)");
+      const target = new InsertTarget(ast.rootNodes[0], "init");
+      expect(target.index).toBeUndefined();
+      expect(target.field).toBe("init");
+      expect(target.srcRange()).toEqual({
+        from: ast.rootNodes[0].srcRange().to,
+        to: ast.rootNodes[0].srcRange().to,
+      });
+    });
+
+    it("makes the edit that sets the field", () => {
+      const ast = parse("(let x)");
+      const edit = new InsertTarget(ast.rootNodes[0], "init").toEdit(ast, "1");
+      expect(edit.toString()).toMatch(/^InsertChild /);
+    });
+
+    it("throws for a field that is full", () => {
+      const ast = parse("(let x 1)");
+      expect(() => new InsertTarget(ast.rootNodes[0], "init")).toThrow(
+        /holds a node already/
+      );
+    });
+  });
+
+  describe("findInsertionPlace", () => {
+    it("is null for what an optional field holds: it is not in a list", () => {
+      const ast = parse("(let x 1)");
+      expect(findInsertionPlace(ast, init(ast.rootNodes[0])!)).toBeNull();
+    });
   });
 });

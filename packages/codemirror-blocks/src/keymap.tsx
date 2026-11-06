@@ -183,10 +183,17 @@ const pasteHandler =
         "block-drop-target-" + getDTid(ast, env.node, before)
       );
       const { field, index } = DTnode?.dataset ?? {};
-      if (field && index !== undefined) {
+      if (field) {
         // We're somewhere valid in the AST. Initiate paste on the target field!
         dispatch(
-          paste(env.editor, new InsertTarget(parent, field, Number(index)))
+          paste(
+            env.editor,
+            new InsertTarget(
+              parent,
+              field,
+              index === undefined ? undefined : Number(index)
+            )
+          )
         );
       } else {
         playSound(BEEP);
