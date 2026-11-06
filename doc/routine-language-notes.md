@@ -1,0 +1,178 @@
+# Notes from writing Routine
+
+Routine (`packages/codemirror-blocks/src/languages/routine`) is a small
+language written to use the editor's newer API as a language author would:
+
+| What it shows                                                                             | Where                                                                                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A block drawn from its state (`useNodeState`)                                             | a name shows what is defined before it while it has focus (`ScopeHint`); a collapsed loop says how many steps are hidden (`LoopStatus`); a value says it would be replaced while something is dragged over it (`ReplaceHint`)                                                 |
+| Drop targets that are not beside the elements they are for (`DropTarget` with an `index`) | a loop's steps are a numbered list with a target for each gap in the gutter, and the target for the end of the list is in the loop's head, above all the steps                                                                                                                |
+| `listItems`, with orphan comments in the list                                             | the step numbers skip a comment, the drop-target indices do not                                                                                                                                                                                                               |
+| A drop target for an empty optional field                                                 | `(let spare)` has a target where the start would be; `(if test then)` has one for the `otherwise`, drawn up beside the test and not where the otherwise will be                                                                                                               |
+| `pretty()` that returns text                                                              | the atoms (a number, a name, a text)                                                                                                                                                                                                                                          |
+| What is spoken, made from the label                                                       | the label of each kind of node is declared once in the spec; the aria label (`name minutes`, `calculation +`) and the long descriptions (`a repeat loop, number 4 times, of 2 definitions, 2 show steps and a calculation`) are made from `node.label` and `node.pluralLabel` |
+| Comments                                                                                  | `;` and `#                                                                                                                                                                                                                                                                    |     | #`, on the line above a node (goes with it) or on their own (a block among the steps) |
+
+Try it with `npm start` in `packages/codemirror-blocks` and open
+`/?lang=routine` (the example page shows another language for `?lang=<id>`).
+The tests are `spec/routine-roundtrip-test.ts`, `spec/routine-test.tsx` and
+`e2e/routine.e2e.ts`.
+
+What follows is what felt clunky or too complex while writing it (item 4 of
+#451), and where the editor's styles helped or had to be overridden (item 2).
+Each item says what I did, and what I would want instead.
+
+## API: clunky or too much
+
+Size first. The language is about 500 lines, and three quarters of that is
+boilerplate that every language would repeat. A kind of node costs about 30
+lines before it does anything.
+
+1. **A node says its fields four times.** The spec (`Spec.nodeSpec([required
+("name"), optional("start")])`), the constructor's parameters, the `fields: {
+name, start }` of `makeNode`, and the parser's call. A mistake in one is a
+   type error at best. _Want:_ one declaration that gives the spec, the
+   constructor and the type of the node, e.g. `defineNode({ type: "define",
+label: "definition", fields: { name: required, start: optional }, pretty,
+render })` returning `(from, to, fields, options) => node`.
+
+2. **Every language writes its own `make` wrapper**, to give a node its comment
+   and its aria label (lambda has `makeLambdaNode`, WeScheme calls `withComment`
+   in each node, Routine has `make`). _Want:_ the editor does both: print the
+   comment (it already does for a `pretty()` that returns text, which is
+   inconsistent: a doc has to ask for it), and take the aria label from the spec.
+
+3. **The label is declared per kind of node, the aria label per node.** `label`
+   is in the spec, so it is written once. `ariaLabel` is in `options`, so
+   `name minutes` has to be put in the options of every name that is made (my
+   `make` does it). _Want:_ `naming: { label, ariaLabel?: (node) => string }` in
+   the spec. (Everything built from the label then follows: it did work well. A
+   rename of a label in the spec renames it in `shortDescription` and in every
+   long description.)
+
+4. **No helper to describe what is in a list.** The summary "2 definitions, 2
+   show steps and a calculation" needs the plural label of each kind and a
+   count: `pluralize` and `enumerateList` exist but are `@internal`, and know
+   nothing of labels, so `summarize` in `ast.tsx` is my own. _Want:_ a public
+   `describeKinds(nodes)` (or an option of `describe`) that does this.
+
+5. **A block cannot ask for the AST.** The scope hint has to know the names
+   defined before it. There is no hook: I used `useStore()`, the internal
+   `selectors.getAST` and `currentNode(ast, node)`, and then walked up the
+   parents to find the list that holds a node by hand (`findInsertionPlace` does
+   this, and is not public). _Want:_ `useAST()`, or `useNodeContext()` giving
+   `{ parent, siblings, ancestors }`, read-only, like `useNodeState`.
+
+6. **`useNodeState` has gaps.**
+   - `over` is only true for blocks that a drop _replaces_ (the ones drawn with
+     `normallyEditable`), not for a container: a loop cannot say "drop to add a
+     step" of itself, and I had to move that to the values. A language wants it
+     for any block, or for its drop targets.
+   - There is no `editing`, and while a block is edited its children are _not
+     drawn_ (the box takes their place). So the scope hint, which is the
+     dropdown that #451 item 3 asks for, **is not there while the name is being
+     edited**, which is the moment it is wanted: a click on a name opens its text
+     at once, and the hint only shows after Escape. _Want:_ `<Node
+editingHint={...}>`, a slot drawn beside the edit box, or the children kept.
+
+7. **`Args` draws no container**, and the editor's style lays out the arguments
+   of a call in `.blocks-args`: I had to write `<span className="blocks-args">`
+   around it, from reading the stylesheet. _Want:_ `Args` draws it (or takes a
+   `className`).
+
+8. **Pretty-printing a form with optional children and a list body is manual.**
+   `P.standardSexpr("let", [name, ...(start ? [start] : [])])` needs the spread
+   for an absent child (a `""` leaves a trailing space: `(let spare )`), and
+   `P.lambdaLikeSexpr` takes one body, so a form whose body is a list of steps,
+   one to a line, with the closing parenthesis after the last, is built from
+   `vert`, `horz` and `vertArray` by hand. An orphan comment in such a list
+   prints a blank line with the indentation in it (`"  "`), which is what the
+   round trip keeps but is untidy. _Want:_ a `P.formSexpr(keyword, header,
+bodies)`, and a printer that drops whitespace-only lines.
+
+9. **Comments in the parser are a second parser.** Reading `;` and `#| |#` (so
+   the reader skips them, nested), finding them again with `scanSchemeComments`,
+   deciding which node each goes with (the lines just above it, in the same
+   list), and giving the rest to `placeOrphans` is about 40 lines, and the WeScheme
+   and lambda parsers each did their own. `scanSchemeComments` knows only Scheme's
+   comments. _Want:_ `attachComments(roots, comments, { blockComment })` that does
+   the choosing, and a scanner that takes the comment syntax.
+
+10. **Types are heavy at the edges.** `Spec.value<number, "value">("value")`
+    (the type parameters are in the wrong order for what a person knows: the
+    name is the thing written), `Parameters<typeof RoutineAST.makeNode<T>>[0]`
+    for a wrapper, `fields` typed through the spec so that `node.fields.name` is
+    an `ASTNode` and `node.fields.name.fields.name` is `unknown`. I did not find
+    a way to write the wrapper without the `Parameters<...>` form.
+
+11. **A language registers itself with `require("./style.less")`** in its index.
+    That is the dependence on a bundler of #509, and it has to be there for the
+    language to have any look at all (see the next section).
+
+12. **The example page and the test helpers know one language.** `createDebugging
+Interface(language, code)` was fine, but `editor-example.js` was WeScheme only
+    (I added `?lang=`), and `openInBlockMode` in the e2e helpers had no language
+    (I added a parameter). A new language should be a one-line addition.
+
+13. **An empty toolbar.** A language with no `primitivesFn` gets the search box
+    and nothing else (the empty panel on the left of the editor). Fine for
+    Routine, but nothing says that it is optional or what it would hold.
+
+What was nice: `listItems` made the numbered list with the targets away from the
+steps short and obviously right (the number and the index cannot be mixed up);
+the drop target needing only `field` and `index` (and nothing at all but `field`
+for an empty optional field); `useNodeState` being one hook that returns plain
+booleans; and labels being one place for everything that is spoken.
+
+## Styles: what I took, what I overrode
+
+The editor has no stylesheet that works for a new language, and that is the
+biggest thing. With an empty `style.less` Routine is **bare text**: no frames, no
+drop targets to see, nothing to tell a block from its neighbour. What I did:
+
+- **Took** the editor's default style by importing it inside the language's
+  class (`.blocks-language-routine { @import "../../less/default-style.less"; }`,
+  as WeScheme does). That gives, for any language: the drop target squares and
+  how they look under the pointer and when something is dragged over; selection,
+  focus, the edit box, an error; comments (the balloon, the popup, a comment
+  that is a block of its own); collapsing; the lock. This part worked, and I
+  wanted all of it.
+- **Had to borrow** the frame of a compound block and the pill of a value,
+  because the default style lists WeScheme's kinds of node by name
+  (`.blocks-functionApp, .blocks-ifExpression, ...`). A new language's kinds get
+  none of it until it says so, with LESS `:extend`:
+  ```less
+  .blocks-define,
+  .blocks-show,
+  .blocks-repeat,
+  .blocks-choice,
+  .blocks-call {
+    &:extend(.blocks-functionApp all);
+  }
+  ```
+  which has to be _outside_ the language's block (inside it, the class is put on
+  the selector twice and nothing matches: I lost some time to this). The black
+  strip at the top is `.blocks-operator`, which the render has to put on by
+  hand. _Want:_ the frame, the strip and the pill under names that are not
+  WeScheme's: e.g. `<Node variant="compound">` and `variant="value"` that
+  put `blocks-compound` and `blocks-value`, which the default style then styles.
+  A type name colliding with one of its classes (`name`, `literal`) is also
+  luck, not design.
+- **Overrode** what is Routine's own: the loop's numbered list (resetting `ol`),
+  the gutter, the rows, the branches of a choice; the things that sit in the black
+  strip of a loop and a choice (the number, the white-space targets: light pills
+  on black); the hint chips; and `.routine-body`, a wrapping row for what is in a
+  `let` or a `show`. About 100 lines, all layout.
+- **Wanted from the editor, and did not have:**
+  - The look of a _hint_ or a _badge_ that a block draws about its own state: I
+    made `.routine-hint`. Every language that uses `useNodeState` will.
+  - A way to get all this **without LESS** (#509): the import of
+    `default-style.less` inside a class is how the variables (`@border-radius`,
+    the colors) are passed in. CSS custom properties would do the same with a
+    plain stylesheet and no compile step.
+  - **Reduced motion.** The default style puts `transition: all 0.5s` on blocks,
+    and the editor fades blocks in; there is no `prefers-reduced-motion` anywhere
+    in the style. Besides being a problem for people, it makes a drop target move
+    for half a second after it is drawn: a Playwright click on one _missed_ (the
+    test now waits for the target to stop).
+  - The toolbar's empty state (above).

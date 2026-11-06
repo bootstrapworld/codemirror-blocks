@@ -33,10 +33,15 @@ export const MOD = "ControlOrMeta";
  * Open the example page, put `code` in the editor, and switch to block mode the
  * way a user would (by clicking the toggle button).
  */
-export async function openInBlockMode(page: Page, code: string) {
+export async function openInBlockMode(
+  page: Page,
+  code: string,
+  // (the example page shows another language for `?lang=<id>`)
+  language?: string
+) {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await page.goto(language ? `/?lang=${language}` : "/");
   // If the example page cannot start (a broken build, say), say so at once
   // and show why, rather than letting every test wait out its own timeout.
   await page

@@ -1,0 +1,112 @@
+.blocks-language-routine {
+  // The editor's own style: the frame of a block, the black strip at its top
+  // (`.blocks-operator`), the little squares that drop targets are, how
+  // selection, focus and a drag over a block look, comments, collapsing.
+  @import "../../less/default-style.less";
+
+  @border-radius: 5px;
+  @border-width: 2px;
+  @comment-color: #ddd;
+  @comment-background-color: #444;
+  @border-color: black;
+  @editing-border-color: orange;
+  @error-border-color: red;
+  @drag-drop-background-color: lightblue;
+  @drag-replace-background-color: red;
+
+  // ---- what is Routine's own ----
+  @hint-background: #fff3c4;
+  @hint-border: #e0b100;
+
+  .routine-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+  }
+  .routine-word {
+    font-size: 12px;
+    color: #555;
+  }
+
+  // The head of a loop or a choice is the editor's black strip, with things in it
+  .routine-loop-head,
+  .routine-choice-head {
+    justify-content: flex-start;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    // (the number in it, and the name: pills on black have to be light)
+    .blocks-number,
+    .blocks-name,
+    .blocks-text {
+      background: white;
+    }
+    .blocks-white-space {
+      background: #333;
+      border-color: #888;
+    }
+  }
+
+  // A loop's steps: a numbered list, with a gap before each, in the gutter
+  .routine-steps {
+    list-style: none;
+    margin: 0;
+    padding: 2px 6px 4px 2px;
+  }
+  .routine-step,
+  .routine-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    margin: 2px 0;
+  }
+  .routine-gutter {
+    display: flex;
+    align-items: center;
+    min-width: 44px;
+    justify-content: flex-end;
+  }
+  .routine-step-number {
+    font: bold 12px/20px monospace;
+    color: #777;
+    margin-left: 2px;
+  }
+
+  .routine-branch {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+  }
+
+  // What a block says about its own state (see useNodeState)
+  .routine-hint {
+    font-size: 11px;
+    font-weight: normal;
+    color: #333;
+    background: @hint-background;
+    border: 1px solid @hint-border;
+    border-radius: 8px;
+    padding: 0 6px;
+    margin-left: 6px;
+  }
+}
+
+// The editor's style names the kinds of node of WeScheme (`.blocks-functionApp`
+// and the others), so a new language gets none of it until it says which of its
+// own are the same: these take the frame of a function call, and the pill of a
+// literal. (Outside the block above: `extend` there would put the language's
+// class on the selector twice.)
+.blocks-define,
+.blocks-show,
+.blocks-repeat,
+.blocks-choice,
+.blocks-call {
+  &:extend(.blocks-functionApp all);
+}
+.blocks-number,
+.blocks-text {
+  &:extend(.blocks-literal all);
+}
