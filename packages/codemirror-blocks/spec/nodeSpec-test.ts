@@ -5,7 +5,11 @@ import { list, nodeSpec, optional, required, value } from "../src/nodeSpec";
 
 let literal: ASTNode;
 beforeAll(() => {
-  literal = Literal({ line: 0, ch: 0 }, { line: 0, ch: 1 }, "a");
+  literal = Literal(
+    { line: 0, ch: 0 },
+    { line: 0, ch: 1 },
+    { value: "a", dataType: "unknown" }
+  );
 });
 
 describe("nodeSpec()", () => {

@@ -161,12 +161,10 @@ export default class ExampleParser {
 
   parseLiteral() {
     const literalToken = this.getToken();
-    return Literal(
-      literalToken.from,
-      literalToken.to,
-      literalToken.text,
-      "number"
-    );
+    return Literal(literalToken.from, literalToken.to, {
+      value: literalToken.text,
+      dataType: "number",
+    });
   }
 
   parseExpression() {
@@ -183,16 +181,12 @@ export default class ExampleParser {
       args.push(this.parseNextToken());
     }
     const closeParenToken = this.getToken();
-    return FunctionApp(
-      token.from,
-      closeParenToken.to,
-      Literal(
-        identifierToken.from,
-        identifierToken.to,
-        identifierToken.text,
-        "symbol"
-      ),
-      args
-    );
+    return FunctionApp(token.from, closeParenToken.to, {
+      func: Literal(identifierToken.from, identifierToken.to, {
+        value: identifierToken.text,
+        dataType: "symbol",
+      }),
+      args,
+    });
   }
 }

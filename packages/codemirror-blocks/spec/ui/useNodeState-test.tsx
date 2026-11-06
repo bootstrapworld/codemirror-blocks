@@ -33,7 +33,11 @@ const States = () => {
 };
 
 const lit = (ch: number) =>
-  Literal({ line: 0, ch }, { line: 0, ch: ch + 1 }, "x", "symbol");
+  Literal(
+    { line: 0, ch },
+    { line: 0, ch: ch + 1 },
+    { value: "x", dataType: "symbol" }
+  );
 
 const mount = (inToolbar = false) => {
   const ast = AST.from(lang.id, [lit(0), lit(2)]);

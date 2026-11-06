@@ -21,7 +21,13 @@ beforeAll(() => {
     parse: (code: string) => {
       return code
         .split(/\s+/)
-        .map((s) => Literal({ line: 0, ch: 0 }, { line: 0, ch: 1 }, s));
+        .map((s) =>
+          Literal(
+            { line: 0, ch: 0 },
+            { line: 0, ch: 1 },
+            { value: s, dataType: "unknown" }
+          )
+        );
     },
   });
 });

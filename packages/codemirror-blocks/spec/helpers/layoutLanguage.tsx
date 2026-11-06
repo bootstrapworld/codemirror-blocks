@@ -326,12 +326,10 @@ const parse = (code: string): ASTNode[] => {
       throw new Error("a comment must be in a list");
     }
     if (token.type === "word") {
-      return Literal(
-        token.from,
-        token.to,
-        token.text,
-        /^\d+$/.test(token.text) ? "number" : "symbol"
-      );
+      return Literal(token.from, token.to, {
+        value: token.text,
+        dataType: /^\d+$/.test(token.text) ? "number" : "symbol",
+      });
     }
     if (token.type !== "(") throw new Error(`unexpected ${token.text}`);
     const head = tokens[at++];

@@ -4,7 +4,8 @@ import wescheme from "../src/languages/wescheme";
 import { Literal } from "../src/nodes";
 
 const pos = (line: number, ch: number) => ({ line, ch });
-const lit = (text: string) => Literal(pos(0, 0), pos(0, text.length), text);
+const lit = (text: string) =>
+  Literal(pos(0, 0), pos(0, text.length), { value: text, dataType: "unknown" });
 
 describe("describing lists and counts for a screenreader", () => {
   it("enumerateList joins descriptions with commas, and 'and' before the last", () => {

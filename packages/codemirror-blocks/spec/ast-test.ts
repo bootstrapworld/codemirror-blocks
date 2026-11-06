@@ -24,7 +24,7 @@ describe("The Literal Class", () => {
   it("should be constructed with a value and data type", () => {
     const from = { line: 0, ch: 0 };
     const to = { line: 0, ch: 2 };
-    const literal = Literal(from, to, "11", "number");
+    const literal = Literal(from, to, { value: "11", dataType: "number" });
     expect(literal.from).toBe(from);
     expect(literal.to).toBe(to);
     expect(literal.fields.value).toBe("11");
@@ -33,12 +33,20 @@ describe("The Literal Class", () => {
   });
 
   it("should set a default data type of unknown if one isn't provided", () => {
-    const literal = Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11");
+    const literal = Literal(
+      { line: 0, ch: 0 },
+      { line: 0, ch: 2 },
+      { value: "11", dataType: "unknown" }
+    );
     expect(literal.fields.dataType).toBe("unknown");
   });
 
   it("should only return itself when iterated over", () => {
-    const literal = Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11");
+    const literal = Literal(
+      { line: 0, ch: 0 },
+      { line: 0, ch: 2 },
+      { value: "11", dataType: "unknown" }
+    );
     expect([...literal.descendants()]).toEqual([literal]);
   });
 
@@ -46,8 +54,7 @@ describe("The Literal Class", () => {
     const literal = Literal(
       { line: 0, ch: 0 },
       { line: 0, ch: 2 },
-      "11",
-      "number",
+      { value: "11", dataType: "number" },
       { ariaLabel: "11" }
     );
     expect(literal.options).toEqual({ ariaLabel: "11" });
@@ -68,18 +75,24 @@ describe("The Sequence Class", () => {
     const func1 = Literal(
       { line: 0, ch: 8 },
       { line: 0, ch: 9 },
-      "+",
-      "symbol"
+      { value: "+", dataType: "symbol" }
     );
     const args1 = [
-      Literal({ line: 0, ch: 10 }, { line: 0, ch: 11 }, "1"),
-      Literal({ line: 0, ch: 12 }, { line: 0, ch: 13 }, "2"),
+      Literal(
+        { line: 0, ch: 10 },
+        { line: 0, ch: 11 },
+        { value: "1", dataType: "unknown" }
+      ),
+      Literal(
+        { line: 0, ch: 12 },
+        { line: 0, ch: 13 },
+        { value: "2", dataType: "unknown" }
+      ),
     ];
     expression1 = FunctionApp(
       { line: 0, ch: 7 },
       { line: 0, ch: 14 },
-      func1,
-      args1,
+      { func: func1, args: args1 },
       { ariaLabel: "+ expression" }
     );
 
@@ -87,27 +100,37 @@ describe("The Sequence Class", () => {
     const func2 = Literal(
       { line: 0, ch: 16 },
       { line: 0, ch: 17 },
-      "-",
-      "symbol"
+      { value: "-", dataType: "symbol" }
     );
     const args2 = [
-      Literal({ line: 0, ch: 18 }, { line: 0, ch: 19 }, "2"),
-      Literal({ line: 0, ch: 20 }, { line: 0, ch: 21 }, "3"),
+      Literal(
+        { line: 0, ch: 18 },
+        { line: 0, ch: 19 },
+        { value: "2", dataType: "unknown" }
+      ),
+      Literal(
+        { line: 0, ch: 20 },
+        { line: 0, ch: 21 },
+        { value: "3", dataType: "unknown" }
+      ),
     ];
     expression2 = FunctionApp(
       { line: 0, ch: 15 },
       { line: 0, ch: 22 },
-      func2,
-      args2,
+      { func: func2, args: args2 },
       { ariaLabel: "+ expression" }
     );
 
     // (begin (+ 1 2) (- 2 3))
     from = { line: 0, ch: 0 };
     to = { line: 0, ch: 23 };
-    name = Literal({ line: 0, ch: 1 }, { line: 0, ch: 6 }, "begin", "symbol");
+    name = Literal(
+      { line: 0, ch: 1 },
+      { line: 0, ch: 6 },
+      { value: "begin", dataType: "symbol" }
+    );
     exprs = [expression1, expression2];
-    sequence = Sequence(from, to, exprs, name);
+    sequence = Sequence(from, to, { exprs, name });
   });
 
   it("should be constructed with a list of expressions", () => {
@@ -119,7 +142,7 @@ describe("The Sequence Class", () => {
 
   it("should take an optional options parameter in its constructor", () => {
     const options = { ariaLabel: "sequence" };
-    const newSequence = Sequence(from, to, exprs, name, options);
+    const newSequence = Sequence(from, to, { exprs, name }, options);
     expect(newSequence.options).toEqual(options);
   });
 });
@@ -131,36 +154,71 @@ describe("The FunctionApp Class", () => {
   let nestedExpression: FunctionAppNode;
   let ast: AST;
   beforeEach(() => {
-    func = Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol");
+    func = Literal(
+      { line: 1, ch: 1 },
+      { line: 1, ch: 2 },
+      { value: "+", dataType: "symbol" }
+    );
     args = [
-      Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
-      Literal({ line: 1, ch: 6 }, { line: 0, ch: 8 }, "22"),
+      Literal(
+        { line: 1, ch: 3 },
+        { line: 1, ch: 5 },
+        { value: "11", dataType: "unknown" }
+      ),
+      Literal(
+        { line: 1, ch: 6 },
+        { line: 0, ch: 8 },
+        { value: "22", dataType: "unknown" }
+      ),
     ];
     // (+ 11 22)
     expression = FunctionApp(
       { line: 1, ch: 0 },
       { line: 1, ch: 9 },
-      func,
-      args,
+      { func, args },
       { ariaLabel: "+ expression" }
     );
     // (+ 11 (- 15 35))
     nestedExpression = FunctionApp(
       { line: 1, ch: 0 },
       { line: 1, ch: 9 },
-      Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
-      [
-        Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
-        FunctionApp(
-          { line: 1, ch: 0 },
-          { line: 1, ch: 9 },
-          Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "-", "symbol"),
-          [
-            Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "15"),
-            Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "35"),
-          ]
+      {
+        func: Literal(
+          { line: 1, ch: 1 },
+          { line: 1, ch: 2 },
+          { value: "+", dataType: "symbol" }
         ),
-      ]
+        args: [
+          Literal(
+            { line: 1, ch: 3 },
+            { line: 1, ch: 5 },
+            { value: "11", dataType: "unknown" }
+          ),
+          FunctionApp(
+            { line: 1, ch: 0 },
+            { line: 1, ch: 9 },
+            {
+              func: Literal(
+                { line: 1, ch: 1 },
+                { line: 1, ch: 2 },
+                { value: "-", dataType: "symbol" }
+              ),
+              args: [
+                Literal(
+                  { line: 1, ch: 3 },
+                  { line: 1, ch: 5 },
+                  { value: "15", dataType: "unknown" }
+                ),
+                Literal(
+                  { line: 1, ch: 3 },
+                  { line: 1, ch: 5 },
+                  { value: "35", dataType: "unknown" }
+                ),
+              ],
+            }
+          ),
+        ],
+      }
     );
     // build the AST, thereby assigning parent/child/sibling relationships
     ast = AST.from(language.id, [expression]);
@@ -204,22 +262,46 @@ describe("The FunctionApp Class", () => {
 
 describe("The AST Class", () => {
   it("should take a set of root nodes in its constructor", () => {
-    const nodes = [Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11")];
+    const nodes = [
+      Literal(
+        { line: 0, ch: 0 },
+        { line: 0, ch: 2 },
+        { value: "11", dataType: "unknown" }
+      ),
+    ];
     const ast = AST.from(language.id, nodes);
     expect(ast.rootNodes).toBe(nodes);
   });
 
   it("should add every node to a node map for quick lookup", () => {
     const nodes = [
-      Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11"),
+      Literal(
+        { line: 0, ch: 0 },
+        { line: 0, ch: 2 },
+        { value: "11", dataType: "unknown" }
+      ),
       FunctionApp(
         { line: 1, ch: 0 },
         { line: 1, ch: 9 },
-        Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
-        [
-          Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
-          Literal({ line: 1, ch: 6 }, { line: 0, ch: 8 }, "22"),
-        ]
+        {
+          func: Literal(
+            { line: 1, ch: 1 },
+            { line: 1, ch: 2 },
+            { value: "+", dataType: "symbol" }
+          ),
+          args: [
+            Literal(
+              { line: 1, ch: 3 },
+              { line: 1, ch: 5 },
+              { value: "11", dataType: "unknown" }
+            ),
+            Literal(
+              { line: 1, ch: 6 },
+              { line: 0, ch: 8 },
+              { value: "22", dataType: "unknown" }
+            ),
+          ],
+        }
       ),
     ] as [LiteralNode, FunctionAppNode];
     const ast = AST.from(language.id, nodes);
@@ -235,27 +317,63 @@ describe("The AST Class", () => {
 
   it("idential subtrees should have the same hash", () => {
     const nodes1 = [
-      Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11"),
+      Literal(
+        { line: 0, ch: 0 },
+        { line: 0, ch: 2 },
+        { value: "11", dataType: "unknown" }
+      ),
       FunctionApp(
         { line: 1, ch: 0 },
         { line: 1, ch: 9 },
-        Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
-        [
-          Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
-          Literal({ line: 1, ch: 6 }, { line: 1, ch: 8 }, "22"),
-        ]
+        {
+          func: Literal(
+            { line: 1, ch: 1 },
+            { line: 1, ch: 2 },
+            { value: "+", dataType: "symbol" }
+          ),
+          args: [
+            Literal(
+              { line: 1, ch: 3 },
+              { line: 1, ch: 5 },
+              { value: "11", dataType: "unknown" }
+            ),
+            Literal(
+              { line: 1, ch: 6 },
+              { line: 1, ch: 8 },
+              { value: "22", dataType: "unknown" }
+            ),
+          ],
+        }
       ),
     ];
     const nodes2 = [
-      Literal({ line: 1, ch: 0 }, { line: 1, ch: 2 }, "11"),
+      Literal(
+        { line: 1, ch: 0 },
+        { line: 1, ch: 2 },
+        { value: "11", dataType: "unknown" }
+      ),
       FunctionApp(
         { line: 2, ch: 0 },
         { line: 2, ch: 9 },
-        Literal({ line: 2, ch: 1 }, { line: 2, ch: 2 }, "+", "symbol"),
-        [
-          Literal({ line: 2, ch: 3 }, { line: 2, ch: 5 }, "11"),
-          Literal({ line: 2, ch: 6 }, { line: 2, ch: 8 }, "22"),
-        ]
+        {
+          func: Literal(
+            { line: 2, ch: 1 },
+            { line: 2, ch: 2 },
+            { value: "+", dataType: "symbol" }
+          ),
+          args: [
+            Literal(
+              { line: 2, ch: 3 },
+              { line: 2, ch: 5 },
+              { value: "11", dataType: "unknown" }
+            ),
+            Literal(
+              { line: 2, ch: 6 },
+              { line: 2, ch: 8 },
+              { value: "22", dataType: "unknown" }
+            ),
+          ],
+        }
       ),
     ];
     const ast1 = AST.from(language.id, nodes1);
@@ -265,29 +383,66 @@ describe("The AST Class", () => {
 
   it("idential subtrees with different comments should have different hashes", () => {
     const nodes1 = [
-      Literal({ line: 0, ch: 0 }, { line: 0, ch: 2 }, "11", "Number", {
-        comment: Comment({ line: 0, ch: 4 }, { line: 0, ch: 7 }, "moo"),
-      }),
+      Literal(
+        { line: 0, ch: 0 },
+        { line: 0, ch: 2 },
+        { value: "11", dataType: "Number" },
+        {
+          comment: Comment({ line: 0, ch: 4 }, { line: 0, ch: 7 }, "moo"),
+        }
+      ),
       FunctionApp(
         { line: 1, ch: 0 },
         { line: 1, ch: 9 },
-        Literal({ line: 1, ch: 1 }, { line: 1, ch: 2 }, "+", "symbol"),
-        [
-          Literal({ line: 1, ch: 3 }, { line: 1, ch: 5 }, "11"),
-          Literal({ line: 1, ch: 6 }, { line: 1, ch: 8 }, "22"),
-        ]
+        {
+          func: Literal(
+            { line: 1, ch: 1 },
+            { line: 1, ch: 2 },
+            { value: "+", dataType: "symbol" }
+          ),
+          args: [
+            Literal(
+              { line: 1, ch: 3 },
+              { line: 1, ch: 5 },
+              { value: "11", dataType: "unknown" }
+            ),
+            Literal(
+              { line: 1, ch: 6 },
+              { line: 1, ch: 8 },
+              { value: "22", dataType: "unknown" }
+            ),
+          ],
+        }
       ),
     ];
     const nodes2 = [
-      Literal({ line: 1, ch: 0 }, { line: 1, ch: 2 }, "11"),
+      Literal(
+        { line: 1, ch: 0 },
+        { line: 1, ch: 2 },
+        { value: "11", dataType: "unknown" }
+      ),
       FunctionApp(
         { line: 2, ch: 0 },
         { line: 2, ch: 9 },
-        Literal({ line: 2, ch: 1 }, { line: 2, ch: 2 }, "+", "symbol"),
-        [
-          Literal({ line: 2, ch: 3 }, { line: 2, ch: 5 }, "11"),
-          Literal({ line: 2, ch: 6 }, { line: 2, ch: 8 }, "22"),
-        ]
+        {
+          func: Literal(
+            { line: 2, ch: 1 },
+            { line: 2, ch: 2 },
+            { value: "+", dataType: "symbol" }
+          ),
+          args: [
+            Literal(
+              { line: 2, ch: 3 },
+              { line: 2, ch: 5 },
+              { value: "11", dataType: "unknown" }
+            ),
+            Literal(
+              { line: 2, ch: 6 },
+              { line: 2, ch: 8 },
+              { value: "22", dataType: "unknown" }
+            ),
+          ],
+        }
       ),
     ];
     const ast1 = AST.from(language.id, nodes1);

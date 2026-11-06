@@ -4,7 +4,6 @@ import {
   ASTNode,
   ASTNodeProps,
   enumerateList,
-  NodeForSpec,
   NodeOptions,
   pluralize,
   Pos,
@@ -14,6 +13,8 @@ import {
 import Node, { COMMENT_PREFIX } from "./components/Node";
 import Args from "./components/Args";
 import { DropTarget } from "./components/DropTarget";
+import { defineNode, field } from "./defineNode";
+import type { NodeOf } from "./defineNode";
 import * as Spec from "./nodeSpec";
 import { poscmp } from "./utils";
 
@@ -74,575 +75,390 @@ export function createASTSpec<NodeSpecs extends ASTSpecConfig>(
   };
 }
 
-const specs = {
-  unknown: Spec.nodeSpec([Spec.list("elts")], {
-    label: "unknown expression",
-  }),
-  functionApp: Spec.nodeSpec(
-    [Spec.required("func"), Spec.list("args", { orphans: true })],
-    {
-      label: "function application",
-    }
-  ),
-  identifierList: Spec.nodeSpec([Spec.value("kind"), Spec.list("ids")], {
-    label: "identifier list",
-  }),
-  structDefinition: Spec.nodeSpec(
-    [Spec.required("name"), Spec.required("fields")],
-    { label: "structure definition" }
-  ),
-  variableDefinition: Spec.nodeSpec(
-    [Spec.required("name"), Spec.required("body")],
-    { label: "variable definition" }
-  ),
-  lambdaExpression: Spec.nodeSpec(
-    [Spec.required("args"), Spec.required("body")],
-    { label: "lambda expression" }
-  ),
-  functionDefinition: Spec.nodeSpec(
-    [Spec.required("name"), Spec.required("params"), Spec.required("body")],
-    { label: "function definition" }
-  ),
-  condClause: Spec.nodeSpec(
-    [Spec.required("testExpr"), Spec.list("thenExprs", { orphans: true })],
-    { label: "conditional clause" }
-  ),
-  condExpression: Spec.nodeSpec([Spec.list("clauses")], {
-    label: "conditional expression",
-  }),
-  ifExpression: Spec.nodeSpec(
-    [
-      Spec.required("testExpr"),
-      Spec.required("thenExpr"),
-      Spec.required("elseExpr"),
-    ],
-    { label: "if expression" }
-  ),
-  literal: Spec.nodeSpec(
-    [Spec.value<string, "value">("value"), Spec.value("dataType")],
-    { label: "literal" }
-  ),
-  comment: Spec.nodeSpec([Spec.value<string, "comment">("comment")], {
-    label: "comment",
-  }),
-  blank: Spec.nodeSpec(
-    [Spec.value<string, "value">("value"), Spec.value("dataType")],
-    { label: "blank" }
-  ),
-  sequence: Spec.nodeSpec(
-    [Spec.optional("name"), Spec.list("exprs", { orphans: true })],
-    { label: "sequence" }
-  ),
-};
+export const Unknown = defineNode({
+  type: "unknown",
+  label: "unknown expression",
+  fields: {
+    elts: field.list(),
+  },
+  pretty: (node) =>
+    node.fields.elts.length
+      ? P.standardSexpr(node.fields.elts[0], node.fields.elts.slice(1))
+      : P.txt("()"),
+  render(props) {
+    const firstElt = props.node.fields.elts[0].reactElement();
+    const restElts = props.node.fields.elts.slice(1);
+    return (
+      <Node {...props}>
+        <span className="blocks-operator">{firstElt}</span>
+        <span className="blocks-args">
+          <Args field="elts">{restElts}</Args>
+        </span>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return (
+      `an unknown expression with ${node.fields.elts.length} ${
+        node.fields.elts.length === 1 ? "child" : "children"
+      } ` +
+      node.fields.elts
+        .map(
+          (e, i, elts) =>
+            (elts.length > 1 ? i + 1 + ": " : "") + e.describe(level)
+        )
+        .join(", ")
+    );
+  },
+});
 
-export const CoreAST = createASTSpec(specs);
-
-export function Unknown(
-  from: Pos,
-  to: Pos,
-  elts: ASTNode[],
-  options: NodeOptions = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
-    type: "unknown",
-    fields: { elts },
-    options,
-    pretty: (node) =>
-      withComment(
-        node.fields.elts.length
-          ? P.standardSexpr(node.fields.elts[0], node.fields.elts.slice(1))
-          : P.txt("()"),
-        node.options.comment,
-        node
-      ),
-    render(props) {
-      const firstElt = props.node.fields.elts[0].reactElement();
-      const restElts = props.node.fields.elts.slice(1);
+export type FunctionAppNode = ReturnType<typeof FunctionApp>;
+export const FunctionApp = defineNode({
+  type: "functionApp",
+  label: "function application",
+  fields: {
+    func: field.required(),
+    args: field.list({ orphans: true }),
+  },
+  pretty: (node) => {
+    // An empty pair of brackets with only comments in it has a blank where
+    // the function goes that was never written (it is no wider than nothing):
+    // printing `...` there would make it a call of its own, and a header with
+    // it a different form.
+    const { func, args } = node.fields;
+    const unwritten =
+      func.type === "blank" &&
+      poscmp(func.from, func.to) === 0 &&
+      args.length > 0 &&
+      args.every((a: ASTNode) => a.options.orphan);
+    return P.standardSexpr(unwritten ? "" : func, args);
+  },
+  render(props) {
+    return (
+      <Node {...props}>
+        <span className="blocks-operator">
+          {props.node.fields.func.reactElement()}
+        </span>
+        <span className="blocks-args">
+          <Args field="args">{props.node.fields.args}</Args>
+        </span>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    // (comments among the arguments are not arguments)
+    const args = withoutOrphans(node.fields.args);
+    // if it's the top level, enumerate the args
+    if (node.level - level == 0) {
       return (
-        <Node {...props}>
-          <span className="blocks-operator">{firstElt}</span>
-          <span className="blocks-args">
-            <Args field="elts">{restElts}</Args>
-          </span>
-        </Node>
-      );
-    },
-    longDescription(node, level) {
-      return (
-        `an unknown expression with ${node.fields.elts.length} ${
-          node.fields.elts.length === 1 ? "child" : "children"
-        } ` +
-        node.fields.elts
+        `applying the function ${node.fields.func.describe(
+          level
+        )} to ${pluralize("argument", args)} ` +
+        args
           .map(
-            (e, i, elts) =>
-              (elts.length > 1 ? i + 1 + ": " : "") + e.describe(level)
+            (a, i, args) =>
+              (args.length > 1 ? i + 1 + ": " : "") + a.describe(level)
           )
           .join(", ")
       );
-    },
-  });
-}
-
-export type FunctionAppNode = ReturnType<typeof FunctionApp>;
-export function FunctionApp(
-  from: Pos,
-  to: Pos,
-  func: ASTNode,
-  args: ASTNode[],
-  options: NodeOptions = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
-    type: "functionApp",
-    fields: { func, args },
-    options,
-    pretty: (node) => {
-      // An empty pair of brackets with only comments in it has a blank where
-      // the function goes that was never written (it is no wider than nothing):
-      // printing `...` there would make it a call of its own, and a header with
-      // it a different form.
-      const { func, args } = node.fields;
-      const unwritten =
-        func.type === "blank" &&
-        poscmp(func.from, func.to) === 0 &&
-        args.length > 0 &&
-        args.every((a: ASTNode) => a.options.orphan);
-      return withComment(
-        P.standardSexpr(unwritten ? "" : func, args),
-        node.options.comment,
-        node
-      );
-    },
-    render(props) {
+    }
+    // if we're lower than that (but not so low that `.shortDescription()` is used), use "f of A, B, C" format
+    else
       return (
-        <Node {...props}>
-          <span className="blocks-operator">
-            {props.node.fields.func.reactElement()}
-          </span>
-          <span className="blocks-args">
-            <Args field="args">{props.node.fields.args}</Args>
-          </span>
-        </Node>
+        `${node.fields.func.describe(level)} of ` +
+        args.map((a) => a.describe(level)).join(", ")
       );
-    },
-    longDescription(node, level) {
-      // (comments among the arguments are not arguments)
-      const args = withoutOrphans(node.fields.args);
-      // if it's the top level, enumerate the args
-      if (node.level - level == 0) {
-        return (
-          `applying the function ${node.fields.func.describe(
-            level
-          )} to ${pluralize("argument", args)} ` +
-          args
-            .map(
-              (a, i, args) =>
-                (args.length > 1 ? i + 1 + ": " : "") + a.describe(level)
-            )
-            .join(", ")
-        );
-      }
-      // if we're lower than that (but not so low that `.shortDescription()` is used), use "f of A, B, C" format
-      else
-        return (
-          `${node.fields.func.describe(level)} of ` +
-          args.map((a) => a.describe(level)).join(", ")
-        );
-    },
-  });
-}
+  },
+});
 
-export function IdentifierList(
-  from: Pos,
-  to: Pos,
-  kind: string,
-  ids: ASTNode[],
-  options: NodeOptions = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
-    type: "identifierList",
-    fields: { kind, ids },
-    options,
-    pretty: (node) =>
-      withComment(P.sepBy(node.fields.ids, " "), node.options.comment, node),
-    render(props) {
-      return (
-        <Node {...props}>
-          <span className="blocks-args">
-            <Args field="ids">{props.node.fields.ids}</Args>
-          </span>
-        </Node>
-      );
-    },
-    longDescription(node, level) {
-      return enumerateList(node.fields.ids, level);
-    },
-  });
-}
+export const IdentifierList = defineNode({
+  type: "identifierList",
+  label: "identifier list",
+  fields: {
+    kind: field.value<string>(),
+    ids: field.list(),
+  },
+  pretty: (node) => P.sepBy(node.fields.ids, " "),
+  render(props) {
+    return (
+      <Node {...props}>
+        <span className="blocks-args">
+          <Args field="ids">{props.node.fields.ids}</Args>
+        </span>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return enumerateList(node.fields.ids, level);
+  },
+});
 
-export function StructDefinition(
-  from: Pos,
-  to: Pos,
-  name: ASTNode,
-  fields: ASTNode,
-  options: NodeOptions = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
-    type: "structDefinition",
-    fields: { name, fields },
-    options,
-    pretty: (node) =>
-      withComment(
-        P.lambdaLikeSexpr(
-          "define-struct",
-          node.fields.name,
-          P.horz("(", node.fields.fields, ")")
-        ),
-        node.options.comment,
-        node
-      ),
-    render(props) {
-      const name = props.node.fields.name.reactElement();
-      const fields = props.node.fields.fields.reactElement();
-      return (
-        <Node {...props}>
-          <span className="blocks-operator">
-            define-struct
-            {name}
-          </span>
-          {fields}
-        </Node>
-      );
-    },
-    longDescription(node, level) {
-      return `define ${node.fields.name.describe(
-        level
-      )} to be a structure with ${node.fields.fields.describe(level)}`;
-    },
-  });
-}
+export const StructDefinition = defineNode({
+  type: "structDefinition",
+  label: "structure definition",
+  fields: {
+    name: field.required(),
+    fields: field.required(),
+  },
+  pretty: (node) =>
+    P.lambdaLikeSexpr(
+      "define-struct",
+      node.fields.name,
+      P.horz("(", node.fields.fields, ")")
+    ),
+  render(props) {
+    const name = props.node.fields.name.reactElement();
+    const fields = props.node.fields.fields.reactElement();
+    return (
+      <Node {...props}>
+        <span className="blocks-operator">
+          define-struct
+          {name}
+        </span>
+        {fields}
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return `define ${node.fields.name.describe(
+      level
+    )} to be a structure with ${node.fields.fields.describe(level)}`;
+  },
+});
 
-export function VariableDefinition(
-  from: Pos,
-  to: Pos,
-  name: ASTNode,
-  body: ASTNode,
-  options = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
-    type: "variableDefinition",
-    fields: { name, body },
-    options,
-    pretty: (node) =>
-      withComment(
-        P.lambdaLikeSexpr("define", node.fields.name, node.fields.body),
-        node.options.comment,
-        node
-      ),
-    render(props) {
-      const body = props.node.fields.body.reactElement();
-      const name = props.node.fields.name.reactElement();
-      return (
-        <Node {...props}>
-          <span className="blocks-operator">
-            define
-            {name}
-          </span>
-          <span className="blocks-args">{body}</span>
-        </Node>
-      );
-    },
-    longDescription(node, level) {
-      const insert = ["literal", "blank"].includes(node.fields.body.type)
-        ? ""
-        : "the result of:";
-      return `define ${
-        node.fields.name
-      } to be ${insert} ${node.fields.body.describe(level)}`;
-    },
-  });
-}
+export const VariableDefinition = defineNode({
+  type: "variableDefinition",
+  label: "variable definition",
+  fields: {
+    name: field.required(),
+    body: field.required(),
+  },
+  pretty: (node) =>
+    P.lambdaLikeSexpr("define", node.fields.name, node.fields.body),
+  render(props) {
+    const body = props.node.fields.body.reactElement();
+    const name = props.node.fields.name.reactElement();
+    return (
+      <Node {...props}>
+        <span className="blocks-operator">
+          define
+          {name}
+        </span>
+        <span className="blocks-args">{body}</span>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    const insert = ["literal", "blank"].includes(node.fields.body.type)
+      ? ""
+      : "the result of:";
+    return `define ${
+      node.fields.name
+    } to be ${insert} ${node.fields.body.describe(level)}`;
+  },
+});
 
-export function LambdaExpression(
-  from: Pos,
-  to: Pos,
-  args: ReturnType<typeof IdentifierList>,
-  body: ASTNode,
-  options = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
-    type: "lambdaExpression",
-    fields: { body, args },
-    options,
-    pretty: (node) =>
-      withComment(
-        P.lambdaLikeSexpr(
-          "lambda",
-          P.horz("(", node.fields.args, ")"),
-          node.fields.body
-        ),
-        node.options.comment,
-        node
-      ),
-    render(props) {
-      const args = props.node.fields.args.reactElement();
-      const body = props.node.fields.body.reactElement();
-      return (
-        <Node {...props}>
-          <span className="blocks-operator">&lambda; ({args})</span>
-          <span className="blocks-args">{body}</span>
-        </Node>
-      );
-    },
-    longDescription(node, level) {
-      if (CoreAST.isNodeOfType(node.fields.args, "identifierList")) {
-        return `an anonymous function of ${pluralize(
-          "argument",
-          node.fields.args.fields.ids
-        )}: 
+export const LambdaExpression = defineNode({
+  type: "lambdaExpression",
+  label: "lambda expression",
+  fields: {
+    args: field.required(),
+    body: field.required(),
+  },
+  pretty: (node) =>
+    P.lambdaLikeSexpr(
+      "lambda",
+      P.horz("(", node.fields.args, ")"),
+      node.fields.body
+    ),
+  render(props) {
+    const args = props.node.fields.args.reactElement();
+    const body = props.node.fields.body.reactElement();
+    return (
+      <Node {...props}>
+        <span className="blocks-operator">&lambda; ({args})</span>
+        <span className="blocks-args">{body}</span>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    // (by its type: CoreAST is made of this kind, and cannot be named here)
+    if (node.fields.args.type === "identifierList") {
+      return `an anonymous function of ${pluralize(
+        "argument",
+        node.fields.args.fields.ids as unknown as ASTNode[]
+      )}: 
             ${node.fields.args.describe(level)}, with body:
             ${node.fields.body.describe(level)}`;
-      }
-    },
-  });
-}
+    }
+  },
+});
 
-export function FunctionDefinition(
-  from: Pos,
-  to: Pos,
-  name: ASTNode,
-  params: ASTNode,
-  body: ASTNode,
-  options = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
-    type: "functionDefinition",
-    fields: { name, params, body },
-    options,
-    pretty: (node) =>
-      withComment(
-        P.lambdaLikeSexpr(
-          "define",
-          P.standardSexpr(node.fields.name, [node.fields.params]),
-          node.fields.body
-        ),
-        node.options.comment,
-        node
-      ),
-    render(props) {
-      const params = props.node.fields.params.reactElement();
-      const body = props.node.fields.body.reactElement();
-      const name = props.node.fields.name.reactElement();
-      return (
-        <Node {...props}>
-          <span className="blocks-operator">
-            define ({name} {params})
-          </span>
-          <span className="blocks-args">{body}</span>
-        </Node>
-      );
-    },
-    longDescription(node, level) {
-      return `define ${node.fields.name} to be a function of 
+export const FunctionDefinition = defineNode({
+  type: "functionDefinition",
+  label: "function definition",
+  fields: {
+    name: field.required(),
+    params: field.required(),
+    body: field.required(),
+  },
+  pretty: (node) =>
+    P.lambdaLikeSexpr(
+      "define",
+      P.standardSexpr(node.fields.name, [node.fields.params]),
+      node.fields.body
+    ),
+  render(props) {
+    const params = props.node.fields.params.reactElement();
+    const body = props.node.fields.body.reactElement();
+    const name = props.node.fields.name.reactElement();
+    return (
+      <Node {...props}>
+        <span className="blocks-operator">
+          define ({name} {params})
+        </span>
+        <span className="blocks-args">{body}</span>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return `define ${node.fields.name} to be a function of 
                 ${node.fields.params.describe(level)}, with body:
                 ${node.fields.body.describe(level)}`;
-    },
-  });
-}
+  },
+});
 
-export function CondClause(
-  from: Pos,
-  to: Pos,
-  testExpr: ASTNode,
-  thenExprs: ASTNode[],
-  options = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
-    type: "condClause",
-    fields: { testExpr, thenExprs },
-    options,
-    pretty: (node) =>
-      withComment(
-        P.horz(
-          "[",
-          P.sepBy([node.fields.testExpr].concat(node.fields.thenExprs), " "),
-          "]"
-        ),
-        node.options.comment,
-        node
-      ),
-    render(props) {
-      const testExpr = props.node.fields.testExpr.reactElement();
-      return (
-        <Node {...props}>
+export const CondClause = defineNode({
+  type: "condClause",
+  label: "conditional clause",
+  fields: {
+    testExpr: field.required(),
+    thenExprs: field.list({ orphans: true }),
+  },
+  pretty: (node) =>
+    P.horz(
+      "[",
+      P.sepBy([node.fields.testExpr].concat(node.fields.thenExprs), " "),
+      "]"
+    ),
+  render(props) {
+    const testExpr = props.node.fields.testExpr.reactElement();
+    return (
+      <Node {...props}>
+        <div className="blocks-cond-row">
+          <div className="blocks-cond-predicate">{testExpr}</div>
+          <div className="blocks-cond-result">
+            {props.node.fields.thenExprs.map((thenExpr, index) => (
+              // by place, not id: ids change with every parse
+              // eslint-disable-next-line @eslint-react/no-array-index-key
+              <span key={index}>
+                <DropTarget field="thenExprs" index={index} />
+                {thenExpr.reactElement()}
+              </span>
+            ))}
+            <DropTarget
+              field="thenExprs"
+              index={props.node.fields.thenExprs.length}
+            />
+          </div>
+        </div>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return `condition: if ${node.fields.testExpr.describe(
+      level
+    )}, then, ${withoutOrphans(node.fields.thenExprs).map((te) => te.describe(level))}`;
+  },
+});
+
+export const CondExpression = defineNode({
+  type: "condExpression",
+  label: "conditional expression",
+  fields: {
+    clauses: field.list(),
+  },
+  pretty: (node) => P.beginLikeSexpr("cond", node.fields.clauses),
+  render(props) {
+    const clauses = props.node.fields.clauses.map((clause, index) =>
+      clause.reactElement({ key: index })
+    );
+    return (
+      <Node {...props}>
+        <span className="blocks-operator">cond</span>
+        <div className="blocks-cond-table">{clauses}</div>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return `a conditional expression with ${pluralize(
+      "condition",
+      node.fields.clauses
+    )}: 
+                ${node.fields.clauses.map((c) => c.describe(level))}`;
+  },
+});
+
+export const IfExpression = defineNode({
+  type: "ifExpression",
+  label: "if expression",
+  fields: {
+    testExpr: field.required(),
+    thenExpr: field.required(),
+    elseExpr: field.required(),
+  },
+  pretty: (node) =>
+    P.standardSexpr("if", [
+      node.fields.testExpr,
+      node.fields.thenExpr,
+      node.fields.elseExpr,
+    ]),
+  render(props) {
+    const testExpr = props.node.fields.testExpr.reactElement();
+    const thenExpr = props.node.fields.thenExpr.reactElement();
+    const elseExpr = props.node.fields.elseExpr.reactElement();
+    return (
+      <Node {...props}>
+        <span className="blocks-operator">if</span>
+        <div className="blocks-cond-table">
           <div className="blocks-cond-row">
             <div className="blocks-cond-predicate">{testExpr}</div>
-            <div className="blocks-cond-result">
-              {props.node.fields.thenExprs.map((thenExpr, index) => (
-                // by place, not id: ids change with every parse
-                // eslint-disable-next-line @eslint-react/no-array-index-key
-                <span key={index}>
-                  <DropTarget field="thenExprs" index={index} />
-                  {thenExpr.reactElement()}
-                </span>
-              ))}
-              <DropTarget
-                field="thenExprs"
-                index={props.node.fields.thenExprs.length}
-              />
-            </div>
+            <div className="blocks-cond-result">{thenExpr}</div>
           </div>
-        </Node>
-      );
-    },
-    longDescription(node, level) {
-      return `condition: if ${node.fields.testExpr.describe(
+          <div className="blocks-cond-row">
+            <div className="blocks-cond-predicate blocks-cond-else">else</div>
+            <div className="blocks-cond-result">{elseExpr}</div>
+          </div>
+        </div>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return (
+      `an if expression: if ${node.fields.testExpr.describe(
         level
-      )}, then, ${withoutOrphans(node.fields.thenExprs).map((te) => te.describe(level))}`;
-    },
-  });
-}
-
-export function CondExpression(
-  from: Pos,
-  to: Pos,
-  clauses: ASTNode[],
-  options = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
-    type: "condExpression",
-    fields: { clauses },
-    options,
-    pretty: (node) =>
-      withComment(
-        P.beginLikeSexpr("cond", node.fields.clauses),
-        node.options.comment,
-        node
-      ),
-    render(props) {
-      const clauses = props.node.fields.clauses.map((clause, index) =>
-        clause.reactElement({ key: index })
-      );
-      return (
-        <Node {...props}>
-          <span className="blocks-operator">cond</span>
-          <div className="blocks-cond-table">{clauses}</div>
-        </Node>
-      );
-    },
-    longDescription(node, level) {
-      return `a conditional expression with ${pluralize(
-        "condition",
-        node.fields.clauses
-      )}: 
-                ${node.fields.clauses.map((c) => c.describe(level))}`;
-    },
-  });
-}
-
-export function IfExpression(
-  from: Pos,
-  to: Pos,
-  testExpr: ASTNode,
-  thenExpr: ASTNode,
-  elseExpr: ASTNode,
-  options = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
-    type: "ifExpression",
-    fields: { testExpr, thenExpr, elseExpr },
-    options,
-    pretty: (node) =>
-      withComment(
-        P.standardSexpr("if", [
-          node.fields.testExpr,
-          node.fields.thenExpr,
-          node.fields.elseExpr,
-        ]),
-        node.options.comment,
-        node
-      ),
-    render(props) {
-      const testExpr = props.node.fields.testExpr.reactElement();
-      const thenExpr = props.node.fields.thenExpr.reactElement();
-      const elseExpr = props.node.fields.elseExpr.reactElement();
-      return (
-        <Node {...props}>
-          <span className="blocks-operator">if</span>
-          <div className="blocks-cond-table">
-            <div className="blocks-cond-row">
-              <div className="blocks-cond-predicate">{testExpr}</div>
-              <div className="blocks-cond-result">{thenExpr}</div>
-            </div>
-            <div className="blocks-cond-row">
-              <div className="blocks-cond-predicate blocks-cond-else">else</div>
-              <div className="blocks-cond-result">{elseExpr}</div>
-            </div>
-          </div>
-        </Node>
-      );
-    },
-    longDescription(node, level) {
-      return (
-        `an if expression: if ${node.fields.testExpr.describe(
-          level
-        )}, then ${node.fields.thenExpr.describe(level)} ` +
-        `else ${node.fields.elseExpr.describe(level)}`
-      );
-    },
-  });
-}
+      )}, then ${node.fields.thenExpr.describe(level)} ` +
+      `else ${node.fields.elseExpr.describe(level)}`
+    );
+  },
+});
 
 export type LiteralNode = ReturnType<typeof Literal>;
-export function Literal(
-  from: Pos,
-  to: Pos,
-  value: string,
-  dataType = "unknown",
-  options = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
-    type: "literal",
-    fields: { value, dataType },
-    options,
-    pretty: (node) =>
-      withComment(
-        P.txt(singleLine(node.fields.value)),
-        node.options.comment,
-        node
-      ),
-    render(props) {
-      return (
-        <Node {...props} normallyEditable={true} expandable={false}>
-          <span className={`blocks-literal-${props.node.fields.dataType}`}>
-            {props.node.fields.value}
-          </span>
-        </Node>
-      );
-    },
-  });
-}
+export const Literal = defineNode({
+  type: "literal",
+  label: "literal",
+  fields: { value: field.value<string>(), dataType: field.value<string>() },
+  pretty: (node) => P.txt(singleLine(node.fields.value)),
+  render(props) {
+    return (
+      <Node {...props} normallyEditable={true} expandable={false}>
+        <span className={`blocks-literal-${props.node.fields.dataType}`}>
+          {props.node.fields.value}
+        </span>
+      </Node>
+    );
+  },
+});
 
 /** Scheme's block comment, for a comment whose language does not say */
 const SCHEME_COMMENT = { open: "#|", close: "|#" };
@@ -723,73 +539,75 @@ export function Comment(
   });
 }
 
-export function Blank(
-  from: Pos,
-  to: Pos,
-  value: string,
-  dataType = "blank",
-  options = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
-    type: "blank",
-    fields: { value: value || "...", dataType },
-    options,
-    pretty: (node) =>
-      withComment(
-        P.txt(singleLine(node.fields.value)),
-        node.options.comment,
-        node
-      ),
-    render(props) {
-      return (
-        <Node {...props} normallyEditable={true} expandable={false}>
-          <span className="blocks-literal-symbol" />
-        </Node>
-      );
-    },
-  });
-}
-
-export type SequenceNode = ReturnType<typeof Sequence>;
-export type NodeForSequenceSpec = NodeForSpec<(typeof specs)["sequence"]>;
-export const SequenceProps = {
-  pretty: (node: NodeForSequenceSpec) =>
-    withComment(
-      P.vert(node.fields.name || "", ...node.fields.exprs),
-      node.options.comment,
-      node
-    ),
-  render(props: { node: NodeForSequenceSpec }) {
+export const Blank = defineNode({
+  type: "blank",
+  label: "blank",
+  fields: { value: field.value<string>(), dataType: field.value<string>() },
+  pretty: (node) => P.txt(singleLine(node.fields.value)),
+  render(props) {
     return (
-      <Node {...props}>
-        <span className="blocks-operator">
-          {props.node.fields.name?.reactElement()}
-        </span>
-        <span className="blocks-sequence-exprs">
-          <Args field="exprs">{props.node.fields.exprs}</Args>
-        </span>
+      <Node {...props} normallyEditable={true} expandable={false}>
+        <span className="blocks-literal-symbol" />
       </Node>
     );
   },
-  longDescription(node: NodeForSequenceSpec, level: number) {
-    return `a sequence containing ${enumerateList(node.fields.exprs, level)}`;
-  },
+});
+
+const sequenceFields = {
+  name: field.optional(),
+  exprs: field.list({ orphans: true }),
 };
-export function Sequence(
-  from: Pos,
-  to: Pos,
-  exprs: ASTNode[],
-  name: ASTNode,
-  options = {}
-) {
-  return CoreAST.makeNode({
-    from,
-    to,
+
+/**
+ * A kind of sequence, printed as `pretty` says (a language prints its own
+ * sequences its own way: WeScheme as an s-expression)
+ */
+export const defineSequence = (
+  pretty: (node: NodeOf<typeof sequenceFields>) => P.Doc | string
+) =>
+  defineNode({
     type: "sequence",
-    fields: { name, exprs },
-    options,
-    ...SequenceProps,
+    label: "sequence",
+    fields: sequenceFields,
+    pretty,
+    render(props) {
+      return (
+        <Node {...props}>
+          <span className="blocks-operator">
+            {props.node.fields.name?.reactElement()}
+          </span>
+          <span className="blocks-sequence-exprs">
+            <Args field="exprs">{props.node.fields.exprs}</Args>
+          </span>
+        </Node>
+      );
+    },
+    longDescription(node, level) {
+      return `a sequence containing ${enumerateList(node.fields.exprs, level)}`;
+    },
   });
-}
+export const Sequence = defineSequence((node) =>
+  P.vert(node.fields.name || "", ...node.fields.exprs)
+);
+export type SequenceNode = ReturnType<typeof Sequence>;
+
+const specs = {
+  unknown: Unknown.spec,
+  functionApp: FunctionApp.spec,
+  identifierList: IdentifierList.spec,
+  structDefinition: StructDefinition.spec,
+  variableDefinition: VariableDefinition.spec,
+  lambdaExpression: LambdaExpression.spec,
+  functionDefinition: FunctionDefinition.spec,
+  condClause: CondClause.spec,
+  condExpression: CondExpression.spec,
+  ifExpression: IfExpression.spec,
+  literal: Literal.spec,
+  comment: Spec.nodeSpec([Spec.value<string, "comment">("comment")], {
+    label: "comment",
+  }),
+  blank: Blank.spec,
+  sequence: Sequence.spec,
+};
+
+export const CoreAST = createASTSpec(specs);

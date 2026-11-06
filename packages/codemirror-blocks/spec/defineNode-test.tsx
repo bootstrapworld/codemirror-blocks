@@ -8,7 +8,10 @@ import { List } from "../src/nodeSpec";
 
 const at = (line: number, ch = 0) => ({ line, ch });
 const lit = (text: string, ch = 0) =>
-  Literal(at(0, ch), at(0, ch + text.length), text, "symbol");
+  Literal(at(0, ch), at(0, ch + text.length), {
+    value: text,
+    dataType: "symbol",
+  });
 
 const Let = defineNode({
   type: "let",

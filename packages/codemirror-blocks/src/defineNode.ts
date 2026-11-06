@@ -162,3 +162,8 @@ export function defineNode<F extends Record<string, FieldDeclaration>>(
     });
   return Object.assign(make, { type, spec });
 }
+
+/** A node of the kind that fields declared as `F` make (for a `pretty` that is written apart) */
+export type NodeOf<F extends Record<string, FieldDeclaration>> = NodeForSpec<
+  SpecOf<F>
+>;

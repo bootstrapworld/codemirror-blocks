@@ -90,6 +90,14 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   `edit_insert` take an index in place of a text position. For a node that is
   not an element of a list (the operator of a call), Ctrl-[, Ctrl-] and paste use
   the nearest drop target of its parent.
+- **Breaking: the core nodes are made with their fields by name.**
+  `Nodes.VariableDefinition(from, to, { name, body }, options)` and
+  `Nodes.Literal(from, to, { value, dataType }, options)` (and the same for
+  `FunctionApp`, `IfExpression`, `Sequence` and the others) in place of
+  `Nodes.VariableDefinition(from, to, name, body, options)`: they are written
+  with `defineNode` now, as a language of your own would write them. `Comment` is
+  as it was. `Literal` and `Blank` no longer default their `dataType`, and a `Blank`
+  does not turn an empty value into `"..."`: say what it is.
 - A node's `pretty()` may return its text instead of a pretty-printer `Doc`, for
   a language that has a printer of its own; the text is not reflowed, and the
   node's comment is printed above it (or beside it, if it was).

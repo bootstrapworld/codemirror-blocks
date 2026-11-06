@@ -152,11 +152,17 @@ describe("an unrecognised expression with nothing in it", () => {
   // print, and the printer threw on the missing first one
   const pos = { line: 0, ch: 0 };
   it("prints as empty parentheses", () => {
-    expect(Unknown(pos, pos, []).pretty().display(80)).toEqual(["()"]);
+    expect(Unknown(pos, pos, { elts: [] }).pretty().display(80)).toEqual([
+      "()",
+    ]);
   });
   it("keeps its other parts when it has some", () => {
     const [a, b] = wescheme.buildAST("a b").rootNodes;
-    expect(Unknown(pos, pos, [a, b]).pretty().display(80)).toEqual(["(a b)"]);
+    expect(
+      Unknown(pos, pos, { elts: [a, b] })
+        .pretty()
+        .display(80)
+    ).toEqual(["(a b)"]);
   });
 });
 
@@ -164,7 +170,7 @@ describe("a string literal with a newline in it", () => {
   // (random sequence) the printer refuses text with a newline and threw
   const pos = { line: 0, ch: 0 };
   it("prints on one line, with the newline escaped", () => {
-    const string = Literal(pos, pos, '"a\nb"', "string");
+    const string = Literal(pos, pos, { value: '"a\nb"', dataType: "string" });
     expect(string.pretty().display(80)).toEqual(['"a\\nb"']);
   });
 });

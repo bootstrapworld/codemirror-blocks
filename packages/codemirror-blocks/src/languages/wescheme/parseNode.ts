@@ -187,11 +187,16 @@ export function parseNodeOrNull(
     const loc = locationFromNode(b);
     const name = parseNode(b.first);
     const val = parseNode(b.second);
-    return VariableDefinition(loc.from, loc.to, name, val, {
-      ariaLabel:
-        symbolAria(b.first.val) + " bound to " + val.shortDescription(),
-      comment: comment,
-    });
+    return VariableDefinition(
+      loc.from,
+      loc.to,
+      { name, body: val },
+      {
+        ariaLabel:
+          symbolAria(b.first.val) + " bound to " + val.shortDescription(),
+        comment: comment,
+      }
+    );
   }
 
   const { from, to } = locationFromNode(node);
@@ -204,8 +209,7 @@ export function parseNodeOrNull(
       func = Blank(
         { line: from.line, ch: from.ch + 1 },
         { line: from.line, ch: from.ch + 1 },
-        "...",
-        "blank",
+        { value: "...", dataType: "blank" },
         { ariaLabel: "*blank*" }
       );
       // special case for Unit Tests
@@ -220,23 +224,29 @@ export function parseNodeOrNull(
         );
       }
     }
-    return FunctionApp(from, to, func, children, {
-      ariaLabel: label,
-      comment: comment,
-    });
+    return FunctionApp(
+      from,
+      to,
+      { func, args: children },
+      {
+        ariaLabel: label,
+        comment: comment,
+      }
+    );
   } else if (node instanceof structures.andExpr) {
     const comment = node.comment ? makeComment(node) : undefined;
     return FunctionApp(
       from,
       to,
-      Literal(
-        { line: from.line, ch: from.ch + 1 },
-        { line: from.line, ch: from.ch + 4 },
-        "and",
-        "symbol",
-        { ariaLabel: "and" }
-      ),
-      node.exprs.map(parseNodeOrNull).filter(notNull),
+      {
+        func: Literal(
+          { line: from.line, ch: from.ch + 1 },
+          { line: from.line, ch: from.ch + 4 },
+          { value: "and", dataType: "symbol" },
+          { ariaLabel: "and" }
+        ),
+        args: node.exprs.map(parseNodeOrNull).filter(notNull),
+      },
       { ariaLabel: expressionAria("and", node.exprs), comment: comment }
     );
   } else if (node instanceof structures.orExpr) {
@@ -244,22 +254,22 @@ export function parseNodeOrNull(
     return FunctionApp(
       from,
       to,
-      Literal(
-        { line: from.line, ch: from.ch + 1 },
-        { line: from.line, ch: from.ch + 3 },
-        "or",
-        "symbol",
-        { ariaLabel: "or" }
-      ),
-      node.exprs.map(parseNodeOrNull).filter(notNull),
+      {
+        func: Literal(
+          { line: from.line, ch: from.ch + 1 },
+          { line: from.line, ch: from.ch + 3 },
+          { value: "or", dataType: "symbol" },
+          { ariaLabel: "or" }
+        ),
+        args: node.exprs.map(parseNodeOrNull).filter(notNull),
+      },
       { ariaLabel: expressionAria("or", node.exprs), comment: comment }
     );
   } else if (node instanceof structures.defVar) {
     return VariableDefinition(
       from,
       to,
-      parseNode(node.name),
-      parseNode(node.expr),
+      { name: parseNode(node.name), body: parseNode(node.expr) },
       {
         ...NAMED.valueDefinition,
         ariaLabel: (n: ASTNode) => `${symbolAria(node.name.val)}: ${n.label}`,
@@ -271,8 +281,7 @@ export function parseNodeOrNull(
     const fields = IdentifierList(
       fieldsLoc.from,
       fieldsLoc.to,
-      "fields",
-      node.fields.map(parseNode),
+      { kind: "fields", ids: node.fields.map(parseNode) },
       {
         ariaLabel:
           pluralize("field", node.fields) +
@@ -281,21 +290,25 @@ export function parseNodeOrNull(
         comment: node.fields.comment ? makeComment(node.fields) : undefined,
       }
     );
-    return StructDefinition(from, to, parseNode(node.name), fields, {
-      ariaLabel: (n: ASTNode) =>
-        `${symbolAria(node.name.val)}: ${n.label} with ` +
-        pluralize("field", node.fields) +
-        ": " +
-        enumerateIdentifierList(node.fields),
-      comment: comment,
-    });
+    return StructDefinition(
+      from,
+      to,
+      { name: parseNode(node.name), fields },
+      {
+        ariaLabel: (n: ASTNode) =>
+          `${symbolAria(node.name.val)}: ${n.label} with ` +
+          pluralize("field", node.fields) +
+          ": " +
+          enumerateIdentifierList(node.fields),
+        comment: comment,
+      }
+    );
   } else if (node instanceof structures.defFunc) {
     const argsLoc = locationFromNode(node.args);
     const args = IdentifierList(
       argsLoc.from,
       argsLoc.to,
-      "arguments:",
-      node.args.map(parseNode),
+      { kind: "arguments:", ids: node.args.map(parseNode) },
       {
         ariaLabel:
           pluralize("argument", node.args) +
@@ -307,9 +320,7 @@ export function parseNodeOrNull(
     return FunctionDefinition(
       from,
       to,
-      parseNode(node.name),
-      args,
-      parseNode(node.body),
+      { name: parseNode(node.name), params: args, body: parseNode(node.body) },
       {
         ariaLabel: (n: ASTNode) =>
           `${symbolAria(node.name.val)}: ${n.label} with ` +
@@ -324,8 +335,7 @@ export function parseNodeOrNull(
     const args = IdentifierList(
       argsLoc.from,
       argsLoc.to,
-      "arguments",
-      node.args.map(parseNode),
+      { kind: "arguments", ids: node.args.map(parseNode) },
       {
         ariaLabel:
           pluralize("argument", node.args) +
@@ -334,27 +344,36 @@ export function parseNodeOrNull(
         comment: node.args.comment ? makeComment(node.args) : undefined,
       }
     );
-    return LambdaExpression(from, to, args, parseNode(node.body), {
-      ...NAMED.anonymousFunction,
-      ariaLabel: (n: ASTNode) =>
-        `${n.label} with ` +
-        pluralize("argument", node.args) +
-        ": " +
-        enumerateIdentifierList(node.args),
-      comment: comment,
-    });
+    return LambdaExpression(
+      from,
+      to,
+      { args, body: parseNode(node.body) },
+      {
+        ...NAMED.anonymousFunction,
+        ariaLabel: (n: ASTNode) =>
+          `${n.label} with ` +
+          pluralize("argument", node.args) +
+          ": " +
+          enumerateIdentifierList(node.args),
+        comment: comment,
+      }
+    );
   } else if (node instanceof structures.condExpr) {
-    return CondExpression(from, to, node.clauses.map(parseNode), {
-      ariaLabel: (n: ASTNode) =>
-        `${n.label} with ` + pluralize("clause", node.clauses),
-      comment: comment,
-    });
+    return CondExpression(
+      from,
+      to,
+      { clauses: node.clauses.map(parseNode) },
+      {
+        ariaLabel: (n: ASTNode) =>
+          `${n.label} with ` + pluralize("clause", node.clauses),
+        comment: comment,
+      }
+    );
   } else if (node instanceof structures.couple) {
     return CondClause(
       from,
       to,
-      parseNode(node.first),
-      [parseNode(node.second)],
+      { testExpr: parseNode(node.first), thenExprs: [parseNode(node.second)] },
       { ariaLabel: "condition " + (i + 1) }
     );
   } else if (node instanceof structures.ifExpr) {
@@ -367,31 +386,51 @@ export function parseNodeOrNull(
     predicate.options.ariaLabel = "if, " + predLabel;
     consequence.options.ariaLabel = "then, " + conLabel;
     alternative.options.ariaLabel = "else, " + altLabel;
-    return IfExpression(from, to, predicate, consequence, alternative, {
-      ...NAMED.ifThenElse,
-      comment: comment,
-    });
+    return IfExpression(
+      from,
+      to,
+      { testExpr: predicate, thenExpr: consequence, elseExpr: alternative },
+      {
+        ...NAMED.ifThenElse,
+        comment: comment,
+      }
+    );
   } else if (node instanceof structures.symbolExpr) {
     if (node.val == "...") {
-      return Blank(from, to, node.val, "symbol", {
-        ariaLabel: "blank",
-        comment: comment,
-      });
+      return Blank(
+        from,
+        to,
+        { value: node.val, dataType: "symbol" },
+        {
+          ariaLabel: "blank",
+          comment: comment,
+        }
+      );
     } else if (["true", "false"].includes(node.val)) {
-      return Literal(from, to, node.val, "boolean", {
-        ariaLabel: symbolAria(node.val) + ", a Boolean",
-        comment: comment,
-      });
+      return Literal(
+        from,
+        to,
+        { value: node.val, dataType: "boolean" },
+        {
+          ariaLabel: symbolAria(node.val) + ", a Boolean",
+          comment: comment,
+        }
+      );
     } else {
       // (a symbol with bars in it is printed as it was written: its value
       // has them in other places than the text does, and does not read back)
       const text = String(node.val).includes("|")
         ? sourceText(node.location)
         : node.val;
-      return Literal(from, to, text, "symbol", {
-        ariaLabel: symbolAria(node.val),
-        comment: comment,
-      });
+      return Literal(
+        from,
+        to,
+        { value: text, dataType: "symbol" },
+        {
+          ariaLabel: symbolAria(node.val),
+          comment: comment,
+        }
+      );
     }
   } else if (node instanceof structures.literal) {
     let dataType: string = typeof node.val,
@@ -415,10 +454,15 @@ export function parseNodeOrNull(
         node.val.denominator()
       )}, a Rational`;
     }
-    return Literal(from, to, value, dataType, {
-      ariaLabel: aria,
-      comment: comment,
-    });
+    return Literal(
+      from,
+      to,
+      { value, dataType },
+      {
+        ariaLabel: aria,
+        comment: comment,
+      }
+    );
   } else if (node instanceof structures.comment) {
     return Comment(from, to, node.txt, {
       blockComment: WESCHEME_BLOCK_COMMENT,
@@ -427,14 +471,15 @@ export function parseNodeOrNull(
     return Sequence(
       from,
       to,
-      node.exprs.map(parseNode),
-      Literal(
-        { line: from.line, ch: from.ch + 1 },
-        { line: from.line, ch: from.ch + 6 },
-        "begin",
-        "symbol",
-        { ariaLabel: "begin" }
-      ),
+      {
+        exprs: node.exprs.map(parseNode),
+        name: Literal(
+          { line: from.line, ch: from.ch + 1 },
+          { line: from.line, ch: from.ch + 6 },
+          { value: "begin", dataType: "symbol" },
+          { ariaLabel: "begin" }
+        ),
+      },
       {
         ariaLabel: (n: ASTNode) =>
           `${n.label} containing ${pluralize("expression", node.exprs)}`,
@@ -454,49 +499,58 @@ export function parseNodeOrNull(
     const sequence = Sequence(
       loc.from,
       loc.to,
-      bindings,
-      Literal(
-        { line: from.line, ch: from.ch + 1 },
-        { line: from.line, ch: from.ch + 9 },
-        "bindings",
-        "symbol",
-        { ariaLabel: "bindings" }
-      ),
+      {
+        exprs: bindings,
+        name: Literal(
+          { line: from.line, ch: from.ch + 1 },
+          { line: from.line, ch: from.ch + 9 },
+          { value: "bindings", dataType: "symbol" },
+          { ariaLabel: "bindings" }
+        ),
+      },
       {
         ariaLabel: `${pluralize("binding", node.bindings)}`,
         noOrphans: true,
       }
     );
-    return LetLikeExpr(from, to, form, sequence, parseNode(node.body), {
-      ariaLabel: `${symbolAria(form)} expression with ${pluralize(
-        "binding",
-        node.bindings
-      )}`,
-      comment: comment,
-    });
+    return LetLikeExpr(
+      from,
+      to,
+      { form, bindings: sequence, expr: parseNode(node.body) },
+      {
+        ariaLabel: `${symbolAria(form)} expression with ${pluralize(
+          "binding",
+          node.bindings
+        )}`,
+        comment: comment,
+      }
+    );
   } else if (node instanceof structures.whenUnlessExpr) {
     const loc = locationFromNode(node.exprs),
       form = node.stx.val;
     return WhenUnless(
       from,
       to,
-      form,
-      parseNode(node.predicate),
-      Sequence(
-        loc.from,
-        loc.to,
-        node.exprs.map(parseNode),
-        Literal(
-          { line: from.line, ch: from.ch + 1 },
-          { line: from.line, ch: from.ch + 6 },
-          "begin",
-          "symbol",
-          { ariaLabel: "begin" }
+      {
+        form,
+        predicate: parseNode(node.predicate),
+        exprs: Sequence(
+          loc.from,
+          loc.to,
+          {
+            exprs: node.exprs.map(parseNode),
+            name: Literal(
+              { line: from.line, ch: from.ch + 1 },
+              { line: from.line, ch: from.ch + 6 },
+              { value: "begin", dataType: "symbol" },
+              { ariaLabel: "begin" }
+            ),
+          },
+          {
+            ariaLabel: `${pluralize("expression", node.exprs)}`,
+          }
         ),
-        {
-          ariaLabel: `${pluralize("expression", node.exprs)}`,
-        }
-      ),
+      },
       { ariaLabel: `${symbolAria(form)} expression`, comment: comment }
     );
   } else if (node instanceof structures.unsupportedExpr) {
@@ -506,7 +560,11 @@ export function parseNodeOrNull(
     const unknown = Unknown(
       from,
       to,
-      (node.val as structures.Program[]).map(parseNodeOrNull).filter(notNull),
+      {
+        elts: (node.val as structures.Program[])
+          .map(parseNodeOrNull)
+          .filter(notNull),
+      },
       {
         ...NAMED.invalid,
         comment: comment,
@@ -514,15 +572,25 @@ export function parseNodeOrNull(
     );
     return unknown;
   } else if (node instanceof structures.requireExpr) {
-    return FunctionApp(from, to, parseNode(node.stx), [parseNode(node.spec)], {
-      ariaLabel: "require " + node.spec.val,
-      comment: comment,
-    });
+    return FunctionApp(
+      from,
+      to,
+      { func: parseNode(node.stx), args: [parseNode(node.spec)] },
+      {
+        ariaLabel: "require " + node.spec.val,
+        comment: comment,
+      }
+    );
   }
   // No block exists for this form (quote, local, case, provide, ...): keep its
   // source text, so that switching to blocks and back never loses code.
-  return Literal(from, to, sourceText(node.location), "unsupported", {
-    ariaLabel: "unsupported expression",
-    comment: comment,
-  });
+  return Literal(
+    from,
+    to,
+    { value: sourceText(node.location), dataType: "unsupported" },
+    {
+      ariaLabel: "unsupported expression",
+      comment: comment,
+    }
+  );
 }

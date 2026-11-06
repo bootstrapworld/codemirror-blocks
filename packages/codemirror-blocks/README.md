@@ -52,10 +52,15 @@ if (node instanceof structures.defVar) {
   const name = parseNode(node.name);
   const expr = parseNode(node.expr);
   const comment = Nodes.Comment(cmntFrom, cmntTo, cmntText);
-  return Nodes.VariableDefinition(from, to, name, expr, {
-    ariaLabel: node.name.val + ": a value definition",
-    comment,
-  });
+  return Nodes.VariableDefinition(
+    from,
+    to,
+    { name, body: expr },
+    {
+      ariaLabel: node.name.val + ": a value definition",
+      comment,
+    }
+  );
 }
 ```
 

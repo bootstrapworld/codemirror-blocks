@@ -35,7 +35,9 @@ describe("a pretty() that gives back text", () => {
 
   it("is embedded in the doc of the node around it", () => {
     const inner = printed("x = 1;");
-    const outer = Unknown(at(0), at(0, 10), [inner, printed("y = 2;")]);
+    const outer = Unknown(at(0), at(0, 10), {
+      elts: [inner, printed("y = 2;")],
+    });
     expect(outer.toString()).toBe("(x = 1; y = 2;)");
   });
 

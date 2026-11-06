@@ -74,18 +74,48 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
         : Prog(from, to, body, options);
     }
     case "num":
-      return Literal(from, to, String(node.value), "number", options);
+      return Literal(
+        from,
+        to,
+        { value: String(node.value), dataType: "number" },
+        options
+      );
     case "str":
-      return Literal(from, to, quote(node.value), "string", options);
+      return Literal(
+        from,
+        to,
+        { value: quote(node.value), dataType: "string" },
+        options
+      );
     case "bool":
-      return Literal(from, to, String(node.value), "bool", options);
+      return Literal(
+        from,
+        to,
+        { value: String(node.value), dataType: "bool" },
+        options
+      );
     case "var":
-      return Literal(from, to, node.value, "symbol", options);
+      return Literal(
+        from,
+        to,
+        { value: node.value, dataType: "symbol" },
+        options
+      );
     case "literal":
       // variable names, as read by `parseVarname`
-      return Literal(from, to, node.name.value, "symbol", options);
+      return Literal(
+        from,
+        to,
+        { value: node.name.value, dataType: "symbol" },
+        options
+      );
     case "raw":
-      return Literal(from, to, "js:raw " + quote(node.code), "raw", options);
+      return Literal(
+        from,
+        to,
+        { value: "js:raw " + quote(node.code), dataType: "raw" },
+        options
+      );
     case "def":
       return VarDef(
         from,
@@ -98,7 +128,9 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
       return Lambda(
         from,
         to,
-        node.name ? Literal(from, from, node.name, "symbol") : null,
+        node.name
+          ? Literal(from, from, { value: node.name, dataType: "symbol" })
+          : null,
         all(node.vars),
         convert(node.body, loc),
         options

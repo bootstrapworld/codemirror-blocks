@@ -160,14 +160,21 @@ Every node also takes an `options` object. The ones you will use are:
 - `isNotEditable`: prevents the node from being edited.
 
 The core node types (`Nodes.Literal`, `Nodes.FunctionApp`,
-`Nodes.VariableDefinition`, `Nodes.IfExpression`, ...) are constructor
-functions with the same `(from, to, ...fields, options)` shape. For example:
+`Nodes.VariableDefinition`, `Nodes.IfExpression`, ...) are made as every node
+is, with `(from, to, fields, options)`, where `fields` is an object with the
+fields of the node by name (see `defineNode`, below). For example:
 
 ```ts
-Nodes.VariableDefinition(from, to, name, body, {
-  ariaLabel: "motto: a value definition",
-  comment,
-});
+Nodes.VariableDefinition(
+  from,
+  to,
+  { name, body },
+  {
+    ariaLabel: "motto: a value definition",
+    comment,
+  }
+);
+Nodes.Literal(from, to, { value: "42", dataType: "number" });
 ```
 
 ### Comments

@@ -7,7 +7,7 @@ const BLOCK = { open: "/*", close: "*/" };
 
 const at = (line: number, ch = 0) => ({ line, ch });
 const lit = (line: number, text: string) =>
-  Literal(at(line), at(line, text.length), text, "symbol");
+  Literal(at(line), at(line, text.length), { value: text, dataType: "symbol" });
 
 describe("scanComments, for a language of its own", () => {
   it("finds the comments of the syntax it is given", () => {
@@ -88,8 +88,8 @@ describe("attachComments", () => {
   it("looks at the nodes of the list the comment is in, and not at another's", () => {
     // (the nodes have no ids yet: they are told apart by being the same node)
     const a = lit(0, "a");
-    const b = Literal(at(0, 6), at(0, 7), "b", "symbol");
-    const inner = Unknown(at(0, 2), at(0, 10), [b]);
+    const b = Literal(at(0, 6), at(0, 7), { value: "b", dataType: "symbol" });
+    const inner = Unknown(at(0, 2), at(0, 10), { elts: [b] });
     const placed = attachComments("a (/* c */ b)", [a, inner], options);
     expect(placed).toHaveLength(2);
     expect(a.options.comment).toBeUndefined();
@@ -97,9 +97,9 @@ describe("attachComments", () => {
   });
 
   it("gives a comment after code to the code in its list, though another node follows on the line", () => {
-    const x = Literal(at(0, 3), at(0, 4), "x", "symbol");
-    const y = Literal(at(0, 17), at(0, 18), "y", "symbol");
-    const call = Unknown(at(0, 0), at(0, 19), [x, y]);
+    const x = Literal(at(0, 3), at(0, 4), { value: "x", dataType: "symbol" });
+    const y = Literal(at(0, 17), at(0, 18), { value: "y", dataType: "symbol" });
+    const call = Unknown(at(0, 0), at(0, 19), { elts: [x, y] });
     attachComments("(f x /* c */ y)", [call], options);
     expect(x.options.comment?.fields.comment).toBe("c");
     expect(y.options.comment).toBeUndefined();

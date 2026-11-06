@@ -23,9 +23,14 @@ const renderWithContext = (el: React.ReactElement) =>
 
 it("renders a draggable span with various aria properties", () => {
   const ast = AST.from(testLang.id, [
-    Literal({ line: 0, ch: 0 }, { line: 0, ch: 1 }, "someVar", "symbol", {
-      ariaLabel: "the someVar variable",
-    }),
+    Literal(
+      { line: 0, ch: 0 },
+      { line: 0, ch: 1 },
+      { value: "someVar", dataType: "symbol" },
+      {
+        ariaLabel: "the someVar variable",
+      }
+    ),
   ]);
   const result = renderWithContext(
     <Node node={ast.rootNodes[0]}>This is a literal for someVar</Node>
@@ -55,10 +60,15 @@ it("renders a draggable span with various aria properties", () => {
 
 it("renders a comment that is associated with a node", () => {
   const ast = AST.from(testLang.id, [
-    Literal({ line: 0, ch: 0 }, { line: 0, ch: 1 }, "someVar", "symbol", {
-      ariaLabel: "the someVar variable",
-      comment: Comment({ line: 0, ch: 2 }, { line: 0, ch: 7 }, "hello"),
-    }),
+    Literal(
+      { line: 0, ch: 0 },
+      { line: 0, ch: 1 },
+      { value: "someVar", dataType: "symbol" },
+      {
+        ariaLabel: "the someVar variable",
+        comment: Comment({ line: 0, ch: 2 }, { line: 0, ch: 7 }, "hello"),
+      }
+    ),
   ]);
   const result = renderWithContext(
     <Node node={ast.rootNodes[0]}>This is a literal for someVar</Node>

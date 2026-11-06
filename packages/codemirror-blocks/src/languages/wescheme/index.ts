@@ -14,16 +14,28 @@ function getASTNodeForPrimitive(primitive: Primitive) {
   return Nodes.FunctionApp(
     dummyLoc,
     dummyLoc,
-    Nodes.Literal(dummyLoc, dummyLoc, primitive.name, "symbol"),
-    primitive.argumentTypes.map(() => Nodes.Blank(dummyLoc, dummyLoc, "")),
+    {
+      func: Nodes.Literal(dummyLoc, dummyLoc, {
+        value: primitive.name,
+        dataType: "symbol",
+      }),
+      args: primitive.argumentTypes.map(() =>
+        Nodes.Blank(dummyLoc, dummyLoc, { value: "...", dataType: "blank" })
+      ),
+    },
     { ariaLabel: primitive.name + " expression" }
   );
 }
 
 function getLiteralNodeForPrimitive(primitive: Primitive) {
-  return Nodes.Literal(dummyLoc, dummyLoc, primitive.name, "symbol", {
-    ariaLabel: primitive.name,
-  });
+  return Nodes.Literal(
+    dummyLoc,
+    dummyLoc,
+    { value: primitive.name, dataType: "symbol" },
+    {
+      ariaLabel: primitive.name,
+    }
+  );
 }
 
 function getExceptionMessage(e: unknown) {
