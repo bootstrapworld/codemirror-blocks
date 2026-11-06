@@ -8,7 +8,7 @@ import type { NodeNaming } from "./naming";
 // Its constructor expects a list of:
 //
 // - required: an ASTNode.
-// - optional: either an ASTNode, or `null`.
+// - optional: either an ASTNode, or `null` (or `undefined`: left out).
 // - list: an array of ASTNodes.
 // - value: an ordinary value that does not contain an ASTNode.
 
@@ -277,13 +277,14 @@ export class Required<FieldName extends string = string> extends BaseSpec<
 
 export class Optional<FieldName extends string = string> extends BaseSpec<
   FieldName,
-  ASTNode | null
+  ASTNode | null | undefined
 > {
   validate(parent: NodeLike) {
     const child = this.getField(parent);
-    if (child !== null && !(child instanceof ASTNode)) {
+    // (a field that is left out is as empty as one that is null)
+    if (child != null && !(child instanceof ASTNode)) {
       throw new Error(
-        `Expected the optional field '${this.fieldName}' of '${parent.type}' to contain an ASTNode or null.`
+        `Expected the optional field '${this.fieldName}' of '${parent.type}' to contain an ASTNode, null or undefined.`
       );
     }
   }

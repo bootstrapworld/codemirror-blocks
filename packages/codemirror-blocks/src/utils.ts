@@ -50,7 +50,8 @@ export function resetUniqueIdGenerator() {
 // (see https://stackoverflow.com/a/7616484/12026982 and
 // https://anchortagdev.com/consistent-object-hashing-using-stable-stringification/ )
 export function hashObject(obj: unknown) {
-  const str = objToStableString(obj);
+  // (undefined has no stable string of its own, and a value field may be it)
+  const str = objToStableString(obj) ?? "undefined";
   let hash = 0,
     i,
     chr;

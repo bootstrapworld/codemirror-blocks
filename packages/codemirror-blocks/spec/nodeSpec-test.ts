@@ -1,5 +1,6 @@
 import { ASTNode, NodeSpec as Spec } from "../src/CodeMirrorBlocks";
 import { Literal } from "../src/nodes";
+import * as P from "pretty-fast-pretty-printer";
 import { list, nodeSpec, optional, required, value } from "../src/nodeSpec";
 
 let literal: ASTNode;
@@ -58,23 +59,25 @@ describe("required()", () => {
 });
 
 describe("optional()", () => {
-  it("requires a the field be an ast node or null", () => {
+  it("requires a the field be an ast node, null or undefined", () => {
     const spec = optional("someField");
-    expect(() =>
-      spec.validate({ type: "test-node", fields: {} })
-    ).toThrowErrorMatchingInlineSnapshot(
-      `"Expected the optional field 'someField' of 'test-node' to contain an ASTNode or null."`
-    );
     expect(() =>
       spec.validate({
         type: "test-node",
         fields: { someField: "not-an-ast-node" },
       })
     ).toThrowErrorMatchingInlineSnapshot(
-      `"Expected the optional field 'someField' of 'test-node' to contain an ASTNode or null."`
+      `"Expected the optional field 'someField' of 'test-node' to contain an ASTNode, null or undefined."`
     );
     expect(() =>
       spec.validate({ type: "test-node", fields: { someField: null } })
+    ).not.toThrow();
+    // (a field that is left out, or set to undefined, is as empty as null)
+    expect(() =>
+      spec.validate({ type: "test-node", fields: {} })
+    ).not.toThrow();
+    expect(() =>
+      spec.validate({ type: "test-node", fields: { someField: undefined } })
     ).not.toThrow();
     expect(() =>
       spec.validate({ type: "test-node", fields: { someField: literal } })
@@ -155,5 +158,46 @@ describe("value()", () => {
         fields: { someField: 123 },
       })
     ).not.toThrow();
+  });
+});
+
+describe("a node with an optional field left empty", () => {
+  // (a language's `let x;` has no initializer; its fields may also carry
+  // data the spec does not name)
+  const make = (fields: Record<string, unknown>) =>
+    new ASTNode({
+      from: { line: 0, ch: 0 },
+      to: { line: 0, ch: 6 },
+      type: "let",
+      fields,
+      options: {},
+      spec: nodeSpec([required("symbol"), optional("init"), value("note")]),
+      pretty: () => P.txt("let x;"),
+      render: () => null,
+    } as never);
+
+  it("is built whether the field is null, undefined or left out", () => {
+    for (const fields of [
+      { symbol: literal, init: null },
+      { symbol: literal, init: undefined },
+      { symbol: literal },
+    ]) {
+      const node = make(fields);
+      expect([...node.children()]).toEqual([literal]);
+    }
+  });
+
+  it("hashes the same however the field is empty", () => {
+    const hashes = [
+      make({ symbol: literal, init: null }).hash,
+      make({ symbol: literal, init: undefined }).hash,
+      make({ symbol: literal }).hash,
+    ];
+    expect(new Set(hashes).size).toBe(1);
+  });
+
+  it("is built with properties the spec does not name", () => {
+    const node = make({ symbol: literal, init: null, scope: ["x", "y"] });
+    expect(node.fields.scope).toEqual(["x", "y"]);
   });
 });
