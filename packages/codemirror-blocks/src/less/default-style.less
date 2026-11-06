@@ -356,6 +356,25 @@
   z-index: 999;
 }
 
+// The badge of a node that has a comment: a small balloon on the corner of
+// the node, beside it (see Node.tsx)
+.blocks-comment-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.blocks-comment-badge {
+  position: absolute;
+  top: 3px;
+  right: -8px;
+  font-size: 11px;
+  line-height: 1;
+  transform: translate(40%, -50%);
+  pointer-events: none;
+  user-select: none;
+  z-index: 3;
+  opacity: 0.5;
+}
+
 .blocks-comment::before {
   content: "";
   width: 0px;
@@ -373,7 +392,7 @@
 
 // (the popup is held at its top edge when it would go off the top of the editor)
 .blocks-comment.blocks-comment-below:not(.blocks-comment-editing) {
-  top: 0;
+  top: 2px; // (the node's own margin: its top edge, not the wrapper's)
   bottom: auto;
   margin-bottom: 0;
 }

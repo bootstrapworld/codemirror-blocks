@@ -66,38 +66,49 @@ it("renders a comment that is associated with a node", () => {
   expect(result.container).toMatchInlineSnapshot(`
    <div>
      <span
-       aria-expanded="true"
-       aria-label="the someVar variable"
-       aria-labelledby="block-node-1 block-node-1-comment"
-       aria-level="1"
-       aria-posinset="1"
-       aria-selected="false"
-       aria-setsize="1"
-       class="blocks-literal blocks-node"
-       data-cmb-drag-source=""
-       id="block-node-1"
-       role="treeitem"
-       style=""
-       tabindex="-1"
+       class="blocks-comment-wrap"
+       role="presentation"
      >
-       This is a literal for someVar
+       <span
+         aria-expanded="true"
+         aria-label="the someVar variable"
+         aria-labelledby="block-node-1 block-node-1-comment"
+         aria-level="1"
+         aria-posinset="1"
+         aria-selected="false"
+         aria-setsize="1"
+         class="blocks-literal blocks-node"
+         data-cmb-drag-source=""
+         id="block-node-1"
+         role="treeitem"
+         style=""
+         tabindex="-1"
+       >
+         This is a literal for someVar
+         <span
+           aria-hidden="true"
+           class="blocks-comment"
+           id="block-node-1-comment"
+           title="hello"
+         >
+           <span
+             class="screenreader-only"
+           >
+             with comment: 
+           </span>
+           hello
+           <span
+             class="screenreader-only"
+           >
+             ,
+           </span>
+         </span>
+       </span>
        <span
          aria-hidden="true"
-         class="blocks-comment"
-         id="block-node-1-comment"
-         title="hello"
+         class="blocks-comment-badge"
        >
-         <span
-           class="screenreader-only"
-         >
-           with comment: 
-         </span>
-         hello
-         <span
-           class="screenreader-only"
-         >
-           ,
-         </span>
+         💬
        </span>
      </span>
    </div>

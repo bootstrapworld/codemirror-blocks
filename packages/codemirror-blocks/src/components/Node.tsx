@@ -512,7 +512,24 @@ const Node = ({ expandable = true, ...props }: Props) => {
         )}
       </span>
     );
-    return <NodeContext value={nodeContext}>{result}</NodeContext>;
+    return (
+      <NodeContext value={nodeContext}>
+        {comment && !props.inToolbar ? (
+          // A speech balloon at the top right corner of the node. It sits beside
+          // the node, not in it, so that the node's own box does not clip it; the
+          // wrapper is what the corner is measured from. It is only to be seen:
+          // the comment is read through the node's name.
+          <span className="blocks-comment-wrap" role="presentation">
+            {result}
+            <span className="blocks-comment-badge" aria-hidden="true">
+              💬
+            </span>
+          </span>
+        ) : (
+          result
+        )}
+      </NodeContext>
+    );
   }
 };
 

@@ -374,3 +374,17 @@ describe("printing what was found in the soak", () => {
     ).toBeUndefined();
   });
 });
+
+describe("the badge of a node that has a comment", () => {
+  it("is a hidden sibling of the node, not a part of it, and only one", () => {
+    const { cmb } = mountCMB(wescheme);
+    cmb.setValue("; c\n(f x)\n(g y)");
+    const wrapper = cmb.getCM().getWrapperElement();
+    const badges = wrapper.querySelectorAll(".blocks-comment-badge");
+    expect(badges).toHaveLength(1);
+    const badge = badges[0];
+    expect(badge.getAttribute("aria-hidden")).toBe("true");
+    expect(badge.previousElementSibling?.getAttribute("role")).toBe("treeitem");
+    expect(badge.closest('[role="treeitem"]')).toBeNull();
+  });
+});
