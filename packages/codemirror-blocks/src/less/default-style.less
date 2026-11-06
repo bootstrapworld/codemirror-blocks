@@ -63,7 +63,11 @@
   background: #eee;
   overflow: hidden;
   white-space: nowrap;
-  transition: all 0.5s;
+  transition:
+    background-color 0.5s,
+    border-color 0.5s,
+    color 0.5s,
+    box-shadow 0.5s;
 
   cursor: grab;
   cursor: -moz-grab;
@@ -229,7 +233,11 @@
   font-size: 12px;
   cursor: pointer;
   cursor: hand;
-  transition: all 0.5s;
+  transition:
+    background-color 0.5s,
+    border-color 0.5s,
+    color 0.5s,
+    box-shadow 0.5s;
 
   /* Editing should always be black-on-white */
   &.blocks-editing,
@@ -551,4 +559,18 @@
 .blocks-locked::after {
   content: "\1f512" !important;
   z-index: 99;
+}
+
+// For people who ask their system for less motion: nothing in the editor
+// animates, however it is drawn (colors change at once, and a drop target does
+// not grow when the pointer is over it).
+@media (prefers-reduced-motion: reduce) {
+  .blocks-node,
+  .blocks-node *,
+  .blocks-white-space,
+  .blocks-comment,
+  .blocks-comment::before {
+    transition: none !important;
+    animation: none !important;
+  }
 }

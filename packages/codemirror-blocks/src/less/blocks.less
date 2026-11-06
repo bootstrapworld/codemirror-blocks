@@ -46,6 +46,19 @@
   margin-left: 4px;
 }
 
+// (blocks fade in when the editor changes them, and out when they go: not for
+// people who ask their system for less motion)
+@media (prefers-reduced-motion: reduce) {
+  .CodeMirror-lines.fadein,
+  .fadein .blocks-node,
+  .fadeout {
+    animation: none;
+  }
+  #clones.animate * {
+    transition: none;
+  }
+}
+
 @keyframes fadein {
   0% {
     opacity: 0;

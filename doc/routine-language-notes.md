@@ -170,9 +170,10 @@ drop targets to see, nothing to tell a block from its neighbour. What I did:
     `default-style.less` inside a class is how the variables (`@border-radius`,
     the colors) are passed in. CSS custom properties would do the same with a
     plain stylesheet and no compile step.
-  - **Reduced motion.** The default style puts `transition: all 0.5s` on blocks,
-    and the editor fades blocks in; there is no `prefers-reduced-motion` anywhere
-    in the style. Besides being a problem for people, it makes a drop target move
-    for half a second after it is drawn: a Playwright click on one _missed_ (the
-    test now waits for the target to stop).
+  - **Reduced motion.** The default style put `transition: all 0.5s` on blocks,
+    and the editor fades blocks in and slides the toolbar open; there was no
+    `prefers-reduced-motion` anywhere in the style (now fixed, #820).
+    A Playwright click on a small target also missed once, because the toolbar
+    slides open for half a second when block mode starts and everything is
+    moving (the test now waits for the target to stop).
   - The toolbar's empty state (above).

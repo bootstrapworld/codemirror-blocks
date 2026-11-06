@@ -5,9 +5,9 @@ import { expectConsistent, openInBlockMode } from "./helpers";
 type Win = { cmb: { getValue(): string } };
 
 /**
- * Blocks animate into place for about half a second after they are drawn (the
- * editor's style has transitions on them), so a small target is moving when it
- * is first there: wait for it to stop before pressing on it.
+ * The toolbar slides open for half a second when block mode starts, and
+ * everything beside it moves with it, so a small target is moving when it is
+ * first there: wait for it to stop before pressing on it.
  */
 const settled = async (target: Locator) => {
   let last = "";
