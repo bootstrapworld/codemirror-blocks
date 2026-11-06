@@ -3,6 +3,7 @@ import classNames from "classnames";
 import PrimitiveList from "./PrimitiveList";
 import { Primitive, PrimitiveGroup } from "../parsers/primitives";
 import CodeMirror from "codemirror";
+import { RemoveIcon } from "./Icons";
 import "./Toolbar.less";
 
 type Props = {
@@ -77,9 +78,11 @@ const Toolbar = (props: Props) => {
         {search ? (
           <button
             aria-label="clear text"
-            className="glyphicon glyphicon-remove"
+            className="clear-search"
             onClick={clearSearch}
-          />
+          >
+            <RemoveIcon />
+          </button>
         ) : null}
       </div>
       <div className="primitives-box">

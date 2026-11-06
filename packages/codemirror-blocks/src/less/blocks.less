@@ -4,28 +4,16 @@
   box-sizing: border-box;
 }
 
-@font-face {
-  font-family: "Glyphicons Halflings";
-  src: url("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/fonts/glyphicons-halflings-regular.eot");
-  src:
-    url("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/fonts/glyphicons-halflings-regular.eot?#iefix")
-      format("embedded-opentype"),
-    url("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/fonts/glyphicons-halflings-regular.woff2")
-      format("woff2"),
-    url("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/fonts/glyphicons-halflings-regular.woff")
-      format("woff"),
-    url("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/fonts/glyphicons-halflings-regular.ttf")
-      format("truetype"),
-    url("https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular")
-      format("svg");
-}
-.glyphicon {
-  position: relative;
-  top: 1px;
-  display: inline-block;
-  font: normal normal 16px/1 "Glyphicons Halflings";
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
+// (the small icons of the toolbar are inline SVG: see src/ui/Icons.tsx)
+.icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: middle;
   margin-right: 4px;
 }
 

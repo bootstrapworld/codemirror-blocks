@@ -154,8 +154,19 @@ describe("Toolbar", () => {
         expect(clearText).toMatchInlineSnapshot(`
           <button
             aria-label="clear text"
-            class="glyphicon glyphicon-remove"
-          />
+            class="clear-search"
+          >
+            <svg
+              aria-hidden="true"
+              class="icon"
+              focusable="false"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M3 3l10 10M13 3L3 13"
+              />
+            </svg>
+          </button>
         `);
         fireEvent.click(clearText);
         expect(searchInput.value).toBe("");

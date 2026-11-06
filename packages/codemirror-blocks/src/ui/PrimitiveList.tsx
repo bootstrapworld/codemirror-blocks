@@ -8,6 +8,7 @@ import CodeMirror from "codemirror";
 import { defaultKeyMap } from "../keymap";
 import { useDrag } from "../dnd";
 import { copy } from "../copypaste";
+import { MinusIcon, PlusIcon } from "./Icons";
 
 require("./PrimitiveList.less");
 
@@ -86,14 +87,10 @@ export const PrimitiveGroup = (props: PrimitiveGroupProps) => {
   const [expanded, setExpanded] = useState(false);
   const toggleExpanded = () => setExpanded(!expanded);
 
-  const expandoClass = classNames(
-    "glyphicon",
-    expanded ? "glyphicon-minus" : "glyphicon-plus"
-  );
   return (
     <li className="PrimitiveGroup list-group-item" role="list">
       <div onFocus={toggleExpanded} className="group-header">
-        <span className={expandoClass} aria-hidden="true" />
+        {expanded ? <MinusIcon /> : <PlusIcon />}
       </div>
       {expanded ? (
         <PrimitiveList
