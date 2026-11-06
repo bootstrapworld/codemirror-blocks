@@ -123,6 +123,8 @@ export type ScannedComment = {
   to: Pos;
   lastFrom: Pos;
   text: string;
+  /** there is code before it on its line (it is not in a row with the others) */
+  trailing: boolean;
 };
 
 /** How a language writes a comment */
@@ -278,6 +280,7 @@ export function scanComments(
         to: c.to,
         lastFrom: c.lastFrom,
         text: c.text,
+        trailing: c.trailing,
       });
     }
     previous = c;
@@ -318,16 +321,44 @@ export function attachComments(
       blockComment,
       orphan: true,
     });
-    // (the nodes are in the order of their starts: the first that starts after
-    // the comment is the one below it)
-    const next = all.find(({ node }) => poscmp(node.from, c.to) >= 0);
-    const adjacent = next && next.node.from.line - c.to.line <= 1;
-    const sameList =
-      next &&
-      (!next.parent ||
-        (poscmp(next.parent.from, c.from) <= 0 &&
-          poscmp(c.to, next.parent.to) <= 0));
-    if (next && adjacent && sameList) {
+    // The list the comment is in: the innermost node that holds it (none, if it
+    // is among the roots). The nodes are in the order of their starts, the
+    // outermost first of those that start together.
+    const container =
+      [...all]
+        .reverse()
+        .find(
+          ({ node }) =>
+            poscmp(node.from, c.from) <= 0 && poscmp(c.to, node.to) <= 0
+        )?.node ?? null;
+    // (by identity: the nodes have no ids until the AST is made of them)
+    const mine = all.filter(({ parent }) => parent === container);
+    // After code on its line, it goes with that code: the last of the nodes of
+    // its list to end before it, on the line.
+    const before = c.trailing
+      ? mine
+          .filter(
+            ({ node }) =>
+              poscmp(node.to, c.from) <= 0 &&
+              node.to.line === c.from.line &&
+              // (a node that was never written, as a blank for a function that
+              // is not there, is no code before it)
+              poscmp(node.from, node.to) < 0
+          )
+          .reduce<Placed | undefined>(
+            (best, p) =>
+              !best || poscmp(p.node.to, best.node.to) > 0 ? p : best,
+            undefined
+          )
+      : undefined;
+    if (before) {
+      addComment(before.node, comment, blockComment);
+      continue;
+    }
+    // Otherwise, with the node after it in its list, if that is on the line
+    // just below it, or on its line.
+    const next = mine.find(({ node }) => poscmp(node.from, c.to) >= 0);
+    if (next && next.node.from.line - c.to.line <= 1) {
       addComment(next.node, comment, blockComment);
     } else {
       orphans.push(comment);

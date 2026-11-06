@@ -1,4 +1,4 @@
-import { Literal } from "../src/nodes";
+import { Literal, Unknown } from "../src/nodes";
 import { attachComments, scanComments } from "../src/orphans";
 
 /** A language that writes comments as C does: `// line` and `/* block *\/` */
@@ -83,5 +83,25 @@ describe("attachComments", () => {
       blockComment: { open: "#|", close: "|#" },
     });
     expect(a.options.comment?.fields.comment).toBe("hi");
+  });
+
+  it("looks at the nodes of the list the comment is in, and not at another's", () => {
+    // (the nodes have no ids yet: they are told apart by being the same node)
+    const a = lit(0, "a");
+    const b = Literal(at(0, 6), at(0, 7), "b", "symbol");
+    const inner = Unknown(at(0, 2), at(0, 10), [b]);
+    const placed = attachComments("a (/* c */ b)", [a, inner], options);
+    expect(placed).toHaveLength(2);
+    expect(a.options.comment).toBeUndefined();
+    expect(b.options.comment?.fields.comment).toBe("c");
+  });
+
+  it("gives a comment after code to the code in its list, though another node follows on the line", () => {
+    const x = Literal(at(0, 3), at(0, 4), "x", "symbol");
+    const y = Literal(at(0, 17), at(0, 18), "y", "symbol");
+    const call = Unknown(at(0, 0), at(0, 19), [x, y]);
+    attachComments("(f x /* c */ y)", [call], options);
+    expect(x.options.comment?.fields.comment).toBe("c");
+    expect(y.options.comment).toBeUndefined();
   });
 });
