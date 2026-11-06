@@ -97,9 +97,22 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   `null`, and an `undefined` `value` field no longer breaks hashing.
 - The toolbar's plus, minus and clear-search icons are inline SVG: the
   Glyphicons font is no longer loaded from a CDN.
+- Nothing in the editor animates for people who ask their system for less
+  motion (`prefers-reduced-motion`), and blocks and values transition their
+  colors only, not their size and place.
 
 ### Added
 
+- `defineNode({ type, label, fields, pretty, render, ... })` gives the
+  constructor of a kind of node, so that the fields are said once (and typed):
+  `field.required()`, `field.optional()`, `field.list()` and `field.value<T>()`.
+  The comment that goes with a node is printed for you.
+- `attachComments(code, roots, { blockComment, syntax })` gives the comments of a
+  program their places among the nodes a parser made, so that a parser has only
+  to skip them. `scanComments` finds them for a comment syntax of the language's
+  own (`scanSchemeComments` is as it was).
+- Routine (`lib/languages/routine`), a small example language that uses the
+  newer API, and `?lang=routine` on the example page.
 - `<DropTarget field="init" />` with no `index` fills an empty `optional` field
   (the initializer of `let x;`): a node typed or dropped there becomes the field.
 - `listItems(list)` gives a hand-made layout the `index`, whether it is an orphan
