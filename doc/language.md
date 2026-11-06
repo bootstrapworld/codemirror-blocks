@@ -254,6 +254,38 @@ class `blocks-whenExpr`). It is also available as `node.type`; use
 `MyLangAST.isNodeOfType(node, "whenExpr")` to narrow the type of a node you are
 given.
 
+#### A kind of node in one place: `defineNode`
+
+Writing the spec, the constructor and `makeNode` says the fields of a node three
+times. `defineNode` says them once, and gives back the constructor:
+
+```tsx
+import { defineNode, field } from "@bootstrapworld/codemirror-blocks";
+
+const When = defineNode({
+  type: "whenExpr",
+  label: "when expression", // what it is called, to people and screenreaders
+  fields: {
+    test: field.required(), // a node
+    otherwise: field.optional(), // a node, or null, or left out
+    body: field.list({ orphans: true }), // nodes (and comments that go with none)
+    id: field.value<number>(), // anything that is not a node
+  },
+  pretty: (node) =>
+    P.standardSexpr("when", [node.fields.test, ...node.fields.body]),
+  render: (props) => <Node {...props}>...</Node>,
+  // optional: longDescription, and ariaLabel (made from the node, so from its label)
+});
+
+When(from, to, { test, otherwise: null, body: [], id: 1 }, options);
+```
+
+The fields of `node` are typed from the declaration (`node.fields.body` is an
+array of nodes), and so are the fields given to the constructor. The comment that
+goes with a node is printed for you (above it, or beside it), whether `pretty`
+returns a `Doc` or text. `When.type` and `When.spec` are there for what needs
+them.
+
 ### Speaking out Loud
 
 The `longDescription(node, level)` function describes the node aloud for a

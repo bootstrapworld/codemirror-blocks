@@ -28,13 +28,11 @@ Size first. The language is about 500 lines, and three quarters of that is
 boilerplate that every language would repeat. A kind of node costs about 30
 lines before it does anything.
 
-1. **A node says its fields four times.** The spec (`Spec.nodeSpec([required
-("name"), optional("start")])`), the constructor's parameters, the `fields: {
-name, start }` of `makeNode`, and the parser's call. A mistake in one is a
-   type error at best. _Want:_ one declaration that gives the spec, the
-   constructor and the type of the node, e.g. `defineNode({ type: "define",
-label: "definition", fields: { name: required, start: optional }, pretty,
-render })` returning `(from, to, fields, options) => node`.
+1. **A node said its fields four times.** The spec, the constructor's parameters,
+   the `fields: { ... }` of `makeNode`, and the parser's call. That is now
+   `defineNode({ type, label, fields: { name: field.required(), ... }, pretty,
+render })`, which gives the constructor (#811): Routine's nodes went from 435
+   lines to about 330, with the fields typed.
 
 2. **Every language writes its own `make` wrapper**, to give a node its comment
    and its aria label (lambda has `makeLambdaNode`, WeScheme calls `withComment`

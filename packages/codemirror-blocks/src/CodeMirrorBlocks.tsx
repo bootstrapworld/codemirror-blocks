@@ -5,6 +5,7 @@ import type { Root } from "react-dom/client";
 import Modal from "react-modal";
 import ToggleEditor from "./ui/ToggleEditor";
 import Args, { listItems } from "./components/Args";
+import { defineNode, field } from "./defineNode";
 export type { ListItem } from "./components/Args";
 import * as DropTarget from "./components/DropTarget";
 import Node, { useNodeState } from "./components/Node";
@@ -114,6 +115,8 @@ export {
   CodeMirrorBlocks,
   Args,
   listItems,
+  defineNode,
+  field,
   DropTarget as DT,
   ASTNode,
   Node,

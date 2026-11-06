@@ -150,10 +150,10 @@ function read(code: string): Sexp[] {
 function build(s: Sexp): ASTNode {
   if (s.kind === "atom") {
     return s.type === "number"
-      ? Num(s.from, s.to, Number(s.text))
+      ? Num(s.from, s.to, { value: Number(s.text) })
       : s.type === "text"
-        ? Text(s.from, s.to, s.text)
-        : Name(s.from, s.to, s.text);
+        ? Text(s.from, s.to, { value: s.text })
+        : Name(s.from, s.to, { name: s.text });
   }
   const [head, ...rest] = s.items;
   if (!head) {
@@ -183,25 +183,29 @@ function build(s: Sexp): ASTNode {
           `(let ...) at line ${s.from.line + 1} must name something first.`
         );
       }
-      return Define(s.from, s.to, build(name), rest[1] ? build(rest[1]) : null);
+      return Define(s.from, s.to, {
+        name: build(name),
+        start: rest[1] ? build(rest[1]) : null,
+      });
     }
     case "show":
       expect(1, "one thing to show");
-      return Show(s.from, s.to, build(rest[0]));
+      return Show(s.from, s.to, { what: build(rest[0]) });
     case "repeat":
       expect(1, "how many times, then the steps", Infinity);
-      return Repeat(s.from, s.to, build(rest[0]), rest.slice(1).map(build));
+      return Repeat(s.from, s.to, {
+        times: build(rest[0]),
+        steps: rest.slice(1).map(build),
+      });
     case "if":
       expect(2, "a test, what to do, and optionally what to do otherwise", 3);
-      return Choice(
-        s.from,
-        s.to,
-        build(rest[0]),
-        build(rest[1]),
-        rest[2] ? build(rest[2]) : null
-      );
+      return Choice(s.from, s.to, {
+        test: build(rest[0]),
+        then: build(rest[1]),
+        otherwise: rest[2] ? build(rest[2]) : null,
+      });
     default:
-      return Call(s.from, s.to, form, rest.map(build));
+      return Call(s.from, s.to, { op: form, args: rest.map(build) });
   }
 }
 
