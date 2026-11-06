@@ -164,6 +164,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
       playSound(BEEP);
       return;
     }
+    // (a collapsed block hides what is in it, the box for its comment too: it
+    // would be open, and take no focus, so keys would go on to something else)
+    if (isCollapsed) {
+      dispatch(actions.uncollapseNode(node));
+    }
     setCommentValue(null);
     setCommentEditor(
       new CommentTarget(node, editor.getRange(node.from, node.to))

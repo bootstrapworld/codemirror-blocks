@@ -237,3 +237,18 @@ test("a drop with a comment box that cannot be saved still open leaves focus on 
   await expect.poll(() => source(page)).toBe("(... x y)\nw");
   await expectConsistent(page);
 });
+
+test("the comment box of a collapsed block is shown and has focus", async ({
+  page,
+}) => {
+  await openInBlockMode(page, "(f (g 1 2) z)");
+  const g = page.getByRole("treeitem", { name: /g expression/ });
+  await g.click({ position: { x: 4, y: 4 } });
+  await page.keyboard.press("ArrowLeft"); // (collapse it)
+  await expect(g).toHaveAttribute("aria-expanded", "false");
+  await page.keyboard.press(COMMENT_KEY);
+  await expect.poll(() => editing(page)).toMatchObject({ editable: "true" });
+  await page.keyboard.type("note");
+  await page.keyboard.press("Enter");
+  await expect.poll(() => source(page)).toContain("#| note |#");
+});
