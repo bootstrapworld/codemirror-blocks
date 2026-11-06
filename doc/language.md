@@ -319,6 +319,39 @@ defining CodeMirror-Blocks components:
   produces a React element. If you wish to pass it any `props`, you may pass
   them in as an object: `child.reactElement({prop: value})`.
 
+#### Reading the state of a block
+
+Whether a block has focus, is selected, collapsed and so on is kept by the
+editor, and shows as CSS classes. A component drawn inside a `<Node>` can read
+it too, with the `useNodeState()` hook (exported from
+`@bootstrapworld/codemirror-blocks`), without knowing anything about redux:
+
+```tsx
+const VariableName = ({ name }: { name: string }) => {
+  const { focused } = useNodeState();
+  return (
+    <span>
+      {name}
+      {focused ? <ScopeList /> : null}
+    </span>
+  );
+};
+
+render: (props) => (
+  <Node {...props}>
+    <VariableName name={props.node.fields.value} />
+  </Node>
+);
+```
+
+It gives plain, read-only values: `focused` (the block is the active one),
+`selected`, `collapsed`, `dragging` (it is being dragged), `over` (something
+being dragged is over it), `errored` (an edit of it was refused) and
+`inToolbar`. A component that calls it is drawn again only when one of these
+changes for _its_ block. A hook can only be called by a component, so call it in
+a component inside the `<Node>`, not in `render()` itself. (For hover, use the
+CSS `:hover`; the editor does not keep it.)
+
 #### Rendering DropTargets
 
 If you've played around with the editor, you will have noticed "drop targets":

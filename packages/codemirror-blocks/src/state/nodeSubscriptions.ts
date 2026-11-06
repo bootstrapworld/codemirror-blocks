@@ -80,6 +80,10 @@ class Hub {
         if (next.editable[id]) this.wake(id);
       }
     }
+    if (prev.errorId !== next.errorId) {
+      this.wake(prev.errorId);
+      this.wake(next.errorId);
+    }
     if ((prev.errorId === "") !== (next.errorId === "")) {
       for (const set of [...this.listeners.values()]) set.forEach((l) => l());
     }
@@ -96,7 +100,8 @@ const hubFor = (store: Store) => {
 /**
  * Like `useSelector((state) => select(state))`, for an answer about the thing
  * with this id: `select` must only change when the store's focus, collapsed,
- * selected, marked or editable state for that id (or the error state) does.
+ * selected, marked or editable state for that id (or the error state, or
+ * whether it is the one with the error) does.
  */
 export function useIdState<T>(id: string, select: (state: RootState) => T): T {
   const store = useStore<RootState>();

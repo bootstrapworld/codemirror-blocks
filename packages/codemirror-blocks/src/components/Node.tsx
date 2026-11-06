@@ -1,4 +1,5 @@
 import React, {
+  createContext,
   useCallback,
   use,
   useEffect,
@@ -67,6 +68,46 @@ const pendingChanged = new Set<BlockNodeMarker>();
 
 /** What is said just before the text of a comment that goes with a node */
 export const COMMENT_PREFIX = "with comment: ";
+
+/**
+ * What a block can read about itself (see {@link useNodeState}): the state the
+ * editor keeps for it, as plain values.
+ */
+export type NodeState = {
+  /** it has keyboard focus (it is the active block) */
+  focused: boolean;
+  /** it is one of the selected blocks */
+  selected: boolean;
+  /** it is collapsed */
+  collapsed: boolean;
+  /** it is being dragged */
+  dragging: boolean;
+  /** something being dragged is over it, to be dropped on it */
+  over: boolean;
+  /** it is the block whose edit was refused */
+  errored: boolean;
+  /** it is in the toolbar, not in the program */
+  inToolbar: boolean;
+};
+
+const noState: NodeState = {
+  focused: false,
+  selected: false,
+  collapsed: false,
+  dragging: false,
+  over: false,
+  errored: false,
+  inToolbar: false,
+};
+const NodeStateContext = createContext<NodeState>(noState);
+
+/**
+ * The state of the block this is drawn in (read only; it re-renders the
+ * component that calls it when one of the values changes). Use it in a
+ * component drawn inside a `<Node>`, not in `render()` itself, as a hook can
+ * only be called by a component: outside any block everything is false.
+ */
+export const useNodeState = (): NodeState => use(NodeStateContext);
 
 /**
  * What a screen reader says for a block: what the node says it is, then the
@@ -448,25 +489,53 @@ const Node = ({ expandable = true, ...props }: Props) => {
     };
   }, [editable, store, props.node.id, nodeElemId]);
 
+  const isErrored = useIdState(
+    props.node.id,
+    (state) => selectors.getErrorId(state) === props.node.id
+  );
+  const inToolbar = Boolean(props.inToolbar);
+  const nodeState = useMemo<NodeState>(
+    () => ({
+      focused: isFocused,
+      selected: isSelected,
+      collapsed: isCollapsed,
+      dragging: isDragging,
+      over: isOver,
+      errored: isErrored,
+      inToolbar,
+    }),
+    [
+      isFocused,
+      isSelected,
+      isCollapsed,
+      isDragging,
+      isOver,
+      isErrored,
+      inToolbar,
+    ]
+  );
+
   if (editable) {
     if (!editor) {
       throw new Error("can't edit nodes before codemirror has mounted");
     }
     // TODO: combine passingProps and contentEditableProps
     return (
-      <NodeEditable
-        {...passingProps}
-        editor={editor}
-        onDisableEditable={() => setEditable(false)}
-        extraClasses={classes}
-        isInsertion={false}
-        target={new ReplaceNodeTarget(currentNode())}
-        value={value}
-        onChange={(value: string | null) => setValue(value)}
-        contentEditableProps={contentEditableProps}
-      >
-        {props.children}
-      </NodeEditable>
+      <NodeStateContext value={nodeState}>
+        <NodeEditable
+          {...passingProps}
+          editor={editor}
+          onDisableEditable={() => setEditable(false)}
+          extraClasses={classes}
+          isInsertion={false}
+          target={new ReplaceNodeTarget(currentNode())}
+          value={value}
+          onChange={(value: string | null) => setValue(value)}
+          contentEditableProps={contentEditableProps}
+        >
+          {props.children}
+        </NodeEditable>
+      </NodeStateContext>
     );
   } else {
     classes.push({ "blocks-over-target": isOver, "blocks-node": true });
@@ -519,20 +588,22 @@ const Node = ({ expandable = true, ...props }: Props) => {
     );
     return (
       <NodeContext value={nodeContext}>
-        {comment && !props.inToolbar ? (
-          // A speech balloon at the top right corner of the node. It sits beside
-          // the node, not in it, so that the node's own box does not clip it; the
-          // wrapper is what the corner is measured from. It is only to be seen:
-          // the comment is read through the node's name.
-          <span className="blocks-comment-wrap" role="presentation">
-            {result}
-            <span className="blocks-comment-badge" aria-hidden="true">
-              💬
+        <NodeStateContext value={nodeState}>
+          {comment && !props.inToolbar ? (
+            // A speech balloon at the top right corner of the node. It sits beside
+            // the node, not in it, so that the node's own box does not clip it; the
+            // wrapper is what the corner is measured from. It is only to be seen:
+            // the comment is read through the node's name.
+            <span className="blocks-comment-wrap" role="presentation">
+              {result}
+              <span className="blocks-comment-badge" aria-hidden="true">
+                💬
+              </span>
             </span>
-          </span>
-        ) : (
-          result
-        )}
+          ) : (
+            result
+          )}
+        </NodeStateContext>
       </NodeContext>
     );
   }
