@@ -44,7 +44,7 @@ describe("forms that become blocks", () => {
     ["#\\a", "literal", "#\\a"],
     ["1/2", "literal", "1/2"],
     ["#t", "literal", "#t"],
-    ["#| block comment |# 5", "literal", "5 #| block comment |#"],
+    ["#| block comment |# 5", "literal", "#| block comment |#\n5"],
   ];
 
   it.each(forms)("%s is a %s", (code, type) => {
@@ -152,7 +152,8 @@ describe("a comment and the forms after it", () => {
     // then covered the `z` before it, which was left with no block; the
     // comment is on `z`'s line, so it goes with `z`)
     const [z, hi] = blocks('#| c |# z\n"hi"');
-    expect(z.text).toBe("z #| c |#");
+    // (a comment before a node is printed above it, whatever line it was on)
+    expect(z.text).toBe("#| c |#\nz");
     expect(z.at.to).toEqual({ line: 0, ch: 9 });
     expect(hi.text).toBe('"hi"');
     expect(hi.at.from).toEqual({ line: 1, ch: 0 });

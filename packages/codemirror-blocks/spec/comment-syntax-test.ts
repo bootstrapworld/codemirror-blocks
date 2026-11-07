@@ -1,6 +1,8 @@
 import wescheme from "../src/languages/wescheme";
 import lambda from "../src/languages/lambda";
 import example from "../src/languages/example";
+import { addLanguage } from "../src/languages";
+import { FunctionApp, Literal } from "../src/nodes";
 import { Comment } from "../src/nodes";
 import {
   isNodeEditable,
@@ -12,6 +14,26 @@ import {
 import * as announcer from "../src/announcer";
 
 const here = { line: 0, ch: 0 };
+
+/** A language that has no comments at all: `(+ 1 2)` is one call */
+const plain = addLanguage({
+  id: "plain-no-comments",
+  name: "Plain",
+  parse: (code: string) => [
+    FunctionApp(
+      { line: 0, ch: 0 },
+      { line: 0, ch: code.length },
+      {
+        func: Literal(
+          { line: 0, ch: 1 },
+          { line: 0, ch: 2 },
+          { value: "+", dataType: "symbol" }
+        ),
+        args: [],
+      }
+    ),
+  ],
+});
 const editComment = { ctrlKey: true, shiftKey: true };
 
 afterEach(() => {
@@ -23,7 +45,8 @@ describe("how a language writes comments", () => {
   it("is declared by the language, if it has block comments", () => {
     expect(wescheme.blockComment).toEqual({ open: "#|", close: "|#" });
     expect(lambda.blockComment).toEqual({ open: "#|", close: "|#" });
-    expect(example.blockComment).toBeUndefined();
+    expect(example.blockComment).toEqual({ open: "#|", close: "|#" });
+    expect(plain.blockComment).toBeUndefined();
   });
 
   it("is what a comment is printed with", () => {
@@ -49,7 +72,7 @@ describe("Edit Comment", () => {
 
   it("says so, and opens nothing, in a language without them", () => {
     const say = jest.spyOn(announcer, "say");
-    const { cmb } = mountCMB(example);
+    const { cmb } = mountCMB(plain);
     cmb.setValue("(+ 1 2)");
     const root = cmb.getAst().rootNodes[0];
     mouseDown(root);

@@ -1,6 +1,8 @@
 import type { ASTNode, BlockComment, Pos } from "./ast";
 import { Comment } from "./nodes";
 import { List } from "./nodeSpec";
+import { COMMENT_RULES } from "./commentRules";
+import type { CommentRules } from "./commentRules";
 import { poscmp } from "./utils";
 
 /*
@@ -53,34 +55,33 @@ function place(node: ASTNode, orphan: ASTNode, blockComment?: BlockComment) {
     place(inner, orphan, blockComment);
     return;
   }
-  if (!kids.length) {
-    // (inside something with no nodes in it, a form that is kept as the text
-    // it was written as: the comment is part of that text)
-    return;
-  }
   for (const spec of node.spec.childSpecs) {
     if (spec instanceof List && spec.orphans && !node.options.noOrphans) {
       const list = spec.getField(node);
       const at = list.findIndex(
         (e) => poscmp(e.srcRange().from, orphan.from) > 0
       );
-      if (at >= 0 && list[at].srcRange().from.line === orphan.to.line) {
-        // (ahead of it on its line: it goes with it)
-        addComment(list[at], orphan, blockComment);
-      } else {
-        list.splice(at < 0 ? list.length : at, 0, orphan);
-      }
+      list.splice(at < 0 ? list.length : at, 0, orphan);
       return;
     }
   }
+  if (!kids.length) {
+    // (inside something with no nodes in it, a form that is kept as the text
+    // it was written as: the comment is part of that text)
+    return;
+  }
+  // (a list that cannot hold a comment of its own: it goes with the node that
+  // comes after it, or with the last)
   const next = kids.find((k) => poscmp(k.from, orphan.to) >= 0);
   addComment(next ?? kids[kids.length - 1], orphan, blockComment);
 }
 
 /**
  * Put the orphans (in document order) in their places among the nodes of a
- * program, and return its root nodes. Roots can always hold orphans. A comment
- * on the line after the last root, with no blank line between, goes with it.
+ * program, and return its root nodes: each is a block of its own, in the list
+ * of the nearest node around it that can hold one, or among the roots, which
+ * can always hold them. (Which comments go with a node and which stand alone
+ * is not decided here: see `attachComments`.)
  */
 export function placeOrphans(
   roots: ASTNode[],
@@ -94,23 +95,10 @@ export function placeOrphans(
       place(home, orphan, blockComment);
       continue;
     }
-    const lastReal = [...result].reverse().find((r) => !r.options.orphan);
-    if (
-      lastReal &&
-      lastReal === result[result.length - 1] &&
-      orphan.from.line === lastReal.srcRange().to.line + 1
-    ) {
-      addComment(lastReal, orphan, blockComment);
-      continue;
-    }
     const at = result.findIndex(
       (r) => poscmp(r.srcRange().from, orphan.from) > 0
     );
-    if (at >= 0 && result[at].srcRange().from.line === orphan.to.line) {
-      addComment(result[at], orphan, blockComment);
-    } else {
-      result.splice(at < 0 ? result.length : at, 0, orphan);
-    }
+    result.splice(at < 0 ? result.length : at, 0, orphan);
   }
   return result;
 }
@@ -196,25 +184,7 @@ export function scanComments(
   };
   while (i < code.length) {
     const c = code[i];
-    if (syntax.line && code.startsWith(syntax.line, i)) {
-      const from = pos();
-      const trailing = hasCode;
-      let end = code.indexOf("\n", i);
-      if (end < 0) end = code.length;
-      const text = code
-        .slice(i, end)
-        .replace(new RegExp(`^(${escapeRegExp(syntax.line)}|\\s)*`), "")
-        .trim();
-      step(end - i);
-      found.push({
-        from,
-        to: pos(),
-        lastFrom: from,
-        text,
-        trailing,
-        opener: opened,
-      });
-    } else if (syntax.block && code.startsWith(syntax.block.open, i)) {
+    if (syntax.block && code.startsWith(syntax.block.open, i)) {
       const { open, close } = syntax.block;
       const from = pos();
       const trailing = hasCode;
@@ -224,6 +194,24 @@ export function scanComments(
         .slice(i + open.length, end - close.length)
         .trim()
         .replace(/\s+/g, " ");
+      step(end - i);
+      found.push({
+        from,
+        to: pos(),
+        lastFrom: from,
+        text,
+        trailing,
+        opener: opened,
+      });
+    } else if (syntax.line && code.startsWith(syntax.line, i)) {
+      const from = pos();
+      const trailing = hasCode;
+      let end = code.indexOf("\n", i);
+      if (end < 0) end = code.length;
+      const text = code
+        .slice(i, end)
+        .replace(new RegExp(`^(${escapeRegExp(syntax.line)}|\\s)*`), "")
+        .trim();
       step(end - i);
       found.push({
         from,
@@ -297,13 +285,19 @@ const walk = (node: ASTNode, parent: ASTNode | null, into: Placed[]) => {
 /**
  * Gives every comment in `code` its place among the nodes a parser has made
  * (`roots`, with positions), and returns the root nodes, now with comments
- * among them. A comment on the line just above a node, or on its line, in the
- * same list, goes with that node (its `options.comment`); any other is a node
- * of its own, among the elements of the nearest list around it that can hold
- * one (see {@link placeOrphans}).
+ * among them. The comments that go with a node are its `options.comment`; the
+ * others are nodes of their own (see {@link placeOrphans}). Which is which is
+ * what the `rules` say (see {@link CommentRules}, which has the defaults and
+ * the words): by default, a comment after code on its line goes with that code
+ * (the last node of its list to end before it), one above a node, or before it
+ * on its line, goes with the node (the next in its list), one at the end of the
+ * program goes with the last node, and any other stands alone.
  *
  * The parser has only to skip comments as it reads (they are found again here,
- * in `code`), and the language has to say how it writes them.
+ * in `code`), and the language has to say how it writes them. `topLevel` is the
+ * node that holds the whole program, for a language that has one (the end of
+ * the program is the end of its list), where there is not one root for each
+ * thing in it.
  */
 export function attachComments(
   code: string,
@@ -311,8 +305,16 @@ export function attachComments(
   {
     blockComment,
     syntax = SCHEME_COMMENTS,
-  }: { blockComment: BlockComment; syntax?: CommentSyntax }
+    rules: given,
+    topLevel = null,
+  }: {
+    blockComment: BlockComment;
+    syntax?: CommentSyntax;
+    rules?: Partial<CommentRules>;
+    topLevel?: ASTNode | null;
+  }
 ): ASTNode[] {
+  const rules = { ...COMMENT_RULES, ...given };
   const all: Placed[] = [];
   for (const root of roots) walk(root, null, all);
   const orphans: ASTNode[] = [];
@@ -333,36 +335,59 @@ export function attachComments(
         )?.node ?? null;
     // (by identity: the nodes have no ids until the AST is made of them)
     const mine = all.filter(({ parent }) => parent === container);
-    // After code on its line, it goes with that code: the last of the nodes of
-    // its list to end before it, on the line.
-    const before = c.trailing
-      ? mine
-          .filter(
-            ({ node }) =>
-              poscmp(node.to, c.from) <= 0 &&
-              node.to.line === c.from.line &&
-              // (a node that was never written, as a blank for a function that
-              // is not there, is no code before it)
-              poscmp(node.from, node.to) < 0
-          )
-          .reduce<Placed | undefined>(
-            (best, p) =>
-              !best || poscmp(p.node.to, best.node.to) > 0 ? p : best,
-            undefined
-          )
-      : undefined;
-    if (before) {
-      addComment(before.node, comment, blockComment);
+    const next = mine.find(({ node }) => poscmp(node.from, c.to) >= 0);
+    const linesToNext = next ? next.node.from.line - c.to.line : Infinity;
+
+    // After code on its line: with that code, the last of the nodes of its
+    // list to end before it, on the line.
+    if (c.trailing && rules.afterCode === "previous") {
+      const before = mine
+        .filter(
+          ({ node }) =>
+            poscmp(node.to, c.from) <= 0 &&
+            node.to.line === c.from.line &&
+            // (a node that was never written, as a blank for a function that
+            // is not there, is no code before it)
+            poscmp(node.from, node.to) < 0
+        )
+        .reduce<Placed | undefined>(
+          (best, p) =>
+            !best || poscmp(p.node.to, best.node.to) > 0 ? p : best,
+          undefined
+        );
+      if (before) {
+        addComment(before.node, comment, blockComment);
+        continue;
+      }
+    }
+    // With the node after it, if it is above that, or before it on its line.
+    const takesNext = c.trailing
+      ? rules.afterCode === "next"
+        ? linesToNext === 0
+        : rules.afterCode === "previous" &&
+          rules.above === "next" &&
+          linesToNext <= rules.maxLinesAbove
+      : rules.above === "next" && linesToNext <= rules.maxLinesAbove;
+    if (next && takesNext) {
+      addComment(next.node, comment, blockComment);
       continue;
     }
-    // Otherwise, with the node after it in its list, if that is on the line
-    // just below it, or on its line.
-    const next = mine.find(({ node }) => poscmp(node.from, c.to) >= 0);
-    if (next && next.node.from.line - c.to.line <= 1) {
-      addComment(next.node, comment, blockComment);
-    } else {
-      orphans.push(comment);
+    // At the end of the program, on the line after the last node: with it.
+    if (
+      rules.atEnd === "last" &&
+      !next &&
+      !c.trailing &&
+      (container === null || container === topLevel)
+    ) {
+      const last = [...mine]
+        .reverse()
+        .find(({ node }) => !node.options.orphan)?.node;
+      if (last && c.from.line === last.srcRange().to.line + 1) {
+        addComment(last, comment, blockComment);
+        continue;
+      }
     }
+    orphans.push(comment);
   }
   return placeOrphans(roots, orphans, blockComment);
 }

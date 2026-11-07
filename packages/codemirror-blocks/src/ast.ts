@@ -8,6 +8,8 @@ import {
 } from "./utils";
 import * as P from "pretty-fast-pretty-printer";
 import type { FieldsForSpec, NodeSpec } from "./nodeSpec";
+import { COMMENT_RULES } from "./commentRules";
+import type { CommentRules } from "./commentRules";
 import { joinWithAnd, labelFromType, pluralOf } from "./naming";
 import { displayLines } from "./printing";
 import type React from "react";
@@ -54,30 +56,36 @@ export const prettyPrintingWidth = 80;
 // edited between prints (see fakeAstEdits), so nothing is kept after.
 let sharedDocs: Map<object, P.Doc> | null = null;
 
-// Displays a comment according to specific rules.
+// Displays a comment with the doc of the node it goes with (see
+// `CommentRules.printAfter`).
 //
 // - `doc` is what's being commented.
 // - `comment` is the comment itself. If it is falsy, there is no comment.
-// - `container` is the ast node that owns the comment. This argument is used to
-//   determine if the comment is a line comment (appears after `container` on
-//   the same line). Line comments will stay as line comments _as long as they
-//   fit on the line_. If they don't, they'll be converted into a comment on the
-//   previous line.
+// - `container` is the ast node that owns the comment (where it starts and ends
+//   is all that is used).
+//
+// A comment that comes before the node is printed above it. One that comes after
+// it, on its last line (`(f x) ; c`), is printed beside it as long as it fits
+// on the line, and above it if not (below it, it would read back as the comment
+// of the node that follows). One on a later line is the comment at the end of
+// the program (see `CommentRules.atEnd`), and is printed beside the node if it
+// fits, and below it if not, where it stays at the end.
 export function withComment(
   doc: P.Doc,
   comment: ASTNode | undefined,
-  container: NodeForSpec
+  container: { from: Pos; to: Pos },
+  printAfter: CommentRules["printAfter"] = COMMENT_RULES.printAfter
 ): P.Doc {
-  if (comment) {
-    // This comment was on the same line as the node. Keep it that way, as long as it fits on a line.
-    if (container && container.to.line == comment.from.line) {
-      return P.ifFlat(P.horz(doc, " ", comment), P.vert(comment, doc));
-    } else {
-      return P.vert(comment, doc);
-    }
-  } else {
-    return doc;
+  if (!comment) return doc;
+  if (container && poscmp(comment.from, container.from) < 0) {
+    return P.vert(comment, doc);
   }
+  if (printAfter === "above") return P.vert(comment, doc);
+  const atEnd = container && comment.from.line > container.to.line;
+  return P.ifFlat(
+    P.horz(doc, " ", comment),
+    atEnd ? P.vert(doc, comment) : P.vert(comment, doc)
+  );
 }
 
 /**
@@ -86,9 +94,15 @@ export function withComment(
  */
 function docOf(node: ASTNode): P.Doc {
   const made = node._pretty(node as NodeForSpec);
-  if (typeof made !== "string") return made;
-  const lines = made.split(/\r?\n/).map((line) => P.txt(line));
-  const doc = lines.length === 1 ? lines[0] : P.vertArray(lines);
+  let doc: P.Doc;
+  if (typeof made === "string") {
+    const lines = made.split(/\r?\n/).map((line) => P.txt(line));
+    doc = lines.length === 1 ? lines[0] : P.vertArray(lines);
+  } else {
+    doc = made;
+  }
+  // (every node's comment is printed here, whatever its kind: a `pretty` does not
+  // have to, and so cannot forget to)
   return withComment(doc, node.options.comment, node as NodeForSpec);
 }
 

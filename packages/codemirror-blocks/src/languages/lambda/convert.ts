@@ -1,6 +1,8 @@
 import type { ASTNode, Pos } from "../../ast";
-import { Comment, Literal } from "../../nodes";
-import { attachComments, parseToIntermediateAST } from "./parser";
+import { Literal } from "../../nodes";
+import { attachComments, scanComments } from "../../orphans";
+import type { CommentSyntax } from "../../orphans";
+import { parseToIntermediateAST } from "./parser";
 import type { LambdaNode } from "./parser";
 import {
   Assignment,
@@ -39,90 +41,37 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
   };
   const { from, to } = loc;
   const all = (nodes: LambdaNode[]) => nodes.map((n) => convert(n, loc));
-  // (comments that no list of orphans took go with the node they were before)
-  if (node.before) {
-    attachComments(node, node.before);
-    delete node.before;
-  }
-  // (whatever comment came before the node goes with it)
-  const { comment } = node;
-  const options = comment
-    ? {
-        comment: Comment(comment.from, comment.to, comment.text, {
-          blockComment: LAMBDA_BLOCK_COMMENT,
-        }),
-      }
-    : {};
   switch (node.type) {
-    case "orphan":
-      return Comment(from, to, comment!.text, {
-        blockComment: LAMBDA_BLOCK_COMMENT,
-        orphan: true,
-      });
-    case "prog": {
-      // the parser gives a program the location of its last token: it spans
-      // what it holds, or its block would not cover its own children
-      const body = all(node.prog);
-      // (a comment that goes with the first or the last is in the program too)
-      return body.length
-        ? Prog(
-            body[0].srcRange().from,
-            body[body.length - 1].srcRange().to,
-            body,
-            options
-          )
-        : Prog(from, to, body, options);
-    }
+    case "prog":
+      return Prog(from, to, all(node.prog));
     case "num":
-      return Literal(
-        from,
-        to,
-        { value: String(node.value), dataType: "number" },
-        options
-      );
+      return Literal(from, to, {
+        value: String(node.value),
+        dataType: "number",
+      });
     case "str":
-      return Literal(
-        from,
-        to,
-        { value: quote(node.value), dataType: "string" },
-        options
-      );
+      return Literal(from, to, {
+        value: quote(node.value),
+        dataType: "string",
+      });
     case "bool":
-      return Literal(
-        from,
-        to,
-        { value: String(node.value), dataType: "bool" },
-        options
-      );
+      return Literal(from, to, { value: String(node.value), dataType: "bool" });
     case "var":
-      return Literal(
-        from,
-        to,
-        { value: node.value, dataType: "symbol" },
-        options
-      );
+      return Literal(from, to, { value: node.value, dataType: "symbol" });
     case "literal":
       // variable names, as read by `parseVarname`
-      return Literal(
-        from,
-        to,
-        { value: node.name.value, dataType: "symbol" },
-        options
-      );
+      return Literal(from, to, { value: node.name.value, dataType: "symbol" });
     case "raw":
-      return Literal(
-        from,
-        to,
-        { value: "js:raw " + quote(node.code), dataType: "raw" },
-        options
-      );
+      return Literal(from, to, {
+        value: "js:raw " + quote(node.code),
+        dataType: "raw",
+      });
     case "def":
       return VarDef(
         from,
         to,
         convert(node.name, loc),
-        node.body ? convert(node.body, loc) : null,
-        options
+        node.body ? convert(node.body, loc) : null
       );
     case "lambda":
       return Lambda(
@@ -132,19 +81,17 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
           ? Literal(from, from, { value: node.name, dataType: "symbol" })
           : null,
         all(node.vars),
-        convert(node.body, loc),
-        options
+        convert(node.body, loc)
       );
     case "call":
-      return Call(from, to, convert(node.func, loc), all(node.args), options);
+      return Call(from, to, convert(node.func, loc), all(node.args));
     case "assign":
       return Assignment(
         from,
         to,
         node.operator,
         convert(node.left, loc),
-        convert(node.right, loc),
-        options
+        convert(node.right, loc)
       );
     case "binary":
       return Binary(
@@ -152,8 +99,7 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
         to,
         node.operator,
         convert(node.left, loc),
-        convert(node.right, loc),
-        options
+        convert(node.right, loc)
       );
     case "let":
       return Let(
@@ -161,8 +107,7 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
         to,
         node.name ? convert(node.name, loc) : null,
         all(node.vars),
-        convert(node.body, loc),
-        options
+        convert(node.body, loc)
       );
     case "if":
       return Conditional(
@@ -170,20 +115,43 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
         to,
         convert(node.cond, loc),
         convert(node.then, loc),
-        node.else ? convert(node.else, loc) : null,
-        options
+        node.else ? convert(node.else, loc) : null
       );
     case "not":
-      return Not(from, to, convert(node.body, loc), options);
+      return Not(from, to, convert(node.body, loc));
     default:
       throw new Error("Don't know how to convert node of type " + node.type);
   }
 }
 
+/** How lambda writes a comment (and how it is read: `#` to the end of the line) */
+const LAMBDA_COMMENTS: CommentSyntax = {
+  line: "#",
+  block: LAMBDA_BLOCK_COMMENT,
+};
+
 export default function parseString(code: string): ASTNode[] {
   const root = parseToIntermediateAST(code);
   const origin = { line: 0, ch: 0 };
+  const lines = code.split("\n");
+  const end = { line: lines.length - 1, ch: lines[lines.length - 1].length };
   // a program of nothing has no block to draw (one of only comments has one)
-  if (root.type === "prog" && root.prog.length === 0) return [];
-  return [convert(root, { from: origin, to: origin })];
+  if (
+    root.type === "prog" &&
+    root.prog.length === 0 &&
+    scanComments(code, LAMBDA_COMMENTS).length === 0
+  ) {
+    return [];
+  }
+  // (the program is all of the text, so that the comments before its first
+  // statement and after its last are in it)
+  const prog = convert(
+    { ...root, from: origin, to: end },
+    { from: origin, to: end }
+  );
+  return attachComments(code, [prog], {
+    blockComment: LAMBDA_BLOCK_COMMENT,
+    syntax: LAMBDA_COMMENTS,
+    topLevel: prog,
+  });
 }

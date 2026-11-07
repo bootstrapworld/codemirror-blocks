@@ -98,6 +98,17 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   with `defineNode` now, as a language of your own would write them. `Comment` is
   as it was. `Literal` and `Blank` no longer default their `dataType`, and a `Blank`
   does not turn an empty value into `"..."`: say what it is.
+- **Breaking: the editor prints the comment of every node, and every language pairs
+  its comments by the same rules.** A node's `pretty()` no longer prints its own
+  comment (one that calls `withComment` on its result would print it twice), and
+  `withComment` takes where the node starts and ends and a rule, not a whole node.
+  WeScheme, lambda, Routine and the example language (which has comments now:
+  `;` and `#| |#`) all use `attachComments`, with the rules in `COMMENT_RULES`:
+  after code on its line goes with that code, above a node goes with the node, at
+  the end goes with the last node, and the rest stand alone. A language can
+  change some of them (`rules`). A comment before a node is always printed above
+  it (WeScheme put one before a node on its line after it), and lambda's parser no
+  longer has a comment pairing of its own.
 - A node's `pretty()` may return its text instead of a pretty-printer `Doc`, for
   a language that has a printer of its own; the text is not reflowed, and the
   node's comment is printed above it (or beside it, if it was).

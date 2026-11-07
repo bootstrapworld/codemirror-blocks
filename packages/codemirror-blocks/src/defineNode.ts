@@ -1,5 +1,5 @@
 import type * as P from "pretty-fast-pretty-printer";
-import { ASTNode, withComment } from "./ast";
+import { ASTNode } from "./ast";
 import type {
   ASTNodeProps,
   NodeFields,
@@ -150,13 +150,7 @@ export function defineNode<F extends Record<string, FieldDeclaration>>(
       fields,
       options: ariaLabel ? { ariaLabel, ...options } : options,
       spec,
-      pretty: (node) => {
-        const printed = definition.pretty(node);
-        // (a text gets its comment from the editor: so does a doc)
-        return typeof printed === "string"
-          ? printed
-          : withComment(printed, node.options.comment, node);
-      },
+      pretty: definition.pretty,
       render: definition.render,
       longDescription: definition.longDescription,
     });

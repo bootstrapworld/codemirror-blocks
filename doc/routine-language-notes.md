@@ -34,19 +34,17 @@ lines before it does anything.
 render })`, which gives the constructor (#811): Routine's nodes went from 435
    lines to about 330, with the fields typed.
 
-2. **Every language writes its own `make` wrapper**, to give a node its comment
-   and its aria label (lambda has `makeLambdaNode`, WeScheme calls `withComment`
-   in each node, Routine has `make`). _Want:_ the editor does both: print the
-   comment (it already does for a `pretty()` that returns text, which is
-   inconsistent: a doc has to ask for it), and take the aria label from the spec.
+2. **Every language wrote its own `make` wrapper**, to give a node its comment
+   and its aria label. The editor prints the comment of every node now (#812),
+   by one set of rules, and a kind made with `defineNode` declares its aria
+   label once.
 
-3. **The label is declared per kind of node, the aria label per node.** `label`
-   is in the spec, so it is written once. `ariaLabel` is in `options`, so
-   `name minutes` has to be put in the options of every name that is made (my
-   `make` does it). _Want:_ `naming: { label, ariaLabel?: (node) => string }` in
-   the spec. (Everything built from the label then follows: it did work well. A
-   rename of a label in the spec renames it in `shortDescription` and in every
-   long description.)
+3. **The label was declared per kind of node, the aria label per node.** `label`
+   is in the spec, written once, but `ariaLabel` was in `options`, so `name
+minutes` had to be put on every name that was made. A kind made with
+   `defineNode` declares `ariaLabel` once (it is made from the node, and so from
+   its label). Everything built from the label follows: a rename of a label
+   renames it in `shortDescription` and in every long description.
 
 4. **No helper to describe what is in a list.** The summary "2 definitions, 2
    show steps and a calculation" needs the plural label of each kind and a

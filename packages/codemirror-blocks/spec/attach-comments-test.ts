@@ -1,4 +1,6 @@
-import { Literal, Unknown } from "../src/nodes";
+import * as P from "pretty-fast-pretty-printer";
+import { withComment } from "../src/ast";
+import { Comment, Literal, Unknown } from "../src/nodes";
 import { attachComments, scanComments } from "../src/orphans";
 
 /** A language that writes comments as C does: `// line` and `/* block *\/` */
@@ -103,5 +105,113 @@ describe("attachComments", () => {
     attachComments("(f x /* c */ y)", [call], options);
     expect(x.options.comment?.fields.comment).toBe("c");
     expect(y.options.comment).toBeUndefined();
+  });
+});
+
+describe("the rules of attachComments", () => {
+  const options = { blockComment: BLOCK, syntax: C };
+  /** what each root is: `+` has a comment, `*` is a comment standing alone, `-` has none */
+  const pattern = (placed: ReturnType<typeof attachComments>) =>
+    placed
+      .map((n) => (n.options.orphan ? "*" : n.options.comment ? "+" : "-"))
+      .join("");
+  const a = () => lit(0, "a");
+  const b = (line: number) => lit(line, "b");
+
+  describe("afterCode", () => {
+    it('"previous" (the default) gives it to the code before it', () => {
+      expect(pattern(attachComments("a // c\nb", [a(), b(1)], options))).toBe(
+        "+-"
+      );
+    });
+    it('"alone" makes it a block of its own', () => {
+      const rules = { afterCode: "alone" as const };
+      expect(
+        pattern(attachComments("a // c\nb", [a(), b(1)], { ...options, rules }))
+      ).toBe("-*-");
+    });
+    it('"next" gives it to the node after it on its line, and otherwise leaves it alone', () => {
+      const rules = { afterCode: "next" as const };
+      const next = Literal(at(0, 9), at(0, 10), {
+        value: "b",
+        dataType: "symbol",
+      });
+      expect(
+        pattern(
+          attachComments("a /* c */ b", [a(), next], { ...options, rules })
+        )
+      ).toBe("-+");
+      expect(
+        pattern(attachComments("a // c\nb", [a(), b(1)], { ...options, rules }))
+      ).toBe("-*-");
+    });
+  });
+
+  describe("above", () => {
+    it('"next" (the default) gives it to the node below', () => {
+      expect(pattern(attachComments("// c\nb", [b(1)], options))).toBe("+");
+    });
+    it('"alone" makes it a block of its own', () => {
+      const rules = { above: "alone" as const };
+      expect(
+        pattern(attachComments("// c\nb", [b(1)], { ...options, rules }))
+      ).toBe("*-");
+    });
+  });
+
+  describe("maxLinesAbove", () => {
+    it("is 1 by default: a blank line between makes it stand alone", () => {
+      expect(pattern(attachComments("// c\n\nb", [b(2)], options))).toBe("*-");
+    });
+    it("allows a blank line when it is 2", () => {
+      const rules = { maxLinesAbove: 2 };
+      expect(
+        pattern(attachComments("// c\n\nb", [b(2)], { ...options, rules }))
+      ).toBe("+");
+    });
+    it("is the node's own line only when it is 0", () => {
+      const rules = { maxLinesAbove: 0 };
+      expect(
+        pattern(attachComments("// c\nb", [b(1)], { ...options, rules }))
+      ).toBe("*-");
+    });
+  });
+
+  describe("atEnd", () => {
+    it('"last" (the default) gives it to the last node', () => {
+      expect(pattern(attachComments("a\n// c", [a()], options))).toBe("+");
+    });
+    it('"alone" makes it a block of its own', () => {
+      const rules = { atEnd: "alone" as const };
+      expect(
+        pattern(attachComments("a\n// c", [a()], { ...options, rules }))
+      ).toBe("-*");
+    });
+  });
+
+  describe("printAfter, for a comment that goes with a node and comes after it", () => {
+    const printed = (printAfter?: "beside" | "above") => {
+      const node = Literal(at(0), at(0, 1), { value: "a", dataType: "symbol" });
+      const comment = Comment(at(0, 2), at(0, 9), "c", { blockComment: BLOCK });
+      return withComment(P.txt("a"), comment, node, printAfter)
+        .display(80)
+        .join("\n");
+    };
+    it("is beside it by default", () => {
+      expect(printed()).toBe("a /* c */");
+    });
+    it('is above it when the rule says "above"', () => {
+      expect(printed("above")).toBe("/* c */\na");
+    });
+    it("is above it for a comment that comes before it, whichever the rule", () => {
+      const node = Literal(at(0, 9), at(0, 10), {
+        value: "a",
+        dataType: "symbol",
+      });
+      const comment = Comment(at(0), at(0, 7), "c", { blockComment: BLOCK });
+      expect(
+        withComment(P.txt("a"), comment, node, "beside").display(80).join("\n")
+      ).toBe("/* c */\na");
+    });
   });
 });

@@ -1,5 +1,9 @@
 import { ASTNode, Pos } from "../../ast";
 import { Literal, FunctionApp } from "../../nodes";
+import { attachComments } from "../../orphans";
+
+/** How this language writes a comment */
+export const EXAMPLE_BLOCK_COMMENT = { open: "#|", close: "|#" };
 
 const TOKENS = {
   OPEN_PAREN: "open-paren",
@@ -45,8 +49,34 @@ export default class ExampleParser {
     return String(e) || "Parser error";
   }
 
+  /** Reads past a comment, if one is here: `;` to the end of the line, or `#| |#` */
+  skipComment() {
+    if (this.code[this.charIndex] === ";") {
+      while (
+        this.charIndex < this.code.length &&
+        this.code[this.charIndex] !== "\n"
+      ) {
+        this.getch();
+      }
+    } else if (this.code.startsWith("#|", this.charIndex)) {
+      const end = this.code.indexOf("|#", this.charIndex + 2);
+      if (end < 0)
+        throw new Error("A comment is not closed: it needs |# at the end");
+      while (this.charIndex < end + 2) this.getch();
+    }
+  }
+
   getToken(): Token {
     const IDENTIFIER_RE = /[\w-+/*]/;
+    // (a comment is read past: `attachComments` finds it again, in the text,
+    // and gives it its place)
+    while (
+      this.code[this.charIndex] === ";" ||
+      this.code.startsWith("#|", this.charIndex)
+    ) {
+      this.skipComment();
+      while (this.code[this.charIndex] === "\n") this.getch();
+    }
     if (this.charIndex >= this.code.length) {
       return new Token(
         { line: this.lineIndex, ch: this.colIndex },
@@ -145,7 +175,11 @@ export default class ExampleParser {
     while (this.peekToken().token != TOKENS.EOF) {
       rootNodes.push(this.parseNextToken());
     }
-    return rootNodes;
+    // the comments go with the nodes by the editor's rules, and stand alone
+    // where nothing takes them
+    return attachComments(code, rootNodes, {
+      blockComment: EXAMPLE_BLOCK_COMMENT,
+    });
   }
 
   parseNextToken(): ASTNode {

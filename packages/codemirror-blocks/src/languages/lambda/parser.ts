@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Pos } from "../../ast";
-import { poscmp } from "../../utils";
 
 //adapted from http://lisperator.net/pltut/
 
@@ -14,26 +13,7 @@ export type LambdaNode = {
   type: string;
   from?: Pos;
   to?: Pos;
-  /** the comment that goes with the node */
-  comment?: LambdaComment;
-  /**
-   * comments just before the node that go with none: orphans, which are
-   * nodes of their own where the node's parent can hold them (see `expand`)
-   */
-  before?: LambdaComment[];
   [field: string]: any;
-};
-
-/**
- * A comment: `# to the end of the line`, or `#| ... |#`. One that starts on the
- * line where the code before it ends is trailing, and refers to that (the node
- * before it); any other refers to the node that comes after it.
- */
-export type LambdaComment = {
-  text: string;
-  from: Pos;
-  to: Pos;
-  trailing: boolean;
 };
 
 type Token = {
@@ -41,8 +21,6 @@ type Token = {
   to: Pos;
   type: "num" | "str" | "kw" | "var" | "punc" | "op";
   value: any;
-  /** the comments between the token before this one and it */
-  comments?: LambdaComment[];
 };
 
 type InputStream = {
@@ -55,10 +33,6 @@ type InputStream = {
 
 type TokenStream = {
   pos(): { from: Pos; to: Pos };
-  /** the comments after the last token, which no token carries */
-  leftover(): LambdaComment[];
-  /** where the last token read ended (null if there was none) */
-  lastEnd(): Pos | null;
   next(): Token | null;
   peek(): Token | null;
   eof(): boolean;
@@ -90,8 +64,6 @@ function parse(input: TokenStream): LambdaNode {
     "%": 20,
   };
   const FALSE = { type: "bool", value: false };
-  // the node most recently parsed in full: what a trailing comment refers to
-  let lastCompleted: LambdaNode | undefined;
   function nextToken(): Token {
     return input.next() ?? input.croak("Unexpected end of input");
   }
@@ -154,8 +126,7 @@ function parse(input: TokenStream): LambdaNode {
     start: string,
     stop: string,
     separator: string,
-    parser: () => LambdaNode,
-    slot = false
+    parser: () => LambdaNode
   ): LambdaNode[] {
     const a: LambdaNode[] = [];
     let first = true;
@@ -167,48 +138,11 @@ function parse(input: TokenStream): LambdaNode {
       if (isPunc(stop)) break;
       a.push(parser());
     }
-    // Comments before the closing bracket are orphans, except for those that
-    // start on the line where the last thing ended: they go on, as they do
-    // where there are no orphans, to what comes after the bracket.
-    const closing = isPunc(stop) || null;
-    let rest: LambdaComment[] = [];
-    if (slot && closing?.comments) {
-      rest = closing.comments.filter((c) => !c.trailing);
-      closing.comments = closing.comments.filter((c) => c.trailing);
-      if (!closing.comments.length) delete closing.comments;
-    }
     skipPunc(stop);
-    return expand(a, slot, rest);
-  }
-  /**
-   * Orphan comments take their place among the nodes of a list that can hold
-   * them (`slot`), as nodes of their own; where the list cannot, they go with
-   * the node they were before. `rest` are the comments after the last node
-   * (those that trail it go with it, and the others are orphans).
-   */
-  function expand(
-    nodes: LambdaNode[],
-    slot: boolean,
-    rest: LambdaComment[] = []
-  ): LambdaNode[] {
-    const out: LambdaNode[] = [];
-    for (const n of nodes) {
-      if (n.before && slot) {
-        out.push(...n.before.map(orphan));
-        delete n.before;
-      }
-      out.push(n);
-    }
-    const last = nodes[nodes.length - 1];
-    const trailing = last ? rest.filter((c) => c.trailing) : [];
-    if (last && trailing.length) attachComments(last, trailing);
-    out.push(
-      ...groupComments(rest.filter((c) => !trailing.includes(c))).map(orphan)
-    );
-    return out;
+    return a;
   }
   function parseCall(func: LambdaNode, from: Pos): LambdaNode {
-    const args = delimited("(", ")", ",", parseExpression, true);
+    const args = delimited("(", ")", ",", parseExpression);
     toLocation = input.pos().to;
     return {
       from: from,
@@ -219,7 +153,7 @@ function parse(input: TokenStream): LambdaNode {
     };
   }
   function parseVarname(): LambdaNode {
-    return withLeadingComments(parseVarnameNode);
+    return startingAt(parseVarnameNode);
   }
   function parseVarnameNode(): LambdaNode {
     const from = input.pos().from;
@@ -229,7 +163,7 @@ function parse(input: TokenStream): LambdaNode {
     return { from, to, type: "literal", dataType: "var", name };
   }
   function parseVardef(): LambdaNode {
-    return withLeadingComments(parseVardefNode);
+    return startingAt(parseVardefNode);
   }
   function parseVardefNode(): LambdaNode {
     const name = parseVarname();
@@ -328,7 +262,7 @@ function parse(input: TokenStream): LambdaNode {
     return expr;
   }
   function parseAtom(): LambdaNode {
-    return withLeadingComments(parseAtomNode);
+    return startingAt(parseAtomNode);
   }
   function parseAtomNode(): LambdaNode {
     fromLocation = input.pos().from;
@@ -377,106 +311,33 @@ function parse(input: TokenStream): LambdaNode {
       prog.push(parseExpression());
       if (!input.eof()) skipPunc(";");
     }
-    // Comments at the end go with the last thing before them if they come
-    // right after it (on its line, or the next one); any others are orphans.
-    let rest = input.leftover();
-    const end = input.lastEnd();
-    const last = prog[prog.length - 1];
-    if (last && end) {
-      const mine = groupComments(rest.filter((c) => !c.trailing))[0];
-      const adjacent = mine && mine.from.line <= end.line + 1;
-      const taken = rest.filter(
-        (c) => c.trailing || (adjacent && c.from.line <= mine.to.line)
-      );
-      if (taken.length) attachComments(last, taken);
-      rest = rest.filter((c) => !taken.includes(c));
-    }
     return {
       from: input.pos().from,
       to: input.pos().to,
       type: "prog",
-      prog: expand(prog, true, rest),
+      prog,
     };
   }
   function parseProg(): LambdaNode {
     const from = fromLocation;
-    const prog = delimited("{", "}", ";", parseExpression, true);
-    // (comments are not statements)
-    const statements = prog.filter((n) => n.type !== "orphan");
-    if (statements.length == 0 && prog.length == 0) return { ...FALSE };
-    if (statements.length == 1 && prog.length == 1) return prog[0];
+    const prog = delimited("{", "}", ";", parseExpression);
+    if (prog.length == 0) return { ...FALSE };
+    if (prog.length == 1) return prog[0];
     toLocation = input.pos().to;
     return { from: from, to: toLocation, type: "prog", prog: prog }; //return { type: "prog", prog: prog };
   }
+  // (looking at the first token of a node first sets where the node starts)
+  function startingAt<T>(parse: () => T): T {
+    input.peek();
+    return parse();
+  }
   function parseExpression(): LambdaNode {
-    return withLeadingComments(() =>
+    return startingAt(() =>
       maybeCall(function () {
         return maybeBinary(parseAtom(), 0);
       })
     );
   }
-  // The comments that come before a node go with it if they are right above
-  // it (or on its line), unless they trail the node before it (they started
-  // on the line where it ended), and then they go with that one. The others
-  // are orphans: they are the node's `before`.
-  function withLeadingComments(parseNode: () => LambdaNode): LambdaNode {
-    const first = input.peek();
-    const comments = first?.comments ?? [];
-    if (first) delete first.comments;
-    const trailing = lastCompleted ? comments.filter((c) => c.trailing) : [];
-    if (lastCompleted && trailing.length) {
-      attachComments(lastCompleted, trailing);
-    }
-    const node = parseNode();
-    const groups = groupComments(comments.filter((c) => !trailing.includes(c)));
-    const mine = groups[groups.length - 1];
-    if (mine && first && mine.to.line >= first.from.line - 1) {
-      attachComments(node, [groups.pop()!]);
-    }
-    if (groups.length) node.before = groups;
-    lastCompleted = node;
-    return node;
-  }
-}
-
-/**
- * Comments that are one after the other, with no blank line between them,
- * are one comment (they go, or do not go, with the same node).
- */
-function groupComments(comments: LambdaComment[]): LambdaComment[] {
-  const groups: LambdaComment[][] = [];
-  for (const c of comments) {
-    const group = groups[groups.length - 1];
-    if (group && c.from.line <= group[group.length - 1].to.line + 1) {
-      group.push(c);
-    } else {
-      groups.push([c]);
-    }
-  }
-  return groups.map((g) => joinComments(g));
-}
-
-function joinComments(all: LambdaComment[]): LambdaComment {
-  return {
-    text: all.map((c) => c.text).join(" "),
-    from: all.reduce(
-      (a, c) => (poscmp(c.from, a) < 0 ? c.from : a),
-      all[0].from
-    ),
-    to: all.reduce((a, c) => (poscmp(c.to, a) > 0 ? c.to : a), all[0].to),
-    trailing: all.every((c) => c.trailing),
-  };
-}
-
-export function attachComments(node: LambdaNode, comments: LambdaComment[]) {
-  node.comment = joinComments(
-    node.comment ? [node.comment, ...comments] : comments
-  );
-}
-
-/** A comment that goes with nothing, standing where it is */
-function orphan(comment: LambdaComment): LambdaNode {
-  return { type: "orphan", from: comment.from, to: comment.to, comment };
 }
 
 /* -----[ parser utils ]----- */
@@ -523,14 +384,9 @@ function tokenStream(input: InputStream): TokenStream {
   let current: Token | null = null;
   let fromLocation = input.inputPos(),
     toLocation = input.inputPos();
-  const pending: LambdaComment[] = [];
-  let lastEnd: Pos | null = null; // (where the last token ended)
-  let lastWasOpener = false; // (and whether it was a ( or a {)
   const keywords = " let if then else lambda λ true false js:raw ";
   return {
     pos: pos,
-    leftover: () => pending.splice(0),
-    lastEnd: () => lastEnd,
     next: next,
     peek: peek,
     eof: eof,
@@ -614,10 +470,10 @@ function tokenStream(input: InputStream): TokenStream {
     toLocation = input.inputPos();
     return { from: fromLocation, to: toLocation, type: "str", value: string };
   }
+  // (a comment is read past: it is found again, and given its place, by
+  // `attachComments`, from the text)
   function readComment() {
-    const from = input.inputPos();
     input.next(); // (the #)
-    let text = "";
     if (input.peek() == "|") {
       input.next();
       let closed = false;
@@ -628,31 +484,11 @@ function tokenStream(input: InputStream): TokenStream {
           closed = true;
           break;
         }
-        text += ch;
       }
       if (!closed) input.croak("Unterminated comment");
     } else {
-      text = readWhite((ch) => ch != "\n");
+      readWhite((ch) => ch != "\n");
     }
-    pending.push({
-      text: text.trim().replace(/\s+/g, " "),
-      from,
-      to: input.inputPos(),
-      // (after an opening bracket, a comment starts what is inside it)
-      trailing:
-        lastEnd !== null && from.line === lastEnd.line && !lastWasOpener,
-    });
-  }
-  // a token carries the comments that came before it
-  function readNext(): Token | null {
-    const token = readToken();
-    if (token && pending.length) token.comments = pending.splice(0);
-    if (token) {
-      lastEnd = input.inputPos();
-      lastWasOpener =
-        token.type === "punc" && (token.value === "(" || token.value === "{");
-    }
-    return token;
   }
   function readToken(): Token | null {
     readWhite(isWhitespace);
@@ -695,24 +531,12 @@ function tokenStream(input: InputStream): TokenStream {
     input.croak("Can't handle character: " + ch);
   }
   function peek() {
-    return current || (current = readNext());
+    return current || (current = readToken());
   }
   function next() {
     const tok = current;
     current = null;
-    const taken = tok || readNext();
-    // comments that nothing claimed (they came before an operator or a
-    // closing bracket) go on to the next token, and so to what it starts
-    if (taken?.comments?.length) {
-      const following = peek();
-      if (following) {
-        following.comments = [...taken.comments, ...(following.comments ?? [])];
-      } else {
-        pending.unshift(...taken.comments);
-      }
-      delete taken.comments;
-    }
-    return taken;
+    return tok || readToken();
   }
   function eof() {
     return peek() == null;

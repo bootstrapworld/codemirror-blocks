@@ -196,11 +196,39 @@ parse(code) {
 }
 ```
 
-A comment on the line above a node, or on its line, in the same list, goes with
-that node (`options.comment`). Any other comment is a block of its own, put among
-the elements of the nearest list around it that was declared with
-`Spec.list(name, { orphans: true })`, or, where there is none, with the node
-beside it.
+Every language pairs its comments with its nodes by the same rules, so that a
+comment means the same thing in all of them:
+
+- a comment **after code on its line** (`(f x) ; c`) goes with that code (the
+  last node of its list to end before it);
+- a comment **above a node** (on the line just above it, or before it on its
+  line) goes with the node;
+- a comment **at the end of the program**, on the line after the last node, goes
+  with the last node;
+- any other comment is a **block of its own**, among the elements of the nearest
+  list around it that was declared with `Spec.list(name, { orphans: true })`, or,
+  where there is none, with the node beside it.
+
+A comment that goes with a node is its `options.comment`, and **the editor prints
+it** (above the node if it came before it; beside it if it came after on the same
+line and fits, and above if not; an end-of-program comment beside it, or below):
+a node's `pretty` does not print its comment, and should not.
+
+The rules are a table, `COMMENT_RULES` (in `commentRules.ts`, with what each
+setting means: `afterCode`, `above`, `maxLinesAbove`, `atEnd`, `printAfter`). A
+language that needs something else gives the settings it changes as `rules` to
+`attachComments`, and `withComment` takes the same table:
+
+```ts
+return attachComments(code, roots, {
+  blockComment,
+  rules: { afterCode: "next", maxLinesAbove: 2 }, // only what is different
+});
+```
+
+If your language has one node that holds the whole program (as lambda's `prog`)
+and not one root for each thing in it, pass it as `topLevel`, so that the end of
+the program is the end of its list.
 
 ## Defining Node Types
 
