@@ -260,23 +260,24 @@ describe("a language with no primitivesFn", () => {
     cmb.setValue("1 + 2");
   });
 
-  it("has a toolbar, with nothing in it", () => {
-    expect(screen.getByPlaceholderText("Search functions")).toBeEnabled();
+  it("has no toolbar: nothing to search, nothing to list", () => {
+    expect(screen.queryByPlaceholderText("Search functions")).toBeNull();
+    expect(document.querySelector(".toolbar-pane")).toBeNull();
     expect(document.querySelectorAll(".Primitive")).toHaveLength(0);
   });
 
-  it("can still be searched and navigated without errors", () => {
-    const search = screen.getByPlaceholderText("Search functions");
-    keyDown("a", {}, search);
-    keyDown("Escape", {}, search);
-    keyDown("ArrowDown", {}, search);
+  it("is still edited, and the key that moves focus to the toolbar does nothing", () => {
+    const block = document.querySelector<HTMLElement>(".blocks-node")!;
+    block.focus();
+    keyDown("Tab", { shiftKey: true }, block);
     expect(cmb.getValue()).toBe("1 + 2");
+    expect(document.querySelector(".blocks-node")).not.toBeNull();
   });
 
-  it("is disabled in text mode, and back again in block mode", () => {
+  it("switches between block and text mode with its value", () => {
     cmb.setBlockMode(false);
-    expect(screen.getByPlaceholderText("Search functions")).toBeDisabled();
+    expect(cmb.getValue()).toBe("1 + 2");
     cmb.setBlockMode(true);
-    expect(screen.getByPlaceholderText("Search functions")).toBeEnabled();
+    expect(document.querySelector(".blocks-node")).not.toBeNull();
   });
 });

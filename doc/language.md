@@ -29,6 +29,37 @@ CMB exposes to language authors is exported from the package root:
 
 Types such as `Pos` live in submodules, e.g. `@bootstrapworld/codemirror-blocks/lib/ast`.
 
+## Starting a Language: a Checklist
+
+What a new language needs, in the order you will want it. Each step is in the
+rest of this guide:
+
+1. **Register it** with `Languages.addLanguage({ id, name, parse, ... })`: only
+   `id`, `name` and `parse` are needed. Give it an `exampleCode` (a short
+   program), and a `blockComment` if it has comments.
+2. **Define its nodes** with `defineNode` (see below). Give each block a
+   `variant` (`"compound"` for a frame with a strip at the top, `"value"` for a
+   pill) and the editor's default style draws it: no stylesheet of your own is
+   needed to start.
+3. **Style it** (optional): a `style.less` that imports the default style under
+   `.blocks-language-<id>`, compiled to CSS and loaded like the editor's own
+   (see [loading the stylesheets](stylesheet.md#loading-the-stylesheets)). Your
+   module imports no stylesheet and needs no bundler loader.
+4. **Try it**: the example page (`npm start` in `packages/codemirror-blocks`)
+   shows any language that has been added, at `/?lang=<id>`, with its
+   `exampleCode`: import the module and its CSS in `example/editor-example.js`
+   (two lines). The end-to-end helper `openInBlockMode(page, code, "<id>")`
+   opens it in a test.
+5. **A toolbar** is only for a language that has `primitivesFn`. Without it the
+   editor has no toolbar at all (no search box, no empty panel).
+
+Two things to know about names. A node's block has the class `blocks-<type>`, so
+a kind with the `type` of one of the default style's own classes (`name`,
+`literal`, `comment`, `blank`, `sequence`, `unknown`, `operator`, `args`) gets
+that style, which is probably not what you want: use another `type`. And the
+default style draws a `variant` of `"compound"` or `"value"`, whatever the
+`type` is.
+
 ## Adding a Language
 
 Here is the shape of a complete language module. The rest of this guide fills in
@@ -108,6 +139,8 @@ export default Languages.addLanguage({
 - `description` is optional, and describes the language.
 - `parse(code: string): ASTNode[]` is the parser, described in the next
   section.
+- `exampleCode` is optional: a short program, which the example page shows for
+  `?lang=<id>`.
 - `blockComment: { open, close }` is optional. It says how the language writes
   a block comment (`{ open: "#|", close: "|#" }` for Scheme). If it is given,
   Shift-Ctrl-] adds or edits a comment on the focused block, and the comment
@@ -119,7 +152,7 @@ export default Languages.addLanguage({
   whatever `parse` threw into something to show the user. The default is
   `String(e)`.
 - `primitivesFn(): PrimitiveGroup` is optional. It supplies the primitives shown
-  in the toolbar. Use `PrimitiveGroup.fromConfig(name, config)` to build one
+  in the toolbar (a language without it has no toolbar). Use `PrimitiveGroup.fromConfig(name, config)` to build one
   from a plain description (see `codemirror-blocks/src/languages/wescheme/primitives-config.ts`).
   If you supply it, also supply `getASTNodeForPrimitive` and
   `getLiteralNodeForPrimitive`, which turn a primitive into the block that is

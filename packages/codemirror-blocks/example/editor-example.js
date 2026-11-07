@@ -7,10 +7,12 @@ import "../lib/css/languages/routine.css";
 import "../lib/css/languages/lambda.css";
 import "../lib/css/languages/example.css";
 import "../lib/css/debug-page.css";
-import wescheme from "../lib/languages/wescheme";
-import routine from "../lib/languages/routine";
-import lambda from "../lib/languages/lambda";
-import exampleLanguage from "../lib/languages/example";
+// (a language adds itself to the editor when it is imported)
+import "../lib/languages/wescheme";
+import "../lib/languages/routine";
+import "../lib/languages/lambda";
+import "../lib/languages/example";
+import { getLanguages, getLanguage } from "../lib/languages";
 import bigExampleCode from "./ast-test.rkt";
 import hugeExampleCode from "./huge-code.rkt";
 const smallExampleCode = `(collapse me)\n(+ 1 2)`;
@@ -25,55 +27,29 @@ Object.assign(window, t);
 const exampleCode = bigExampleCode;
 //const exampleCode = hugeExampleCode;
 
-// ?lang=routine shows Routine, a small language that tries the editor's API
-const routineCode = `; Start the day
-(let minutes 10)
-(let spare)
-(show "Good morning")
+// `?lang=<id>` shows any language that has been added (WeScheme if none is
+// given), with its `exampleCode`. WeScheme's is a larger program of our own.
+const programs = { wescheme: bigExampleCode };
 
-#| steps that repeat |#
-(repeat 3
-  ; the longer the later
-  (show (+ minutes 1))
-  (let minutes (+ minutes 5))
-  (if (> minutes 20)
-    (show "late")))
-
-(if (< minutes 30)
-  (show "on time")
-  (show "late"))
-`;
-
-// ?lang=lambda shows lambda, and ?lang=example the example language
-const lambdaCode = `# Some functions
-double = lambda (x) x * 2;
-area = lambda (w, h) w * h;
-
-# a conditional, and a call
-answer = if double(21) > 40 then area(6, 7) else 0;
-let loop (i = 0) if i < 3 then loop(i + 1) else i
-`;
-const exampleLanguageCode = `; numbers and calls
-(+ 1 2)
-(* (+ 3 4) (- 10 5))
-`;
-
-const languages = {
-  wescheme: { language: wescheme, code: bigExampleCode, looks: ["classic"] },
-  routine: {
-    language: routine,
-    code: routineCode,
-    looks: ["classic", "storyboard"],
-  },
-  lambda: { language: lambda, code: lambdaCode, looks: ["classic", "maths"] },
-  example: {
-    language: exampleLanguage,
-    code: exampleLanguageCode,
-    looks: ["classic"],
-  },
+// A language that has another look (see its style.less) lists them here
+const looksOf = {
+  routine: ["classic", "storyboard"],
+  lambda: ["classic", "maths"],
 };
 const params = new URLSearchParams(window.location.search);
-const chosen = languages[params.get("lang")] ?? languages.wescheme;
+const id = params.get("lang") ?? "wescheme";
+const language = getLanguage(id);
+if (!language) {
+  document.body.textContent = `There is no language "${id}": try ${getLanguages()
+    .map((l) => `?lang=${l.id}`)
+    .join(", ")}`;
+  throw new Error(`no language ${id}`);
+}
+const chosen = {
+  language,
+  code: programs[id] ?? language.exampleCode ?? "",
+  looks: looksOf[id] ?? ["classic"],
+};
 const editor = createDebuggingInterface(chosen.language, chosen.code);
 
 // ?look=<name> draws the language another way: the page has the class

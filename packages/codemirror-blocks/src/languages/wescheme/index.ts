@@ -56,6 +56,10 @@ export default addLanguage({
   id: "wescheme",
   name: "WeScheme",
   description: "The WeScheme language",
+  exampleCode: `; a function, and a call of it
+(define (double x) (* x 2))
+(double 21)
+`,
   blockComment: WESCHEME_BLOCK_COMMENT,
   parse,
   getExceptionMessage,

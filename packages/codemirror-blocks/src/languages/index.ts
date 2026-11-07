@@ -42,6 +42,13 @@ export type LanguageConfig = {
   parse(code: string): ASTNode[];
 
   /**
+   * A short program in the language, which the example page shows for
+   * `?lang=<id>` (and a person trying the language for the first time can start
+   * from). Optional.
+   */
+  exampleCode?: string;
+
+  /**
    * How the language writes a block comment, e.g. `{ open: "#|", close: "|#" }`.
    * A language that has them can have its blocks commented from the keyboard
    * (the comment is written this way, and so it has to be something the
@@ -78,7 +85,8 @@ export type LanguageConfig = {
 
   /**
    * Returns a list of language primitives that will be displayed
-   * in the search bar.
+   * in the search bar. Optional: a language with no primitives has no toolbar
+   * (no search box, no list), and the editor has the whole width.
    */
   primitivesFn?: () => PrimitiveGroup;
 };

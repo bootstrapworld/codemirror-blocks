@@ -104,11 +104,14 @@ className="blocks-args">` around it, from reading the stylesheet. It takes a
 12. **The example page and the test helpers know one language.** `createDebugging
 Interface(language, code)` was fine, but `editor-example.js` was WeScheme only
     (I added `?lang=`), and `openInBlockMode` in the e2e helpers had no language
-    (I added a parameter). A new language should be a one-line addition.
+    (I added a parameter). A new language should be a one-line addition. The
+    page shows any language that has been added now, with its `exampleCode`
+    (#821): importing the module and its CSS is all it takes.
 
-13. **An empty toolbar.** A language with no `primitivesFn` gets the search box
-    and nothing else (the empty panel on the left of the editor). Fine for
-    Routine, but nothing says that it is optional or what it would hold.
+13. **An empty toolbar.** A language with no `primitivesFn` got the search box
+    and nothing else (the empty panel on the left of the editor), and nothing
+    said that it is optional. It has no toolbar now (#821), and the guide says
+    so.
 
 What was nice: `listItems` made the numbered list with the targets away from the
 steps short and obviously right (the number and the index cannot be mixed up);

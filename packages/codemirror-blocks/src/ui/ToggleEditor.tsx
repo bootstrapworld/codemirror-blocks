@@ -184,18 +184,21 @@ function ToggleEditor(props: ToggleEditorProps) {
         {blockMode && editor ? (
           <TrashCan language={props.language} editor={editor} />
         ) : null}
-        <div className={"toolbar-pane"} tabIndex={-1} aria-hidden={!blockMode}>
-          <Toolbar
-            primitives={
-              props.language.primitivesFn
-                ? props.language.primitivesFn()
-                : undefined
-            }
-            languageId={props.language.id}
-            blockMode={blockMode}
-            toolbarRef={toolbarRef}
-          />
-        </div>
+        {/* (a language with no primitives has nothing to put in a toolbar) */}
+        {props.language.primitivesFn ? (
+          <div
+            className={"toolbar-pane"}
+            tabIndex={-1}
+            aria-hidden={!blockMode}
+          >
+            <Toolbar
+              primitives={props.language.primitivesFn()}
+              languageId={props.language.id}
+              blockMode={blockMode}
+              toolbarRef={toolbarRef}
+            />
+          </div>
+        ) : null}
         <div className="codemirror-pane">
           {blockMode ? (
             <BlockEditor
