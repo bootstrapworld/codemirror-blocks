@@ -164,6 +164,9 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   (it was bare text), and the example language's style is the import and a few
   colors. Routine has an alternate `storyboard` look and lambda a `maths` one,
   switched on the example page with `?look=` or the "Look" menu.
+- The picture of a block that is being dragged has the shape of the block again
+  (it is a copy in a box that has the language's class, so the language's style
+  applies to it), and is see-through (opacity 0.65).
 - `<Node editingHint={...}>` is drawn beside the edit box while a block is being
   edited (the box takes the place of the block's children), so a block can keep
   showing a hint, such as the names in scope, while its text is typed.

@@ -98,12 +98,28 @@ class DragStore {
   }
 
   private begin(p: Pending, pos: Point) {
-    const preview = p.el.cloneNode(true) as HTMLElement;
-    preview.removeAttribute("id");
-    preview.querySelectorAll("[id]").forEach((e) => e.removeAttribute("id"));
-    preview.classList.add("cmb-drag-preview");
+    const copy = p.el.cloneNode(true) as HTMLElement;
+    copy.removeAttribute("id");
+    copy.querySelectorAll("[id]").forEach((e) => e.removeAttribute("id"));
+    copy.removeAttribute("data-cmb-drag-source");
+    // The copy goes in a box of its own that follows the pointer. A language's
+    // style is written under its class (`.blocks-language-<id>`, on an element
+    // around the editor), so the box has that class too, and the font that the
+    // block has: a copy put straight in the page has none of it, and is not the
+    // shape of the block.
+    const preview = document.createElement("div");
+    preview.className = "cmb-drag-preview";
+    for (let up = p.el.parentElement; up; up = up.parentElement) {
+      up.classList.forEach((c) => {
+        if (c.startsWith("blocks-language-")) preview.classList.add(c);
+      });
+    }
+    const style = getComputedStyle(p.el);
+    preview.style.fontFamily = style.fontFamily;
+    preview.style.fontSize = style.fontSize;
+    preview.style.lineHeight = style.lineHeight;
     preview.setAttribute("aria-hidden", "true"); // a picture, not a second block
-    preview.removeAttribute("data-cmb-drag-source");
+    preview.appendChild(copy);
     document.body.appendChild(preview);
     document.body.classList.add("cmb-dragging");
     try {

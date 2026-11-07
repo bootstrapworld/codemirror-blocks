@@ -13,6 +13,23 @@ beforeEach(() => {
 
 afterEach(teardown);
 
+describe("the picture of a block that is being dragged", () => {
+  it("is a copy of the block in a box that has the language's class, so it has its shape", () => {
+    cmb.setValue(`(add firstVar secondVar)`);
+    const add = getNodeLabeled(/add expression/);
+    const dragging = drag(add);
+    const preview = document.querySelector(".cmb-drag-preview")!;
+    // (a language's style is under its class: a copy in the page alone has none)
+    expect(preview).toHaveClass("blocks-language-wescheme");
+    expect(preview.parentElement).toBe(document.body);
+    expect(preview.querySelector(".blocks-functionApp")).not.toBeNull();
+    expect(preview).toHaveAttribute("aria-hidden", "true");
+    expect(preview.querySelector("[id]")).toBeNull();
+    dragging.cancel();
+    expect(document.querySelector(".cmb-drag-preview")).toBeNull();
+  });
+});
+
 describe("when dragging a node onto a node in a different subtree", () => {
   it("should replace the node that it's dropped onto and focus on the new node", () => {
     cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
