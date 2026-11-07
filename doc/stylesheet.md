@@ -176,3 +176,31 @@ written without the `blocks-` prefix.
 ### Other Classes
 
 - **searchBox**: The box that pops up when you search with `/`.
+
+## Drawing a language more than one way
+
+Because the default style speaks of `blocks-compound` and `blocks-value`, and
+not of one language's kinds of node, the same blocks can be drawn another way by
+a stylesheet that changes those classes (and the few of the language's own), and
+nothing else: the drop targets, selection, focus and the edit box stay the
+default style's. Put the alternate rules under a class that the page sets:
+
+```less
+.look-storyboard .blocks-language-routine {
+  .blocks-compound {
+    border-left-width: 6px;
+    background: white;
+  }
+  .blocks-operator {
+    background: transparent;
+    color: #555;
+  }
+}
+```
+
+Routine has a `storyboard` look (cards with a colored edge and an arrow between
+the steps of a loop), and lambda a `maths` one (no frames, `f(x)` with its
+brackets, `λ`). On the example page, `?look=storyboard` or `?look=maths` (or the
+"Look" menu, for a language that has more than one) switches between them as the
+page is open. This is a feature of the page: an application picks its look in its
+own stylesheet.

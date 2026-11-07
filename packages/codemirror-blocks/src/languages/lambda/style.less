@@ -1,22 +1,154 @@
 .blocks-language-lambda {
-  @border-radius: 5px;
-  @border-width: 1px;
+  // The editor's own style: the frame of a block (`variant="compound"`), the
+  // pill of a value, the black strip (`.blocks-operator`), drop targets,
+  // selection, comments, collapsing.
+  @import "../../less/default-style.less";
 
+  @border-radius: 5px;
+  @border-width: 2px;
+
+  // The whole program: a box with a title, and its statements one to a line
   .blocks-prog {
-    border: 1px solid black;
     display: block;
     border-radius: 5px;
-    padding: 2px;
+    background: white;
     > h4 {
-      border-bottom: 1px solid black;
+      margin: 0;
+      padding: 1px 5px;
+      font-size: 12px;
+      background: black;
+      color: white;
       text-align: center;
     }
   }
-  .blocks-binary {
-    border: 1px solid black;
-    display: inline-block;
-    border-radius: 5px;
+
+  .blocks-statements {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 4px;
+  }
+
+  // (what a value says, and a name in a black strip is a light pill)
+  @literal-number-color: blue;
+  @literal-string-color: green;
+  @literal-boolean-color: darkred;
+  @literal-symbol-color: steelblue;
+  .blocks-literal-number {
+    color: @literal-number-color;
+  }
+  .blocks-literal-string {
+    color: @literal-string-color;
+  }
+  .blocks-literal-boolean {
+    color: @literal-boolean-color;
+  }
+  .blocks-literal-symbol {
+    color: @literal-symbol-color;
+  }
+  .blocks-operator .blocks-value {
+    background: white;
+  }
+
+  // An expression with an operator between its sides, `a + b` and `x = 1`, is
+  // a row, not a block with a strip over its arguments
+  .blocks-binary,
+  .blocks-assignment,
+  .blocks-vardef {
+    flex-direction: row;
+    align-items: center;
+    border-radius: 8px;
     white-space: normal;
-    padding: 2px 5px;
+    > .blocks-operator {
+      background: transparent;
+      color: black;
+    }
+  }
+}
+
+// ---- the maths look ----
+// The same blocks, drawn as one writes maths (the page has the class
+// `look-maths`: see `?look=` on the example page): no frames and no black strips,
+// a serif face, `f(x)` with its brackets, `λ x ▸ body`, variables in italics,
+// and the program as plain lines. The default style still draws the drop
+// targets, selection, focus and the edit box.
+.look-maths .blocks-language-lambda {
+  font-family: "Times New Roman", Georgia, serif;
+  font-size: 16px;
+
+  .blocks-compound {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    background: transparent;
+    border-color: transparent;
+    border-radius: 4px;
+    box-shadow: none;
+    gap: 4px;
+    margin: 1px;
+    padding: 0 2px;
+  }
+  .blocks-prog {
+    display: block;
+    background: transparent;
+    border: none;
+    > h4 {
+      display: none;
+    }
+  }
+  .blocks-statements {
+    gap: 6px;
+  }
+
+  // words and signs are text, not a strip
+  .blocks-operator {
+    background: transparent;
+    color: #222;
+    font-weight: normal;
+    font-style: italic;
+    padding: 0 2px;
+  }
+  .blocks-binary > .blocks-operator,
+  .blocks-assignment > .blocks-operator,
+  .blocks-vardef > .blocks-operator,
+  .blocks-not > .blocks-operator {
+    font-style: normal;
+  }
+
+  // f(x, y): the brackets are drawn, as they are written
+  .blocks-call > .blocks-operator {
+    font-style: normal;
+    padding-right: 0;
+    &::after {
+      content: "(";
+    }
+  }
+  .blocks-call::after {
+    content: ")";
+  }
+
+  // lambda is a λ, and its parameters and its body follow
+  .blocks-lambda > .blocks-operator {
+    font-size: 0;
+    &::before {
+      content: "\03bb";
+      font-size: 20px;
+      font-style: normal;
+    }
+  }
+
+  // values: no pill
+  .blocks-value {
+    background: transparent;
+    border-color: transparent;
+    font-size: 16px;
+    padding: 0 1px;
+  }
+  .blocks-operator .blocks-value {
+    background: transparent;
+  }
+  .blocks-literal-symbol {
+    font-style: italic;
   }
 }

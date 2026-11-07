@@ -61,7 +61,7 @@ export const LetLikeExpr = defineNode({
   },
   render(props) {
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <span className="blocks-operator">{props.node.fields.form}</span>
         {props.node.fields.bindings.reactElement()}
         {props.node.fields.expr.reactElement()}
@@ -110,7 +110,7 @@ export const WhenUnless = defineNode({
   },
   render(props) {
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <span className="blocks-operator">{props.node.fields.form}</span>
         {props.node.fields.predicate.reactElement()}
         {props.node.fields.exprs.reactElement()}

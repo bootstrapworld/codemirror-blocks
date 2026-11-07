@@ -104,9 +104,11 @@ export function Prog(from: Pos, to: Pos, exprs: ASTNode[], options = {}) {
     },
     render(props) {
       return (
-        <Node {...props}>
+        <Node {...props} variant="compound">
           <h4>Your Lambda Program</h4>
-          <Args field="exprs">{props.node.fields.exprs}</Args>
+          <Args className="blocks-statements" field="exprs">
+            {props.node.fields.exprs}
+          </Args>
         </Node>
       );
     },
@@ -133,7 +135,7 @@ export function Call(
       P.horz(atomic(node.fields.func), commaSeparated(node.fields.args)),
     render(props) {
       return (
-        <Node {...props}>
+        <Node {...props} variant="compound">
           <span className="blocks-operator">
             {props.node.fields.func.reactElement()}
           </span>
@@ -172,7 +174,7 @@ export function Lambda(
       ),
     render(props) {
       return (
-        <Node {...props}>
+        <Node {...props} variant="compound">
           <span className="blocks-operator">lambda</span>
           {props.node.fields.name?.reactElement()}
           <Args field="vars">{props.node.fields.vars}</Args>
@@ -204,7 +206,7 @@ export function VarDef(
         : P.horz(node.fields.name),
     render(props) {
       return (
-        <Node {...props}>
+        <Node {...props} variant="compound">
           {props.node.fields.name.reactElement()}
           {props.node.fields.body ? (
             <>
@@ -244,7 +246,7 @@ export function Let(
       ),
     render(props) {
       return (
-        <Node {...props}>
+        <Node {...props} variant="compound">
           <span className="blocks-operator">let</span>
           {props.node.fields.name?.reactElement()}
           <Args field="vars">{props.node.fields.vars}</Args>
@@ -285,7 +287,7 @@ export function Conditional(
     render(props) {
       const { cond, then, else: else_ } = props.node.fields;
       return (
-        <Node {...props}>
+        <Node {...props} variant="compound">
           <span className="blocks-operator">if</span>
           {cond.reactElement()}
           <span className="blocks-operator">then</span>
@@ -316,7 +318,7 @@ export function Not(from: Pos, to: Pos, body: ASTNode, options = {}) {
     pretty: (node) => P.horz("!", atomic(node.fields.body)),
     render(props) {
       return (
-        <Node {...props}>
+        <Node {...props} variant="compound">
           <span className="blocks-operator">!</span>
           {props.node.fields.body.reactElement()}
         </Node>
@@ -350,7 +352,7 @@ function operatorNode(type: "binary" | "assignment") {
         ),
       render(props) {
         return (
-          <Node {...props}>
+          <Node {...props} variant="compound">
             {props.node.fields.left.reactElement()}
             <span className="blocks-operator">
               {props.node.fields.operator}

@@ -89,7 +89,7 @@ export const Unknown = defineNode({
     const firstElt = props.node.fields.elts[0].reactElement();
     const restElts = props.node.fields.elts.slice(1);
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <span className="blocks-operator">{firstElt}</span>
         <Args className="blocks-args" field="elts">
           {restElts}
@@ -135,7 +135,7 @@ export const FunctionApp = defineNode({
   },
   render(props) {
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <span className="blocks-operator">
           {props.node.fields.func.reactElement()}
         </span>
@@ -210,7 +210,7 @@ export const StructDefinition = defineNode({
     const name = props.node.fields.name.reactElement();
     const fields = props.node.fields.fields.reactElement();
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <span className="blocks-operator">
           define-struct
           {name}
@@ -239,7 +239,7 @@ export const VariableDefinition = defineNode({
     const body = props.node.fields.body.reactElement();
     const name = props.node.fields.name.reactElement();
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <span className="blocks-operator">
           define
           {name}
@@ -275,7 +275,7 @@ export const LambdaExpression = defineNode({
     const args = props.node.fields.args.reactElement();
     const body = props.node.fields.body.reactElement();
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <span className="blocks-operator">&lambda; ({args})</span>
         <span className="blocks-args">{body}</span>
       </Node>
@@ -313,7 +313,7 @@ export const FunctionDefinition = defineNode({
     const body = props.node.fields.body.reactElement();
     const name = props.node.fields.name.reactElement();
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <span className="blocks-operator">
           define ({name} {params})
         </span>
@@ -384,7 +384,7 @@ export const CondExpression = defineNode({
       clause.reactElement({ key: index })
     );
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <span className="blocks-operator">cond</span>
         <div className="blocks-cond-table">{clauses}</div>
       </Node>
@@ -418,7 +418,7 @@ export const IfExpression = defineNode({
     const thenExpr = props.node.fields.thenExpr.reactElement();
     const elseExpr = props.node.fields.elseExpr.reactElement();
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <span className="blocks-operator">if</span>
         <div className="blocks-cond-table">
           <div className="blocks-cond-row">
@@ -451,7 +451,12 @@ export const Literal = defineNode({
   pretty: (node) => P.txt(singleLine(node.fields.value)),
   render(props) {
     return (
-      <Node {...props} normallyEditable={true} expandable={false}>
+      <Node
+        {...props}
+        variant="value"
+        normallyEditable={true}
+        expandable={false}
+      >
         <span className={`blocks-literal-${props.node.fields.dataType}`}>
           {props.node.fields.value}
         </span>
@@ -546,7 +551,12 @@ export const Blank = defineNode({
   pretty: (node) => P.txt(singleLine(node.fields.value)),
   render(props) {
     return (
-      <Node {...props} normallyEditable={true} expandable={false}>
+      <Node
+        {...props}
+        variant="value"
+        normallyEditable={true}
+        expandable={false}
+      >
         <span className="blocks-literal-symbol" />
       </Node>
     );
@@ -572,7 +582,7 @@ export const defineSequence = (
     pretty,
     render(props) {
       return (
-        <Node {...props}>
+        <Node {...props} variant="compound">
           <span className="blocks-operator">
             {props.node.fields.name?.reactElement()}
           </span>

@@ -42,19 +42,9 @@
   }
 }
 
-// (a language that gives its block `variant="compound"` has this too)
-.blocks-compound,
-.blocks-condExpression,
-.blocks-functionApp,
-.blocks-functionDefinition,
-.blocks-ifExpression,
-.blocks-lambdaExpression,
-.blocks-letLikeExpr,
-.blocks-sequence,
-.blocks-structDefinition,
-.blocks-unknown,
-.blocks-variableDefinition,
-.blocks-whenUnlessExpr {
+// The frame of a block that holds others: a block that has `variant="compound"`
+// (every kind of node of the core languages does, and a language's own say it)
+.blocks-compound {
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;

@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import wescheme from "../lib/languages/wescheme";
 import routine from "../lib/languages/routine";
+import lambda from "../lib/languages/lambda";
+import exampleLanguage from "../lib/languages/example";
 import bigExampleCode from "./ast-test.rkt";
 import hugeExampleCode from "./huge-code.rkt";
 const smallExampleCode = `(collapse me)\n(+ 1 2)`;
@@ -33,11 +35,68 @@ const routineCode = `; Start the day
   (show "on time")
   (show "late"))
 `;
-const useRoutine =
-  new URLSearchParams(window.location.search).get("lang") === "routine";
-const editor = useRoutine
-  ? createDebuggingInterface(routine, routineCode)
-  : createDebuggingInterface(wescheme, bigExampleCode);
+
+// ?lang=lambda shows lambda, and ?lang=example the example language
+const lambdaCode = `# Some functions
+double = lambda (x) x * 2;
+area = lambda (w, h) w * h;
+
+# a conditional, and a call
+answer = if double(21) > 40 then area(6, 7) else 0;
+let loop (i = 0) if i < 3 then loop(i + 1) else i
+`;
+const exampleLanguageCode = `; numbers and calls
+(+ 1 2)
+(* (+ 3 4) (- 10 5))
+`;
+
+const languages = {
+  wescheme: { language: wescheme, code: bigExampleCode, looks: ["classic"] },
+  routine: {
+    language: routine,
+    code: routineCode,
+    looks: ["classic", "storyboard"],
+  },
+  lambda: { language: lambda, code: lambdaCode, looks: ["classic", "maths"] },
+  example: {
+    language: exampleLanguage,
+    code: exampleLanguageCode,
+    looks: ["classic"],
+  },
+};
+const params = new URLSearchParams(window.location.search);
+const chosen = languages[params.get("lang")] ?? languages.wescheme;
+const editor = createDebuggingInterface(chosen.language, chosen.code);
+
+// ?look=<name> draws the language another way: the page has the class
+// `look-<name>`, and a language's alternate style is under it (see the
+// `look-` rules in the language's style.less). Routine and lambda have one.
+const LOOKS = ["classic", "storyboard", "maths"];
+const setLook = (look) => {
+  for (const l of LOOKS)
+    document.body.classList.toggle(`look-${l}`, l === look);
+};
+// (only the looks the language has: `?look=` for another is the classic one)
+const look = chosen.looks.includes(params.get("look"))
+  ? params.get("look")
+  : "classic";
+const picker = document.createElement("label");
+picker.className = "look-picker";
+picker.innerHTML = `Look <select id="look">${chosen.looks
+  .map(
+    (l) => `<option value="${l}"${l === look ? " selected" : ""}>${l}</option>`
+  )
+  .join("")}</select>`;
+if (chosen.looks.length > 1) {
+  document.querySelector(".page-header")?.appendChild(picker);
+}
+picker.querySelector("select").addEventListener("change", (e) => {
+  setLook(e.target.value);
+  const url = new URL(window.location.href);
+  url.searchParams.set("look", e.target.value);
+  window.history.replaceState(null, "", url);
+});
+setLook(look);
 
 // for debugging purposes
 window.editor = editor;

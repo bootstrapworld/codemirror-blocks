@@ -158,6 +158,12 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   and `blocks-value`, so that a language's stylesheet does not have to say
   which of its kinds of node are like WeScheme's (the `:extend` Routine had to
   use). The class `blocks-hint` is a chip for what a block says about its state.
+- Every language of the editor uses the variants: the core nodes (and so
+  WeScheme and the example language) are `compound` or `value`, the default style
+  has no list of WeScheme's kinds of node any more, lambda has the default style
+  (it was bare text), and the example language's style is the import and a few
+  colors. Routine has an alternate `storyboard` look and lambda a `maths` one,
+  switched on the example page with `?look=` or the "Look" menu.
 - `<Node editingHint={...}>` is drawn beside the edit box while a block is being
   edited (the box takes the place of the block's children), so a block can keep
   showing a hint, such as the names in scope, while its text is typed.
