@@ -1,5 +1,7 @@
 import { AST, ASTNode } from "../ast";
 import type { BlockComment } from "../ast";
+import { withCommentRules } from "../commentRules";
+import type { CommentRules } from "../commentRules";
 import type { PrimitiveGroup } from "../CodeMirrorBlocks";
 import { Literal } from "../nodes";
 import { Primitive } from "../parsers/primitives";
@@ -46,6 +48,15 @@ export type LanguageConfig = {
    * language's parser reads back as a comment); one that does not, cannot.
    */
   blockComment?: BlockComment;
+
+  /**
+   * How the language's comments are paired with its nodes, and printed, where it
+   * differs from what the editor does for every language (see `CommentRules`,
+   * which has the settings and the defaults): only the settings that differ. The
+   * `attachComments` call of its `parse` takes them, and so does the printing of
+   * its nodes.
+   */
+  commentRules?: Partial<CommentRules>;
 
   /**
    * A function for generating a human readable error message
@@ -95,7 +106,12 @@ export function addLanguage(languageDefinition: LanguageConfig) {
     getExceptionMessage: (e: unknown) => String(e) || "Parser error",
     ...languageDefinition,
     buildAST: (code: string) => {
-      return AST.from(id, languageDefinition.parse(code));
+      return AST.from(
+        id,
+        withCommentRules(languageDefinition.commentRules, () =>
+          languageDefinition.parse(code)
+        )
+      );
     },
   };
   LANGUAGES[id] = language;

@@ -216,15 +216,19 @@ a node's `pretty` does not print its comment, and should not.
 
 The rules are a table, `COMMENT_RULES` (in `commentRules.ts`, with what each
 setting means: `afterCode`, `above`, `maxLinesAbove`, `atEnd`, `printAfter`). A
-language that needs something else gives the settings it changes as `rules` to
-`attachComments`, and `withComment` takes the same table:
+language that needs something else says so once, in its definition, giving only
+the settings it changes; they are used when its `parse` pairs the comments and
+when its nodes are printed:
 
 ```ts
-return attachComments(code, roots, {
-  blockComment,
-  rules: { afterCode: "next", maxLinesAbove: 2 }, // only what is different
+addLanguage({
+  id: "mine",
+  // ...
+  commentRules: { afterCode: "next", maxLinesAbove: 2 },
 });
 ```
+
+(A call of `attachComments` can also give `rules` of its own, which win.)
 
 If your language has one node that holds the whole program (as lambda's `prog`)
 and not one root for each thing in it, pass it as `topLevel`, so that the end of

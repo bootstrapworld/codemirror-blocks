@@ -279,6 +279,7 @@ export function cloneNode(oldNode: ASTNode): ASTNode {
     spec: oldNode.spec,
   });
   cloned.id = oldNode.id;
+  cloned.languageId = oldNode.languageId;
   cloned._dangerouslySetHash(oldNode.hash);
   return cloned;
 }

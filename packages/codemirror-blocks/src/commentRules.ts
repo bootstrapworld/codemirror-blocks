@@ -50,3 +50,28 @@ export const COMMENT_RULES: CommentRules = {
   atEnd: "last",
   printAfter: "beside",
 };
+
+let inEffect: Partial<CommentRules> | undefined;
+
+/**
+ * Runs `fn` with a language's rules in effect, for the `attachComments` calls
+ * it makes that do not give rules of their own (the editor does this around the
+ * `parse` of a language that has `commentRules`: see `LanguageConfig`).
+ */
+export function withCommentRules<T>(
+  rules: Partial<CommentRules> | undefined,
+  fn: () => T
+): T {
+  const before = inEffect;
+  inEffect = rules;
+  try {
+    return fn();
+  } finally {
+    inEffect = before;
+  }
+}
+
+/** The rules in effect: the language's, over the defaults, and `given` over those */
+export function rulesInEffect(given?: Partial<CommentRules>): CommentRules {
+  return { ...COMMENT_RULES, ...inEffect, ...given };
+}

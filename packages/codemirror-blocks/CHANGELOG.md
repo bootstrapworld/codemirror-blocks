@@ -106,7 +106,7 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   `;` and `#| |#`) all use `attachComments`, with the rules in `COMMENT_RULES`:
   after code on its line goes with that code, above a node goes with the node, at
   the end goes with the last node, and the rest stand alone. A language can
-  change some of them (`rules`). A comment before a node is always printed above
+  change some of them (`commentRules` in its definition). A comment before a node is always printed above
   it (WeScheme put one before a node on its line after it), and lambda's parser no
   longer has a comment pairing of its own.
 - A node's `pretty()` may return its text instead of a pretty-printer `Doc`, for

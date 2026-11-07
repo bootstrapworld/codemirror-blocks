@@ -1,7 +1,7 @@
 import type { ASTNode, BlockComment, Pos } from "./ast";
 import { Comment } from "./nodes";
 import { List } from "./nodeSpec";
-import { COMMENT_RULES } from "./commentRules";
+import { rulesInEffect } from "./commentRules";
 import type { CommentRules } from "./commentRules";
 import { poscmp } from "./utils";
 
@@ -314,7 +314,7 @@ export function attachComments(
     topLevel?: ASTNode | null;
   }
 ): ASTNode[] {
-  const rules = { ...COMMENT_RULES, ...given };
+  const rules = rulesInEffect(given);
   const all: Placed[] = [];
   for (const root of roots) walk(root, null, all);
   const orphans: ASTNode[] = [];

@@ -14,7 +14,7 @@ import { joinWithAnd, labelFromType, pluralOf } from "./naming";
 import { displayLines } from "./printing";
 import type React from "react";
 import type { Props as NodeProps } from "./components/Node";
-import { getLanguage } from "./languages";
+import { getLanguage, LANGUAGES } from "./languages";
 
 /**
  * @internal
@@ -103,7 +103,11 @@ function docOf(node: ASTNode): P.Doc {
   }
   // (every node's comment is printed here, whatever its kind: a `pretty` does not
   // have to, and so cannot forget to)
-  return withComment(doc, node.options.comment, node as NodeForSpec);
+  const { printAfter } = {
+    ...COMMENT_RULES,
+    ...(node.languageId ? LANGUAGES[node.languageId]?.commentRules : undefined),
+  };
+  return withComment(doc, node.options.comment, node, printAfter);
 }
 
 type Edges = { parentId?: string; nextId?: string; prevId?: string };
@@ -190,7 +194,8 @@ export type ASTData = Readonly<{
  * and populating various maps for tree navigation
  */
 function annotateNodes(
-  nodes: Readonly<ASTNode[]>
+  nodes: Readonly<ASTNode[]>,
+  languageId?: string
 ): Omit<ASTData, "languageId"> {
   const nodeIdMap = new Map<string, ASTNode>();
   const nodeNIdMap = new Map<number, ASTNode>();
@@ -213,6 +218,7 @@ function annotateNodes(
         // If this node is commented, give its comment an id based on this node's id.
         node.options.comment.id = node.id + "-comment";
       }
+      node.languageId = languageId;
       node.level = level;
       node.ariaSetSize = nodes.length;
       node.ariaPosInset = i + 1;
@@ -265,7 +271,7 @@ export class AST {
   static from(languageId: string, rootNodes: Readonly<ASTNode[]>) {
     return new AST({
       languageId,
-      ...annotateNodes(rootNodes),
+      ...annotateNodes(rootNodes, languageId),
     });
   }
 
@@ -662,6 +668,7 @@ export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
   readonly level: number;
   readonly ariaSetSize: number;
   readonly ariaPosInset: number;
+  readonly languageId: string | undefined;
 
   readonly fields: FieldsForSpec<Spec>;
   readonly options: NodeOptions;
@@ -749,6 +756,12 @@ export class ASTNode<
   level = -1;
   ariaSetSize = -1;
   ariaPosInset = -1;
+  /**
+   * @internal
+   * The language of the AST this node is in (set when the AST is made of it),
+   * for what is the language's to say when the node is printed.
+   */
+  languageId: string | undefined;
 
   readonly fields: Fields;
 
