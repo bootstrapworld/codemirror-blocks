@@ -128,6 +128,10 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   (the initializer of `let x;`): a node typed or dropped there becomes the field.
 - `<Args className="blocks-args" ...>` draws the arguments and their drop targets in
   a `<span>` of that class, which the editor's style lays out.
+- `sexpr(head, parts)` and `formSexpr(keyword, header, bodies)` help to write a
+  `pretty()`: a form with a part that may be left out, and a form with a body of
+  any number of things, one to a line. A document is printed with no whitespace
+  on a line of nothing else, so a blank line inside something indented is empty.
 - `listItems(list)` gives a hand-made layout the `index`, whether it is an orphan
   comment and the number to show for each element of a list.
 - `useNodeState()` lets a component drawn inside a `<Node>` read whether its

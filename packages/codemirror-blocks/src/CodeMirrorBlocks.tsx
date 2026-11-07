@@ -8,6 +8,7 @@ import Args, { listItems } from "./components/Args";
 import { defineNode, field } from "./defineNode";
 import { describeKinds } from "./summary";
 import { joinWithAnd, pluralize } from "./naming";
+import { formSexpr, sexpr } from "./printing";
 export type { ListItem } from "./components/Args";
 import * as DropTarget from "./components/DropTarget";
 import Node, { useNodeState } from "./components/Node";
@@ -119,6 +120,8 @@ export {
   listItems,
   defineNode,
   describeKinds,
+  formSexpr,
+  sexpr,
   joinWithAnd,
   pluralize,
   field,

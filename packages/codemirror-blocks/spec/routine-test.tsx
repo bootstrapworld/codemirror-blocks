@@ -87,8 +87,8 @@ describe("the steps of a repeat, drawn as a numbered list with its targets elsew
     expect(all.map((el) => el.dataset.index)).toEqual(["0", "1", "2", "3"]);
     insertThrough(all[2], "(show 9)");
     expect(text()).toBe(
-      // (the blank line that keeps a comment a block of its own is indented)
-      "(repeat 2\n  #| a note |#\n  \n  (show 1)\n  (show 9)\n  (show 2))"
+      // (a blank line keeps a comment a block of its own, with nothing on it)
+      "(repeat 2\n  #| a note |#\n\n  (show 1)\n  (show 9)\n  (show 2))"
     );
   });
 });

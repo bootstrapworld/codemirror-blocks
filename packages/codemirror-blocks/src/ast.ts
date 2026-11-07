@@ -9,6 +9,7 @@ import {
 import * as P from "pretty-fast-pretty-printer";
 import type { FieldsForSpec, NodeSpec } from "./nodeSpec";
 import { joinWithAnd, labelFromType, pluralOf } from "./naming";
+import { displayLines } from "./printing";
 import type React from "react";
 import type { Props as NodeProps } from "./components/Node";
 import { getLanguage } from "./languages";
@@ -866,7 +867,7 @@ export class ASTNode<
 
   // Pretty-print the node and its children, based on the pp-width
   toString(): string {
-    return this.pretty().display(prettyPrintingWidth).join("\n");
+    return displayLines(this.pretty(), prettyPrintingWidth).join("\n");
   }
 
   // Produces an iterator over the children of this node.

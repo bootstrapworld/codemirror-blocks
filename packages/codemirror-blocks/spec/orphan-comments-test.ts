@@ -198,7 +198,7 @@ describe("printing and reading back", () => {
 
   it("an orphan is printed with a blank line after it", () => {
     expect(wescheme.buildAST("(f a\n\n; c\n\nb)").toString()).toBe(
-      "(f\n a\n #| c |#\n \n b)"
+      "(f\n a\n #| c |#\n\n b)"
     );
   });
 

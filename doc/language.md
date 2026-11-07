@@ -350,6 +350,17 @@ tree**. If your syntax isn't an s-expression, build a `Doc` with `P.horz`,
 [`ast.tsx`](../packages/codemirror-blocks/src/languages/lambda/ast.tsx) has
 infix operators, calls, and blocks as examples.
 
+Two helpers (exported from the package) cover what `Pretty` makes awkward:
+
+- `sexpr(head, parts)` prints `(head part part ...)` like `Pretty.standardSexpr`,
+  but leaves out a part that is `null`, `undefined` or `false`, so a form with an
+  optional child has no empty text where it is not there:
+  `sexpr("let", [node.fields.name, node.fields.start])`.
+- `formSexpr(keyword, header, bodies)` prints a form with any number of bodies,
+  one to a line and indented, with the closing bracket after the last:
+  `formSexpr("repeat", node.fields.times, node.fields.steps)` is
+  `(repeat 3\n  (show 1)\n  (show 2))`. The `header` can be `null`.
+
 If your language already has a printer of its own, `pretty` may return the text
 itself instead of a `Doc`. The text is taken as laid out already (it is not
 reflowed to fit the width, and keeps its own line breaks), and the node's

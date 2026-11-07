@@ -17,6 +17,7 @@ import type { AppThunk } from "../state/store";
 import * as selectors from "../state/selectors";
 import { err, ok, Result } from "./result";
 import { CMBEditor, ReadonlyRangedText } from "../editor";
+import { displayLines } from "../printing";
 import CodeMirror from "codemirror";
 
 /**
@@ -609,7 +610,7 @@ class EditGroup {
     }
     // Pretty-print to determine the new text.
     const width = prettyPrintingWidth - range.from.ch;
-    const newText = clonedAncestor.pretty().display(width);
+    const newText = displayLines(clonedAncestor.pretty(), width);
     return makeChangeObject({
       from: range.from,
       to: range.to,

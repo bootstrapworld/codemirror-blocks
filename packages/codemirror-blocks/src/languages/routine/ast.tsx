@@ -7,6 +7,7 @@ import Args, { listItems } from "../../components/Args";
 import { DropTarget } from "../../components/DropTarget";
 import Node, { useNodeState } from "../../components/Node";
 import { defineNode, field } from "../../defineNode";
+import { formSexpr, sexpr } from "../../printing";
 import { describeKinds } from "../../summary";
 import * as Spec from "../../nodeSpec";
 import type { RootState } from "../../state/reducers";
@@ -147,11 +148,7 @@ export const Define = defineNode({
   type: "define",
   label: "definition",
   fields: { name: field.required(), start: field.optional() },
-  pretty: (node) =>
-    P.standardSexpr("let", [
-      node.fields.name,
-      ...(node.fields.start ? [node.fields.start] : []),
-    ]),
+  pretty: (node) => sexpr("let", [node.fields.name, node.fields.start]),
   longDescription: (node, level) =>
     node.fields.start
       ? `a ${node.label} of ${node.fields.name.describe(level)}, starting as ${node.fields.start.describe(level)}`
@@ -199,16 +196,7 @@ export const Repeat = defineNode({
   type: "repeat",
   label: "repeat loop",
   fields: { times: field.required(), steps: field.list({ orphans: true }) },
-  pretty: (node) =>
-    node.fields.steps.length
-      ? P.horz(
-          P.vert(
-            P.horz("(repeat ", node.fields.times),
-            P.horz("  ", P.vertArray(node.fields.steps))
-          ),
-          ")"
-        )
-      : P.horz("(repeat ", node.fields.times, ")"),
+  pretty: (node) => formSexpr("repeat", node.fields.times, node.fields.steps),
   longDescription: (node, level) =>
     `a ${node.label}, ${node.fields.times.describe(level)} times, of ${describeKinds(node.fields.steps)}`,
   render: (props) => {
@@ -255,11 +243,7 @@ export const Choice = defineNode({
     otherwise: field.optional(),
   },
   pretty: (node) =>
-    P.standardSexpr("if", [
-      node.fields.test,
-      node.fields.then,
-      ...(node.fields.otherwise ? [node.fields.otherwise] : []),
-    ]),
+    sexpr("if", [node.fields.test, node.fields.then, node.fields.otherwise]),
   longDescription: (node, level) =>
     `a ${node.label}: if ${node.fields.test.describe(level)}, ${node.fields.then.describe(level)}${
       node.fields.otherwise

@@ -78,15 +78,13 @@ editingHint={...}>`, a slot drawn beside the edit box, or the children kept.
 className="blocks-args">` around it, from reading the stylesheet. It takes a
    `className` now (#816): `<Args className="blocks-args" field="args">`.
 
-8. **Pretty-printing a form with optional children and a list body is manual.**
-   `P.standardSexpr("let", [name, ...(start ? [start] : [])])` needs the spread
-   for an absent child (a `""` leaves a trailing space: `(let spare )`), and
-   `P.lambdaLikeSexpr` takes one body, so a form whose body is a list of steps,
-   one to a line, with the closing parenthesis after the last, is built from
-   `vert`, `horz` and `vertArray` by hand. An orphan comment in such a list
-   prints a blank line with the indentation in it (`"  "`), which is what the
-   round trip keeps but is untidy. _Want:_ a `P.formSexpr(keyword, header,
-bodies)`, and a printer that drops whitespace-only lines.
+8. **Pretty-printing a form with optional children and a list body was manual.**
+   `P.standardSexpr("let", [name, start ?? ""])` left a trailing space for an
+   absent `start`, and a form with a list body, one to a line, with the closing
+   bracket after the last, was built from `vert`, `horz` and `vertArray`; an
+   orphan comment in it printed a blank line with the indentation in it. They
+   are `sexpr` and `formSexpr` now, and a document is printed with no whitespace
+   on a line of nothing else (#817).
 
 9. **Comments in the parser were a second parser.** Finding the comments again,
    deciding which node each goes with, and giving the rest to `placeOrphans` was

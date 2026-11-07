@@ -343,7 +343,7 @@ describe("applyEdits on small documents", () => {
         edit_delete(a, child(a, 1)),
       ]);
       expect(result).not.toContain("x");
-      expect(result).toBe("(f\n #| c |#\n \n y)");
+      expect(result).toBe("(f\n #| c |#\n\n y)");
     });
   });
 
