@@ -87,8 +87,8 @@ className="blocks-args">` around it, from reading the stylesheet. It takes a
 9. **Comments in the parser were a second parser.** Finding the comments again,
    deciding which node each goes with, and giving the rest to `placeOrphans` was
    about 40 lines, and the WeScheme and lambda parsers each did their own. It is
-   now `attachComments(code, roots, { blockComment, syntax })`, which Routine
-   uses (#818): the reader only skips comments.
+   now `attachComments(code, roots, { blockComment, comments })`, which Routine
+   uses (#818): the reader reports the comments it skips, and that is all.
 
 10. **Types are heavy at the edges.** `Spec.value<number, "value">("value")`
     (the type parameters are in the wrong order for what a person knows: the

@@ -7,7 +7,7 @@ import {
 import { poscmp } from "../../utils";
 import { addComment, attachComments } from "../../orphans";
 
-import { lex } from "./reader/lex";
+import { lexWithComments } from "./reader/lex";
 import * as types from "./reader/types";
 import * as structuresModule from "./reader/structures";
 
@@ -823,21 +823,17 @@ export function parse(code: string) {
   }
 
   setSource(code);
-  const sexps = lex(maskMultilineBarSymbols(code));
+  const { sexps, comments } = lexWithComments(maskMultilineBarSymbols(code));
   const ast = parseStar(sexps);
   const rootNodes = ast
     .map(parseNodeOrNull)
     .filter((item: ASTNode | null) => item !== null);
-  // The lexer gives the nodes the comments it finds, but not always as one reads
-  // them (a comment far above a form, or one before the form that follows it on
-  // its line), so the comments are given their places again, by the editor's
-  // rules: on the line above a node, or after code on its line, goes with it,
-  // and any other is a block of its own.
-  for (const root of rootNodes) {
-    for (const node of root.descendants()) node.options.comment = undefined;
-  }
+  // The reader reports the comments it skipped; they are given their places by
+  // the editor's rules: on the line above a node, or after code on its line,
+  // goes with it, and any other is a block of its own.
   const placed = attachComments(code, rootNodes, {
     blockComment: WESCHEME_BLOCK_COMMENT,
+    comments,
   });
   // A list of names has no brackets of its own (the form that holds it prints
   // them), so a comment on it would print inside them, and read back as one on

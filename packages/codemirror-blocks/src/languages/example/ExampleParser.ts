@@ -1,6 +1,7 @@
 import { ASTNode, Pos } from "../../ast";
 import { Literal, FunctionApp } from "../../nodes";
 import { attachComments } from "../../orphans";
+import type { ReportedComment } from "../../orphans";
 
 /** How this language writes a comment */
 export const EXAMPLE_BLOCK_COMMENT = { open: "#|", close: "|#" };
@@ -31,6 +32,8 @@ class Token {
 
 export default class ExampleParser {
   code = "";
+  /** the comments read past, by where they start (a token can be read twice) */
+  comments = new Map<number, ReportedComment>();
   charIndex = 0;
   lineIndex = 0;
   colIndex = 0;
@@ -51,6 +54,7 @@ export default class ExampleParser {
 
   /** Reads past a comment, if one is here: `;` to the end of the line, or `#| |#` */
   skipComment() {
+    const from = this.charIndex;
     if (this.code[this.charIndex] === ";") {
       while (
         this.charIndex < this.code.length &&
@@ -64,12 +68,12 @@ export default class ExampleParser {
         throw new Error("A comment is not closed: it needs |# at the end");
       while (this.charIndex < end + 2) this.getch();
     }
+    this.comments.set(from, { from, to: this.charIndex });
   }
 
   getToken(): Token {
     const IDENTIFIER_RE = /[\w-+/*]/;
-    // (a comment is read past: `attachComments` finds it again, in the text,
-    // and gives it its place)
+    // (a comment is read past, and reported to `attachComments`)
     while (
       this.code[this.charIndex] === ";" ||
       this.code.startsWith("#|", this.charIndex)
@@ -170,6 +174,7 @@ export default class ExampleParser {
     this.charIndex = 0;
     this.lineIndex = 0;
     this.colIndex = 0;
+    this.comments = new Map();
 
     const rootNodes = [];
     while (this.peekToken().token != TOKENS.EOF) {
@@ -179,6 +184,7 @@ export default class ExampleParser {
     // where nothing takes them
     return attachComments(code, rootNodes, {
       blockComment: EXAMPLE_BLOCK_COMMENT,
+      comments: [...this.comments.values()],
     });
   }
 

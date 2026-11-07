@@ -179,22 +179,30 @@ Nodes.Literal(from, to, { value: "42", dataType: "number" });
 
 ### Comments
 
-Your reader has only to skip the comments as it reads. Then give the root nodes
-it made to `attachComments`, with the text and how the language writes a comment:
+**A language brings a parser that handles its comments.** Your reader is the one
+that knows what is a comment (and what only looks like one, a `;` in a text), so
+it reads each comment it skips and reports it, as the range it covers in the
+code. Then give `attachComments` the root nodes it made, and those comments:
 
 ```ts
 import { attachComments } from "@bootstrapworld/codemirror-blocks/lib/orphans";
 
-const COMMENTS = { line: "//", block: { open: "/*", close: "*/" } };
-
 parse(code) {
-  const roots = readNodes(code); // skips comments; every node has its range
+  const { roots, comments } = readNodes(code); // every node has its range
+  // comments: [{ from, to }, ...], offsets in `code` (or positions); a `text`
+  // can be given, if the reader knows it (else it is the source, less its marks)
   return attachComments(code, roots, {
-    blockComment: COMMENTS.block, // how the editor writes a comment back
-    syntax: COMMENTS, // how to find them (Scheme's, `;` and `#| |#`, if left out)
+    blockComment: { open: "/*", close: "*/" }, // how the editor writes one back
+    comments,
   });
 }
 ```
+
+A parser that skips a comment without reporting it loses it. To test that
+yours does not, give `commentProblems` (in `toolkit/comment-conformance`) some
+programs with a `@@` wherever a comment may be put, and how your language
+writes one: it returns what is wrong (a comment that is lost or printed twice,
+a printing that does not parse back the same), and `[]` if nothing is.
 
 Every language pairs its comments with its nodes by the same rules, so that a
 comment means the same thing in all of them:

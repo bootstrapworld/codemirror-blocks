@@ -4,7 +4,6 @@ import wescheme from "../src/languages/wescheme";
 import { select } from "./helpers/gestures";
 import { allowConsoleErrors } from "./globalSetup";
 import { setEditableText } from "./helpers/editing";
-import { scanSchemeComments } from "../src/orphans";
 import { summarizeProgram } from "../src/summary";
 import {
   cmd_ctrl,
@@ -327,10 +326,11 @@ describe("Edit Comment on an orphan", () => {
 describe("a comment after an opening bracket", () => {
   it("does not join the row of comments above its line", () => {
     const code = "#| a |#\n#| b |#\n(#| c |#\n w)";
-    const found = scanSchemeComments(code);
-    expect(found.map((c) => c.text)).toEqual(["a b", "c"]);
-    expect(found[0].to.line).toBe(1);
-    roundTrips("wescheme", code);
+    const { ast } = roundTrips("wescheme", code);
+    // (a and b are one comment on the form below them: c, after the bracket,
+    // is not a part of it)
+    expect(ast.rootNodes[0].options.comment?.fields.comment).toBe("a b");
+    expect(ast.rootNodes[0].options.comment?.to.line).toBe(1);
   });
 });
 

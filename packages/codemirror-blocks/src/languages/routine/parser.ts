@@ -1,5 +1,6 @@
 import type { ASTNode, Pos } from "../../ast";
 import { attachComments } from "../../orphans";
+import type { ReportedComment } from "../../orphans";
 import {
   Call,
   Choice,
@@ -34,8 +35,12 @@ type Sexp =
     }
   | { kind: "list"; items: Sexp[]; from: Pos; to: Pos };
 
-/** Reads the text into s-expressions, each with its place in the text */
-function read(code: string): Sexp[] {
+/**
+ * Reads the text into s-expressions, each with its place in the text, and
+ * reports the comments it skips
+ */
+function read(code: string): { sexps: Sexp[]; comments: ReportedComment[] } {
+  const comments: ReportedComment[] = [];
   let i = 0;
   let line = 0;
   let ch = 0;
@@ -54,8 +59,11 @@ function read(code: string): Sexp[] {
       if (/\s/.test(code[i] ?? "x")) {
         step();
       } else if (code[i] === ";") {
+        const from = i;
         while (i < code.length && code[i] !== "\n") step();
+        comments.push({ from, to: i });
       } else if (code.startsWith("#|", i)) {
+        const from = i;
         let depth = 0;
         do {
           if (i >= code.length)
@@ -69,6 +77,7 @@ function read(code: string): Sexp[] {
           }
           step();
         } while (depth > 0);
+        comments.push({ from, to: i });
       } else {
         return;
       }
@@ -141,7 +150,7 @@ function read(code: string): Sexp[] {
   const roots: Sexp[] = [];
   for (;;) {
     skipSpace();
-    if (i >= code.length) return roots;
+    if (i >= code.length) return { sexps: roots, comments };
     roots.push(readOne());
   }
 }
@@ -210,6 +219,10 @@ function build(s: Sexp): ASTNode {
 }
 
 export function parse(code: string): ASTNode[] {
-  const roots = read(code).map(build);
-  return attachComments(code, roots, { blockComment: ROUTINE_BLOCK_COMMENT });
+  const { sexps, comments } = read(code);
+  const roots = sexps.map(build);
+  return attachComments(code, roots, {
+    blockComment: ROUTINE_BLOCK_COMMENT,
+    comments,
+  });
 }

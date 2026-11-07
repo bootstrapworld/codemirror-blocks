@@ -137,7 +137,10 @@ describe("the commentRules of a language", () => {
           );
         return attachComments(code, roots, {
           blockComment: BLOCK,
-          syntax: { line: "//" },
+          comments: [...code.matchAll(/\/\/.*/g)].map((m) => ({
+            from: m.index!,
+            to: m.index! + m[0].length,
+          })),
         });
       },
     });
@@ -184,7 +187,7 @@ describe("the commentRules of a language", () => {
           ],
           {
             blockComment: BLOCK,
-            syntax: { line: "//" },
+            comments: [{ from: 2, to: c.length }],
             rules: { afterCode: "previous" },
           }
         ),

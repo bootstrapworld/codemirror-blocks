@@ -1,51 +1,68 @@
 import * as P from "pretty-fast-pretty-printer";
 import { withComment } from "../src/ast";
 import { Comment, Literal, Unknown } from "../src/nodes";
-import { attachComments, scanComments } from "../src/orphans";
+import { attachComments } from "../src/orphans";
 
-/** A language that writes comments as C does: `// line` and `/* block *\/` */
-const C = { line: "//", block: { open: "/*", close: "*/" } };
 const BLOCK = { open: "/*", close: "*/" };
 
 const at = (line: number, ch = 0) => ({ line, ch });
 const lit = (line: number, text: string) =>
   Literal(at(line), at(line, text.length), { value: text, dataType: "symbol" });
 
-describe("scanComments, for a language of its own", () => {
-  it("finds the comments of the syntax it is given", () => {
-    const found = scanComments("a // one\n/* two\nlines */ b", C);
-    expect(found.map((c) => c.text)).toEqual(["one", "two lines"]);
+/** What a parser of this language would report: `// line` and `/* block *\/` */
+const cStyle = (code: string) =>
+  [...code.matchAll(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g)].map((m) => ({
+    from: m.index!,
+    to: m.index! + m[0].length,
+  }));
+
+/** `attachComments`, told by a parser of this language what it skipped */
+const attach = (
+  code: string,
+  roots: Parameters<typeof attachComments>[1],
+  opts: Partial<Parameters<typeof attachComments>[2]> = {}
+) =>
+  attachComments(code, roots, {
+    blockComment: BLOCK,
+    comments: cStyle(code),
+    ...opts,
   });
 
-  it("leaves what is a comment in another language alone", () => {
-    expect(scanComments("a ; not one\n#| nor this |#", C)).toEqual([]);
+describe("the comments a parser reports", () => {
+  it("say what the source says, without the marks that start them", () => {
+    const [a, block] = attach("a // one\n\n/* two\nlines */", [lit(0, "a")]);
+    expect(a.options.comment?.fields.comment).toBe("one");
+    expect(block.fields.comment).toBe("two lines");
   });
 
-  it("does not look for a comment in a text", () => {
-    expect(scanComments('"a // b" c', C)).toEqual([]);
-  });
-
-  it("makes one of the lines in a row", () => {
-    const [one, ...rest] = scanComments("// a\n// b\n\n// c", C);
-    expect(rest).toHaveLength(1);
-    expect(one.text).toBe("a b");
-  });
-
-  it("still reads Scheme's comments, and its symbols with bars, by default", () => {
-    const found = scanComments("|a;b| ; yes", {
-      line: ";",
-      block: { open: "#|", close: "|#" },
-      scheme: true,
+  it("are given as text by a parser that knows better", () => {
+    const [a] = attach("a // one", [lit(0, "a")], {
+      comments: [{ from: 2, to: 8, text: "mine" }],
     });
-    expect(found.map((c) => c.text)).toEqual(["yes"]);
+    expect(a.options.comment?.fields.comment).toBe("mine");
+  });
+
+  it("can be given as positions", () => {
+    const [a] = attach("a // one", [lit(0, "a")], {
+      comments: [{ from: at(0, 2), to: at(0, 8) }],
+    });
+    expect(a.options.comment?.fields.comment).toBe("one");
+  });
+
+  it("make one of the lines in a row", () => {
+    const placed = attach("// a\n// b\n\n// c\nx", [lit(4, "x")]);
+    expect(placed.map((n) => String(n.fields.comment ?? ""))).toEqual([
+      "a b",
+      "",
+    ]);
   });
 });
 
 describe("attachComments", () => {
-  const options = { blockComment: BLOCK, syntax: C };
+  const options = {};
 
   it("gives a comment on the line above a node to that node", () => {
-    const placed = attachComments(
+    const placed = attach(
       "// about a\na\nb",
       [lit(1, "a"), lit(2, "b")],
       options
@@ -56,7 +73,7 @@ describe("attachComments", () => {
   });
 
   it("makes a block of its own of a comment with a blank line below it", () => {
-    const placed = attachComments(
+    const placed = attach(
       "a\n\n/* apart */\n\nb",
       [lit(0, "a"), lit(4, "b")],
       options
@@ -71,18 +88,18 @@ describe("attachComments", () => {
   });
 
   it("keeps the way the language writes a comment, to write it back", () => {
-    const [a] = attachComments("// c\na", [lit(1, "a")], options);
+    const [a] = attach("// c\na", [lit(1, "a")], options);
     expect(a.options.comment?.options.blockComment).toEqual(BLOCK);
   });
 
   it("puts a comment after the last node at the end", () => {
-    const placed = attachComments("a\n\n\n// end", [lit(0, "a")], options);
+    const placed = attach("a\n\n\n// end", [lit(0, "a")], options);
     expect(placed.map((n) => n.type)).toEqual(["literal", "comment"]);
   });
 
-  it("reads Scheme's comments if no syntax is given", () => {
-    const [a] = attachComments("; hi\na", [lit(1, "a")], {
-      blockComment: { open: "#|", close: "|#" },
+  it("takes the marks of any language off a line comment", () => {
+    const [a] = attach("; hi\na", [lit(1, "a")], {
+      comments: [{ from: 0, to: 4 }],
     });
     expect(a.options.comment?.fields.comment).toBe("hi");
   });
@@ -92,7 +109,7 @@ describe("attachComments", () => {
     const a = lit(0, "a");
     const b = Literal(at(0, 6), at(0, 7), { value: "b", dataType: "symbol" });
     const inner = Unknown(at(0, 2), at(0, 10), { elts: [b] });
-    const placed = attachComments("a (/* c */ b)", [a, inner], options);
+    const placed = attach("a (/* c */ b)", [a, inner], options);
     expect(placed).toHaveLength(2);
     expect(a.options.comment).toBeUndefined();
     expect(b.options.comment?.fields.comment).toBe("c");
@@ -102,14 +119,14 @@ describe("attachComments", () => {
     const x = Literal(at(0, 3), at(0, 4), { value: "x", dataType: "symbol" });
     const y = Literal(at(0, 17), at(0, 18), { value: "y", dataType: "symbol" });
     const call = Unknown(at(0, 0), at(0, 19), { elts: [x, y] });
-    attachComments("(f x /* c */ y)", [call], options);
+    attach("(f x /* c */ y)", [call], options);
     expect(x.options.comment?.fields.comment).toBe("c");
     expect(y.options.comment).toBeUndefined();
   });
 });
 
 describe("the rules of attachComments", () => {
-  const options = { blockComment: BLOCK, syntax: C };
+  const options = {};
   /** what each root is: `+` has a comment, `*` is a comment standing alone, `-` has none */
   const pattern = (placed: ReturnType<typeof attachComments>) =>
     placed
@@ -120,14 +137,12 @@ describe("the rules of attachComments", () => {
 
   describe("afterCode", () => {
     it('"previous" (the default) gives it to the code before it', () => {
-      expect(pattern(attachComments("a // c\nb", [a(), b(1)], options))).toBe(
-        "+-"
-      );
+      expect(pattern(attach("a // c\nb", [a(), b(1)], options))).toBe("+-");
     });
     it('"alone" makes it a block of its own', () => {
       const rules = { afterCode: "alone" as const };
       expect(
-        pattern(attachComments("a // c\nb", [a(), b(1)], { ...options, rules }))
+        pattern(attach("a // c\nb", [a(), b(1)], { ...options, rules }))
       ).toBe("-*-");
     });
     it('"next" gives it to the node after it on its line, and otherwise leaves it alone', () => {
@@ -137,55 +152,53 @@ describe("the rules of attachComments", () => {
         dataType: "symbol",
       });
       expect(
-        pattern(
-          attachComments("a /* c */ b", [a(), next], { ...options, rules })
-        )
+        pattern(attach("a /* c */ b", [a(), next], { ...options, rules }))
       ).toBe("-+");
       expect(
-        pattern(attachComments("a // c\nb", [a(), b(1)], { ...options, rules }))
+        pattern(attach("a // c\nb", [a(), b(1)], { ...options, rules }))
       ).toBe("-*-");
     });
   });
 
   describe("above", () => {
     it('"next" (the default) gives it to the node below', () => {
-      expect(pattern(attachComments("// c\nb", [b(1)], options))).toBe("+");
+      expect(pattern(attach("// c\nb", [b(1)], options))).toBe("+");
     });
     it('"alone" makes it a block of its own', () => {
       const rules = { above: "alone" as const };
-      expect(
-        pattern(attachComments("// c\nb", [b(1)], { ...options, rules }))
-      ).toBe("*-");
+      expect(pattern(attach("// c\nb", [b(1)], { ...options, rules }))).toBe(
+        "*-"
+      );
     });
   });
 
   describe("maxLinesAbove", () => {
     it("is 1 by default: a blank line between makes it stand alone", () => {
-      expect(pattern(attachComments("// c\n\nb", [b(2)], options))).toBe("*-");
+      expect(pattern(attach("// c\n\nb", [b(2)], options))).toBe("*-");
     });
     it("allows a blank line when it is 2", () => {
       const rules = { maxLinesAbove: 2 };
-      expect(
-        pattern(attachComments("// c\n\nb", [b(2)], { ...options, rules }))
-      ).toBe("+");
+      expect(pattern(attach("// c\n\nb", [b(2)], { ...options, rules }))).toBe(
+        "+"
+      );
     });
     it("is the node's own line only when it is 0", () => {
       const rules = { maxLinesAbove: 0 };
-      expect(
-        pattern(attachComments("// c\nb", [b(1)], { ...options, rules }))
-      ).toBe("*-");
+      expect(pattern(attach("// c\nb", [b(1)], { ...options, rules }))).toBe(
+        "*-"
+      );
     });
   });
 
   describe("atEnd", () => {
     it('"last" (the default) gives it to the last node', () => {
-      expect(pattern(attachComments("a\n// c", [a()], options))).toBe("+");
+      expect(pattern(attach("a\n// c", [a()], options))).toBe("+");
     });
     it('"alone" makes it a block of its own', () => {
       const rules = { atEnd: "alone" as const };
-      expect(
-        pattern(attachComments("a\n// c", [a()], { ...options, rules }))
-      ).toBe("-*");
+      expect(pattern(attach("a\n// c", [a()], { ...options, rules }))).toBe(
+        "-*"
+      );
     });
   });
 

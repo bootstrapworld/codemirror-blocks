@@ -126,10 +126,14 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   constructor of a kind of node, so that the fields are said once (and typed):
   `field.required()`, `field.optional()`, `field.list()` and `field.value<T>()`.
   The comment that goes with a node is printed for you.
-- `attachComments(code, roots, { blockComment, syntax })` gives the comments of a
-  program their places among the nodes a parser made, so that a parser has only
-  to skip them. `scanComments` finds them for a comment syntax of the language's
-  own (`scanSchemeComments` is as it was).
+- `attachComments(code, roots, { blockComment, comments })` gives the comments a
+  parser skipped their places among the nodes it made. **A language brings a
+  parser that handles its comments**: it reports each one it skips (`{ from, to }`
+  in the code), and the editor no longer looks for them again in the text (there
+  is no `scanComments`). `commentProblems(language, { programs, comment })`
+  (`toolkit/comment-conformance`) tests that a language loses none. WeScheme's
+  reader (from `wescheme-js`) is part of the language now, in
+  `languages/wescheme/reader`, and reports its comments.
 - `describeKinds(nodes)` says what a list of nodes is made of ("2 definitions,
   1 call, and 3 literals") from the labels of their kinds, for a long
   description; the summary of a program uses it.

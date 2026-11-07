@@ -103,150 +103,102 @@ export function placeOrphans(
   return result;
 }
 
-const escapeRegExp = (text: string) =>
-  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/**
+ * A comment the parser skipped, where it was in `code`: as offsets, or as
+ * positions. `text` is what it says, if the parser knows; if not, it is what is
+ * left of the source when the marks that start (and end) it are taken off.
+ */
+export type ReportedComment = {
+  from: number | Pos;
+  to: number | Pos;
+  text?: string;
+};
 
-export type ScannedComment = {
+type Found = {
   from: Pos;
   to: Pos;
   lastFrom: Pos;
   text: string;
   /** there is code before it on its line (it is not in a row with the others) */
   trailing: boolean;
-};
-
-/** How a language writes a comment */
-export type CommentSyntax = {
-  /** what starts a comment that runs to the end of the line (`;`, `//`) */
-  line?: string;
-  /** what starts and ends a comment that can be many lines (`#|` and `|#`) */
-  block?: BlockComment;
-  /**
-   * Whether the code has Scheme's other ways of writing things that look like
-   * the start of a comment: `#\;` (a character), `#;` (a comment of a form) and
-   * `|a;b|` (a symbol with bars). They are not comments, and are left alone.
-   */
-  scheme?: boolean;
-};
-
-/** Scheme's comments: `; line` and `#| block |#` */
-export const SCHEME_COMMENTS: CommentSyntax = {
-  line: ";",
-  block: { open: "#|", close: "|#" },
-  scheme: true,
+  /** an opening bracket comes before it on its line */
+  opener: boolean;
+  /** there is code after it on its line */
+  codeAfter: boolean;
 };
 
 /**
- * The comments in Scheme-like source text (see {@link scanComments})
+ * What the comments say, from where the parser says they are: the ones in a row
+ * (on lines one after the other) are one, as a lexer that gives a node the
+ * comments above it sees them; `lastFrom` is where the last of them starts. A
+ * comment that follows code on its line is one of its own.
  */
-export function scanSchemeComments(code: string): ScannedComment[] {
-  return scanComments(code, SCHEME_COMMENTS);
-}
-
-/**
- * The comments in source text, with the ones in a row (on lines one after the
- * other) as one, as a lexer that gives a node the comments above it sees them:
- * `lastFrom` is where the last of them starts. A comment that follows code on
- * its line is one of its own. Text in `"quotes"` holds no comment.
- */
-export function scanComments(
+function readComments(
   code: string,
-  syntax: CommentSyntax
-): ScannedComment[] {
-  const found: (ScannedComment & {
-    trailing: boolean;
-    codeAfter?: boolean;
-    opener: boolean;
-  })[] = [];
-  let line = 0;
-  let col = 0;
-  let hasCode = false;
-  let opened = false; // (an opening bracket came before, on this line)
-  let i = 0;
-  const pos = (): Pos => ({ line, ch: col });
-  // (code after a comment on its line ends the row of comments it is in)
-  const code_ = () => {
-    hasCode = true;
-    const last = found[found.length - 1];
-    if (last && last.to.line === line) last.codeAfter = true;
+  reported: readonly ReportedComment[],
+  blockComment: BlockComment
+): (Omit<Found, "opener" | "codeAfter"> & { trailing: boolean })[] {
+  const lines = code.split("\n");
+  const starts: number[] = [];
+  let at = 0;
+  for (const l of lines) {
+    starts.push(at);
+    at += l.length + 1;
+  }
+  const posAt = (offset: number): Pos => {
+    let line = 0;
+    while (line + 1 < starts.length && starts[line + 1] <= offset) line++;
+    return { line, ch: offset - starts[line] };
   };
-  const step = (n = 1) => {
-    for (let k = 0; k < n && i < code.length; k++, i++) {
-      if (code[i] === "\n") {
-        line++;
-        col = 0;
-        hasCode = false;
-        opened = false;
-      } else {
-        col++;
-      }
-    }
-  };
-  while (i < code.length) {
-    const c = code[i];
-    if (syntax.block && code.startsWith(syntax.block.open, i)) {
-      const { open, close } = syntax.block;
-      const from = pos();
-      const trailing = hasCode;
-      let end = code.indexOf(close, i + open.length);
-      end = end < 0 ? code.length : end + close.length;
-      const text = code
-        .slice(i + open.length, end - close.length)
+  const offsetOf = (p: number | Pos) =>
+    typeof p === "number" ? p : (starts[p.line] ?? code.length) + p.ch;
+  const sorted = reported
+    .map((c) => ({ ...c, a: offsetOf(c.from), b: offsetOf(c.to) }))
+    .sort((x, y) => x.a - y.a);
+  // the code, with the comments blanked out (so that what is left on a line is
+  // what is code)
+  let blank = "";
+  let end = 0;
+  for (const c of sorted) {
+    if (c.a < end) continue; // (inside another)
+    blank += code.slice(end, c.a) + code.slice(c.a, c.b).replace(/[^\n]/g, " ");
+    end = c.b;
+  }
+  blank += code.slice(end);
+  const blankLines = blank.split("\n");
+  const textOf = (a: number, b: number) => {
+    const source = code.slice(a, b);
+    const { open, close } = blockComment;
+    if (source.startsWith(open)) {
+      return source
+        .slice(open.length, source.endsWith(close) ? -close.length : undefined)
         .trim()
         .replace(/\s+/g, " ");
-      step(end - i);
-      found.push({
-        from,
-        to: pos(),
-        lastFrom: from,
-        text,
-        trailing,
-        opener: opened,
-      });
-    } else if (syntax.line && code.startsWith(syntax.line, i)) {
-      const from = pos();
-      const trailing = hasCode;
-      let end = code.indexOf("\n", i);
-      if (end < 0) end = code.length;
-      const text = code
-        .slice(i, end)
-        .replace(new RegExp(`^(${escapeRegExp(syntax.line)}|\\s)*`), "")
-        .trim();
-      step(end - i);
-      found.push({
-        from,
-        to: pos(),
-        lastFrom: from,
-        text,
-        trailing,
-        opener: opened,
-      });
-    } else if (c === '"') {
-      code_();
-      step();
-      while (i < code.length && code[i] !== '"') step(code[i] === "\\" ? 2 : 1);
-      step();
-    } else if (
-      syntax.scheme &&
-      c === "#" &&
-      (code[i + 1] === "\\" || code[i + 1] === ";")
-    ) {
-      if (code[i + 1] === "\\") code_();
-      step(2);
-    } else if (syntax.scheme && c === "|") {
-      code_();
-      const end = code.indexOf("|", i + 1);
-      step(end < 0 ? code.length - i : end + 1 - i);
-    } else {
-      // (an opening bracket does not make a comment after it trail: the
-      // comment is above what follows, as a lexer reads it)
-      if (/[([{]/.test(c)) opened = true;
-      else if (!/\s/.test(c)) code_();
-      step();
     }
+    return source.replace(/^(?:#[;!]|(\S)\1*)\s*/, "").trim();
+  };
+
+  const found: Found[] = [];
+  end = 0;
+  for (const c of sorted) {
+    if (c.a < end) continue;
+    end = c.b;
+    const from = posAt(c.a);
+    const to = posAt(c.b);
+    const before = blankLines[from.line].slice(0, from.ch);
+    const after = blankLines[to.line].slice(to.ch);
+    found.push({
+      from,
+      to,
+      lastFrom: from,
+      text: c.text ?? textOf(c.a, c.b),
+      trailing: /[^\s([{]/.test(before),
+      opener: /[([{]/.test(before),
+      codeAfter: /\S/.test(after),
+    });
   }
-  const groups: ScannedComment[] = [];
-  let previous: (typeof found)[number] | undefined;
+  const groups: Found[] = [];
+  let previous: Found | undefined;
   for (const c of found) {
     const group = groups[groups.length - 1];
     if (
@@ -262,14 +214,9 @@ export function scanComments(
       group.to = c.to;
       group.lastFrom = c.from;
       group.text += " " + c.text;
+      group.codeAfter = c.codeAfter;
     } else {
-      groups.push({
-        from: c.from,
-        to: c.to,
-        lastFrom: c.lastFrom,
-        text: c.text,
-        trailing: c.trailing,
-      });
+      groups.push({ ...c });
     }
     previous = c;
   }
@@ -293,8 +240,9 @@ const walk = (node: ASTNode, parent: ASTNode | null, into: Placed[]) => {
  * on its line, goes with the node (the next in its list), one at the end of the
  * program goes with the last node, and any other stands alone.
  *
- * The parser has only to skip comments as it reads (they are found again here,
- * in `code`), and the language has to say how it writes them. `topLevel` is the
+ * The parser reads the comments, as it is the one that knows what is one (and
+ * not a `;` in a string): it reports each it skips, as `comments`, and this
+ * decides which node each goes with. `topLevel` is the
  * node that holds the whole program, for a language that has one (the end of
  * the program is the end of its list), where there is not one root for each
  * thing in it.
@@ -304,12 +252,12 @@ export function attachComments(
   roots: ASTNode[],
   {
     blockComment,
-    syntax = SCHEME_COMMENTS,
+    comments,
     rules: given,
     topLevel = null,
   }: {
     blockComment: BlockComment;
-    syntax?: CommentSyntax;
+    comments: readonly ReportedComment[];
     rules?: Partial<CommentRules>;
     topLevel?: ASTNode | null;
   }
@@ -318,7 +266,7 @@ export function attachComments(
   const all: Placed[] = [];
   for (const root of roots) walk(root, null, all);
   const orphans: ASTNode[] = [];
-  for (const c of scanComments(code, syntax)) {
+  for (const c of readComments(code, comments, blockComment)) {
     const comment = Comment(c.from, c.to, c.text, {
       blockComment,
       orphan: true,

@@ -42,7 +42,17 @@ type TokenStream = {
 /* -----[ the parser ]----- */
 
 export function parseToIntermediateAST(code: string): LambdaNode {
-  return parse(tokenStream(inputStream(code)));
+  return parseWithComments(code).root;
+}
+
+/** The program, and the comments that were skipped in reading it */
+export function parseWithComments(code: string): {
+  root: LambdaNode;
+  comments: { from: Pos; to: Pos }[];
+} {
+  const comments = new Map<string, { from: Pos; to: Pos }>();
+  const root = parse(tokenStream(inputStream(code), comments));
+  return { root, comments: [...comments.values()] };
 }
 
 function parse(input: TokenStream): LambdaNode {
@@ -380,7 +390,10 @@ function inputStream(input: string): InputStream {
   }
 }
 
-function tokenStream(input: InputStream): TokenStream {
+function tokenStream(
+  input: InputStream,
+  comments: Map<string, { from: Pos; to: Pos }>
+): TokenStream {
   let current: Token | null = null;
   let fromLocation = input.inputPos(),
     toLocation = input.inputPos();
@@ -470,9 +483,9 @@ function tokenStream(input: InputStream): TokenStream {
     toLocation = input.inputPos();
     return { from: fromLocation, to: toLocation, type: "str", value: string };
   }
-  // (a comment is read past: it is found again, and given its place, by
-  // `attachComments`, from the text)
+  // (a comment is read past, and reported: `attachComments` gives it its place)
   function readComment() {
+    const from = input.inputPos();
     input.next(); // (the #)
     if (input.peek() == "|") {
       input.next();
@@ -489,6 +502,7 @@ function tokenStream(input: InputStream): TokenStream {
     } else {
       readWhite((ch) => ch != "\n");
     }
+    comments.set(`${from.line}:${from.ch}`, { from, to: input.inputPos() });
   }
   function readToken(): Token | null {
     readWhite(isWhitespace);

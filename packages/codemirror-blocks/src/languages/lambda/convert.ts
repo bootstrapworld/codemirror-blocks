@@ -1,8 +1,7 @@
 import type { ASTNode, Pos } from "../../ast";
 import { Literal } from "../../nodes";
-import { attachComments, scanComments } from "../../orphans";
-import type { CommentSyntax } from "../../orphans";
-import { parseToIntermediateAST } from "./parser";
+import { attachComments } from "../../orphans";
+import { parseWithComments } from "./parser";
 import type { LambdaNode } from "./parser";
 import {
   Assignment,
@@ -124,23 +123,13 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
   }
 }
 
-/** How lambda writes a comment (and how it is read: `#` to the end of the line) */
-const LAMBDA_COMMENTS: CommentSyntax = {
-  line: "#",
-  block: LAMBDA_BLOCK_COMMENT,
-};
-
 export default function parseString(code: string): ASTNode[] {
-  const root = parseToIntermediateAST(code);
+  const { root, comments } = parseWithComments(code);
   const origin = { line: 0, ch: 0 };
   const lines = code.split("\n");
   const end = { line: lines.length - 1, ch: lines[lines.length - 1].length };
   // a program of nothing has no block to draw (one of only comments has one)
-  if (
-    root.type === "prog" &&
-    root.prog.length === 0 &&
-    scanComments(code, LAMBDA_COMMENTS).length === 0
-  ) {
+  if (root.type === "prog" && root.prog.length === 0 && comments.length === 0) {
     return [];
   }
   // (the program is all of the text, so that the comments before its first
@@ -151,7 +140,7 @@ export default function parseString(code: string): ASTNode[] {
   );
   return attachComments(code, [prog], {
     blockComment: LAMBDA_BLOCK_COMMENT,
-    syntax: LAMBDA_COMMENTS,
+    comments,
     topLevel: prog,
   });
 }

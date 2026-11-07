@@ -82,21 +82,6 @@ function enumerateIdentifierList(lst: structures.Program[]) {
 /** How WeScheme writes a comment that it did not read as one (see Comment) */
 export const WESCHEME_BLOCK_COMMENT = { open: "#|", close: "|#" };
 
-// makeComment : WeSchemeComment -> ASTNodeComment
-function makeComment(node: structures.Program | structures.comment) {
-  const from = {
-    line: (node.comment || node).location.startRow - 1,
-    ch: (node.comment || node).location.startCol,
-  };
-  const to = {
-    line: (node.comment || node).location.endRow - 1,
-    ch: (node.comment || node).location.endCol,
-  };
-  return Comment(from, to, node.comment?.txt || "", {
-    blockComment: WESCHEME_BLOCK_COMMENT,
-  });
-}
-
 // The source text being parsed. Forms with no block of their own are kept as
 // the text they were written as, so parseNode needs to be able to slice it.
 let source = "";
@@ -194,13 +179,11 @@ export function parseNodeOrNull(
       {
         ariaLabel:
           symbolAria(b.first.val) + " bound to " + val.shortDescription(),
-        comment: comment,
       }
     );
   }
 
   const { from, to } = locationFromNode(node);
-  const comment = node.comment ? makeComment(node) : undefined;
 
   if (node instanceof structures.callExpr) {
     let func, label;
@@ -230,11 +213,9 @@ export function parseNodeOrNull(
       { func, args: children },
       {
         ariaLabel: label,
-        comment: comment,
       }
     );
   } else if (node instanceof structures.andExpr) {
-    const comment = node.comment ? makeComment(node) : undefined;
     return FunctionApp(
       from,
       to,
@@ -247,10 +228,9 @@ export function parseNodeOrNull(
         ),
         args: node.exprs.map(parseNodeOrNull).filter(notNull),
       },
-      { ariaLabel: expressionAria("and", node.exprs), comment: comment }
+      { ariaLabel: expressionAria("and", node.exprs) }
     );
   } else if (node instanceof structures.orExpr) {
-    const comment = node.comment ? makeComment(node) : undefined;
     return FunctionApp(
       from,
       to,
@@ -263,7 +243,7 @@ export function parseNodeOrNull(
         ),
         args: node.exprs.map(parseNodeOrNull).filter(notNull),
       },
-      { ariaLabel: expressionAria("or", node.exprs), comment: comment }
+      { ariaLabel: expressionAria("or", node.exprs) }
     );
   } else if (node instanceof structures.defVar) {
     return VariableDefinition(
@@ -273,7 +253,6 @@ export function parseNodeOrNull(
       {
         ...NAMED.valueDefinition,
         ariaLabel: (n: ASTNode) => `${symbolAria(node.name.val)}: ${n.label}`,
-        comment: comment,
       }
     );
   } else if (node instanceof structures.defStruct) {
@@ -287,7 +266,6 @@ export function parseNodeOrNull(
           pluralize("field", node.fields) +
           ": " +
           enumerateIdentifierList(node.fields),
-        comment: node.fields.comment ? makeComment(node.fields) : undefined,
       }
     );
     return StructDefinition(
@@ -300,7 +278,6 @@ export function parseNodeOrNull(
           pluralize("field", node.fields) +
           ": " +
           enumerateIdentifierList(node.fields),
-        comment: comment,
       }
     );
   } else if (node instanceof structures.defFunc) {
@@ -314,7 +291,6 @@ export function parseNodeOrNull(
           pluralize("argument", node.args) +
           ": " +
           enumerateIdentifierList(node.args),
-        comment: node.args.comment ? makeComment(node.args) : undefined,
       }
     );
     return FunctionDefinition(
@@ -327,7 +303,6 @@ export function parseNodeOrNull(
           pluralize("argument", node.args) +
           ": " +
           enumerateIdentifierList(node.args),
-        comment: comment,
       }
     );
   } else if (node instanceof structures.lambdaExpr) {
@@ -341,7 +316,6 @@ export function parseNodeOrNull(
           pluralize("argument", node.args) +
           ": " +
           enumerateIdentifierList(node.args),
-        comment: node.args.comment ? makeComment(node.args) : undefined,
       }
     );
     return LambdaExpression(
@@ -355,7 +329,6 @@ export function parseNodeOrNull(
           pluralize("argument", node.args) +
           ": " +
           enumerateIdentifierList(node.args),
-        comment: comment,
       }
     );
   } else if (node instanceof structures.condExpr) {
@@ -366,7 +339,6 @@ export function parseNodeOrNull(
       {
         ariaLabel: (n: ASTNode) =>
           `${n.label} with ` + pluralize("clause", node.clauses),
-        comment: comment,
       }
     );
   } else if (node instanceof structures.couple) {
@@ -392,7 +364,6 @@ export function parseNodeOrNull(
       { testExpr: predicate, thenExpr: consequence, elseExpr: alternative },
       {
         ...NAMED.ifThenElse,
-        comment: comment,
       }
     );
   } else if (node instanceof structures.symbolExpr) {
@@ -403,7 +374,6 @@ export function parseNodeOrNull(
         { value: node.val, dataType: "symbol" },
         {
           ariaLabel: "blank",
-          comment: comment,
         }
       );
     } else if (["true", "false"].includes(node.val)) {
@@ -413,7 +383,6 @@ export function parseNodeOrNull(
         { value: node.val, dataType: "boolean" },
         {
           ariaLabel: symbolAria(node.val) + ", a Boolean",
-          comment: comment,
         }
       );
     } else {
@@ -428,7 +397,6 @@ export function parseNodeOrNull(
         { value: text, dataType: "symbol" },
         {
           ariaLabel: symbolAria(node.val),
-          comment: comment,
         }
       );
     }
@@ -460,7 +428,6 @@ export function parseNodeOrNull(
       { value, dataType },
       {
         ariaLabel: aria,
-        comment: comment,
       }
     );
   } else if (node instanceof structures.comment) {
@@ -483,7 +450,6 @@ export function parseNodeOrNull(
       {
         ariaLabel: (n: ASTNode) =>
           `${n.label} containing ${pluralize("expression", node.exprs)}`,
-        comment: comment,
       }
     );
   } else if (
@@ -522,7 +488,6 @@ export function parseNodeOrNull(
           "binding",
           node.bindings
         )}`,
-        comment: comment,
       }
     );
   } else if (node instanceof structures.whenUnlessExpr) {
@@ -551,7 +516,7 @@ export function parseNodeOrNull(
           }
         ),
       },
-      { ariaLabel: `${symbolAria(form)} expression`, comment: comment }
+      { ariaLabel: `${symbolAria(form)} expression` }
     );
   } else if (node instanceof structures.unsupportedExpr) {
     if (node.val.constructor !== Array) {
@@ -567,7 +532,6 @@ export function parseNodeOrNull(
       },
       {
         ...NAMED.invalid,
-        comment: comment,
       }
     );
     return unknown;
@@ -578,7 +542,6 @@ export function parseNodeOrNull(
       { func: parseNode(node.stx), args: [parseNode(node.spec)] },
       {
         ariaLabel: "require " + node.spec.val,
-        comment: comment,
       }
     );
   }
@@ -590,7 +553,6 @@ export function parseNodeOrNull(
     { value: sourceText(node.location), dataType: "unsupported" },
     {
       ariaLabel: "unsupported expression",
-      comment: comment,
     }
   );
 }

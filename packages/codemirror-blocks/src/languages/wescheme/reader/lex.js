@@ -56,8 +56,6 @@ var leftListDelims = /[(\u005B\u007B]/
 
 // the delimiters encountered so far, line and column, and case-sensitivity
 var delims, line, column, startCol, startRow, source, caseSensitiveSymbols;
-// last-seen comments and sexps, so we can associate one with the other
-var lastComment = false, lastSexp = false;
 // UGLY HACK to track index if an error occurs. We should remove this if we can make it entirely stateless
 var endOfError;
 
@@ -147,29 +145,18 @@ export function sexpToString(sexp) {
   return (sexp instanceof Array) ? "(" + sexp.map(sexpToString).join(" ") + ")" : sexp.toString();
 }
 
-// use heuristic to assign comments to an sexp
-function maybeAssignComment(sexp) {
-  // if it's code and there's an un-assigned comment
-  // immediately-preceding line, assign it and clear the comment
-  if(!(sexp instanceof comment) && lastComment &&
-    lastComment.location.endRow === sexp.location.startRow-1) { 
-    sexp.comment = lastComment;
-    lastComment = false;
-  // if it's a comment and there's an un-commented sexp on
-  // the same line, assign it and clear the comment
-  } else if((sexp instanceof comment) && lastSexp &&
-            (lastSexp.location.endRow == sexp.location.startRow)) {
-    lastSexp.comment = sexp;
-    lastComment = false;
-  // merge unattached comments with the contiguous previous comments
-  } else if(sexp instanceof comment) {
-      if(lastComment && lastComment.location.endRow == sexp.location.endRow-1) {
-      sexp.txt = lastComment.txt + "\n" + sexp.txt;
-    } 
-    lastComment = sexp;
-  }
-}
+// every comment the reader skipped, as {from, to} offsets into the source
+var comments = [];
 
+// the end of a comment that starts at `from`: the end of its line, or its
+// closing |#, or (for #;) the end of the datum it comments out
+function commentEnd(str, from, atom) {
+  var two = str.substr(from, 2);
+  if (two === "#|") return str.indexOf("|#", from + 2) + 2;
+  if (two === "#;") return from + atom.location.span + 1;
+  var nl = str.indexOf("\n", from);
+  return nl < 0 ? str.length : nl;
+}
 
 /////////////////////
 /* Primary Methods */
@@ -183,7 +170,7 @@ function readProg(str, strSource) {
   var i = 0;
   startCol = column = 0, startRow = line = 1; // initialize all position indices
   caseSensitiveSymbols = true;                // initialize case sensitivity
-  lastComment = lastSexp = false;             // initialize comment tracking
+  comments = [];                              // forget the comments of the last program
   source = strSource || "<definitions>";
   var sexp, sexps = [];
   delims = [];
@@ -197,8 +184,6 @@ function readProg(str, strSource) {
     i = chewWhiteSpace(str, sexp.location.startChar + sexp.location.span);
   }
   sexps.location = new Location(startCol, startRow, 0, i, source);
-  maybeAssignComment(sexp);
-  lastSexp = sexp;
   return sexps;
 }
 
@@ -229,9 +214,11 @@ function readSExpByIndex(str, i) {
     /* else */
     readSymbolOrNumber(str, i);
     
-  // see if we can assign a comment to this sexp
-  maybeAssignComment(sexp);
-  lastSexp = sexp;
+  // report it, if it is a comment
+  if (sexp instanceof comment) {
+    var from = sexp.location.startChar;
+    comments.push({from: from, to: commentEnd(str, from, sexp)});
+  }
   return sexp;
 }
 
@@ -249,8 +236,6 @@ function readList(str, i) {
     , msg;
   column++; // move forward to count the closing delimeter
   var list = [];
-  // grab lastComment if one exists
-  if(lastComment) { list.comment = lastComment; lastComment = null; }
   delims.push(openingDelim);
   i = chewWhiteSpace(str, i);
 
@@ -273,7 +258,6 @@ function readList(str, i) {
       sexp.parent = list; // set this list as it's parent
       list.push(sexp); // and add the sexp to the list
     }
-    lastSexp = sexp;
     return i;
   }
 
@@ -1033,4 +1017,18 @@ export var lex = function(str, strSource, debug) {
     console.log(sexpToString(sexp));
   }
   return sexp;
+};
+
+// lexWithComments : String String -> {sexps, comments}
+// the same, and every comment that was skipped: {from, to} offsets in `str`
+// (one inside another comment, as in #; (a ; b), is not reported on its own)
+export var lexWithComments = function(str, strSource) {
+  var sexps = lex(str, strSource);
+  var found = comments.slice().sort(function(a, b) { return a.from - b.from || b.to - a.to; });
+  var outer = [];
+  found.forEach(function(c) {
+    var last = outer[outer.length - 1];
+    if (!last || c.from >= last.to) outer.push(c);
+  });
+  return {sexps: sexps, comments: outer};
 };
