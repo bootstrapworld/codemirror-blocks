@@ -85,7 +85,7 @@ test.describe("the Routine language", () => {
     ).toHaveCount(0);
   });
 
-  test("a name shows what is defined before it while it has focus", async ({
+  test("a name shows what is defined before it while it is edited", async ({
     page,
   }) => {
     await openInBlockMode(page, "(let a 1)\n(show (+ a 2))", "routine");
@@ -94,11 +94,6 @@ test.describe("the Routine language", () => {
     // (a click on a name opens its text: the hint is beside the edit box)
     await expect(page.locator(".routine-hint")).toHaveText("defined: a");
     await page.keyboard.press("Escape");
-    await expect(page.locator(".routine-hint")).toHaveText("defined: a");
-    await page
-      .locator(".blocks-define")
-      .first()
-      .click({ position: { x: 4, y: 4 } });
     await expect(page.locator(".routine-hint")).toHaveCount(0);
   });
 });

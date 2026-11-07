@@ -120,15 +120,15 @@ describe("an optional part with nothing in it", () => {
 });
 
 describe("a block that draws itself from its state", () => {
-  it("shows what a name could be only while the name has focus", () => {
+  it("shows what a name could be only while the name is edited", () => {
     mount("(let a 1)\n(let b 2)\n(show (+ a b))\n(let c 3)");
     expect(hints()).toEqual([]);
     const call = [...root(2).descendants()].find((n) => n.type === "name")!;
     mouseDown(call);
-    keyDown("Escape"); // (a click on a name opens its text: this is the block)
+    expect(hints()).toEqual([]); // (it has focus: that is not enough)
+    keyDown("Enter");
     expect(hints()).toEqual(["defined: a, b"]);
-    const other = root(0);
-    mouseDown(other);
+    keyDown("Escape");
     expect(hints()).toEqual([]);
   });
 

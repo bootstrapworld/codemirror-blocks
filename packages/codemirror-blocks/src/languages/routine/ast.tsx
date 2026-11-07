@@ -54,15 +54,14 @@ export function namesInScope(ast: AST, node: ASTNode): string[] {
 }
 
 /**
- * Shows, while its block has focus or its text is being edited (the editing
- * box takes the place of the block, so it is drawn as the `editingHint`), what
- * a name could be
+ * Shows, while the name is being edited, what it could be. (The editing box
+ * takes the place of the block, so this is drawn as its `editingHint`.)
  */
 const ScopeHint = ({ node }: { node: DrawnNode }) => {
-  const { focused, editing } = useNodeState();
+  const { editing } = useNodeState();
   // (the language reaches for the store: a block has no way to ask for the AST)
   const store = useStore<RootState>();
-  if (!focused && !editing) return null;
+  if (!editing) return null;
   const ast = selectors.getAST(store.getState());
   const names = namesInScope(ast, currentNode(ast, node));
   return (
@@ -147,7 +146,6 @@ export const Name = defineNode({
       editingHint={<ScopeHint node={props.node} />}
     >
       <span className="routine-name">{props.node.fields.name}</span>
-      <ScopeHint node={props.node} />
       <ReplaceHint />
     </Node>
   ),
