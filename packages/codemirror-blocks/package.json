@@ -81,7 +81,7 @@
     "prettier": "^3.6.2",
     "ts-node": "^10.9.1",
     "typescript": "^6.0.3",
-    "webpack-cli": "^7.2.3"
+    "webpack-cli": "^7.3.1"
   },
   "peerDependencies": {
     "codemirror": "^5.65.7"
