@@ -64,12 +64,12 @@ minutes` had to be put on every name that was made. A kind made with
      `normallyEditable`), not for a container: a loop cannot say "drop to add a
      step" of itself, and I had to move that to the values. A language wants it
      for any block, or for its drop targets.
-   - There is no `editing`, and while a block is edited its children are _not
+   - There was no `editing`, and while a block is edited its children are _not
      drawn_ (the box takes their place). So the scope hint, which is the
-     dropdown that #451 item 3 asks for, **is not there while the name is being
-     edited**, which is the moment it is wanted: a click on a name opens its text
-     at once, and the hint only shows after Escape. _Want:_ `<Node
-editingHint={...}>`, a slot drawn beside the edit box, or the children kept.
+     dropdown that #451 item 3 asks for, was not there while the name was being
+     edited, which is the moment it is wanted. It is now: `useNodeState` has
+     `editing`, and `<Node editingHint={...}>` is drawn beside the edit box
+     (#815).
 
 7. **`Args` drew no container**, and the editor's style lays out the arguments of
    a call in `.blocks-args`, so a language had to write `<span

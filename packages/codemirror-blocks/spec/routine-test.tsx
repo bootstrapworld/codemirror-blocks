@@ -132,6 +132,19 @@ describe("a block that draws itself from its state", () => {
     expect(hints()).toEqual([]);
   });
 
+  it("shows it beside the edit box while the name is being edited", () => {
+    mount("(let a 1)\n(let b 2)\n(show (+ a b))");
+    const call = [...root(2).descendants()].find((n) => n.type === "name")!;
+    mouseDown(call);
+    keyDown("Enter"); // (the name is focused: Enter opens its text)
+    // (the edit box has taken the place of the name: its hint is still there)
+    expect(document.querySelector("[role=textbox]")).not.toBeNull();
+    expect(hints()).toEqual(["defined: a, b"]);
+    expect(document.querySelector(".blocks-editing-hint")).not.toBeNull();
+    keyDown("Escape");
+    expect(document.querySelector(".blocks-editing-hint")).toBeNull();
+  });
+
   it("says what is hidden in a collapsed loop", () => {
     mount("(repeat 2 (show 1) (show 2) (show 3))");
     expect(hints()).toEqual([]);

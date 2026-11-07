@@ -48,6 +48,13 @@ export type Props = {
   inToolbar?: boolean;
   normallyEditable?: boolean;
   expandable?: boolean;
+  /**
+   * Drawn beside the edit box while the block is being edited (the box takes
+   * the place of the block's children, so they are not drawn then): a hint
+   * about what to type, such as the names in scope. It can read
+   * {@link useNodeState}, as the children can.
+   */
+  editingHint?: React.ReactNode;
   children?: React.ReactNode | React.ReactElement;
 };
 
@@ -88,6 +95,8 @@ export type NodeState = {
   errored: boolean;
   /** it is in the toolbar, not in the program */
   inToolbar: boolean;
+  /** its text is being edited (its children are not drawn: see `editingHint`) */
+  editing: boolean;
 };
 
 const noState: NodeState = {
@@ -98,6 +107,7 @@ const noState: NodeState = {
   over: false,
   errored: false,
   inToolbar: false,
+  editing: false,
 };
 const NodeStateContext = createContext<NodeState>(noState);
 
@@ -503,6 +513,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
       over: isOver,
       errored: isErrored,
       inToolbar,
+      editing: Boolean(editable),
     }),
     [
       isFocused,
@@ -512,6 +523,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
       isOver,
       isErrored,
       inToolbar,
+      editable,
     ]
   );
 
@@ -532,6 +544,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
           value={value}
           onChange={(value: string | null) => setValue(value)}
           contentEditableProps={contentEditableProps}
+          hint={props.editingHint}
         >
           {props.children}
         </NodeEditable>
@@ -616,6 +629,7 @@ export default React.memo(Node, (prev: Props, next: Props) => {
   const keys = new Set([...Object.keys(prev), ...Object.keys(next)]);
   keys.delete("node");
   keys.delete("children");
+  keys.delete("editingHint");
   for (const key of keys) {
     if (prev[key as keyof Props] !== next[key as keyof Props]) return false;
   }

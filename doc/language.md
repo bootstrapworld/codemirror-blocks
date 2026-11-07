@@ -476,11 +476,22 @@ render: (props) => (
 
 It gives plain, read-only values: `focused` (the block is the active one),
 `selected`, `collapsed`, `dragging` (it is being dragged), `over` (something
-being dragged is over it), `errored` (an edit of it was refused) and
+being dragged is over it), `errored` (an edit of it was refused), `editing` (its text is being edited) and
 `inToolbar`. A component that calls it is drawn again only when one of these
 changes for _its_ block. A hook can only be called by a component, so call it in
 a component inside the `<Node>`, not in `render()` itself. (For hover, use the
 CSS `:hover`; the editor does not keep it.)
+
+While a block with `normallyEditable` is being edited, the edit box takes the
+place of its children, so they are not drawn. To show something beside the box
+then (the names in scope, say), give the `<Node>` an `editingHint`, which can
+read `useNodeState()` too:
+
+```tsx
+<Node {...props} normallyEditable editingHint={<ScopeList />}>
+  <VariableName name={props.node.fields.value} />
+</Node>
+```
 
 #### Rendering DropTargets
 

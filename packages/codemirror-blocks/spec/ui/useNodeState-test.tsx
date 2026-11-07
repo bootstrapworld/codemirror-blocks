@@ -64,6 +64,7 @@ it("says nothing outside a block", () => {
     selected: false,
     collapsed: false,
     dragging: false,
+    editing: false,
     over: false,
     errored: false,
     inToolbar: false,

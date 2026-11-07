@@ -46,6 +46,8 @@ function selectElement(element: HTMLElement, shouldCollapse: boolean) {
 type Props = Omit<ContentEditableProps, "value"> & {
   target: Target;
   children?: React.ReactNode;
+  /** drawn beside the box, while it is open (not part of what is edited) */
+  hint?: React.ReactNode;
   isInsertion: boolean;
   value?: string | null;
   onChange: (e: string | null) => void;
@@ -258,7 +260,7 @@ const NodeEditable = ({
       ] as ClassNamesArgument[]
     ).concat(extraClasses);
     const text = value ?? initialValue;
-    return (
+    const box = (
       <ContentEditable
         {...contentEditableProps}
         className={classNames(classes)}
@@ -275,6 +277,14 @@ const NodeEditable = ({
         aria-label={text}
         value={text}
       />
+    );
+    return props.hint ? (
+      <>
+        {box}
+        <span className="blocks-editing-hint">{props.hint}</span>
+      </>
+    ) : (
+      box
     );
   }
 };

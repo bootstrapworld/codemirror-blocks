@@ -151,7 +151,11 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   comment and the number to show for each element of a list.
 - `useNodeState()` lets a component drawn inside a `<Node>` read whether its
   block is focused, selected, collapsed, being dragged, dragged over, the one
-  whose edit was refused, or in the toolbar, without knowing about redux.
+  whose edit was refused, being edited (`editing`), or in the toolbar, without
+  knowing about redux.
+- `<Node editingHint={...}>` is drawn beside the edit box while a block is being
+  edited (the box takes the place of the block's children), so a block can keep
+  showing a hint, such as the names in scope, while its text is typed.
 - Search is back. F3, Ctrl-F (Cmd-F on a Mac) opens the Search Settings dialog,
   with two ways to search: by text (case, whole word and regular expression
   options) and by kind of block. Enter closes the dialog and goes to the first
