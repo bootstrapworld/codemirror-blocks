@@ -65,7 +65,7 @@ const ScopeHint = ({ node }: { node: DrawnNode }) => {
   const ast = selectors.getAST(store.getState());
   const names = namesInScope(ast, currentNode(ast, node));
   return (
-    <span className="routine-hint" aria-hidden="true">
+    <span className="blocks-hint" aria-hidden="true">
       {names.length ? `defined: ${names.join(", ")}` : "nothing defined yet"}
     </span>
   );
@@ -75,7 +75,7 @@ const ScopeHint = ({ node }: { node: DrawnNode }) => {
 const LoopStatus = ({ count }: { count: number }) => {
   const { collapsed } = useNodeState();
   return collapsed ? (
-    <span className="routine-hint" aria-hidden="true">
+    <span className="blocks-hint" aria-hidden="true">
       {count === 1 ? "1 step" : `${count} steps`} hidden
     </span>
   ) : null;
@@ -89,7 +89,7 @@ const LoopStatus = ({ count }: { count: number }) => {
 const ReplaceHint = () => {
   const { over } = useNodeState();
   return over ? (
-    <span className="routine-hint" aria-hidden="true">
+    <span className="blocks-hint" aria-hidden="true">
       replace
     </span>
   ) : null;
@@ -111,7 +111,7 @@ export const Num = defineNode({
   pretty: (node) => String(node.fields.value),
   ariaLabel: labelled,
   render: (props) => (
-    <Node {...props} normallyEditable={true} expandable={false}>
+    <Node {...props} variant="value" normallyEditable={true} expandable={false}>
       <span className="routine-number-value">{props.node.fields.value}</span>
       <ReplaceHint />
     </Node>
@@ -125,7 +125,7 @@ export const Text = defineNode({
   pretty: (node) => JSON.stringify(node.fields.value),
   ariaLabel: labelled,
   render: (props) => (
-    <Node {...props} normallyEditable={true} expandable={false}>
+    <Node {...props} variant="value" normallyEditable={true} expandable={false}>
       <span className="routine-text-value">{props.node.fields.value}</span>
       <ReplaceHint />
     </Node>
@@ -141,6 +141,7 @@ export const Name = defineNode({
   render: (props) => (
     <Node
       {...props}
+      variant="value"
       normallyEditable={true}
       expandable={false}
       editingHint={<ScopeHint node={props.node} />}
@@ -163,7 +164,7 @@ export const Define = defineNode({
   render: (props) => {
     const { name, start } = props.node.fields;
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <span className="blocks-operator">let</span>
         <div className="routine-body">
           {name.reactElement()}
@@ -190,7 +191,7 @@ export const Show = defineNode({
   longDescription: (node, level) =>
     `a ${node.label} of ${node.fields.what.describe(level)}`,
   render: (props) => (
-    <Node {...props}>
+    <Node {...props} variant="compound">
       <span className="blocks-operator">show</span>
       <div className="routine-body">
         {props.node.fields.what.reactElement()}
@@ -209,7 +210,7 @@ export const Repeat = defineNode({
   render: (props) => {
     const { times, steps } = props.node.fields;
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <header className="blocks-operator routine-loop-head">
           <span>repeat</span>
           {times.reactElement()}
@@ -260,7 +261,7 @@ export const Choice = defineNode({
   render: (props) => {
     const { test, then, otherwise } = props.node.fields;
     return (
-      <Node {...props}>
+      <Node {...props} variant="compound">
         <header className="blocks-operator routine-choice-head">
           <span>if</span>
           {test.reactElement()}
@@ -296,7 +297,7 @@ export const Call = defineNode({
         : ""
     }`,
   render: (props) => (
-    <Node {...props}>
+    <Node {...props} variant="compound">
       <span className="blocks-operator">{props.node.fields.op}</span>
       <Args className="blocks-args" field="args">
         {props.node.fields.args}

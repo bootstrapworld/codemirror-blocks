@@ -118,6 +118,15 @@ are:
   `blocks-comment`. Your language defines the rest: a node created with
   `type: "whenExpr"` gets the class `blocks-whenExpr`.
 
+- **blocks-compound** and **blocks-value**: what a block that has
+  `<Node variant="compound">` or `variant="value"` is drawn as, whatever its
+  `type`: the first is a frame with a black bar at the top (a call, a
+  definition), the second is a small pill (a name, a number). A language does not
+  have to name its own kinds of node in its stylesheet to get them.
+
+- **blocks-hint**: A chip for what a block says about its own state (see
+  `useNodeState`, and `editingHint` of `<Node>`): give a `<span>` this class.
+
 - **blocks-blank**: This represents a part of the program that hasn't been
   filled in yet.
 

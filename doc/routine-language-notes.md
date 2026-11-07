@@ -130,34 +130,23 @@ drop targets to see, nothing to tell a block from its neighbour. What I did:
   that is a block of its own); collapsing; the lock. This part worked, and I
   wanted all of it.
 - **Had to borrow** the frame of a compound block and the pill of a value,
-  because the default style lists WeScheme's kinds of node by name
-  (`.blocks-functionApp, .blocks-ifExpression, ...`). A new language's kinds get
-  none of it until it says so, with LESS `:extend`:
-  ```less
-  .blocks-define,
-  .blocks-show,
-  .blocks-repeat,
-  .blocks-choice,
-  .blocks-call {
-    &:extend(.blocks-functionApp all);
-  }
-  ```
-  which has to be _outside_ the language's block (inside it, the class is put on
-  the selector twice and nothing matches: I lost some time to this). The black
-  strip at the top is `.blocks-operator`, which the render has to put on by
-  hand. _Want:_ the frame, the strip and the pill under names that are not
-  WeScheme's: e.g. `<Node variant="compound">` and `variant="value"` that
-  put `blocks-compound` and `blocks-value`, which the default style then styles.
-  A type name colliding with one of its classes (`name`, `literal`) is also
-  luck, not design.
+  because the default style listed WeScheme's kinds of node by name
+  (`.blocks-functionApp, .blocks-ifExpression, ...`): a new language's kinds got
+  none of it until it said so, with LESS `:extend` (which had to be _outside_ the
+  language's block: inside it, the class is put on the selector twice and
+  nothing matches; I lost some time to this). That is now `<Node
+variant="compound">` and `variant="value"` (#819), which put `blocks-compound`
+  and `blocks-value`, which the default style styles: Routine's style has no
+  `:extend` any more. The black strip at the top is `.blocks-operator`, which
+  the render still puts on by hand.
 - **Overrode** what is Routine's own: the loop's numbered list (resetting `ol`),
   the gutter, the rows, the branches of a choice; the things that sit in the black
   strip of a loop and a choice (the number, the white-space targets: light pills
-  on black); the hint chips; and `.routine-body`, a wrapping row for what is in a
+  on black); and `.routine-body`, a wrapping row for what is in a
   `let` or a `show`. About 100 lines, all layout.
 - **Wanted from the editor, and did not have:**
   - The look of a _hint_ or a _badge_ that a block draws about its own state: I
-    made `.routine-hint`. Every language that uses `useNodeState` will.
+    made `.routine-hint`. That is the class `blocks-hint` now (#819).
   - A way to get all this **without LESS** (#509): the import of
     `default-style.less` inside a class is how the variables (`@border-radius`,
     the colors) are passed in. CSS custom properties would do the same with a

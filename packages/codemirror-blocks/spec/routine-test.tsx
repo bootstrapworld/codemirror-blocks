@@ -43,7 +43,7 @@ const insertThrough = (el: Element, value: string) => {
   keyDown("Enter");
 };
 const hints = () =>
-  [...document.querySelectorAll(".routine-hint")].map((el) => el.textContent);
+  [...document.querySelectorAll(".blocks-hint")].map((el) => el.textContent);
 
 describe("the steps of a repeat, drawn as a numbered list with its targets elsewhere", () => {
   const code = '(repeat 2 (show "a") (show "b"))';
@@ -116,6 +116,19 @@ describe("an optional part with nothing in it", () => {
     mount("(let spare)\n7");
     drag(elementForNode(root(1))!).dropOnto(targets(root(0), "start")[0]);
     expect(text()).toBe("(let spare 7)");
+  });
+});
+
+describe("the variant of a block", () => {
+  it("is a class the editor's style draws a frame or a pill for", () => {
+    mount("(let a 1)");
+    const classes = (type: string) =>
+      [...root(0).descendants(), root(0)]
+        .filter((n) => n.type === type)
+        .map((n) => elementForNode(n)!.className);
+    expect(classes("define")[0]).toContain("blocks-compound");
+    expect(classes("name")[0]).toContain("blocks-value");
+    expect(classes("number")[0]).toContain("blocks-value");
   });
 });
 

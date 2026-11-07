@@ -153,6 +153,11 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   block is focused, selected, collapsed, being dragged, dragged over, the one
   whose edit was refused, being edited (`editing`), or in the toolbar, without
   knowing about redux.
+- `<Node variant="compound">` and `variant="value"` give a block the frame (with
+  the black bar) or the pill that the default style draws, as `blocks-compound`
+  and `blocks-value`, so that a language's stylesheet does not have to say
+  which of its kinds of node are like WeScheme's (the `:extend` Routine had to
+  use). The class `blocks-hint` is a chip for what a block says about its state.
 - `<Node editingHint={...}>` is drawn beside the edit box while a block is being
   edited (the box takes the place of the block's children), so a block can keep
   showing a hint, such as the names in scope, while its text is typed.

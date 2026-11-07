@@ -42,6 +42,8 @@
   }
 }
 
+// (a language that gives its block `variant="compound"` has this too)
+.blocks-compound,
 .blocks-condExpression,
 .blocks-functionApp,
 .blocks-functionDefinition,
@@ -194,10 +196,12 @@
     box-shadow: 0px 0px 10px 1px white;
   }
   > .blocks-literal,
+  > .blocks-value,
   .blocks-identifierList {
     box-shadow: none;
   }
-  .blocks-literal {
+  .blocks-literal,
+  .blocks-value {
     border: @border-width inset;
   }
 }
@@ -210,14 +214,17 @@
   justify-content: center;
 
   > .blocks-literal,
+  > .blocks-value,
   .blocks-white-space[contenteditable="true"] {
     background: white;
     border: @border-width lightgray inset;
   }
 }
 
+// (the pill of a value; a language that gives its block `variant="value"` has it)
 .blocks-name,
 .blocks-literal,
+.blocks-value,
 .blocks-blank {
   @height: 20px;
 
@@ -281,6 +288,19 @@
 
 .blocks-name {
   color: steelblue;
+}
+
+// What a block says about its own state, beside what it holds (a chip; see
+// `useNodeState`): give the element the class `blocks-hint`
+.blocks-hint {
+  font-size: 11px;
+  font-weight: normal;
+  color: #333;
+  background: #fff3c4;
+  border: 1px solid #e0b100;
+  border-radius: 8px;
+  padding: 0 6px;
+  margin-left: 6px;
 }
 
 .blocks-node[aria-selected^="true"] {

@@ -49,6 +49,13 @@ export type Props = {
   normallyEditable?: boolean;
   expandable?: boolean;
   /**
+   * What the editor's default style draws it as, whatever kind of node it is:
+   * `"compound"` is a frame with a black strip at the top (a call, a
+   * definition), and `"value"` is a pill (a name, a number). The block has the
+   * class `blocks-compound` or `blocks-value`.
+   */
+  variant?: "compound" | "value";
+  /**
    * Drawn beside the edit box while the block is being edited (the box takes
    * the place of the block's children, so they are not drawn then): a hint
    * about what to type, such as the names in scope. It can read
@@ -335,6 +342,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const classes: Parameters<typeof classNames> = [
     { "blocks-locked": locked },
     `blocks-${props.node.type}`,
+    props.variant && `blocks-${props.variant}`,
   ];
   const [{ isOver }, connectDropTarget] = useDrop({
     describe: () => ({ nid: currentNode().nid }),

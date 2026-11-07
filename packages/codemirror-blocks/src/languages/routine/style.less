@@ -15,8 +15,6 @@
   @drag-replace-background-color: red;
 
   // ---- what is Routine's own ----
-  @hint-background: #fff3c4;
-  @hint-border: #e0b100;
 
   .routine-body {
     display: flex;
@@ -80,33 +78,4 @@
     gap: 6px;
     padding: 2px 8px;
   }
-
-  // What a block says about its own state (see useNodeState)
-  .routine-hint {
-    font-size: 11px;
-    font-weight: normal;
-    color: #333;
-    background: @hint-background;
-    border: 1px solid @hint-border;
-    border-radius: 8px;
-    padding: 0 6px;
-    margin-left: 6px;
-  }
-}
-
-// The editor's style names the kinds of node of WeScheme (`.blocks-functionApp`
-// and the others), so a new language gets none of it until it says which of its
-// own are the same: these take the frame of a function call, and the pill of a
-// literal. (Outside the block above: `extend` there would put the language's
-// class on the selector twice.)
-.blocks-define,
-.blocks-show,
-.blocks-repeat,
-.blocks-choice,
-.blocks-call {
-  &:extend(.blocks-functionApp all);
-}
-.blocks-number,
-.blocks-text {
-  &:extend(.blocks-literal all);
 }

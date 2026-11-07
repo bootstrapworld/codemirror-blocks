@@ -92,8 +92,8 @@ test.describe("the Routine language", () => {
     const name = page.locator(".blocks-call .blocks-name").first();
     await name.click();
     // (a click on a name opens its text: the hint is beside the edit box)
-    await expect(page.locator(".routine-hint")).toHaveText("defined: a");
+    await expect(page.locator(".blocks-hint")).toHaveText("defined: a");
     await page.keyboard.press("Escape");
-    await expect(page.locator(".routine-hint")).toHaveCount(0);
+    await expect(page.locator(".blocks-hint")).toHaveCount(0);
   });
 });
