@@ -2,7 +2,6 @@ import { addLanguage } from "../../languages/";
 import { ROUTINE_BLOCK_COMMENT } from "./ast";
 import { parse } from "./parser";
 
-require("./style.less");
 export default addLanguage({
   id: "routine",
   name: "Routine",

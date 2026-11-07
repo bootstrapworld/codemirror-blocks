@@ -4,11 +4,6 @@
  */
 
 const sharedConfig = {
-  // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
-  moduleNameMapper: {
-    "^[./a-zA-Z0-9$_-]+\\.(less|css)$":
-      "<rootDir>/packages/codemirror-blocks/jest/StyleStub",
-  },
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
   setupFilesAfterEnv: [
     "<rootDir>/packages/codemirror-blocks/spec/globalSetup.ts",

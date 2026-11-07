@@ -1,5 +1,3 @@
-import "codemirror/lib/codemirror.css";
-import "./debug-page.less";
 import type { Language } from "../CodeMirrorBlocks";
 import CodeMirrorBlocks from "../CodeMirrorBlocks";
 import { resetUniqueIdGenerator } from "../utils";

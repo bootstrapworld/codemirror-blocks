@@ -10,6 +10,7 @@
       "default": "./lib/CodeMirrorBlocks.js"
     },
     "./lib/*.less": "./lib/*.less",
+    "./lib/css/*.css": "./lib/css/*.css",
     "./lib/languages": {
       "types": "./lib/languages/index.d.ts",
       "default": "./lib/languages/index.js"
@@ -78,6 +79,7 @@
     "babel-loader": "^10.1.1",
     "jest": "^30.5.2",
     "jest-environment-jsdom": "^30.5.2",
+    "less": "^4.9.1",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.1",
     "typescript": "^6.0.3",
@@ -90,7 +92,8 @@
     "prepare": "npm run build && npm run build-types",
     "build-sounds": "node scripts/inline-sounds.js",
     "start": "webpack serve --config webpack/example.config.js",
-    "build": "npx babel src --out-dir lib --source-maps inline --copy-files --extensions \".ts,.tsx,.js,.jsx\"",
+    "build": "npx babel src --out-dir lib --source-maps inline --copy-files --extensions \".ts,.tsx,.js,.jsx\" && npm run build-css",
+    "build-css": "node scripts/build-css.js",
     "build-watch": "npm run build -- --watch",
     "build-types": "npx tsc",
     "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit && tsc -p spec --noEmit && tsc -p e2e --noEmit",

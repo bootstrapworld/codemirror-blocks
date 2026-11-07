@@ -8,7 +8,10 @@ import {
   setLogReporter,
 } from "@bootstrapworld/codemirror-blocks";
 import "codemirror/lib/codemirror.css";
-import "@bootstrapworld/codemirror-blocks/lib/less/example.less";
+// (the editor's stylesheets are plain CSS: this bundle takes them in)
+import "@bootstrapworld/codemirror-blocks/lib/css/codemirror-blocks.css";
+import "@bootstrapworld/codemirror-blocks/lib/css/languages/wescheme.css";
+import "@bootstrapworld/codemirror-blocks/lib/css/example-page.css";
 
 const errorForm = document.createElement("div");
 errorForm.innerHTML = `<iframe

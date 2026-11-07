@@ -3,7 +3,6 @@ import { addLanguage } from "../../languages/";
 
 const parser = new ExampleParser();
 
-require("./style.less");
 export default addLanguage({
   id: "example",
   name: "Example",

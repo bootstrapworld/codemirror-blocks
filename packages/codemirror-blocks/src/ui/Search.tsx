@@ -3,7 +3,6 @@ import { recordEvent } from "../state/activityLog";
 import { useSelector, useStore } from "react-redux";
 import * as selectors from "../state/selectors";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
-import "react-tabs/style/react-tabs.less";
 import Dialog from "../components/Dialog";
 import { say } from "../announcer";
 import { ASTNode, Pos } from "../ast";

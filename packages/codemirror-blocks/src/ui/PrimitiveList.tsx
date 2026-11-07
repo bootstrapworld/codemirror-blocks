@@ -10,8 +10,6 @@ import { useDrag } from "../dnd";
 import { copy } from "../copypaste";
 import { MinusIcon, PlusIcon } from "./Icons";
 
-require("./PrimitiveList.less");
-
 type BasePrimitiveProps = {
   primitive: LanguagePrimitive;
   className: string;

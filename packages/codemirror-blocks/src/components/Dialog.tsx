@@ -1,6 +1,5 @@
 import React, { KeyboardEvent, ReactElement, useRef, useCallback } from "react";
 import Modal from "react-modal";
-import "../less/Dialog.less";
 
 type Props = {
   closeFn: () => void;

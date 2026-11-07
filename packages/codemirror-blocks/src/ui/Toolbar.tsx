@@ -4,7 +4,6 @@ import PrimitiveList from "./PrimitiveList";
 import { Primitive, PrimitiveGroup } from "../parsers/primitives";
 import CodeMirror from "codemirror";
 import { RemoveIcon } from "./Icons";
-import "./Toolbar.less";
 
 type Props = {
   primitives?: PrimitiveGroup;

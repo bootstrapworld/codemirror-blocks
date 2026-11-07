@@ -15,6 +15,8 @@ Your style file should look like this:
       ...
     }
 
+To load the stylesheets, see the [last section](#loading-the-stylesheets).
+
 The rest of this documentation has two sections, describing (i) the
 parameters you can override, and (ii) the css classes you can tweak the
 style of.
@@ -204,3 +206,28 @@ brackets, `λ`). On the example page, `?look=storyboard` or `?look=maths` (or th
 "Look" menu, for a language that has more than one) switches between them as the
 page is open. This is a feature of the page: an application picks its look in its
 own stylesheet.
+
+## Loading the stylesheets
+
+The editor's stylesheets are plain CSS, made when the package is built, so
+that using it asks nothing of your bundler (no `less-loader`, `css-loader` or
+`style-loader`). Load them with a `<link>`, or import them if your bundler
+handles CSS:
+
+```js
+import "codemirror/lib/codemirror.css";
+import "@bootstrapworld/codemirror-blocks/lib/css/codemirror-blocks.css"; // the editor
+import "@bootstrapworld/codemirror-blocks/lib/css/languages/wescheme.css"; // a language
+```
+
+`lib/css/languages/<id>.css` is the style of one of the languages that come with
+the editor (`wescheme`, `lambda`, `routine` and `example`); a language's style
+is written under its own class, so loading all of them does no harm. A language
+of your own makes its CSS from its Less (`npx lessc style.less style.css`, or
+your bundler's loader, if you have one) and loads it the same way. The Less
+sources are in the package too (`lib/less/default-style.less`, ...), if you want
+to compile the default style with your own variables, as the
+[beginning of this guide](#stylesheet-guide) does.
+
+(`lib/css/example-page.css` and `lib/css/debug-page.css` are the styles of our
+example pages, and of wescheme.org: page chrome, not part of the editor.)

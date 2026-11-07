@@ -84,7 +84,7 @@ Create an `index.ts` file ([see this example](https://github.com/bootstrapworld/
 
 ### Style Your Blocks
 
-CMB provides [default CSS styling](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/src/less/default-style.less) for all node types, but you can always add your own! Add a `style.less` file that overrides the built-in styles, providing your own "look and feel" using standard CSS.
+CMB provides [default CSS styling](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/src/less/default-style.less) for all node types, but you can always add your own! Add a `style.less` file that overrides the built-in styles, providing your own "look and feel" using standard CSS. The editor's stylesheets are plain CSS (`lib/css/codemirror-blocks.css`, and `lib/css/languages/<id>.css` for each language that comes with it), so your bundler needs no loader for them: see [loading the stylesheets](../../doc/stylesheet.md#loading-the-stylesheets).
 
 Obviously, if you've added new AST node types, you'll have to provide the styling for those yourself!
 

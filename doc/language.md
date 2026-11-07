@@ -125,8 +125,9 @@ export default Languages.addLanguage({
   `getLiteralNodeForPrimitive`, which turn a primitive into the block that is
   dropped into the editor.
 
-You will also want a [`less`](http://lesscss.org/) style file, loaded with
-`require("./style.less")` from your module. Follow the
+You will also want a style file for your blocks (the editor's own stylesheets
+are plain CSS, so your module needs no bundler loader: see
+[loading the stylesheets](stylesheet.md#loading-the-stylesheets)). Follow the
 [stylesheet guide](stylesheet.md) to style your blocks.
 
 ## Defining the Parser

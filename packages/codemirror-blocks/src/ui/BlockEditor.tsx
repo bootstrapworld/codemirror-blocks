@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import { recordEvent } from "../state/activityLog";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
-import "./Editor.less";
 import { useDispatch, useSelector } from "react-redux";
 import { commitChanges, focusAfterUndoOrRedo } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";

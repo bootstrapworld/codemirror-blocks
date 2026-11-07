@@ -1,4 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+// The stylesheets are plain CSS, made by `npm run build` (see scripts/build-css.js)
+import "codemirror/lib/codemirror.css";
+import "../lib/css/codemirror-blocks.css";
+import "../lib/css/languages/wescheme.css";
+import "../lib/css/languages/routine.css";
+import "../lib/css/languages/lambda.css";
+import "../lib/css/languages/example.css";
+import "../lib/css/debug-page.css";
 import wescheme from "../lib/languages/wescheme";
 import routine from "../lib/languages/routine";
 import lambda from "../lib/languages/lambda";

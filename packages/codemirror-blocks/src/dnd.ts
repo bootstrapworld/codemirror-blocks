@@ -21,7 +21,6 @@ import React, {
   useSyncExternalStore,
 } from "react";
 import { recordEvent, type UIEvent } from "./state/activityLog";
-require("./dnd.less");
 
 export enum ItemTypes {
   NODE = "node",

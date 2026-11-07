@@ -5,7 +5,6 @@ import { AppDispatch } from "../state/store";
 import * as actions from "../state/actions";
 import { CMBEditor } from "../editor";
 import type { Language } from "../CodeMirrorBlocks";
-require("./TrashCan.less");
 
 const TrashCan = (props: { editor: CMBEditor; language: Language }) => {
   const dispatch: AppDispatch = useDispatch();

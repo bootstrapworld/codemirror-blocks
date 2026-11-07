@@ -6,7 +6,6 @@ import type { Primitive } from "../../parsers/primitives";
 import PRIMITIVES_CONFIG from "./primitives-config";
 import { symbolAria, WESCHEME_BLOCK_COMMENT } from "./parseNode";
 import { parse } from "./sexpParser";
-require("./style.less");
 
 const dummyLoc = { line: -1, ch: 0 };
 

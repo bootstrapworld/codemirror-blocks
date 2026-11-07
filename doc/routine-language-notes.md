@@ -97,9 +97,9 @@ className="blocks-args">` around it, from reading the stylesheet. It takes a
     an `ASTNode` and `node.fields.name.fields.name` is `unknown`. I did not find
     a way to write the wrapper without the `Parameters<...>` form.
 
-11. **A language registers itself with `require("./style.less")`** in its index.
-    That is the dependence on a bundler of #509, and it has to be there for the
-    language to have any look at all (see the next section).
+11. **A language registered itself with `require("./style.less")`** in its index:
+    a dependence on a bundler (#509). The Less is compiled to CSS when the package
+    is built now (`lib/css`), and nothing in the source imports a stylesheet.
 
 12. **The example page and the test helpers know one language.** `createDebugging
 Interface(language, code)` was fine, but `editor-example.js` was WeScheme only
