@@ -23,7 +23,6 @@ const sharedConfig = {
     ],
   },
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-  transformIgnorePatterns: ["/node_modules/(?!(wescheme-js)/)"],
   // All imported modules in your tests should be mocked automatically
   // automock: false,
 

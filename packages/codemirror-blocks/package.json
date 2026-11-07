@@ -86,9 +86,6 @@
   "peerDependencies": {
     "codemirror": "^5.65.7"
   },
-  "optionalDependencies": {
-    "wescheme-js": "^0.0.4"
-  },
   "scripts": {
     "prepare": "npm run build && npm run build-types",
     "build-sounds": "node scripts/inline-sounds.js",
