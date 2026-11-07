@@ -4,9 +4,8 @@ import {
   setSource,
   WESCHEME_BLOCK_COMMENT,
 } from "./parseNode";
-import { Comment } from "../../nodes";
 import { poscmp } from "../../utils";
-import { addComment, placeOrphans, scanSchemeComments } from "../../orphans";
+import { addComment, attachComments } from "../../orphans";
 
 import { lex } from "wescheme-js/src/lex";
 import * as types from "wescheme-js/src/runtime/types";
@@ -22,72 +21,6 @@ type Sexp = any;
 const structures: Sexp = structuresModule;
 
 // What the lexer calls the mark of a quote written as `'x`, `` `x ``, `,x` or `,@x`
-const QUOTE_NAMES = new Set([
-  "quote",
-  "quasiquote",
-  "unquote",
-  "unquote-splicing",
-]);
-
-/**
- * The lexer gives a form the comment on the line above it, but it forgets the
- * comment only when a form on the next line takes it. A comment followed by
- * another form on its own line (`#| c |# z`) stays for the form after that,
- * which then claims a comment with a form in between: its block would swallow
- * that form. Take back any comment that has a sibling between it and its form.
- */
-/**
- * The lexer gives the comment above `'x` to the x, which has no block of its
- * own: it goes with the whole quote. (A quote mark is one or two characters
- * long: `(quote x)` written out is not one.)
- */
-function hoistQuoteComment(sexp: Sexp) {
-  if (!(sexp instanceof Array)) return;
-  const list: Sexp = sexp; // (the lexer's lists carry a location and a comment)
-  if (
-    list.length === 2 &&
-    list[1]?.comment &&
-    !list.comment &&
-    QUOTE_NAMES.has(String(list[0]?.val)) &&
-    list[0]?.location &&
-    list.location &&
-    list[0].location.startChar === list.location.startChar &&
-    list[0].location.endChar - list[0].location.startChar <= 2
-  ) {
-    list.comment = list[1].comment;
-    list[1].comment = undefined;
-  }
-}
-
-function dropStaleComments(sexps: Sexp) {
-  if (!(sexps instanceof Array)) return;
-  sexps.forEach((sexp: Sexp, i: number) => {
-    hoistQuoteComment(sexp);
-    const prev = sexps[i - 1];
-    const next = sexps[i + 1];
-    const comment = sexp?.comment;
-    if (
-      comment?.location &&
-      prev?.location &&
-      comment.location.startChar < sexp.location.startChar &&
-      prev.location.endChar > comment.location.startChar
-    ) {
-      sexp.comment = undefined;
-    }
-    // a comment after a form is its own only if nothing starts before it: in
-    // `a (#| c |# z)` the comment sits inside the list, not after `a`
-    if (
-      comment?.location &&
-      next?.location &&
-      comment.location.startChar >= sexp.location.endChar &&
-      next.location.startChar < comment.location.startChar
-    ) {
-      sexp.comment = undefined;
-    }
-    dropStaleComments(sexp);
-  });
-}
-
 /**
  * The lexer reads a |bar symbol| up to the last | in the rest of the text (a
  * later comment's #| |# included), and doesn't count the lines it spans, so what
@@ -891,41 +824,21 @@ export function parse(code: string) {
 
   setSource(code);
   const sexps = lex(maskMultilineBarSymbols(code));
-  dropStaleComments(sexps);
   const ast = parseStar(sexps);
   const rootNodes = ast
     .map(parseNodeOrNull)
     .filter((item: ASTNode | null) => item !== null);
-  // The comments that went with a node are its own. Those that did not are
-  // orphans: nodes of their own, wherever a list can hold them.
-  const key = (p: { line: number; ch: number }) => `${p.line}:${p.ch}`;
-  const attached = new Set<string>();
+  // The lexer gives the nodes the comments it finds, but not always as one reads
+  // them (a comment far above a form, or one before the form that follows it on
+  // its line), so the comments are given their places again, by the editor's
+  // rules: on the line above a node, or after code on its line, goes with it,
+  // and any other is a block of its own.
   for (const root of rootNodes) {
-    for (const node of root.descendants()) {
-      const comment = node.options.comment;
-      // (the lexer gives a list the last comment before it, however far above
-      // it was: one with a blank line between them goes with it no longer)
-      // (nor does it go with the node it is inside of: it is among its parts)
-      const inside =
-        comment &&
-        poscmp(comment.from, node.from) > 0 &&
-        poscmp(comment.to, node.to) < 0;
-      if (comment && (comment.to.line < node.from.line - 1 || inside)) {
-        node.options.comment = undefined;
-      } else if (comment) {
-        attached.add(key(comment.from));
-      }
-    }
+    for (const node of root.descendants()) node.options.comment = undefined;
   }
-  const orphans = scanSchemeComments(code)
-    .filter((c) => !attached.has(key(c.lastFrom)))
-    .map((c) =>
-      Comment(c.from, c.to, c.text, {
-        blockComment: WESCHEME_BLOCK_COMMENT,
-        orphan: true,
-      })
-    );
-  const placed = placeOrphans(rootNodes, orphans, WESCHEME_BLOCK_COMMENT);
+  const placed = attachComments(code, rootNodes, {
+    blockComment: WESCHEME_BLOCK_COMMENT,
+  });
   // A list of names has no brackets of its own (the form that holds it prints
   // them), so a comment on it would print inside them, and read back as one on
   // the first name: it is one on the first name.
@@ -939,6 +852,27 @@ export function parse(code: string) {
       if (comment && first && poscmp(comment.to, first.from) <= 0) {
         addComment(first, comment, WESCHEME_BLOCK_COMMENT);
         node.options.comment = undefined;
+      }
+      // The bindings of a let, and the body of a when or an unless, are a
+      // sequence that is only there to hold them as a group: its form prints
+      // what is in it and not the sequence, so a comment on the sequence would
+      // be lost. It goes with the first thing in it if it is above it, and with
+      // the last if it comes after.
+      const group: ASTNode | null =
+        node.type === "letLikeExpr"
+          ? (node.fields.bindings as ASTNode)
+          : node.type === "whenUnlessExpr"
+            ? (node.fields.exprs as ASTNode)
+            : null;
+      const held = group?.options.comment;
+      if (group && held && group.type === "sequence") {
+        const kids = group.fields.exprs as ASTNode[];
+        const above = poscmp(held.to, group.from) <= 0;
+        const target = above ? kids[0] : kids[kids.length - 1];
+        if (target) {
+          addComment(target, held, WESCHEME_BLOCK_COMMENT);
+          group.options.comment = undefined;
+        }
       }
     }
   }

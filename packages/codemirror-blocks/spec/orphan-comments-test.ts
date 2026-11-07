@@ -434,3 +434,34 @@ describe("undoing a change made in several parts", () => {
     expect(cmb.getValue()).toBe(code);
   });
 });
+
+describe("a comment next to a form that holds a group, in WeScheme", () => {
+  // (the bindings of a let, and the body of a when, are held in a sequence that
+  // is not written and prints no comment of its own: one given to it was lost)
+  const words = (text: string) =>
+    text
+      .replace(/#\||\|#|;/g, " ")
+      .split(/\s+/)
+      .filter((w) => /^(note|above|after|body|end)$/.test(w));
+  it.each([
+    "(let ([x 1] [y 2]) #| note |# (+ x y))",
+    "(let ([x 1] [y 2])\n  ; note\n  (+ x y))",
+    "(let (#| note |# [x 1] [y 2]) (+ x y))",
+    "(let ([x 1] [y 2] #| note |#) (+ x y))",
+    "(when (> a 1) #| note |# (f a) (g a))",
+    "(when (> a 1)\n  ; note\n  (f a) (g a))",
+    "(when (> a 1) (f a) (g a)\n\n#| note |#)",
+  ])("keeps the comment of %j, and reads it back as it was printed", (code) => {
+    const { once } = roundTrips("wescheme", code);
+    expect(words(once)).toEqual(["note"]);
+  });
+
+  it("keeps every comment among several before a form with no block of its own", () => {
+    // (a comment given to a node grows the node: the next one is not in it)
+    const { once } = roundTrips(
+      "wescheme",
+      "(define ; above\n(; note\n; after\nf)\n  (g ...))"
+    );
+    expect(words(once).sort()).toEqual(["above", "after", "note"]);
+  });
+});

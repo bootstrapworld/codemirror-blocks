@@ -13,10 +13,10 @@ import { poscmp } from "./utils";
  * there is none, with the node beside it.
  */
 
-const contains = (node: ASTNode, c: ASTNode) => {
-  const range = node.srcRange();
-  return poscmp(range.from, c.from) <= 0 && poscmp(c.to, range.to) <= 0;
-};
+// (by the range of the node itself, and not with the comment that goes with it,
+// which grows as comments are given to it: a comment before it is not in it)
+const contains = (node: ASTNode, c: ASTNode) =>
+  poscmp(node.from, c.from) <= 0 && poscmp(c.to, node.to) <= 0;
 
 /** One comment that goes with `node`, made of the one it has and `extra` */
 export function addComment(
@@ -73,7 +73,7 @@ function place(node: ASTNode, orphan: ASTNode, blockComment?: BlockComment) {
       return;
     }
   }
-  const next = kids.find((k) => poscmp(k.srcRange().from, orphan.to) >= 0);
+  const next = kids.find((k) => poscmp(k.from, orphan.to) >= 0);
   addComment(next ?? kids[kids.length - 1], orphan, blockComment);
 }
 
