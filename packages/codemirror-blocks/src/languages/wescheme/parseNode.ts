@@ -1,9 +1,9 @@
-import * as structures from "wescheme-js/src/structures";
+import * as structures from "./reader/structures";
 import { pluralize } from "../../ast";
 import type { ASTNode } from "../../ast";
 import * as Nodes from "../../nodes";
 import { LetLikeExpr, WhenUnless, Sequence } from "./ast";
-import * as types from "wescheme-js/src/runtime/types";
+import * as types from "./reader/types";
 /** WeScheme's own names for some of the core kinds of node */
 const NAMED = {
   valueDefinition: { label: "value definition" },

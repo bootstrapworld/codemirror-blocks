@@ -7,9 +7,9 @@ import {
 import { poscmp } from "../../utils";
 import { addComment, attachComments } from "../../orphans";
 
-import { lex } from "wescheme-js/src/lex";
-import * as types from "wescheme-js/src/runtime/types";
-import * as structuresModule from "wescheme-js/src/structures";
+import { lex } from "./reader/lex";
+import * as types from "./reader/types";
+import * as structuresModule from "./reader/structures";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // The wescheme-js lexer produces loosely-structured s-expressions: nested

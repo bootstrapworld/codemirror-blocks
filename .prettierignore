@@ -11,3 +11,5 @@ doc/*.html
 .DS_Store
 compilation-stats.json
 *.json
+packages/codemirror-blocks/src/languages/wescheme/reader/*.js
+packages/codemirror-blocks/src/languages/wescheme/reader/LICENSE
