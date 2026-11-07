@@ -91,9 +91,9 @@ export const Unknown = defineNode({
     return (
       <Node {...props}>
         <span className="blocks-operator">{firstElt}</span>
-        <span className="blocks-args">
-          <Args field="elts">{restElts}</Args>
-        </span>
+        <Args className="blocks-args" field="elts">
+          {restElts}
+        </Args>
       </Node>
     );
   },
@@ -139,9 +139,9 @@ export const FunctionApp = defineNode({
         <span className="blocks-operator">
           {props.node.fields.func.reactElement()}
         </span>
-        <span className="blocks-args">
-          <Args field="args">{props.node.fields.args}</Args>
-        </span>
+        <Args className="blocks-args" field="args">
+          {props.node.fields.args}
+        </Args>
       </Node>
     );
   },
@@ -182,9 +182,9 @@ export const IdentifierList = defineNode({
   render(props) {
     return (
       <Node {...props}>
-        <span className="blocks-args">
-          <Args field="ids">{props.node.fields.ids}</Args>
-        </span>
+        <Args className="blocks-args" field="ids">
+          {props.node.fields.ids}
+        </Args>
       </Node>
     );
   },
@@ -576,9 +576,9 @@ export const defineSequence = (
           <span className="blocks-operator">
             {props.node.fields.name?.reactElement()}
           </span>
-          <span className="blocks-sequence-exprs">
-            <Args field="exprs">{props.node.fields.exprs}</Args>
-          </span>
+          <Args className="blocks-sequence-exprs" field="exprs">
+            {props.node.fields.exprs}
+          </Args>
         </Node>
       );
     },

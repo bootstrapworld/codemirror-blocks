@@ -307,11 +307,9 @@ export const Call = defineNode({
   render: (props) => (
     <Node {...props}>
       <span className="blocks-operator">{props.node.fields.op}</span>
-      {/* (Args draws no container of its own, and the editor's style lays the
-          arguments of a call out in `.blocks-args`) */}
-      <span className="blocks-args">
-        <Args field="args">{props.node.fields.args}</Args>
-      </span>
+      <Args className="blocks-args" field="args">
+        {props.node.fields.args}
+      </Args>
     </Node>
   ),
 });

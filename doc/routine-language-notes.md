@@ -73,10 +73,10 @@ render })`, which gives the constructor (#811): Routine's nodes went from 435
      at once, and the hint only shows after Escape. _Want:_ `<Node
 editingHint={...}>`, a slot drawn beside the edit box, or the children kept.
 
-7. **`Args` draws no container**, and the editor's style lays out the arguments
-   of a call in `.blocks-args`: I had to write `<span className="blocks-args">`
-   around it, from reading the stylesheet. _Want:_ `Args` draws it (or takes a
-   `className`).
+7. **`Args` drew no container**, and the editor's style lays out the arguments of
+   a call in `.blocks-args`, so a language had to write `<span
+className="blocks-args">` around it, from reading the stylesheet. It takes a
+   `className` now (#816): `<Args className="blocks-args" field="args">`.
 
 8. **Pretty-printing a form with optional children and a list body is manual.**
    `P.standardSexpr("let", [name, ...(start ? [start] : [])])` needs the spread

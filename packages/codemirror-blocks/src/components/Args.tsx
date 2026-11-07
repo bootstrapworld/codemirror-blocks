@@ -5,9 +5,15 @@ import { DropTarget } from "./DropTarget";
 export type ArgsProps = {
   field: string;
   children: ASTNode[];
+  /**
+   * What to draw around the children and their drop targets, as one `<span>`
+   * with this class (the editor's style lays out the arguments of a call in
+   * `blocks-args`). Without one, they are drawn with no container of their own.
+   */
+  className?: string;
 };
 
-const Args = ({ field, children }: ArgsProps) => {
+const Args = ({ field, children, className }: ArgsProps) => {
   // elems starts with a dropTarget
   const elems = [<DropTarget key={"drop-0"} field={field} index={0} />];
   children.forEach((child, index) => {
@@ -19,7 +25,7 @@ const Args = ({ field, children }: ArgsProps) => {
     const key = "drop-" + after;
     elems.push(<DropTarget key={key} field={field} index={after} />);
   });
-  return <>{elems}</>;
+  return className ? <span className={className}>{elems}</span> : <>{elems}</>;
 };
 
 export type ListItem = {

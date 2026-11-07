@@ -126,6 +126,8 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   newer API, and `?lang=routine` on the example page.
 - `<DropTarget field="init" />` with no `index` fills an empty `optional` field
   (the initializer of `let x;`): a node typed or dropped there becomes the field.
+- `<Args className="blocks-args" ...>` draws the arguments and their drop targets in
+  a `<span>` of that class, which the editor's style lays out.
 - `listItems(list)` gives a hand-made layout the `index`, whether it is an orphan
   comment and the number to show for each element of a list.
 - `useNodeState()` lets a component drawn inside a `<Node>` read whether its

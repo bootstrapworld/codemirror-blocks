@@ -442,7 +442,9 @@ Most of the time, you should use `Args`. The syntax is
 `<Args field="FIELDNAME">{elts}</Args>`, which will intersperse drop targets
 horizontally among `elts` (which should be an array of nodes, or elements).
 "FIELDNAME" is the name of the field containing `elts`, which must be declared as
-type `Spec.list`.
+type `Spec.list`. `Args` draws no container of its own; give it a `className` to
+have them in a `<span>` of that class (the editor's style lays the arguments of
+a call out in `blocks-args`: `<Args className="blocks-args" field="args">`).
 
 However, if you want to put drop targets in a more interesting arrangement than
 `Args` gives you, you have a second option: you can use `DropTarget`s directly
