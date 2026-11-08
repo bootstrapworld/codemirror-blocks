@@ -50,7 +50,13 @@ function insertTextAtCaret(text: string) {
   if (sel && sel.rangeCount > 0) {
     const range = sel.getRangeAt(0);
     range.deleteContents();
-    range.insertNode(document.createTextNode(text));
+    const inserted = document.createTextNode(text);
+    range.insertNode(inserted);
+    // (the range now holds the text that was inserted: the caret goes after it)
+    range.setStartAfter(inserted);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
   }
 }
 
@@ -76,6 +82,9 @@ function OneLineContentEditable(
     ev.preventDefault();
     const text = ev.clipboardData.getData("text");
     insertTextAtCaret(text);
+    // (a change made to the DOM is not an `input` event: say it was one, so that
+    // what is listening for the text to change hears of the paste)
+    ev.currentTarget.dispatchEvent(new Event("input", { bubbles: true }));
   };
 
   return (

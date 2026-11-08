@@ -517,6 +517,15 @@
   top: 6px;
   bottom: auto;
 }
+// (where it would go below the bottom of the editor, it grows upwards instead)
+.blocks-comment.blocks-comment-editing.blocks-literal.blocks-comment-above {
+  top: auto;
+  bottom: 0px;
+}
+.blocks-comment.blocks-comment-editing.blocks-literal.blocks-comment-above::before {
+  top: auto;
+  bottom: 6px;
+}
 .blocks-comment.blocks-comment-editing.blocks-literal::selection {
   background: #6a7fb5;
   color: white;

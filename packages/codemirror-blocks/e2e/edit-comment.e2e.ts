@@ -207,6 +207,75 @@ test.describe("a comment that goes with no block", () => {
     );
   });
 
+  test("the box a comment is typed in grows upwards when its text would take it below the editor", async ({
+    page,
+  }) => {
+    const filler = Array.from({ length: 40 }, (_, i) => `(h ${i})`).join("\n");
+    await openInBlockMode(page, `${filler}\n(g y)`);
+    await page.evaluate(() => {
+      const cm = (
+        document.querySelector(".CodeMirror") as unknown as {
+          CodeMirror: { scrollTo(x: number, y: number): void };
+        }
+      ).CodeMirror;
+      cm.scrollTo(0, 1e6);
+    });
+    const g = page.getByRole("treeitem", { name: /g expression/ });
+    await g.click({ position: { x: 4, y: 4 } });
+    await page.keyboard.press(COMMENT_KEY);
+    const box = page.locator(".blocks-comment-editing");
+    await expect(box).toBeVisible();
+    await expect(box).not.toHaveClass(/blocks-comment-above/);
+    // (a few words fit below the block: many wrap onto lines that do not)
+    await page.keyboard.type(
+      Array.from({ length: 40 }, (_, i) => `word${i}`).join(" ")
+    );
+    await expect(box).toHaveClass(/blocks-comment-above/);
+    const edge = (selector: string, side: "top" | "bottom") =>
+      page.evaluate(
+        ([sel, s]) =>
+          document.querySelector(sel)?.getBoundingClientRect()[
+            s as "top" | "bottom"
+          ] ?? NaN,
+        [selector, side]
+      );
+    // (the editor follows the caret, and then the box: it settles in a moment)
+    const editorBottom = await edge(".CodeMirror", "bottom");
+    await expect
+      .poll(() => edge(".blocks-comment-editing", "bottom"))
+      .toBeLessThanOrEqual(editorBottom + 1);
+  });
+
+  test("pasting into the box a comment is typed in leaves the caret after the text", async ({
+    page,
+  }) => {
+    await openInBlockMode(page, "(f x)");
+    const f = page.getByRole("treeitem", { name: /f expression/ });
+    await f.click({ position: { x: 4, y: 4 } });
+    await page.keyboard.press(COMMENT_KEY);
+    const box = page.locator(".blocks-comment-editing");
+    await expect(box).toBeVisible();
+    await page.keyboard.type("one ");
+    await page.evaluate(() => {
+      const el = document.querySelector(".blocks-comment-editing")!;
+      const data = new DataTransfer();
+      data.setData("text", "pasted");
+      el.dispatchEvent(
+        new ClipboardEvent("paste", {
+          clipboardData: data,
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+    });
+    // (nothing is selected: the caret is a point, at the end of what was pasted)
+    expect(await page.evaluate(() => window.getSelection()?.isCollapsed)).toBe(
+      true
+    );
+    await page.keyboard.type("!");
+    await expect(box).toHaveText("one pasted!");
+  });
+
   test("a comment popup that has room below hangs from the top of its block", async ({
     page,
   }) => {

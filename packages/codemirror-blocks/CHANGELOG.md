@@ -190,7 +190,10 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
 - The popup with a block's comment hangs from the top of the block and grows
   downwards; where that would put it below the bottom of the editor it is held at
   the bottom edge of the block instead and grows upwards (the class is
-  `blocks-comment-above`, it was `blocks-comment-below`).
+  `blocks-comment-above`, it was `blocks-comment-below`). The box a comment is typed in is placed
+  the same way, again each time its text changes. Pasting into a one-line edit box
+  (a comment, a name, a number) leaves the caret after the pasted text, where it
+  had left the text selected.
 - `<Node editingHint={...}>` is drawn beside the edit box while a block is being
   edited (the box takes the place of the block's children), so a block can keep
   showing a hint, such as the names in scope, while its text is typed.

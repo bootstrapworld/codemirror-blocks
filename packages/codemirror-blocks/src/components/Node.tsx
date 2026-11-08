@@ -143,6 +143,23 @@ export function spokenLabel(
   );
 }
 
+/**
+ * Places the popup (or the box) with a node's comment: it hangs from the top of
+ * the node, and so grows downwards; where that would put it below the bottom of
+ * the editor (and out of sight), it is held at the node's bottom edge instead,
+ * and grows upwards, unless that would put it above the top of the editor too.
+ */
+function placeCommentBox(node: HTMLElement, box: HTMLElement) {
+  box.classList.remove("blocks-comment-above");
+  const room = node.closest(".CodeMirror")?.getBoundingClientRect();
+  if (room && box.getBoundingClientRect().bottom > room.bottom) {
+    box.classList.add("blocks-comment-above");
+    if (box.getBoundingClientRect().top < room.top) {
+      box.classList.remove("blocks-comment-above");
+    }
+  }
+}
+
 const Node = ({ expandable = true, ...props }: Props) => {
   // (useIdState wakes this block only when the store changes something about
   // this node, instead of running the selector on every update)
@@ -435,25 +452,13 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }
   }, [editor, isFocused, editable]);
 
-  // The popup with this node's comment hangs from the top of the node, and so
-  // grows downwards; where that would put it below the bottom of the editor
-  // (and out of sight), it is held at the node's bottom edge instead, and grows
-  // upwards, unless that would put it above the top of the editor too.
+  // The popup with this node's comment is placed (see placeCommentBox)
   const commentText = comment ? String(comment.fields.comment) : "";
   useLayoutEffect(() => {
     const node = nodeElementRef.current;
     const popup = node?.querySelector<HTMLElement>(":scope > .blocks-comment");
     if (!node || !popup) return;
-    const place = () => {
-      popup.classList.remove("blocks-comment-above");
-      const room = node.closest(".CodeMirror")?.getBoundingClientRect();
-      if (room && popup.getBoundingClientRect().bottom > room.bottom) {
-        popup.classList.add("blocks-comment-above");
-        if (popup.getBoundingClientRect().top < room.top) {
-          popup.classList.remove("blocks-comment-above");
-        }
-      }
-    };
+    const place = () => placeCommentBox(node, popup);
     place();
     if (!isFocused) return;
     // (the editor scrolls a block into view after it has focus, which moves it
@@ -466,6 +471,42 @@ const Node = ({ expandable = true, ...props }: Props) => {
       scroller?.removeEventListener("scroll", place);
     };
   }, [isFocused, commentText]);
+
+  // The box the comment is typed in is placed the same way, and again each time
+  // the text changes (it is as big as the text, so it can grow past an edge).
+  useLayoutEffect(() => {
+    const node = nodeElementRef.current;
+    const box = node?.querySelector<HTMLElement>(".blocks-comment-editing");
+    if (!commentEditor || !node || !box) return;
+    const place = () => {
+      placeCommentBox(node, box);
+      // (typing moves the editor's scroll to follow the caret, and the box
+      // growing upwards moves it back: keep the box in view, which is what is
+      // being typed in)
+      const room = node.closest(".CodeMirror")?.getBoundingClientRect();
+      const at = box.getBoundingClientRect();
+      if (room && (at.bottom > room.bottom || at.top < room.top)) {
+        box.scrollIntoView?.({ block: "nearest" });
+      }
+    };
+    place();
+    // (once more after the frame: what is typed is drawn again by then, and the
+    // editor scrolls to follow the caret, which moves the box in the editor)
+    let frame = 0;
+    const onInput = () => {
+      place();
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(place);
+    };
+    const scroller = node.closest(".CodeMirror-scroll");
+    box.addEventListener("input", onInput);
+    scroller?.addEventListener("scroll", place);
+    return () => {
+      cancelAnimationFrame(frame);
+      box.removeEventListener("input", onInput);
+      scroller?.removeEventListener("scroll", place);
+    };
+  }, [commentEditor]);
 
   // An edit can re-create this node's codemirror widget without changing its
   // id (e.g. dropping a node elsewhere). The browser then drops focus, and
