@@ -5,6 +5,14 @@ http://keepachangelog.com/
 
 ## 0.9.0 - 2026-10-30
 
+### Fixed
+
+- The popup with a block's comment no longer takes the pointer from the blocks
+  it lies over (a click on the block beside the commented one was caught by it),
+  and in lambda a comment of its own among the arguments of a call is printed on
+  a line of its own, so that it reads back as one (and not as a comment on the
+  function). Both were found by the soak.
+
 ### Changed
 
 - **Breaking: the editor comes with no languages, and each language is a package of

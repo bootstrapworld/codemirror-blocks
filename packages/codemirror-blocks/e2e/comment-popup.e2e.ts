@@ -62,3 +62,24 @@ test("the popup of the comment of a focused block is on top, and whole", async (
   });
   expect(problems).toEqual([]);
 });
+
+test("a popup does not take the pointer from what it is over, and a comment block of its own does take it", async ({
+  page,
+}) => {
+  // (found by the soak, seed 31151: a click on a block was meant for the block,
+  // and the popup of its neighbour's comment was over it)
+  await openInBlockMode(page, "; note\n(f x)\n\n#| alone |#\n\n(g y)");
+  const kinds = await page.evaluate(() => {
+    const events = (selector: string) => {
+      const el = document.querySelector(`.CodeMirror-code ${selector}`);
+      return el ? getComputedStyle(el).pointerEvents : "(none on the page)";
+    };
+    return {
+      popup: events(".blocks-comment:not(.blocks-node)"),
+      block: events(".blocks-comment.blocks-node"),
+    };
+  });
+  expect(kinds.popup).toBe("none");
+  expect(kinds.block).not.toBe("none");
+  expect(kinds.block).not.toBe("(none on the page)");
+});

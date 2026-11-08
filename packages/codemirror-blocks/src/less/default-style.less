@@ -387,6 +387,13 @@
   z-index: 999;
 }
 
+// (the popup is to be read, and keys are how a comment is edited: it must not take
+// the pointer from what it is over, which a click would be meant for. Not a comment
+// that is a block of its own, or the box that one is typed in: both are `blocks-node`)
+.blocks-comment:not(.blocks-node) {
+  pointer-events: none;
+}
+
 // The badge of a node that has a comment: a small balloon on the corner of
 // the node, beside it (see Node.tsx)
 .blocks-comment-wrap {
