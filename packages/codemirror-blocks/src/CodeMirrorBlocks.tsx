@@ -11,6 +11,7 @@ import { joinWithAnd, pluralize } from "./naming";
 import { formSexpr, sexpr } from "./printing";
 export type { ListItem } from "./components/Args";
 import * as DropTarget from "./components/DropTarget";
+import { DropTarget as DropTargetComponent } from "./components/DropTarget";
 import Node, { useNodeState } from "./components/Node";
 export type { NodeState } from "./components/Node";
 import { ASTNode } from "./ast";
@@ -71,7 +72,7 @@ export const CodeMirrorBlocksComponent = ({
  * @param container a DOM node to host the editor
  * @param options configuration options for CodeMirrorBlocks
  * @param language A language definition object that has been previously
- *  registered using {@link Languages.addLanguage}
+ *  registered using {@link Languages.addLanguage}, or the id of one
  * @param codemirrorOptions Any additional [codemirror-specific configuration](https://codemirror.net/doc/manual.html#config)
  * @returns An object-representation of CMB, allowing for
  *  integration with external (non-react) code
@@ -83,9 +84,21 @@ const roots = new WeakMap<HTMLElement, Root>();
 function CodeMirrorBlocks(
   container: HTMLElement,
   options: Options = {},
-  language: Language,
+  languageOrId: Language | string,
   codemirrorOptions: CodeMirror.EditorConfiguration = {}
 ): API {
+  // (a language that has been added can be said by its id: `"wescheme"`)
+  const language =
+    typeof languageOrId === "string"
+      ? Languages.LANGUAGES[languageOrId]
+      : languageOrId;
+  if (!language) {
+    throw new Error(
+      `There is no language "${String(languageOrId)}": add it first, by loading its module (one of ${
+        Object.keys(Languages.LANGUAGES).join(", ") || "none have been added"
+      }).`
+    );
+  }
   const apiBox: API = {} as API;
   let root = roots.get(container);
   if (!root) {
@@ -112,7 +125,27 @@ function CodeMirrorBlocks(
   Modal.setAppElement(container);
   return apiBox;
 }
-export { setLogReporter } from "./utils";
+export { setLogReporter, BlockError, poscmp } from "./utils";
+export { useAST } from "./hooks";
+export { attachComments, addComment, placeOrphans } from "./orphans";
+export type { ReportedComment } from "./orphans";
+export { currentNode, withoutOrphans } from "./ast";
+export type { AST, DrawnNode, Pos, BlockComment } from "./ast";
+export type { Primitive } from "./parsers/primitives";
+// (the types that are in what a language makes, and so in its declarations)
+export type { NodeMaker, NodeOf } from "./defineNode";
+export type { ASTNodeProps, NodeFields, NodeForSpec, NodeOptions } from "./ast";
+export type {
+  ChildSpec,
+  FieldsForSpec,
+  NodeSpec as NodeSpecOf,
+  List as ListSpec,
+  Optional as OptionalSpec,
+  Required as RequiredSpec,
+  Value as ValueSpec,
+} from "./nodeSpec";
+export { COMMENT_RULES } from "./commentRules";
+export type { CommentRules } from "./commentRules";
 
 export {
   CodeMirrorBlocks,
@@ -126,6 +159,7 @@ export {
   pluralize,
   field,
   DropTarget as DT,
+  DropTargetComponent as DropTarget,
   ASTNode,
   Node,
   useNodeState,

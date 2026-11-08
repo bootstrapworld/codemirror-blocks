@@ -1,6 +1,6 @@
 import type { AST, ASTNode } from "../src/ast";
-import lambda from "../src/languages/lambda";
-import wescheme from "../src/languages/wescheme";
+import lambda from "@bootstrapworld/cmb-lambda";
+import wescheme from "@bootstrapworld/cmb-wescheme";
 import { select } from "./helpers/gestures";
 import { allowConsoleErrors } from "./globalSetup";
 import { setEditableText } from "./helpers/editing";

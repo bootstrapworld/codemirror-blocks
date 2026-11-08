@@ -1,0 +1,64 @@
+{
+  "name": "@bootstrapworld/cmb-lambda",
+  "version": "0.9.0",
+  "description": "A small language of functions and expressions (from lisperator.net) for CodeMirror-Blocks",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./css/lambda.css": "./lib/css/lambda.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "/lib",
+    "/dist"
+  ],
+  "engines": {
+    "node": ">=24",
+    "npm": ">=11"
+  },
+  "peerDependencies": {
+    "@bootstrapworld/codemirror-blocks": "^0.9.0",
+    "react": "^19.2.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.20.7",
+    "@babel/core": "^7.20.12",
+    "@babel/plugin-transform-modules-commonjs": "^7.18.2",
+    "@babel/preset-env": "^7.18.9",
+    "@babel/preset-react": "^7.18.6",
+    "@babel/preset-typescript": "^7.18.6",
+    "@bootstrapworld/cmb-toolkit": "*",
+    "@bootstrapworld/codemirror-blocks": "*",
+    "@types/jest": "^30.0.0",
+    "@types/react": "^19.2.0",
+    "typescript": "^6.0.3",
+    "webpack-cli": "^7.3.1"
+  },
+  "scripts": {
+    "prepublishOnly": "npm run build && npm run build-types",
+    "build": "npx babel src --out-dir lib --source-maps inline --copy-files --extensions \".ts,.tsx,.js,.jsx\" && npm run build-css",
+    "build-css": "node ../cmb-toolkit/bin/cmb-build-css.js src/style.less lib/css/lambda.css --with-core",
+    "build-types": "npx tsc",
+    "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit && tsc -p spec --noEmit",
+    "bundle": "webpack --config webpack.config.js && cp lib/css/lambda.css dist/cmb-lambda.css"
+  },
+  "author": "The Bootstrap Team",
+  "repository": "github:bootstrapworld/codemirror-blocks",
+  "contributors": [
+    "Paul Carduner",
+    "Zachary Espiritu",
+    "Aleksey Kliger",
+    "Justin Pombrio",
+    "Sorawee Porncharoenwase",
+    "Emmanuel Schanzer",
+    "Dorai Sitaram",
+    "Preston Tunnell Wilson"
+  ],
+  "license": "MIT",
+  "unpkg": "dist/cmb-lambda-min.js",
+  "jsdelivr": "dist/cmb-lambda-min.js"
+}

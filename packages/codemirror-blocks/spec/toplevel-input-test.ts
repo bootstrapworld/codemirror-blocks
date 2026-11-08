@@ -1,4 +1,4 @@
-import wescheme from "../src/languages/wescheme";
+import wescheme from "@bootstrapworld/cmb-wescheme";
 import { fireEvent } from "@testing-library/react";
 import {
   keyDown,

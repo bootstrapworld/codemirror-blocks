@@ -1,8 +1,6 @@
 {
   "extends": "../tsconfig.json",
   "include": ["./**/*", "../src/**/*"],
-  // (the reader taken from wescheme-js is JavaScript, with declarations beside it)
-  "exclude": ["../src/languages/wescheme/reader/*.js"],
   "compilerOptions": {
     "allowJs": true,
     "rootDir": "..",

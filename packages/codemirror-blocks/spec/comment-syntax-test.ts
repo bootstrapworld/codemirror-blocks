@@ -1,6 +1,6 @@
-import wescheme from "../src/languages/wescheme";
-import lambda from "../src/languages/lambda";
-import example from "../src/languages/example";
+import wescheme from "@bootstrapworld/cmb-wescheme";
+import lambda from "@bootstrapworld/cmb-lambda";
+import example from "@bootstrapworld/cmb-example";
 import { addLanguage } from "../src/languages";
 import { FunctionApp, Literal } from "../src/nodes";
 import { Comment } from "../src/nodes";

@@ -7,6 +7,31 @@ http://keepachangelog.com/
 
 ### Changed
 
+- **Breaking: the editor comes with no languages, and each language is a package of
+  its own.** `@bootstrapworld/codemirror-blocks` is the editor, and
+  `@bootstrapworld/cmb-wescheme`, `cmb-lambda`, `cmb-routine` and `cmb-example`
+  are the languages (`lib/languages/<id>` of the editor is gone). A language adds
+  itself to the editor when its module is imported, and `CodeMirrorBlocks(el,
+options, "wescheme")` takes the **id** of a language as well as the object. A
+  page with no bundler loads `codemirror-blocks-min.js` and then a language's
+  `cmb-<id>-min.js` (each package has its file in `dist`, made by `npm run
+bundle`, and its stylesheet next to it); the language's file leaves the editor,
+  React and the pretty-printer to the editor's, so the page has one of each. The
+  editor's file is about 400 KB and WeScheme's about 130 KB. WeScheme's reader
+  (LGPL) is in its package, apart from the editor's MIT code.
+- **Breaking: the public API is what the root of the editor exports, and nothing
+  else can be imported** (#462). The `exports` of the package are the root, `/css/*.css`,
+  `/less/*.less`, `/testing`, `/conformance` and `/debug`: the `./lib/*` that gave
+  every internal file to anyone is gone, and the stylesheets are at
+  `@bootstrapworld/codemirror-blocks/css/codemirror-blocks.css` (and a language's at
+  `@bootstrapworld/cmb-<id>/css/<id>.css`). The root exports what a language needs, which
+  is now more: `attachComments`, `addComment`, `placeOrphans`, `useAST`,
+  `currentNode`, `withoutOrphans`, `COMMENT_RULES`, `BlockError`, `poscmp`, the
+  `DropTarget` component, and the types that are in what a language makes
+  (`NodeMaker`, `NodeFields`, `ASTNode`, `AST`, `Pos`, ...). `useAST()` is how a
+  block reads the program around it, where Routine reached into the store. The
+  language guide lists it.
+
 - **Dragging uses pointer events, and works on touch screens.** Blocks and
   toolbar items are dragged with the mouse, a pen, or a finger (press and hold
   briefly, then drag; moving sooner scrolls the page). `react-dnd` and

@@ -1,4 +1,4 @@
-import wescheme from "../src/languages/wescheme";
+import wescheme from "@bootstrapworld/cmb-wescheme";
 import { act, fireEvent, screen } from "@testing-library/react";
 import {
   cmd_ctrl,

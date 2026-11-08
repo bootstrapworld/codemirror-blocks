@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import wescheme from "../src/languages/wescheme";
+import wescheme from "@bootstrapworld/cmb-wescheme";
 import React from "react";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { CodeMirrorBlocksComponent, API } from "../src/CodeMirrorBlocks";

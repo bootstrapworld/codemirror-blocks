@@ -2,32 +2,58 @@
 
 This is a guide to adding support for a new language to CodeMirror-Blocks
 (CMB). The code in each section is type-checked against the current API, and
-the [`lambda`](../packages/codemirror-blocks/src/languages/lambda/) and
-[`wescheme`](../packages/codemirror-blocks/src/languages/wescheme/) languages in this repository are
-complete examples to read alongside it.
+the [`lambda`](../packages/cmb-lambda/) and
+[`wescheme`](../packages/cmb-wescheme/) languages in this repository (each a package of its
+own, like yours) are complete examples to read alongside it, and
+[`example`](../packages/cmb-example/) is the smallest.
 
 ## Logistics
 
-A language module is a separate package that depends on `@bootstrapworld/codemirror-blocks`:
+The editor, `@bootstrapworld/codemirror-blocks`, comes with no languages. A
+language is a module of its own (a package, with a peer dependency on the editor
+and on React), which adds itself to the editor when it is imported, and is then
+asked for by its id:
 
-    npm install --save @bootstrapworld/codemirror-blocks
+    npm install --save-peer @bootstrapworld/codemirror-blocks react
 
-Your IDE must load CodeMirror 5 itself (it is a peer dependency). Everything
-CMB exposes to language authors is exported from the package root:
+Your IDE must load CodeMirror 5 itself (it is a peer dependency of the editor).
 
-    import {
-      ASTNode, // the base class of all nodes
-      Args, // drop targets for list fields (see "Rendering DropTargets")
-      DT, // the DropTarget component, and friends
-      Node, // the component every block starts with
-      Nodes, // the core node types, and tools for defining new ones
-      NodeSpec, // declares the fields of a node type
-      Languages, // register your language
-      Pretty, // the pretty-printing library
-      PrimitiveGroup, // primitives shown in the toolbar
-    } from "@bootstrapworld/codemirror-blocks";
+### The public API
 
-Types such as `Pos` live in submodules, e.g. `@bootstrapworld/codemirror-blocks/lib/ast`.
+A language uses **only what the root of the editor exports**: that is the API
+(`import ... from "@bootstrapworld/codemirror-blocks"`), and it is what the
+editor's version number promises. Nothing else of the package can be imported (its
+`exports` say so). Everything a language needs:
+
+| for                   | what                                                                                                                                                                                                           |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| the editor            | `CodeMirrorBlocks` (the function, also the default export), `Languages` (`addLanguage`, ...), `setLogReporter`                                                                                                 |
+| nodes                 | `defineNode`, `field`, `Nodes` (the core nodes, `createASTSpec`, `CoreAST`), `NodeSpec`, `ASTNode`, `withoutOrphans`, `currentNode`; types `AST`, `DrawnNode`, `Pos`, `NodeMaker`, `NodeFields`, `NodeOptions` |
+| drawing               | `Node`, `Args`, `listItems`, `DropTarget`, `useNodeState`, `useAST`                                                                                                                                            |
+| printing and speaking | `Pretty`, `sexpr`, `formSexpr`, `describeKinds`, `pluralize`, `joinWithAnd`                                                                                                                                    |
+| the parser            | `attachComments`, `addComment`, `placeOrphans`, `COMMENT_RULES`, `BlockError`, `poscmp`; types `ReportedComment`, `CommentRules`, `BlockComment`                                                               |
+| the toolbar           | `PrimitiveGroup`, type `Primitive`                                                                                                                                                                             |
+
+and, apart from the root: `@bootstrapworld/codemirror-blocks/testing` (the helpers
+for tests: `mountCMB`, `keyDown`, ...; it needs `@testing-library`),
+`.../conformance` (`commentProblems`, see "Comments"), `.../css/*.css` (the
+editor's styles) and `.../less/*.less` (the Less sources, to compile with your own
+variables).
+
+### Packaging a language
+
+`packages/cmb-example` is the shape of one: `src/index.ts` (the module: it calls
+`addLanguage` and exports the language), `src/style.less` (its style),
+and a `package.json` with these scripts, which come from `@bootstrapworld/cmb-toolkit`:
+
+- `build`: Babel (`src` to `lib`), and the style: `cmb-build-css src/style.less
+lib/css/<id>.css --with-core` (the Less may `@import "default-style.less"`, the
+  editor's own style, and gets plain CSS);
+- `bundle`: `webpack --config webpack.config.js`, where the configuration is
+  `getLanguageBundleConfig({ name: "cmb-<id>", global: "CMB<Id>", entry: "./src/index.ts" })`.
+  It makes `dist/cmb-<id>-min.js`, the file for a `<script>` tag that is loaded
+  after the editor's: it leaves the editor, React and the pretty-printer to it
+  (they are on the global `CodeMirrorBlocks`), so that the page has one of each.
 
 ## Starting a Language: a Checklist
 
@@ -78,7 +104,7 @@ import {
   NodeSpec as Spec,
   Pretty as P,
 } from "@bootstrapworld/codemirror-blocks";
-import type { Pos } from "@bootstrapworld/codemirror-blocks/lib/ast";
+import type { Pos } from "@bootstrapworld/codemirror-blocks";
 
 // 1. Declare the node types of your language. Start from the core ones...
 const MyLangAST = Nodes.createASTSpec({
@@ -221,7 +247,7 @@ it reads each comment it skips and reports it, as the range it covers in the
 code. Then give `attachComments` the root nodes it made, and those comments:
 
 ```ts
-import { attachComments } from "@bootstrapworld/codemirror-blocks/lib/orphans";
+import { attachComments } from "@bootstrapworld/codemirror-blocks";
 
 parse(code) {
   const { roots, comments } = readNodes(code); // every node has its range
@@ -608,7 +634,7 @@ That's it! We've fully defined the `When` node type.
 CMB's own tests, and those of the language packages in this repository, use the
 helpers in
 [`toolkit/test-utils.tsx`](../packages/codemirror-blocks/src/toolkit/test-utils.tsx)
-(imported as `@bootstrapworld/codemirror-blocks/lib/toolkit/test-utils`). They build on the
+(imported as `@bootstrapworld/codemirror-blocks/testing`). They build on the
 private `@bootstrapworld/cmb-toolkit` package, so they are only available inside
 this repository's workspace. `mountCMB(language)` renders an editor into the test DOM, in block mode, and
 returns `{cmb, store}`; the API calls on `cmb` are wrapped in React's `act()`, so

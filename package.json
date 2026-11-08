@@ -9,6 +9,10 @@
   "workspaces": [
     "packages/cmb-toolkit",
     "packages/codemirror-blocks",
+    "packages/cmb-example",
+    "packages/cmb-lambda",
+    "packages/cmb-routine",
+    "packages/cmb-wescheme",
     "packages/wescheme-blocks"
   ],
   "scripts": {
@@ -18,7 +22,10 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format:check": "prettier --check .",
     "soak": "node scripts/soak.js",
-    "test:e2e": "npm run test:e2e --workspace=@bootstrapworld/codemirror-blocks"
+    "test:e2e": "npm run test:e2e --workspace=@bootstrapworld/codemirror-blocks",
+    "build:libs": "npm run build --workspace=@bootstrapworld/codemirror-blocks && npm run build --workspace=@bootstrapworld/cmb-example && npm run build --workspace=@bootstrapworld/cmb-lambda && npm run build --workspace=@bootstrapworld/cmb-routine && npm run build --workspace=@bootstrapworld/cmb-wescheme",
+    "build:types": "npm run build-types --workspace=@bootstrapworld/codemirror-blocks && npm run build-types --workspace=@bootstrapworld/cmb-example && npm run build-types --workspace=@bootstrapworld/cmb-lambda && npm run build-types --workspace=@bootstrapworld/cmb-routine && npm run build-types --workspace=@bootstrapworld/cmb-wescheme",
+    "build:all": "npm run build:libs && npm run build:types"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^5.28.8",

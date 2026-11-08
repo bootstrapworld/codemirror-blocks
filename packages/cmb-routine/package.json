@@ -1,0 +1,63 @@
+{
+  "name": "@bootstrapworld/cmb-routine",
+  "version": "0.9.0",
+  "description": "Routine, a small language of plans (lets, shows, repeats, choices), to try the editor's API with CodeMirror-Blocks",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./css/routine.css": "./lib/css/routine.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "/lib",
+    "/dist"
+  ],
+  "engines": {
+    "node": ">=24",
+    "npm": ">=11"
+  },
+  "peerDependencies": {
+    "@bootstrapworld/codemirror-blocks": "^0.9.0",
+    "react": "^19.2.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.20.7",
+    "@babel/core": "^7.20.12",
+    "@babel/plugin-transform-modules-commonjs": "^7.18.2",
+    "@babel/preset-env": "^7.18.9",
+    "@babel/preset-react": "^7.18.6",
+    "@babel/preset-typescript": "^7.18.6",
+    "@bootstrapworld/cmb-toolkit": "*",
+    "@bootstrapworld/codemirror-blocks": "*",
+    "@types/react": "^19.2.0",
+    "typescript": "^6.0.3",
+    "webpack-cli": "^7.3.1"
+  },
+  "scripts": {
+    "prepublishOnly": "npm run build && npm run build-types",
+    "build": "npx babel src --out-dir lib --source-maps inline --copy-files --extensions \".ts,.tsx,.js,.jsx\" && npm run build-css",
+    "build-css": "node ../cmb-toolkit/bin/cmb-build-css.js src/style.less lib/css/routine.css --with-core",
+    "build-types": "npx tsc",
+    "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit",
+    "bundle": "webpack --config webpack.config.js && cp lib/css/routine.css dist/cmb-routine.css"
+  },
+  "author": "The Bootstrap Team",
+  "repository": "github:bootstrapworld/codemirror-blocks",
+  "contributors": [
+    "Paul Carduner",
+    "Zachary Espiritu",
+    "Aleksey Kliger",
+    "Justin Pombrio",
+    "Sorawee Porncharoenwase",
+    "Emmanuel Schanzer",
+    "Dorai Sitaram",
+    "Preston Tunnell Wilson"
+  ],
+  "license": "MIT",
+  "unpkg": "dist/cmb-routine-min.js",
+  "jsdelivr": "dist/cmb-routine-min.js"
+}

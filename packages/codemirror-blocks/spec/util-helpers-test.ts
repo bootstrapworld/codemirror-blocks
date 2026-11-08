@@ -1,5 +1,5 @@
 import type { EditorChange } from "codemirror";
-import wescheme from "../src/languages/wescheme";
+import wescheme from "@bootstrapworld/cmb-wescheme";
 import {
   BEEP,
   WRAP,

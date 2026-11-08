@@ -9,32 +9,28 @@
       "types": "./lib/CodeMirrorBlocks.d.ts",
       "default": "./lib/CodeMirrorBlocks.js"
     },
-    "./lib/*.less": "./lib/*.less",
-    "./lib/css/*.css": "./lib/css/*.css",
-    "./lib/languages": {
-      "types": "./lib/languages/index.d.ts",
-      "default": "./lib/languages/index.js"
+    "./css/*.css": "./lib/css/*.css",
+    "./less/*.less": "./lib/less/*.less",
+    "./testing": {
+      "types": "./lib/toolkit/test-utils.d.ts",
+      "default": "./lib/toolkit/test-utils.js"
     },
-    "./lib/languages/example": {
-      "types": "./lib/languages/example/index.d.ts",
-      "default": "./lib/languages/example/index.js"
+    "./conformance": {
+      "types": "./lib/toolkit/comment-conformance.d.ts",
+      "default": "./lib/toolkit/comment-conformance.js"
     },
-    "./lib/languages/lambda": {
-      "types": "./lib/languages/lambda/index.d.ts",
-      "default": "./lib/languages/lambda/index.js"
-    },
-    "./lib/languages/wescheme": {
-      "types": "./lib/languages/wescheme/index.d.ts",
-      "default": "./lib/languages/wescheme/index.js"
-    },
-    "./lib/*": {
-      "types": "./lib/*.d.ts",
-      "default": "./lib/*.js"
+    "./debug": {
+      "types": "./lib/toolkit/debug.d.ts",
+      "default": "./lib/toolkit/debug.js"
     },
     "./package.json": "./package.json"
   },
   "files": [
-    "/lib"
+    "/lib",
+    "/dist/*-min.js",
+    "/dist/*-min.js.map",
+    "/dist/*-min.js.LICENSE.txt",
+    "/dist/*.css"
   ],
   "engines": {
     "node": ">=24",
@@ -64,7 +60,11 @@
     "@babel/preset-env": "^7.18.9",
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.18.6",
+    "@bootstrapworld/cmb-example": "*",
+    "@bootstrapworld/cmb-lambda": "*",
+    "@bootstrapworld/cmb-routine": "*",
     "@bootstrapworld/cmb-toolkit": "*",
+    "@bootstrapworld/cmb-wescheme": "*",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -101,7 +101,8 @@
     "analyze": "webpack --config webpack/example.config.js --mode=production --json=dist/stats.json && webpack-bundle-analyzer dist/stats.json",
     "build-types-watch": "npx tsc --watch",
     "lint": "eslint .",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "bundle": "webpack --config webpack/umd.config.js && cp lib/css/codemirror-blocks.css dist/codemirror-blocks.css"
   },
   "author": "The Bootstrap Team",
   "repository": "github:bootstrapworld/codemirror-blocks",
@@ -115,5 +116,7 @@
     "Dorai Sitaram",
     "Preston Tunnell Wilson"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "unpkg": "dist/codemirror-blocks-min.js",
+  "jsdelivr": "dist/codemirror-blocks-min.js"
 }

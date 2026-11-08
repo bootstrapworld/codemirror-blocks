@@ -1,5 +1,5 @@
 import { act, fireEvent, waitFor } from "@testing-library/react";
-import example from "../../src/languages/example";
+import example from "@bootstrapworld/cmb-example";
 import { createDebuggingInterface as create } from "../../src/toolkit/debug";
 import { getReducerActivities } from "../../src/state/activityLog";
 import { allowConsoleErrors } from "../globalSetup";

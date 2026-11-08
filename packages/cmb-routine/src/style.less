@@ -1,0 +1,194 @@
+.blocks-language-routine {
+  // The editor's own style: the frame of a block, the black strip at its top
+  // (`.blocks-operator`), the little squares that drop targets are, how
+  // selection, focus and a drag over a block look, comments, collapsing.
+  @import "default-style.less";
+
+  @border-radius: 5px;
+  @border-width: 2px;
+  @comment-color: #ddd;
+  @comment-background-color: #444;
+  @border-color: black;
+  @editing-border-color: orange;
+  @error-border-color: red;
+  @drag-drop-background-color: lightblue;
+  @drag-replace-background-color: red;
+
+  // ---- what is Routine's own ----
+
+  // a name is blue, as the default style draws the kind that is called `name`
+  // (this kind is `variable`, so that it does not depend on that)
+  .blocks-variable {
+    color: steelblue;
+  }
+
+  .routine-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+  }
+  .routine-word {
+    font-size: 12px;
+    color: #555;
+  }
+
+  // The head of a loop or a choice is the editor's black strip, with things in it
+  .routine-loop-head,
+  .routine-choice-head {
+    justify-content: flex-start;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    // (the number in it, and the name: pills on black have to be light)
+    .blocks-number,
+    .blocks-variable,
+    .blocks-text {
+      background: white;
+    }
+    .blocks-white-space {
+      background: #333;
+      border-color: #888;
+    }
+  }
+
+  // A loop's steps: a numbered list, with a gap before each, in the gutter
+  .routine-steps {
+    list-style: none;
+    margin: 0;
+    padding: 2px 6px 4px 2px;
+  }
+  .routine-step,
+  .routine-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    margin: 2px 0;
+  }
+  .routine-gutter {
+    display: flex;
+    align-items: center;
+    min-width: 44px;
+    justify-content: flex-end;
+  }
+  .routine-step-number {
+    font: bold 12px/20px monospace;
+    color: #777;
+    margin-left: 2px;
+  }
+
+  .routine-branch {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+  }
+}
+
+// ---- the storyboard look ----
+// The same blocks, drawn another way (the page has the class `look-storyboard`:
+// see `?look=` on the example page). Only what is different is said here: cards
+// with a colored edge in place of the black strip, an arrow between the steps of
+// a loop, the two branches of a choice side by side, and plain chips for values.
+// Everything that is behavior (drop targets, selection, the edit box) is the
+// default style's.
+.look-storyboard .blocks-language-routine {
+  @define: #3b6fd4;
+  @show: #2f9e6f;
+  @loop: #b5651d;
+  @choice: #8a4fbf;
+  @calc: #666;
+
+  .blocks-compound {
+    border: 1px solid #d9dee7;
+    border-left-width: 6px;
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    margin: 4px;
+  }
+  .blocks-define {
+    border-left-color: @define;
+  }
+  .blocks-show {
+    border-left-color: @show;
+  }
+  .blocks-repeat {
+    border-left-color: @loop;
+  }
+  .blocks-choice {
+    border-left-color: @choice;
+  }
+  .blocks-call {
+    border-left-color: @calc;
+  }
+
+  // the strip is a small label above what the card holds, not a black bar
+  .blocks-operator {
+    background: transparent;
+    color: #555;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    justify-content: flex-start;
+    padding: 3px 8px 0;
+  }
+  .routine-loop-head,
+  .routine-choice-head {
+    color: #555;
+    .blocks-white-space {
+      background: #f1f3f7;
+      border-color: #c5ccd8;
+    }
+  }
+
+  // values are plain chips
+  .blocks-value {
+    background: #f1f3f7;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 0 8px;
+  }
+  .blocks-operator .blocks-value,
+  .routine-loop-head .blocks-value,
+  .routine-choice-head .blocks-value {
+    background: #f1f3f7;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  // the steps of a loop come one after the other, with an arrow between
+  .routine-steps {
+    padding: 4px 8px 6px;
+  }
+  .routine-step:not(:last-child),
+  .routine-note:not(:last-child) {
+    margin-bottom: 14px;
+    position: relative;
+    &::after {
+      content: "\2193";
+      position: absolute;
+      left: 52px;
+      bottom: -15px;
+      font-size: 14px;
+      color: #aab2c0;
+    }
+  }
+
+  // the two branches of a choice are side by side
+  .blocks-choice {
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    > .routine-choice-head {
+      grid-column: 1 / -1;
+    }
+    > .routine-branch {
+      border-top: 1px dashed #d9dee7;
+      align-items: flex-start;
+    }
+    > .routine-branch + .routine-branch {
+      border-left: 1px dashed #d9dee7;
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
-import wescheme from "../src/languages/wescheme";
-import lambda from "../src/languages/lambda";
+import wescheme from "@bootstrapworld/cmb-wescheme";
+import lambda from "@bootstrapworld/cmb-lambda";
 import {
   cmd_ctrl,
   elementForNode,

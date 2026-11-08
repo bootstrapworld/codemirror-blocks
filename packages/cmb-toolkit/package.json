@@ -6,7 +6,8 @@
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [
-    "/lib"
+    "/lib",
+    "/bin"
   ],
   "engines": {
     "node": ">=24",
@@ -37,5 +38,8 @@
   "contributors": [
     "Paul Carduner"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "bin": {
+    "cmb-build-css": "./bin/cmb-build-css.js"
+  }
 }

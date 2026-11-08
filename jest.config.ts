@@ -8,6 +8,23 @@ const sharedConfig = {
   setupFilesAfterEnv: [
     "<rootDir>/packages/codemirror-blocks/spec/globalSetup.ts",
   ],
+  // (a worktree of the repository has the same package names: not another copy)
+  modulePathIgnorePatterns: ["<rootDir>/.claude/"],
+  // The packages of the monorepo are used from their source, as one copy of each:
+  // a language is a module of its own that imports the editor by its name, and
+  // the editor's tests import the languages by theirs.
+  moduleNameMapper: {
+    "^@bootstrapworld/codemirror-blocks$":
+      "<rootDir>/packages/codemirror-blocks/src/CodeMirrorBlocks.tsx",
+    "^@bootstrapworld/codemirror-blocks/testing$":
+      "<rootDir>/packages/codemirror-blocks/src/toolkit/test-utils.tsx",
+    "^@bootstrapworld/codemirror-blocks/conformance$":
+      "<rootDir>/packages/codemirror-blocks/src/toolkit/comment-conformance.ts",
+    "^@bootstrapworld/codemirror-blocks/debug$":
+      "<rootDir>/packages/codemirror-blocks/src/toolkit/debug.ts",
+    "^@bootstrapworld/cmb-(wescheme|lambda|routine|example)$":
+      "<rootDir>/packages/cmb-$1/src/index.ts",
+  },
   // The test environment that will be used for testing
   testEnvironment: "jsdom",
   // A map from regular expressions to paths to transformers
@@ -147,6 +164,7 @@ export default {
         "**/?(*.)+(spec|test).[tj]s?(x)",
         "<rootDir>/packages/codemirror-blocks/**/?(*-)+(spec|test).[tj]s?(x)",
         "<rootDir>/packages/cmb-toolkit/**/?(*-)+(spec|test).[tj]s?(x)",
+        "<rootDir>/packages/cmb-*/spec/**/?(*-)+(spec|test).[tj]s?(x)",
       ],
       // (runs in Node, below)
       testPathIgnorePatterns: ["/node_modules/", "/cmb-toolkit/spec/webpack-"],

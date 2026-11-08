@@ -1,4 +1,4 @@
-import wescheme from "../src/languages/wescheme";
+import wescheme from "@bootstrapworld/cmb-wescheme";
 import "codemirror/addon/search/searchcursor.js";
 
 /*eslint no-unused-vars: "off"*/

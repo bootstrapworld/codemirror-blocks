@@ -1,9 +1,9 @@
 /**
- * Someone who uses the editor but not the WeScheme language should not ship
- * WeScheme's parser: the languages are separate entry points
- * (`lib/languages/wescheme`), and nothing in the main one may pull them in.
- */
-import { execFileSync } from "child_process";
+ * The editor comes with no languages: someone who uses it, and not WeScheme (or
+ * lambda, or Routine), should not ship the parser of one. Each is a package of
+ * its own (`@bootstrapworld/cmb-wescheme`, ...), and nothing in the editor's
+ * main entry point may pull one in.
+ */ import { execFileSync } from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -38,20 +38,36 @@ describe("a bundle of the main entry point", () => {
     return fs.readFileSync(path.join(dir, "out.js"), "utf8");
   };
 
-  // (strings that only WeScheme's parser has: its structure names)
-  const WESCHEME_PARSER = ["unsupportedExpr", "callExpr", "letrecExpr"];
+  // (strings that only a language has: WeScheme's structure names, lambda's
+  // title, Routine's classes)
+  const MARKERS: Record<string, { entry: string; strings: string[] }> = {
+    wescheme: {
+      entry: "cmb-wescheme",
+      strings: ["unsupportedExpr", "callExpr", "letrecExpr"],
+    },
+    lambda: { entry: "cmb-lambda", strings: ["Your Lambda Program"] },
+    routine: {
+      entry: "cmb-routine",
+      strings: ["routine-steps", "routine-body"],
+    },
+  };
+  const languageEntry = (name: string) =>
+    path.resolve(root, "..", MARKERS[name].entry, "src", "index.ts");
 
-  it("does not contain the WeScheme parser", () => {
+  it("contains none of the languages", () => {
     const code = bundle("./src/CodeMirrorBlocks.tsx");
-    for (const marker of WESCHEME_PARSER) {
-      expect(code).not.toContain(marker);
+    for (const { strings } of Object.values(MARKERS)) {
+      for (const marker of strings) expect(code).not.toContain(marker);
     }
   });
 
-  it("does when the WeScheme language is asked for (so the check can fail)", () => {
-    const code = bundle("./src/languages/wescheme/index.ts");
-    for (const marker of WESCHEME_PARSER) {
-      expect(code).toContain(marker);
+  it.each(Object.keys(MARKERS))(
+    "does when the %s language is asked for (so the check can fail)",
+    (name) => {
+      const code = bundle(languageEntry(name));
+      for (const marker of MARKERS[name].strings) {
+        expect(code).toContain(marker);
+      }
     }
-  });
+  );
 });

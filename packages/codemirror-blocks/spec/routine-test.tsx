@@ -1,7 +1,7 @@
 import { fireEvent } from "@testing-library/react";
 import { ASTNode } from "../src/ast";
 import { API } from "../src/CodeMirrorBlocks";
-import routine from "../src/languages/routine";
+import routine from "@bootstrapworld/cmb-routine";
 import {
   elementForNode,
   keyDown,

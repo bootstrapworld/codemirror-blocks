@@ -216,18 +216,18 @@ handles CSS:
 
 ```js
 import "codemirror/lib/codemirror.css";
-import "@bootstrapworld/codemirror-blocks/lib/css/codemirror-blocks.css"; // the editor
-import "@bootstrapworld/codemirror-blocks/lib/css/languages/wescheme.css"; // a language
+import "@bootstrapworld/codemirror-blocks/css/codemirror-blocks.css"; // the editor
+import "@bootstrapworld/cmb-wescheme/css/wescheme.css"; // a language
 ```
 
-`lib/css/languages/<id>.css` is the style of one of the languages that come with
-the editor (`wescheme`, `lambda`, `routine` and `example`); a language's style
+`css/<id>.css` of the module of a language (`@bootstrapworld/cmb-wescheme/css/wescheme.css`)
+is its style, which `cmb-build-css` made from its Less; a language's style
 is written under its own class, so loading all of them does no harm. A language
 of your own makes its CSS from its Less (`npx lessc style.less style.css`, or
 your bundler's loader, if you have one) and loads it the same way. The Less
-sources are in the package too (`lib/less/default-style.less`, ...), if you want
+sources are in the package too (`@bootstrapworld/codemirror-blocks/less/default-style.less`, ...), if you want
 to compile the default style with your own variables, as the
 [beginning of this guide](#stylesheet-guide) does.
 
-(`lib/css/example-page.css` and `lib/css/debug-page.css` are the styles of our
+(`css/example-page.css` and `css/debug-page.css` of the editor are the styles of our
 example pages, and of wescheme.org: page chrome, not part of the editor.)

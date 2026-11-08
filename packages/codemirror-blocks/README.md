@@ -4,40 +4,68 @@ A library for making functional languages editable using visual blocks inside of
 
 ## Usage
 
-**CodeMirror-Blocks ("CMB") is not a block editor.** It's a _toolkit for building block editors_. In other words, it is _NOT_ intended to be used in your IDE. ;-)
+**CodeMirror-Blocks ("CMB") is not a block editor.** It's a _toolkit for building block editors_: the editor itself, with its accessibility and keyboard features, **and no languages**. A language (its parser, how its blocks look and what a screenreader says of them) is a module of its own, added to the editor. The ones in this repository are:
 
-CMB should instead be _included in language-specific modules_, so your Python editor would include a CMB-enabled Python module. CMB provides the blockification and a11y features, and the language module provides the parser and (optionally) the vocalization and appearance for each construct in the language. The language module is what you use in your IDE.
+| language                                       | module                         |
+| ---------------------------------------------- | ------------------------------ |
+| WeScheme                                       | `@bootstrapworld/cmb-wescheme` |
+| lambda (a small language of functions)         | `@bootstrapworld/cmb-lambda`   |
+| Routine (plans: lets, shows, repeats, choices) | `@bootstrapworld/cmb-routine`  |
+| example (numbers and calls: a place to start)  | `@bootstrapworld/cmb-example`  |
 
-The following language modules are available now:
+### With npm
 
-- https://github.com/bootstrapworld/wescheme-blocks
-- https://github.com/bootstrapworld/pyret-blocks
+```sh
+npm install @bootstrapworld/codemirror-blocks @bootstrapworld/cmb-wescheme codemirror
+```
 
-If you happen to use one of those languages, you're good to go! Export the language module using the normal `npm run build` mechanism, then include it in your favorite CodeMirror-enabled project. You can now use the `CodeMirrorBlocks` constructor to replace an existing CodeMirror instance with blocks. In other words, you'd replace code that looks like this:
+```js
+import CodeMirrorBlocks from "@bootstrapworld/codemirror-blocks";
+import "@bootstrapworld/cmb-wescheme"; // adds the language to the editor
+import "codemirror/lib/codemirror.css";
+import "@bootstrapworld/codemirror-blocks/css/codemirror-blocks.css";
+import "@bootstrapworld/cmb-wescheme/css/wescheme.css";
 
-        // make a new CM instance inside the container elt, passing in CM ops
-        this.editor = CodeMirror(container, {/* CodeMirror options  */}});
+// replaces a CodeMirror with blocks: the language is asked for by its id
+const editor = CodeMirrorBlocks(container, { value: "(+ 1 2)" }, "wescheme");
+```
 
-With code that looks like this:
+The stylesheets are plain CSS: no loader is needed in your bundler.
 
-        // make a new CMB instance inside the container elt, passing in CMB ops
-        this.editor = CodeMirrorBlocks(container, {/* CodeMirrorBlocks options  */});
+### With a script tag
 
-But if you're here, our guess is that you have a language in mind (Python, Rust, YourFavLang, etc.) and you want to allow people to hack in that language even if they need blocks, or rely on screenreaders. So how does one make a language module?
+No bundler: the editor is one file, and each language another, loaded after it (which adds the language to the editor). CodeMirror 5 is loaded by the page, as it is for any editor that uses it.
+
+```html
+<link rel="stylesheet" href="codemirror.css" />
+<link rel="stylesheet" href="codemirror-blocks.css" />
+<link rel="stylesheet" href="cmb-wescheme.css" />
+<div id="editor"></div>
+<script src="codemirror.js"></script>
+<script src="codemirror-blocks-min.js"></script>
+<script src="cmb-wescheme-min.js"></script>
+<script>
+  CodeMirrorBlocks(
+    document.getElementById("editor"),
+    { value: "(+ 1 2)" },
+    "wescheme"
+  );
+</script>
+```
+
+The files are in the packages' `dist` folders (`npm run bundle` makes them, and they are on unpkg and jsDelivr). A page that uses no language has not shipped any: a language's file is only the language (WeScheme's is about 130 KB, the editor's about 400 KB).
 
 ## Making your own language module
 
 _NOTE: your IDE will need to load CodeMirror as an external dependency._ We assume it already does (otherwise, why would you be here?), so you'll need to provide it yourself.
 
-### Create a new repository
+### Create a new package
 
-Make a repo (e.g. - `YourFavLang-blocks`), and include CMB as a dependency:
+A language is a package that has the editor as a peer dependency (`cmb-example` is the smallest one to start from: copy it):
 
-        npm install --save @bootstrapworld/codemirror-blocks
+        npm install --save-peer @bootstrapworld/codemirror-blocks
 
-Then add folders for your parser (`src/languages/YourFavLang`) and test cases (`spec/languages/YourFavLang`).
-
-CMB requires Node 24 or later, React 19, and CodeMirror 5 (which your IDE provides). It ships its own TypeScript declarations, so your language module can be written in TypeScript.
+CMB requires Node 24 or later, React 19, and CodeMirror 5 (which your IDE provides). It ships its own TypeScript declarations, so your language module can be written in TypeScript. What a language may use is the editor's public API, which is what its root exports (and `/testing`, for your tests): the [language guide](../../doc/language.md) lists it, and says how to build your module's file for a script tag (`getLanguageBundleConfig` of `@bootstrapworld/cmb-toolkit`).
 
 ### Provide a Parser
 

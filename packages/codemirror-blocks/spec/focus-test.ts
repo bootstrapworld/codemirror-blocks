@@ -1,6 +1,6 @@
 import { ASTNode } from "../src/ast";
 import { API } from "../src/CodeMirrorBlocks";
-import wescheme from "../src/languages/wescheme";
+import wescheme from "@bootstrapworld/cmb-wescheme";
 import type { FunctionAppNode, LiteralNode } from "../src/nodes";
 import { setEditableText } from "./helpers/editing";
 import { typeChar } from "./helpers/gestures";

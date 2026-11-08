@@ -14,7 +14,7 @@ export default tseslint.config(
       "**/build/**",
       ".coverage/**",
       // (the reader taken from wescheme-js: see its header)
-      "**/languages/wescheme/reader/**/*.js",
+      "**/cmb-wescheme/src/reader/**/*.js",
     ],
   },
   js.configs.recommended,

@@ -5,10 +5,10 @@
  *
  *   lib/css/codemirror-blocks.css      the editor itself: panes, toolbar, trash can,
  *                                      dialogs, the dragged block, and react-tabs'
- *   lib/css/languages/<id>.css         one language's style (it includes the default
- *                                      style, under the language's own class)
  *   lib/css/example-page.css           the style of our example pages (and of the
  *   lib/css/debug-page.css             WeScheme site): page chrome, not the editor
+ *
+ * A language module builds its own style (`cmb-build-css`, of the toolkit).
  *
  * The Less sources are in `lib` too (babel copies them), for a project that wants
  * to compile them with its own variables.
@@ -19,8 +19,6 @@ const less = require("less");
 
 const root = path.resolve(__dirname, "..");
 const out = path.join(root, "lib", "css");
-
-const languages = ["example", "lambda", "routine", "wescheme"];
 
 const targets = [
   {
@@ -33,10 +31,6 @@ const targets = [
         "utf8"
       ),
   },
-  ...languages.map((id) => ({
-    from: `src/languages/${id}/style.less`,
-    to: `languages/${id}.css`,
-  })),
   { from: "src/less/example.less", to: "example-page.css" },
   { from: "src/toolkit/debug-page.less", to: "debug-page.css" },
 ];

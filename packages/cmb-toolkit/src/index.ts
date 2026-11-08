@@ -10,7 +10,13 @@
  *   to try out your code in a browser
  * - {@link getWebpackBundleConfig} for generating a minified javascript bundle that
  *   can be included with a `<script>` tag.
+ * - {@link getLanguageBundleConfig} for the same, for a language module, which is
+ *   included after the editor's and adds itself to it.
  *
  * @module codemirror-blocks/toolkit
  */
-export { getWebpackBundleConfig, getWebpackDevServerConfig } from "./webpack";
+export {
+  getLanguageBundleConfig,
+  getWebpackBundleConfig,
+  getWebpackDevServerConfig,
+} from "./webpack";

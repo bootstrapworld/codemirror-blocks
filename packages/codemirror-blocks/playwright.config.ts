@@ -35,8 +35,9 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    // The example page imports the built library (lib/), so build it first.
-    command: `npm run build && npm start -- --port ${port}`,
+    // The example page imports the built packages (the editor and the languages),
+    // so build them first.
+    command: `npm run build:libs --prefix ../.. && npm start -- --port ${port}`,
     url: `http://localhost:${port}`,
     // Always start fresh: a leftover server would serve a stale build of lib/
     reuseExistingServer: false,

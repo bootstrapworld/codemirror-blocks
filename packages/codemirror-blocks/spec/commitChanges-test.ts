@@ -6,7 +6,7 @@ import {
   computeFocusNodeFromChanges,
   computeFocusNodeFromHint,
 } from "../src/edits/commitChanges";
-import wescheme from "../src/languages/wescheme";
+import wescheme from "@bootstrapworld/cmb-wescheme";
 import * as actions from "../src/state/actions";
 import * as selectors from "../src/state/selectors";
 import { createAppStore } from "../src/state/store";

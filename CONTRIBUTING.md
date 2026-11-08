@@ -8,7 +8,9 @@ can discuss it there.
 
 1. Make sure you haven't broken anything by running `npm test`, `npm run lint`,
    `npm run typecheck` and `npm run format:check` from the repository root
-   (see the README for details)
+   (see the README for details). The editor and each language are packages of their
+   own, typed against each other's declarations: run `npm run build:all` first, and
+   again after a change to the API (the tests need no build, they use the sources)
 2. Write new unit tests for your change and make sure it covers
    your modified code by running `npm test -- --coverage` and looking
    at the output in `.coverage/lcov-report/index.html`

@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import wescheme from "../src/languages/wescheme";
+import wescheme from "@bootstrapworld/cmb-wescheme";
 import * as copypaste from "../src/copypaste";
 import {
   cmd_ctrl,

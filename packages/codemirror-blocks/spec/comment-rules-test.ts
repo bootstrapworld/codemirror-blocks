@@ -1,8 +1,8 @@
 import { AST, ASTNode } from "../src/ast";
-import example from "../src/languages/example";
-import lambda from "../src/languages/lambda";
-import routine from "../src/languages/routine";
-import wescheme from "../src/languages/wescheme";
+import example from "@bootstrapworld/cmb-example";
+import lambda from "@bootstrapworld/cmb-lambda";
+import routine from "@bootstrapworld/cmb-routine";
+import wescheme from "@bootstrapworld/cmb-wescheme";
 import { addLanguage } from "../src/languages";
 import type { Language } from "../src/languages";
 import type { CommentRules } from "../src/commentRules";

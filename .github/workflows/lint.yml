@@ -23,8 +23,12 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+      # (the packages are built in order: the languages are typed against the
+      # editor's declarations, and its tests against theirs)
+      - name: Build the packages
+        run: npm run build:all
       - name: Type-check
-        run: npm run typecheck --workspace=@bootstrapworld/codemirror-blocks
+        run: npm run typecheck
 
       # Make sure prettier was run on any changes
       - name: Check Prettier

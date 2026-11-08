@@ -1,4 +1,4 @@
-import routine from "../src/languages/routine";
+import routine from "@bootstrapworld/cmb-routine";
 
 /** The text a program is shown as in blocks, and what that reads back as */
 const printed = (code: string) => routine.buildAST(code).toString();

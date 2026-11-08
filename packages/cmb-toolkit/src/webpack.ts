@@ -1,5 +1,8 @@
 import * as path from "path";
-import type { Configuration as WebpackConfiguration } from "webpack";
+import type {
+  Configuration as WebpackConfiguration,
+  ExternalItem,
+} from "webpack";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 // webpack-dev-server 6 is an ES module; this file is CommonJS, and only the type
@@ -95,14 +98,91 @@ export function getWebpackBundleConfig(config: {
         openAnalyzer: false,
       }),
     ],
+    // CodeMirror 5 is loaded by the page, with its own <script> tag, as the global
+    // `CodeMirror` (and its addons add to it)
     externals: {
-      codemirror: "codemirror",
-      "codemirror/addon/search/search": "codemirror",
-      "codemirror/addon/search/searchcursor": "codemirror",
+      codemirror: {
+        root: "CodeMirror",
+        commonjs: "codemirror",
+        commonjs2: "codemirror",
+        amd: "codemirror",
+      },
+      "codemirror/addon/search/search": {
+        root: "CodeMirror",
+        commonjs: "codemirror/addon/search/search",
+        commonjs2: "codemirror/addon/search/search",
+        amd: "codemirror/addon/search/search",
+      },
+      "codemirror/addon/search/searchcursor": {
+        root: "CodeMirror",
+        commonjs: "codemirror/addon/search/searchcursor",
+        commonjs2: "codemirror/addon/search/searchcursor",
+        amd: "codemirror/addon/search/searchcursor",
+      },
     },
     optimization: {
       minimize: true,
     },
+  };
+}
+
+/**
+ * What a language module's bundle leaves to the editor's: the editor's own file
+ * (`codemirror-blocks-min.js`, a global named `CodeMirrorBlocks`) has the editor,
+ * React and the pretty-printer, and a language that is loaded after it uses
+ * those, so that the page has one of each (and one registry of languages).
+ */
+const FROM_THE_EDITOR = {
+  "@bootstrapworld/codemirror-blocks": {
+    root: "CodeMirrorBlocks",
+    commonjs: "@bootstrapworld/codemirror-blocks",
+    commonjs2: "@bootstrapworld/codemirror-blocks",
+    amd: "@bootstrapworld/codemirror-blocks",
+  },
+  react: {
+    root: ["CodeMirrorBlocks", "React"],
+    commonjs: "react",
+    commonjs2: "react",
+    amd: "react",
+  },
+  "pretty-fast-pretty-printer": {
+    root: ["CodeMirrorBlocks", "Pretty"],
+    commonjs: "pretty-fast-pretty-printer",
+    commonjs2: "pretty-fast-pretty-printer",
+    amd: "pretty-fast-pretty-printer",
+  },
+};
+
+/**
+ * Creates a webpack configuration for the bundle of a language module, a file
+ * that is included with a `<script>` tag after the editor's (see
+ * {@link getWebpackBundleConfig}): it adds the language to the editor on load,
+ * and is the language (a global of the name `global`).
+ *
+ * @param config.name the name of the file: `cmb-wescheme` makes `cmb-wescheme-min.js`
+ * @param config.global the name of the global that is the language: `CMBWeScheme`
+ * @param config.entry the entry point of the module
+ */
+export function getLanguageBundleConfig(config: {
+  name: string;
+  global: string;
+  entry: string;
+}): WebpackConfiguration {
+  const base = getWebpackBundleConfig({
+    entry: { [config.name]: config.entry },
+  });
+  return {
+    ...base,
+    name: "language-bundle",
+    output: {
+      ...base.output,
+      library: { name: config.global, type: "umd", export: "default" },
+    },
+    // (no report of the sizes: the language is a small part of a page)
+    plugins: (base.plugins ?? []).filter(
+      (p) => !p || p.constructor.name !== "BundleAnalyzerPlugin"
+    ),
+    externals: [base.externals as ExternalItem, FROM_THE_EDITOR],
   };
 }
 

@@ -20,8 +20,8 @@ jobs:
       - name: Install packages
         run: npm install
 
-      - name: Build codemirror-blocks
-        run: npm run prepare --workspace=@bootstrapworld/codemirror-blocks
+      - name: Build codemirror-blocks and the languages
+        run: npm run build:libs
 
       - name: Build wescheme-blocks
         run: npm run build --workspace=@bootstrapworld/wescheme-blocks

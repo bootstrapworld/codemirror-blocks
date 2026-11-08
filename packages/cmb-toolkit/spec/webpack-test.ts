@@ -7,6 +7,7 @@ import type { Configuration, RuleSetRule } from "webpack";
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 import {
   getBaseConfig,
+  getLanguageBundleConfig,
   getWebpackBundleConfig,
   getWebpackDevServerConfig,
 } from "../src/webpack";
@@ -81,11 +82,18 @@ describe("the bundle configuration", () => {
     });
   });
 
-  it("leaves CodeMirror to the page", () => {
-    expect(config.externals).toEqual({
-      codemirror: "codemirror",
-      "codemirror/addon/search/search": "codemirror",
-      "codemirror/addon/search/searchcursor": "codemirror",
+  it("leaves CodeMirror to the page, as the global CodeMirror 5 defines", () => {
+    // (the page loads codemirror.js, which defines `CodeMirror`: a global of any
+    // other name would be undefined, and the editor would fail when it loads)
+    const roots = Object.fromEntries(
+      Object.entries(config.externals as Record<string, { root: string }>).map(
+        ([name, external]) => [name, external.root]
+      )
+    );
+    expect(roots).toEqual({
+      codemirror: "CodeMirror",
+      "codemirror/addon/search/search": "CodeMirror",
+      "codemirror/addon/search/searchcursor": "CodeMirror",
     });
   });
 
@@ -230,4 +238,44 @@ describe("compiling with the built configuration", () => {
     expect(files).toContain("index.html");
     expect(files.some((f) => f.endsWith(".js"))).toBe(true);
   }, 120_000);
+});
+
+describe("the bundle configuration of a language", () => {
+  const config = getLanguageBundleConfig({
+    name: "cmb-mine",
+    global: "CMBMine",
+    entry: "./src/index.ts",
+  });
+
+  it("is the language, a global of its own, in a file of its own", () => {
+    expect(config.entry).toEqual({ "cmb-mine": "./src/index.ts" });
+    expect(config.output?.filename).toBe("[name]-min.js");
+    expect(config.output?.library).toEqual({
+      name: "CMBMine",
+      type: "umd",
+      export: "default",
+    });
+  });
+
+  it("leaves the editor, React and the pretty-printer to the editor's file", () => {
+    const externals = config.externals as Record<
+      string,
+      { root: string | string[] }
+    >[];
+    const fromTheEditor = externals.find((e) => "react" in e)!;
+    expect(fromTheEditor["@bootstrapworld/codemirror-blocks"].root).toBe(
+      "CodeMirrorBlocks"
+    );
+    expect(fromTheEditor.react.root).toEqual(["CodeMirrorBlocks", "React"]);
+    expect(fromTheEditor["pretty-fast-pretty-printer"].root).toEqual([
+      "CodeMirrorBlocks",
+      "Pretty",
+    ]);
+  });
+
+  it("writes no report of its sizes", () => {
+    expect(
+      (config.plugins ?? []).some((p) => p instanceof BundleAnalyzerPlugin)
+    ).toBe(false);
+  });
 });

@@ -1,4 +1,4 @@
-import lambda from "../src/languages/lambda";
+import lambda from "@bootstrapworld/cmb-lambda";
 
 /** The text a program is shown as in blocks, and what that reads back as */
 const printed = (code: string) => lambda.buildAST(code).toString();

@@ -1,5 +1,7 @@
-import { parse } from "../src/languages/wescheme/sexpParser";
+import wescheme from "@bootstrapworld/cmb-wescheme";
 import { areNodesEqualish } from "../src/ui/ToplevelBlock";
+
+const { parse } = wescheme;
 
 /**
  * A root's block marker covers its comment, so a root whose comment moves must
