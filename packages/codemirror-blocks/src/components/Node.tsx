@@ -144,6 +144,18 @@ export function spokenLabel(
 }
 
 /**
+ * Calls `fn` when the editor has drawn again (it does so a moment after what was
+ * typed or scrolled, and that can move the lines in it). Returns what stops it.
+ */
+function onEditorUpdate(node: HTMLElement, fn: () => void): () => void {
+  const wrapper = node.closest<HTMLElement>(".CodeMirror") as
+    (HTMLElement & { CodeMirror?: CodeMirror.Editor }) | null;
+  const cm = wrapper?.CodeMirror;
+  cm?.on("update", fn);
+  return () => cm?.off("update", fn);
+}
+
+/**
  * Places the popup (or the box) with a node's comment: it hangs from the top of
  * the node, and so grows downwards; where that would put it below the bottom of
  * the editor (and out of sight), it is held at the node's bottom edge instead,
@@ -466,9 +478,11 @@ const Node = ({ expandable = true, ...props }: Props) => {
     const scroller = node.closest(".CodeMirror-scroll");
     const frame = requestAnimationFrame(place);
     scroller?.addEventListener("scroll", place);
+    const stop = onEditorUpdate(node, place);
     return () => {
       cancelAnimationFrame(frame);
       scroller?.removeEventListener("scroll", place);
+      stop();
     };
   }, [isFocused, commentText]);
 
@@ -501,10 +515,12 @@ const Node = ({ expandable = true, ...props }: Props) => {
     const scroller = node.closest(".CodeMirror-scroll");
     box.addEventListener("input", onInput);
     scroller?.addEventListener("scroll", place);
+    const stop = onEditorUpdate(node, place);
     return () => {
       cancelAnimationFrame(frame);
       box.removeEventListener("input", onInput);
       scroller?.removeEventListener("scroll", place);
+      stop();
     };
   }, [commentEditor]);
 

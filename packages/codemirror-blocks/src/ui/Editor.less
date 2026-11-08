@@ -19,6 +19,26 @@
     z-index: 3;
   }
 
+  // While the words of a switch between text and blocks float (see morph.ts),
+  // the text of the editor is not drawn: copies of the words are, over it.
+  // (the fill, not `color`: the color the text will have is what the words
+  // that float to it are made, and is read from it)
+  &[data-morphing] .CodeMirror-lines * {
+    -webkit-text-fill-color: transparent !important;
+  }
+  // (and the blocks they float into come in with them)
+  &.blocks[data-morphing] .react-container {
+    animation: cmb-morph-in 450ms ease-out both;
+  }
+
+  // CodeMirror keeps its own scroll position. The browser's scroll anchoring
+  // moves it as well when something in the lines changes size (the popup of a
+  // comment that is typed, which is placed above or below its block as it
+  // grows), and the two do not agree.
+  .CodeMirror-scroll {
+    overflow-anchor: none;
+  }
+
   > .toolbar-pane {
     border-right: 1px solid #ddd;
     padding-left: 0px;
@@ -101,5 +121,14 @@
   .Editor * {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+@keyframes cmb-morph-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

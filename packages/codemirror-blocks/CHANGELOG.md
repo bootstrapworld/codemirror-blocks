@@ -194,6 +194,17 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   the same way, again each time its text changes. Pasting into a one-line edit box
   (a comment, a name, a number) leaves the caret after the pasted text, where it
   had left the text selected.
+- Switching between text and blocks with the button is animated: the words of the
+  program (names, operators and keywords as well as literals) float from where
+  they are written to where they are in the blocks, and back, while the blocks
+  fade in. Only the words in view before the switch, or after it, move; the
+  others appear. It is made of the page itself, and needs nothing of a language
+  (`ui/morph.ts`). It is not made for people who ask their system for reduced
+  motion, and a key, a click or a scroll ends it at once. Switching with
+  `setBlockMode()` in code is not animated.
+- The editor's scroller has `overflow-anchor: none`: the browser's scroll anchoring
+  moved its scroll position as well as CodeMirror, and a comment box typed in at
+  the bottom of the editor could end up out of view.
 - `<Node editingHint={...}>` is drawn beside the edit box while a block is being
   edited (the box takes the place of the block's children), so a block can keep
   showing a hint, such as the names in scope, while its text is typed.

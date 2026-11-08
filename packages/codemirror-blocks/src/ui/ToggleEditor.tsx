@@ -11,6 +11,7 @@ import BlockEditor from "./BlockEditor";
 import TextEditor from "./TextEditor";
 import Dialog from "../components/Dialog";
 import Toolbar from "./Toolbar";
+import { beginMorph } from "./morph";
 import { ToggleButton, BugButton } from "./EditorButtons";
 import { ErrorNotice } from "./ErrorNotice";
 import { mountAnnouncer, say } from "../announcer";
@@ -104,10 +105,15 @@ function ToggleEditor(props: ToggleEditorProps) {
    */
   const handleToggle = (blockMode: boolean) => {
     recordEvent({ type: "MODE", blocks: blockMode });
+    // (the words on the screen now float to where they are after the switch)
+    const morph = beginMorph(editorElementRef.current);
     const result = dispatch(
       actions.setBlockMode(blockMode, editor.getValue(), props.language)
     );
-    if (!result.successful) {
+    if (result.successful) {
+      morph?.play();
+    } else {
+      morph?.cancel();
       setDialog({
         title: "Could not convert to Blocks",
         content: <p>{String(result.exception)}</p>,

@@ -27,6 +27,9 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${port}`,
     trace: "retain-on-failure",
+    // (the words float for half a second when the mode is switched: the tests
+    // that are not about that do not wait for them)
+    reducedMotion: "reduce",
     // the editor reads the clipboard through a hidden textarea
     permissions: ["clipboard-read", "clipboard-write"],
   },
