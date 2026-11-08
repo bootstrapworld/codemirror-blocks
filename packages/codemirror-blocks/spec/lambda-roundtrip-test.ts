@@ -9,6 +9,29 @@ const roundTrips = (code: string) => {
 };
 
 describe("lambda, from text to blocks and back", () => {
+  describe("a comment of its own among the arguments of a call", () => {
+    // (found by the soak, seed 1266696: `7`, a comment on its own lines, and
+    // `(a)`: the comment is among the arguments, with a blank line below it)
+    const code = "7\n#| only |#\n\n(a) (b)";
+
+    it("is printed on a line of its own, so that it reads back as one", () => {
+      const out = roundTrips(code);
+      // (under the bracket, as the lines of a call are)
+      expect(out).toBe("7(\n   #| only |#\n\n   a\n )(b)");
+    });
+
+    it("stays a block of its own, and does not go with the call's function", () => {
+      const comment = (text: string) => {
+        const ast = lambda.buildAST(text);
+        return [...ast.getAllNodes()].map(
+          (n) =>
+            `${n.type}${n.options.orphan ? " (alone)" : ""}${n.options.comment ? " (has one)" : ""}`
+        );
+      };
+      expect(comment(printed(code))).toEqual(comment(code));
+    });
+  });
+
   describe("let with a name", () => {
     it("keeps its name and the values of its variables", () => {
       expect(roundTrips("let foo (a = 1, b) foo(a)")).toBe(

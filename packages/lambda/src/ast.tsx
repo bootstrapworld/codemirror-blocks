@@ -74,7 +74,11 @@ function commaSeparated(nodes: ASTNode[]) {
   const items = nodes.map((n) =>
     n.options.orphan || --remaining === 0 ? n : P.horz(n, ",")
   );
-  return P.horz("(", P.vertArray(items), ")");
+  // (one that is first goes on the line after the bracket: on the line of `f(`
+  // it would read back as a comment after `f`, and go with it)
+  return nodes[0].options.orphan
+    ? P.vert("(", P.horz("  ", P.vertArray(items)), ")")
+    : P.horz("(", P.vertArray(items), ")");
 }
 
 export function Prog(from: Pos, to: Pos, exprs: ASTNode[], options = {}) {
