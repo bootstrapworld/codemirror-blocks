@@ -83,6 +83,7 @@
     "prettier": "^3.6.2",
     "ts-node": "^10.9.1",
     "typescript": "^6.0.3",
+    "webpack-bundle-analyzer": "^5.4.2",
     "webpack-cli": "^7.3.1"
   },
   "peerDependencies": {
@@ -97,6 +98,7 @@
     "build-watch": "npm run build -- --watch",
     "build-types": "npx tsc",
     "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit && tsc -p spec --noEmit && tsc -p e2e --noEmit",
+    "analyze": "webpack --config webpack/example.config.js --mode=production --json=dist/stats.json && webpack-bundle-analyzer dist/stats.json",
     "build-types-watch": "npx tsc --watch",
     "lint": "eslint .",
     "test:e2e": "playwright test"
