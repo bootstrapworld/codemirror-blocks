@@ -8,6 +8,10 @@
  *   npm run soak -- --hours 0          until you stop it (Ctrl-C)
  *   npm run soak -- --alternate        jsdom, plus a Chromium batch every 20th
  *   npm run soak -- --e2e --hours 2    only Chromium (real input; slower)
+ *   npm run soak -- --motion           the animated switch between text and blocks, in
+ *                                      Chromium with motion on (random presses of the
+ *                                      button, and keys, clicks, scrolls and resizes in
+ *                                      the middle of it); results in soak-results/motion
  *   npm run soak -- --seed 50000       start somewhere else (it resumes by default)
  *   npm run soak -- --known "<text>"   mark failures whose signature has <text> as known
  *   npm run soak -- --promote 1004     print a regression test for seed 1004
@@ -69,7 +73,13 @@ const opt = (name, fallback) => {
 const flag = (name) => args.includes(`--${name}`);
 
 const root = path.resolve(__dirname, "..");
-const out = path.resolve(root, opt("out", "soak-results"));
+// --motion: the animated switch between text and blocks, in Chromium, with its
+// own results (see e2e/motion-sequences.e2e.ts)
+const motion = flag("motion");
+const out = path.resolve(
+  root,
+  opt("out", motion ? "soak-results/motion" : "soak-results")
+);
 fs.mkdirSync(path.join(out, "logs"), { recursive: true });
 const failuresFile = path.join(out, "failures.jsonl");
 const knownFile = path.join(out, "known.json");
@@ -93,11 +103,8 @@ const dirty = git("status", "--porcelain").length > 0;
 // ---- per-mode state ----
 
 const alternate = flag("alternate");
-const modeNames = flag("e2e")
-  ? ["e2e"]
-  : alternate
-    ? ["jsdom", "e2e"]
-    : ["jsdom"];
+const modeNames =
+  flag("e2e") || motion ? ["e2e"] : alternate ? ["jsdom", "e2e"] : ["jsdom"];
 const states = {};
 for (const mode of modeNames) {
   const file = path.join(out, `progress-${mode}.json`);
@@ -262,7 +269,7 @@ const runBatch = (job, mode, from, count, steps, timeout) =>
           "test",
           "-c",
           "packages/codemirror-blocks/playwright.config.ts",
-          "random.e2e.ts",
+          motion ? "motion-sequences.e2e.ts" : "random.e2e.ts",
           "--reporter=json",
         ]
       : [
@@ -279,6 +286,7 @@ const runBatch = (job, mode, from, count, steps, timeout) =>
       ? {
           ...process.env,
           CMB_E2E_SEEDS: seeds,
+          CMB_MOTION_SEEDS: seeds,
           CMB_E2E_ACTION_TIMEOUT: String(e2eActionMs),
         }
       : {

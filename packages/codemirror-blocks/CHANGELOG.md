@@ -206,6 +206,11 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   editor is still text, and moves with it), the words are measured where it has
   put them, and they float when the mode is switched, and going to text the words float first and it closes
   after them.
+- `npm run soak -- --motion` runs sequences of the animated switch in Chromium: the
+  toggle button pressed, and again, with a key, a click, a scroll or a resize in
+  the middle of it, in each language, checking that nothing of the animation is
+  left over and that the editor is in one mode and looks like it
+  (`e2e/motion-sequences.e2e.ts`; the other sequences switch the mode in code).
 - The editor's scroller has `overflow-anchor: none`: the browser's scroll anchoring
   moved its scroll position as well as CodeMirror, and a comment box typed in at
   the bottom of the editor could end up out of view.
