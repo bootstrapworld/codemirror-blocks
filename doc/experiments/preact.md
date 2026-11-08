@@ -20,35 +20,33 @@ runs the browser tests on the example page built the same way.
 
 ## Does it work
 
-Most of it does, which was not certain: of the 141 browser tests, **131 pass** on
-Preact. Drag and drop, focus, selection, scrolling, comments, undo and redo, the
-animation, the script-tag files and the languages all run. What fails (10 tests) is
-**typing the first character that opens an edit box**:
+Yes: **all 141 browser tests pass on Preact** (twice in a row), and the languages'
+script-tag files work with the Preact editor file unchanged (the script-tag tests
+run each case on both).
 
-- A key pressed with no edit box open (typing at the top level) opens one; the
-  box takes keyboard focus in an effect, and the key's character must go into it.
-  React runs that effect before the browser inserts the character; Preact runs
-  effects after the next paint, so the first character goes to the hidden
-  keyboard buffer and is lost (`(f x y)` is typed as `f x y)`).
-- `NodeEditable` was changed to focus in a layout effect (which both run at
-  once). That fixed the edit-in-place cases (19 failures to 10), and React is
-  unchanged (all tests pass).
-- `ToplevelBlockEditable` does its focusing in `useEffect` on purpose
-  ("CodeMirror calls focus() when `setBookmark` is called, which triggers React's
-  unstable_flushDiscreteUpdates warning"), so a layout effect is not a drop-in
-  there. A microtask after the commit would do it for both, but the tests (and
-  the soak) are what say whether it is right.
+Two things were needed:
 
-## What it would take
+1. **When effects run.** Typing at the top level opens an edit box, which takes
+   keyboard focus in an effect, and the next key must go into it. React runs the
+   effects of a keypress before the browser goes on to the next event. Preact runs
+   them after the next paint (or 35 ms), so a key pressed a few milliseconds later
+   went to the hidden keyboard buffer and replaced what had been typed (`(f x y)`
+   came out as `f x y)`; with 400 ms between the keys it was fine). Preact's own hook
+   for this, `options.requestAnimationFrame`, is set to run effects in a microtask
+   (`webpack/preact-compat.js`, which is what `react` is aliased to).
+2. `NodeEditable` focuses its box in a layout effect (the same on both, and React
+   passes everything as before).
 
-1. The top-level typing path made independent of when effects run (above).
-2. The comment-box and Routine typing cases that still fail checked after that
-   (they are the same kind: a focus that has to happen before the next key).
-3. The soak run on Preact, as the tests are not the whole of it.
-4. If it holds, shipped as a second file (`codemirror-blocks-lite-min.js`) beside
-   the full one, not instead of it: a page that has React already loses nothing,
-   and the two behave the same to a language module, which is told only the name
-   of the global.
+## What is not done
+
+- **The soak on Preact** (the browser batches can run it: `CMB_PREACT=1 npm run soak
+-- --e2e`, and `-- --motion`), since the tests are not the whole of it.
+- Whether the lite file is **shipped**: as `codemirror-blocks-lite-min.js` beside the
+  full one (a page that has React already loses nothing; the languages are told only
+  the name of the global, `CodeMirrorBlocks`, which both files define), and whether
+  `npm run bundle` makes both. This is a decision, not a technical one.
+- Preact is a **dev dependency** of the editor for this, and a major version (11).
+  The editor on npm still uses React: only the script-tag file differs.
 
 Not tried: lazy-loading rarely used parts, and replacing `react-modal` (21 KB) with
 the native `<dialog>`: both are in the options for the size of the bundle.

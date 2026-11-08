@@ -23,8 +23,10 @@ config.resolve.alias = {
 if (process.env.CMB_PREACT) {
   config.resolve.alias = {
     ...config.resolve.alias,
-    react: "preact/compat",
-    "react-dom": "preact/compat",
+    react$: path.resolve(__dirname, "preact-compat.js"),
+    "react-dom$": path.resolve(__dirname, "preact-compat.js"),
+    "react-dom/client": "preact/compat/client",
+    "react/jsx-runtime": "preact/compat/jsx-runtime",
   };
 }
 
