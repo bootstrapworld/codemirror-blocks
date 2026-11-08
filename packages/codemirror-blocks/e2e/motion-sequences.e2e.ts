@@ -1,5 +1,5 @@
 import { expect, Page, test } from "@playwright/test";
-import { expectConsistent } from "./helpers";
+import { snapshot } from "./helpers";
 
 /**
  * The animated switch between text and blocks (see ui/morph.ts), in sequences
@@ -109,7 +109,17 @@ async function settled(page: Page, memory: { text?: string; blocks: boolean }) {
       .toBeGreaterThan(0);
     if (hasBar)
       await expect.poll(barWidth, { timeout: 5000 }).toBeGreaterThan(190);
-    await expectConsistent(page);
+    // (the AST is the text: not where keyboard focus is, as a click beside the
+    // editor leaves it on the page)
+    await expect
+      .poll(
+        async () => {
+          const now = await snapshot(page);
+          return JSON.stringify(now.reparsed) === JSON.stringify(now.roots);
+        },
+        { timeout: 2000 }
+      )
+      .toBe(true);
   } else {
     await expect.poll(() => inLines.count(), { timeout: 5000 }).toBe(0);
     if (hasBar) await expect.poll(barWidth, { timeout: 5000 }).toBeLessThan(5);
@@ -151,6 +161,31 @@ async function runSequence(page: Page, seed: number) {
       log.push("(settled)");
     }
   } catch (e) {
+    // (what the editor was like when it failed: the soak keeps it in its trace)
+    const state = await page
+      .evaluate(() => {
+        const editor = document.querySelector(".Editor") as HTMLElement | null;
+        const bar = document.querySelector(
+          ".toolbar-pane"
+        ) as HTMLElement | null;
+        const style = bar && getComputedStyle(bar);
+        return JSON.stringify({
+          editor: editor?.className,
+          attributes:
+            editor && [...editor.attributes].map((a) => `${a.name}=${a.value}`),
+          words: document.querySelectorAll(".cmb-morph").length,
+          toolbar: style && {
+            width: style.width,
+            opacity: style.opacity,
+            transition: style.transition,
+            animations: bar!
+              .getAnimations()
+              .map((a) => `${a.playState}@${a.currentTime}`),
+          },
+        });
+      })
+      .catch(() => "(no page)");
+    log.push(`state at the failure: ${state}`);
     throw new Error(
       `seed ${seed} failed after ${log.length} steps:\n  ${log.join("\n  ")}\n\n${e}`,
       { cause: e }

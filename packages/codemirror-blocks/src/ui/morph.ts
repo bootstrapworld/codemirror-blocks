@@ -227,8 +227,14 @@ export function switchWithMorph(
     root.removeAttribute("data-morphing");
     // (a toolbar that was held open closes now; one that was opened for the
     // switch has the mode that keeps it open, a moment after it is switched)
-    if (delayToolbar) setTimeout(() => root.removeAttribute(TOOLBAR), 100);
-    else root.removeAttribute(TOOLBAR);
+    // (not if another switch has begun since: the marker is its own then)
+    if (delayToolbar) {
+      setTimeout(() => {
+        if (!active) root.removeAttribute(TOOLBAR);
+      }, 100);
+    } else {
+      root.removeAttribute(TOOLBAR);
+    }
     window.removeEventListener("keydown", cancel, true);
     window.removeEventListener("pointerdown", cancel, true);
     window.removeEventListener("resize", cancel);
