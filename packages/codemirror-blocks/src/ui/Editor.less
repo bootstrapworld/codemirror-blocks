@@ -11,6 +11,14 @@
     height: 100%;
   }
 
+  // CodeMirror gives each line a layer of its own (z-index 2), and a later line
+  // is drawn over an earlier one: the badge of a comment on a block below would
+  // cover the popup of the focused block above it, whatever the popup's own
+  // z-index. The line that has the focused block is raised above the others.
+  .CodeMirror pre.CodeMirror-line:has(.blocks-node:focus) {
+    z-index: 3;
+  }
+
   > .toolbar-pane {
     border-right: 1px solid #ddd;
     padding-left: 0px;

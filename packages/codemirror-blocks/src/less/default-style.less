@@ -53,7 +53,9 @@
   border-radius: 15px;
   margin: 2px;
   background: #eee;
-  overflow: hidden;
+  // (not `overflow: hidden`: the popup of the comment of a block inside this one
+  // would be cut off at its frame. The strip at the top has the frame's curve
+  // instead, below.)
   white-space: nowrap;
   transition:
     background-color 0.5s,
@@ -66,6 +68,11 @@
   cursor: -webkit-grab;
 
   user-select: none;
+
+  > :first-child:not(.blocks-comment) {
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+  }
 }
 
 .blocks-lambdaExpression {
@@ -305,6 +312,10 @@
   border-color: @editing-border-color;
   outline: 0;
 }
+.blocks-node:focus + .blocks-comment-badge {
+  display: none;
+}
+
 .blocks-identifierList {
   border-radius: 15px;
 }
@@ -360,6 +371,7 @@
   color: @comment-color;
   padding: 2px 10px;
   border-radius: 5px;
+  width: max-content;
   max-width: 300px;
   line-height: 20px;
   box-shadow: 0px 0px 20px #999;
