@@ -55,8 +55,10 @@ rest of this guide:
 
 Two things to know about names. A node's block has the class `blocks-<type>`, so
 a kind with the `type` of one of the default style's own classes (`name`,
-`literal`, `comment`, `blank`, `sequence`, `unknown`, `operator`, `args`) gets
-that style, which is probably not what you want: use another `type`. And the
+`literal`, `comment`, `blank`, `sequence`, `unknown`, `operator`, `args`, `node`,
+`value`, `compound`, `hint`, ...) gets that style, which is probably not what you
+want: `defineNode` warns about it, and you use another `type` (the `label` can
+still be `"name"`). And the
 default style draws a `variant` of `"compound"` or `"value"`, whatever the
 `type` is.
 

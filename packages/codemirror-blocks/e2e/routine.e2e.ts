@@ -89,7 +89,7 @@ test.describe("the Routine language", () => {
     page,
   }) => {
     await openInBlockMode(page, "(let a 1)\n(show (+ a 2))", "routine");
-    const name = page.locator(".blocks-call .blocks-name").first();
+    const name = page.locator(".blocks-call .blocks-variable").first();
     await name.click();
     // (a click on a name opens its text: the hint is beside the edit box)
     await expect(page.locator(".blocks-hint")).toHaveText("defined: a");

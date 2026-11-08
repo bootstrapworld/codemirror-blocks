@@ -16,6 +16,12 @@
 
   // ---- what is Routine's own ----
 
+  // a name is blue, as the default style draws the kind that is called `name`
+  // (this kind is `variable`, so that it does not depend on that)
+  .blocks-variable {
+    color: steelblue;
+  }
+
   .routine-body {
     display: flex;
     flex-wrap: wrap;
@@ -37,7 +43,7 @@
     padding: 2px 8px;
     // (the number in it, and the name: pills on black have to be light)
     .blocks-number,
-    .blocks-name,
+    .blocks-variable,
     .blocks-text {
       background: white;
     }

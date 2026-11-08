@@ -127,7 +127,7 @@ describe("the variant of a block", () => {
         .filter((n) => n.type === type)
         .map((n) => elementForNode(n)!.className);
     expect(classes("define")[0]).toContain("blocks-compound");
-    expect(classes("name")[0]).toContain("blocks-value");
+    expect(classes("variable")[0]).toContain("blocks-value");
     expect(classes("number")[0]).toContain("blocks-value");
   });
 });
@@ -136,7 +136,7 @@ describe("a block that draws itself from its state", () => {
   it("shows what a name could be only while the name is edited", () => {
     mount("(let a 1)\n(let b 2)\n(show (+ a b))\n(let c 3)");
     expect(hints()).toEqual([]);
-    const call = [...root(2).descendants()].find((n) => n.type === "name")!;
+    const call = [...root(2).descendants()].find((n) => n.type === "variable")!;
     mouseDown(call);
     expect(hints()).toEqual([]); // (it has focus: that is not enough)
     keyDown("Enter");
@@ -147,7 +147,7 @@ describe("a block that draws itself from its state", () => {
 
   it("shows it beside the edit box while the name is being edited", () => {
     mount("(let a 1)\n(let b 2)\n(show (+ a b))");
-    const call = [...root(2).descendants()].find((n) => n.type === "name")!;
+    const call = [...root(2).descendants()].find((n) => n.type === "variable")!;
     mouseDown(call);
     keyDown("Enter"); // (the name is focused: Enter opens its text)
     // (the edit box has taken the place of the name: its hint is still there)
@@ -188,7 +188,7 @@ describe("what is said about a node comes from its label", () => {
     expect(show.shortDescription()).toBe("show step");
     expect(call.shortDescription()).toBe("calculation +");
     expect(loop.shortDescription()).toBe("repeat loop");
-    const name = [...def.descendants()].find((n) => n.type === "name")!;
+    const name = [...def.descendants()].find((n) => n.type === "variable")!;
     expect(name.shortDescription()).toBe("name minutes");
   });
 

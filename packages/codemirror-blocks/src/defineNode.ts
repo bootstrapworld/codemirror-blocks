@@ -8,6 +8,7 @@ import type {
   Pos,
 } from "./ast";
 import * as Spec from "./nodeSpec";
+import { warn } from "./utils";
 
 /*
  * `defineNode` says what a kind of node is once: its fields, what it is called,
@@ -116,10 +117,55 @@ export type NodeMaker<F extends Record<string, FieldDeclaration>> = {
   readonly spec: SpecOf<F>;
 };
 
-export function defineNode<F extends Record<string, FieldDeclaration>>(
+/**
+ * A block has the class `blocks-<type>`, and the editor's default style has
+ * rules for some of those, which are not what a kind of a language of its own
+ * wants: a kind with one of these as its `type` is drawn by them (and by luck,
+ * if it looks right).
+ */
+const RESERVED_TYPES = new Set([
+  // (the kinds of the core nodes: a language that makes one of its own says
+  // something else by them)
+  "literal",
+  "comment",
+  "blank",
+  "sequence",
+  "unknown",
+  // (what the default style calls the parts of a block, and its states)
+  "name",
+  "operator",
+  "args",
+  "node",
+  "locked",
+  "editing",
+  "error",
+  "dragging",
+  "compound",
+  "value",
+  "hint",
+  "white-space",
+]);
+const warned = new Set<string>();
+
+/** `defineNode`, for the core nodes of the editor, which may have a reserved type */
+export function defineCoreNode<F extends Record<string, FieldDeclaration>>(
   definition: Definition<F>
 ): NodeMaker<F> {
+  return defineNode(definition, true);
+}
+
+export function defineNode<F extends Record<string, FieldDeclaration>>(
+  definition: Definition<F>,
+  core = false
+): NodeMaker<F> {
   const { type, label, pluralLabel, ariaLabel } = definition;
+  if (!core && RESERVED_TYPES.has(type) && !warned.has(type)) {
+    warned.add(type);
+    warn(
+      "defineNode",
+      `the kind "${type}" has the class blocks-${type}, which the editor's default style draws in a way of its own: use another type (its label can be "${definition.label}" still)`
+    );
+  }
   const childSpecs = Object.entries(definition.fields).map(([name, d]) => {
     switch (d.kind) {
       case "required":

@@ -170,7 +170,10 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   empty panel), and the editor has the whole width. `exampleCode` in a language's
   definition is a short program, which the example page shows for `?lang=<id>`
   for any language that has been added (it knew four by name). The language guide
-  has a checklist for starting one (#821).
+  has a checklist for starting one (#821). `defineNode` warns when a kind has a
+  `type` that the default style has rules for (`name`, `operator`, `args`, ...;
+  a block has the class `blocks-<type>`): Routine's kind of name is `variable`
+  now.
 - Every language of the editor uses the variants: the core nodes (and so
   WeScheme and the example language) are `compound` or `value`, the default style
   has no list of WeScheme's kinds of node any more, lambda has the default style

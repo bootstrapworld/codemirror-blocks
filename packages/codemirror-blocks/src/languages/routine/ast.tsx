@@ -133,7 +133,8 @@ export const Text = defineNode({
 });
 
 export const Name = defineNode({
-  type: "name",
+  // (not "name": a kind of that type gets the default style's own idea of one)
+  type: "variable",
   label: "name",
   fields: { name: field.value<string>() },
   pretty: (node) => node.fields.name,

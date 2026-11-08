@@ -13,7 +13,7 @@ import {
 import Node, { COMMENT_PREFIX } from "./components/Node";
 import Args from "./components/Args";
 import { DropTarget } from "./components/DropTarget";
-import { defineNode, field } from "./defineNode";
+import { defineCoreNode as defineNode, field } from "./defineNode";
 import type { NodeOf } from "./defineNode";
 import * as Spec from "./nodeSpec";
 import { poscmp } from "./utils";
