@@ -10,8 +10,8 @@ import {
   edit_replace,
   performEdits,
 } from "../src/edits/performEdits";
-import lambda from "@bootstrapworld/cmb-lambda";
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import lambda from "@bootstrapworld/lambda";
+import wescheme from "@bootstrapworld/wescheme";
 import { AppStore, createAppStore } from "../src/state/store";
 import * as actions from "../src/state/actions";
 import * as selectors from "../src/state/selectors";

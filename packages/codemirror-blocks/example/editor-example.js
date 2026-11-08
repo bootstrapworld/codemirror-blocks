@@ -2,16 +2,16 @@
 // The stylesheets are plain CSS, made by `npm run build` (see scripts/build-css.js)
 import "codemirror/lib/codemirror.css";
 import "../lib/css/codemirror-blocks.css";
-import "@bootstrapworld/cmb-wescheme/css/wescheme.css";
-import "@bootstrapworld/cmb-routine/css/routine.css";
-import "@bootstrapworld/cmb-lambda/css/lambda.css";
-import "@bootstrapworld/cmb-example/css/example.css";
+import "@bootstrapworld/wescheme/css/wescheme.css";
+import "@bootstrapworld/routine/css/routine.css";
+import "@bootstrapworld/lambda/css/lambda.css";
+import "@bootstrapworld/example/css/example.css";
 import "../lib/css/debug-page.css";
 // (a language adds itself to the editor when it is imported)
-import "@bootstrapworld/cmb-wescheme";
-import "@bootstrapworld/cmb-routine";
-import "@bootstrapworld/cmb-lambda";
-import "@bootstrapworld/cmb-example";
+import "@bootstrapworld/wescheme";
+import "@bootstrapworld/routine";
+import "@bootstrapworld/lambda";
+import "@bootstrapworld/example";
 import { getLanguages, getLanguage } from "../lib/languages";
 import bigExampleCode from "./ast-test.rkt";
 import hugeExampleCode from "./huge-code.rkt";

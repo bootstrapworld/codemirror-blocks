@@ -1,4 +1,4 @@
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import { act } from "@testing-library/react";
 import { AST } from "../src/ast";
 import * as actions from "../src/state/actions";

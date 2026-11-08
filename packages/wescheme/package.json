@@ -1,7 +1,7 @@
 {
-  "name": "@bootstrapworld/cmb-example",
+  "name": "@bootstrapworld/wescheme",
   "version": "0.9.0",
-  "description": "The example language of CodeMirror-Blocks: numbers and calls, a start for a language of your own",
+  "description": "The WeScheme language (a Scheme for teaching) for CodeMirror-Blocks: its reader, its blocks and its primitives",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "exports": {
@@ -9,7 +9,7 @@
       "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
     },
-    "./css/example.css": "./lib/css/example.css",
+    "./css/wescheme.css": "./lib/css/wescheme.css",
     "./package.json": "./package.json"
   },
   "files": [
@@ -41,10 +41,10 @@
   "scripts": {
     "prepublishOnly": "npm run build && npm run build-types",
     "build": "npx babel src --out-dir lib --source-maps inline --copy-files --extensions \".ts,.tsx,.js,.jsx\" && npm run build-css",
-    "build-css": "node ../cmb-toolkit/bin/cmb-build-css.js src/style.less lib/css/example.css --with-core",
+    "build-css": "node ../cmb-toolkit/bin/cmb-build-css.js src/style.less lib/css/wescheme.css --with-core",
     "build-types": "npx tsc",
     "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit && tsc -p spec --noEmit",
-    "bundle": "webpack --config webpack.config.js && cp lib/css/example.css dist/cmb-example.css"
+    "bundle": "webpack --config webpack.config.js && cp lib/css/wescheme.css dist/wescheme.css"
   },
   "author": "The Bootstrap Team",
   "repository": "github:bootstrapworld/codemirror-blocks",
@@ -58,7 +58,7 @@
     "Dorai Sitaram",
     "Preston Tunnell Wilson"
   ],
-  "license": "MIT",
-  "unpkg": "dist/cmb-example-min.js",
-  "jsdelivr": "dist/cmb-example-min.js"
+  "license": "MIT AND LGPL-2.1-only",
+  "unpkg": "dist/wescheme-min.js",
+  "jsdelivr": "dist/wescheme-min.js"
 }

@@ -13,8 +13,8 @@ can be found in their respective directories:
 
 - [codemirror-blocks](packages/codemirror-blocks/) - the editor: everything but the languages. Start here if you'd like to implement a new block editor for a programming language of your choice (see the [language guide](doc/language.md)).
 - The languages, each a module of its own that is added to the editor (an npm package, or a `<script>` tag):
-  [cmb-wescheme](packages/cmb-wescheme/) (WeScheme), [cmb-lambda](packages/cmb-lambda/) (a small language of functions),
-  [cmb-routine](packages/cmb-routine/) (a language for plans, to try the API with) and [cmb-example](packages/cmb-example/) (a start for a language of your own).
+  [wescheme](packages/wescheme/) (WeScheme), [lambda](packages/lambda/) (a small language of functions),
+  [routine](packages/routine/) (a language for plans, to try the API with) and [example](packages/example/) (a start for a language of your own).
 - [wescheme-blocks](packages/wescheme-blocks/) - the editor and WeScheme in one file, for wescheme.org.
 - [cmb-toolkit](packages/cmb-toolkit/) - the build tools (webpack configurations, a CSS build) for the packages above and for a language of your own.
 

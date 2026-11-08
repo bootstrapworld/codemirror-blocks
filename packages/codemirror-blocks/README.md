@@ -6,25 +6,25 @@ A library for making functional languages editable using visual blocks inside of
 
 **CodeMirror-Blocks ("CMB") is not a block editor.** It's a _toolkit for building block editors_: the editor itself, with its accessibility and keyboard features, **and no languages**. A language (its parser, how its blocks look and what a screenreader says of them) is a module of its own, added to the editor. The ones in this repository are:
 
-| language                                       | module                         |
-| ---------------------------------------------- | ------------------------------ |
-| WeScheme                                       | `@bootstrapworld/cmb-wescheme` |
-| lambda (a small language of functions)         | `@bootstrapworld/cmb-lambda`   |
-| Routine (plans: lets, shows, repeats, choices) | `@bootstrapworld/cmb-routine`  |
-| example (numbers and calls: a place to start)  | `@bootstrapworld/cmb-example`  |
+| language                                       | module                     |
+| ---------------------------------------------- | -------------------------- |
+| WeScheme                                       | `@bootstrapworld/wescheme` |
+| lambda (a small language of functions)         | `@bootstrapworld/lambda`   |
+| Routine (plans: lets, shows, repeats, choices) | `@bootstrapworld/routine`  |
+| example (numbers and calls: a place to start)  | `@bootstrapworld/example`  |
 
 ### With npm
 
 ```sh
-npm install @bootstrapworld/codemirror-blocks @bootstrapworld/cmb-wescheme codemirror
+npm install @bootstrapworld/codemirror-blocks @bootstrapworld/wescheme codemirror
 ```
 
 ```js
 import CodeMirrorBlocks from "@bootstrapworld/codemirror-blocks";
-import "@bootstrapworld/cmb-wescheme"; // adds the language to the editor
+import "@bootstrapworld/wescheme"; // adds the language to the editor
 import "codemirror/lib/codemirror.css";
 import "@bootstrapworld/codemirror-blocks/css/codemirror-blocks.css";
-import "@bootstrapworld/cmb-wescheme/css/wescheme.css";
+import "@bootstrapworld/wescheme/css/wescheme.css";
 
 // replaces a CodeMirror with blocks: the language is asked for by its id
 const editor = CodeMirrorBlocks(container, { value: "(+ 1 2)" }, "wescheme");
@@ -39,11 +39,11 @@ No bundler: the editor is one file, and each language another, loaded after it (
 ```html
 <link rel="stylesheet" href="codemirror.css" />
 <link rel="stylesheet" href="codemirror-blocks.css" />
-<link rel="stylesheet" href="cmb-wescheme.css" />
+<link rel="stylesheet" href="wescheme.css" />
 <div id="editor"></div>
 <script src="codemirror.js"></script>
 <script src="codemirror-blocks-min.js"></script>
-<script src="cmb-wescheme-min.js"></script>
+<script src="wescheme-min.js"></script>
 <script>
   CodeMirrorBlocks(
     document.getElementById("editor"),
@@ -61,7 +61,7 @@ _NOTE: your IDE will need to load CodeMirror as an external dependency._ We assu
 
 ### Create a new package
 
-A language is a package that has the editor as a peer dependency (`cmb-example` is the smallest one to start from: copy it):
+A language is a package that has the editor as a peer dependency (`example` is the smallest one to start from: copy it):
 
         npm install --save-peer @bootstrapworld/codemirror-blocks
 

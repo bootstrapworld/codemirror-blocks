@@ -1,5 +1,5 @@
 import { act, fireEvent, screen } from "@testing-library/react";
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import { API } from "../src/CodeMirrorBlocks";
 import { keyDown, mountCMB, teardown } from "../src/toolkit/test-utils";
 import * as announcer from "../src/announcer";

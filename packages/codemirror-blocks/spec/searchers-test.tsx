@@ -1,6 +1,6 @@
 import { act, fireEvent, render } from "@testing-library/react";
 import React from "react";
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import { CodeMirrorFacade } from "../src/editor";
 import { collapseNode } from "../src/state/actions";
 import ByBlock from "../src/ui/searchers/ByBlock";

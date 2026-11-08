@@ -1,7 +1,7 @@
 /**
  * The editor comes with no languages: someone who uses it, and not WeScheme (or
  * lambda, or Routine), should not ship the parser of one. Each is a package of
- * its own (`@bootstrapworld/cmb-wescheme`, ...), and nothing in the editor's
+ * its own (`@bootstrapworld/wescheme`, ...), and nothing in the editor's
  * main entry point may pull one in.
  */ import { execFileSync } from "child_process";
 import * as fs from "fs";
@@ -42,12 +42,12 @@ describe("a bundle of the main entry point", () => {
   // title, Routine's classes)
   const MARKERS: Record<string, { entry: string; strings: string[] }> = {
     wescheme: {
-      entry: "cmb-wescheme",
+      entry: "wescheme",
       strings: ["unsupportedExpr", "callExpr", "letrecExpr"],
     },
-    lambda: { entry: "cmb-lambda", strings: ["Your Lambda Program"] },
+    lambda: { entry: "lambda", strings: ["Your Lambda Program"] },
     routine: {
-      entry: "cmb-routine",
+      entry: "routine",
       strings: ["routine-steps", "routine-body"],
     },
   };

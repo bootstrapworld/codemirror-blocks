@@ -9,10 +9,10 @@
   "workspaces": [
     "packages/cmb-toolkit",
     "packages/codemirror-blocks",
-    "packages/cmb-example",
-    "packages/cmb-lambda",
-    "packages/cmb-routine",
-    "packages/cmb-wescheme",
+    "packages/example",
+    "packages/lambda",
+    "packages/routine",
+    "packages/wescheme",
     "packages/wescheme-blocks"
   ],
   "scripts": {
@@ -23,8 +23,8 @@
     "format:check": "prettier --check .",
     "soak": "node scripts/soak.js",
     "test:e2e": "npm run test:e2e --workspace=@bootstrapworld/codemirror-blocks",
-    "build:libs": "npm run build --workspace=@bootstrapworld/codemirror-blocks && npm run build --workspace=@bootstrapworld/cmb-example && npm run build --workspace=@bootstrapworld/cmb-lambda && npm run build --workspace=@bootstrapworld/cmb-routine && npm run build --workspace=@bootstrapworld/cmb-wescheme",
-    "build:types": "npm run build-types --workspace=@bootstrapworld/codemirror-blocks && npm run build-types --workspace=@bootstrapworld/cmb-example && npm run build-types --workspace=@bootstrapworld/cmb-lambda && npm run build-types --workspace=@bootstrapworld/cmb-routine && npm run build-types --workspace=@bootstrapworld/cmb-wescheme",
+    "build:libs": "npm run build --workspace=@bootstrapworld/codemirror-blocks && npm run build --workspace=@bootstrapworld/example && npm run build --workspace=@bootstrapworld/lambda && npm run build --workspace=@bootstrapworld/routine && npm run build --workspace=@bootstrapworld/wescheme",
+    "build:types": "npm run build-types --workspace=@bootstrapworld/codemirror-blocks && npm run build-types --workspace=@bootstrapworld/example && npm run build-types --workspace=@bootstrapworld/lambda && npm run build-types --workspace=@bootstrapworld/routine && npm run build-types --workspace=@bootstrapworld/wescheme",
     "build:all": "npm run build:libs && npm run build:types"
   },
   "devDependencies": {

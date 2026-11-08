@@ -1,4 +1,4 @@
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {

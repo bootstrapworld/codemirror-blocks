@@ -1,6 +1,6 @@
-# @bootstrapworld/cmb-lambda
+# @bootstrapworld/example
 
-A small language of functions and expressions (from lisperator.net) for CodeMirror-Blocks.
+The example language of CodeMirror-Blocks: numbers and calls, a start for a language of your own.
 
 This is a language module for [CodeMirror-Blocks](https://github.com/bootstrapworld/codemirror-blocks):
 the editor (`@bootstrapworld/codemirror-blocks`) comes with no languages, and
@@ -10,29 +10,33 @@ a language is added by loading its module.
 
 ```js
 import CodeMirrorBlocks from "@bootstrapworld/codemirror-blocks";
-import "@bootstrapworld/cmb-lambda"; // adds the language
+import "@bootstrapworld/example"; // adds the language
 import "codemirror/lib/codemirror.css";
 import "@bootstrapworld/codemirror-blocks/css/codemirror-blocks.css";
-import "@bootstrapworld/cmb-lambda/css/lambda.css";
+import "@bootstrapworld/example/css/example.css";
 
-CodeMirrorBlocks(document.getElementById("editor"), { value: "..." }, "lambda");
+CodeMirrorBlocks(
+  document.getElementById("editor"),
+  { value: "..." },
+  "example"
+);
 ```
 
 The module adds its language when it is imported, and the editor is given it by
-its id (`"lambda"`), or by the object the module exports.
+its id (`"example"`), or by the object the module exports.
 
 ## A script tag
 
 ```html
 <link rel="stylesheet" href="codemirror-blocks.css" />
-<link rel="stylesheet" href="cmb-lambda.css" />
+<link rel="stylesheet" href="example.css" />
 <script src="codemirror-blocks.js"></script>
-<script src="cmb-lambda.js"></script>
+<script src="example.js"></script>
 <script>
   CodeMirrorBlocks(
     document.getElementById("editor"),
     { value: "..." },
-    "lambda"
+    "example"
   );
 </script>
 ```

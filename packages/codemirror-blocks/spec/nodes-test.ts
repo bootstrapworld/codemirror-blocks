@@ -1,4 +1,4 @@
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import { Literal, Unknown } from "../src/nodes";
 import { mountCMB, teardown } from "../src/toolkit/test-utils";
 

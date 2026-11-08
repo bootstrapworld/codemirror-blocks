@@ -9,7 +9,7 @@ import {
 } from "../src/edits/performEdits";
 import type { EditInterface } from "../src/edits/performEdits";
 import { FakeAstInsertion, insertionPos } from "../src/edits/fakeAstEdits";
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import { makeLayoutLanguage } from "./helpers/layoutLanguage";
 import * as actions from "../src/state/actions";
 import * as selectors from "../src/state/selectors";

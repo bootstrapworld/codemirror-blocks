@@ -1,6 +1,6 @@
 import { defineNode, field } from "../src/defineNode";
 import { Literal } from "../src/nodes";
-import routine from "@bootstrapworld/cmb-routine";
+import routine from "@bootstrapworld/routine";
 
 const warnings = () =>
   (console.warn as jest.Mock).mock.calls.map((c) => String(c[0]));

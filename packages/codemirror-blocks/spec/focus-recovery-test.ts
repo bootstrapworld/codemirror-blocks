@@ -1,6 +1,6 @@
 import CodeMirror from "codemirror";
 import { fireEvent, screen } from "@testing-library/react";
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import {
   cmd_ctrl,
   keyDown,

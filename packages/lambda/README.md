@@ -1,6 +1,6 @@
-# @bootstrapworld/cmb-wescheme
+# @bootstrapworld/lambda
 
-The WeScheme language (a Scheme for teaching) for CodeMirror-Blocks: its reader, its blocks and its primitives.
+A small language of functions and expressions (from lisperator.net) for CodeMirror-Blocks.
 
 This is a language module for [CodeMirror-Blocks](https://github.com/bootstrapworld/codemirror-blocks):
 the editor (`@bootstrapworld/codemirror-blocks`) comes with no languages, and
@@ -10,33 +10,29 @@ a language is added by loading its module.
 
 ```js
 import CodeMirrorBlocks from "@bootstrapworld/codemirror-blocks";
-import "@bootstrapworld/cmb-wescheme"; // adds the language
+import "@bootstrapworld/lambda"; // adds the language
 import "codemirror/lib/codemirror.css";
 import "@bootstrapworld/codemirror-blocks/css/codemirror-blocks.css";
-import "@bootstrapworld/cmb-wescheme/css/wescheme.css";
+import "@bootstrapworld/lambda/css/lambda.css";
 
-CodeMirrorBlocks(
-  document.getElementById("editor"),
-  { value: "..." },
-  "wescheme"
-);
+CodeMirrorBlocks(document.getElementById("editor"), { value: "..." }, "lambda");
 ```
 
 The module adds its language when it is imported, and the editor is given it by
-its id (`"wescheme"`), or by the object the module exports.
+its id (`"lambda"`), or by the object the module exports.
 
 ## A script tag
 
 ```html
 <link rel="stylesheet" href="codemirror-blocks.css" />
-<link rel="stylesheet" href="cmb-wescheme.css" />
+<link rel="stylesheet" href="lambda.css" />
 <script src="codemirror-blocks.js"></script>
-<script src="cmb-wescheme.js"></script>
+<script src="lambda.js"></script>
 <script>
   CodeMirrorBlocks(
     document.getElementById("editor"),
     { value: "..." },
-    "wescheme"
+    "lambda"
   );
 </script>
 ```

@@ -1,4 +1,4 @@
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 
 /**
  * The example WeScheme language (the same node types the WeScheme editor uses):

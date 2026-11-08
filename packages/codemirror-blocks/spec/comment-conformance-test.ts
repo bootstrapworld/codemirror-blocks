@@ -1,7 +1,7 @@
-import example from "@bootstrapworld/cmb-example";
-import lambda from "@bootstrapworld/cmb-lambda";
-import routine from "@bootstrapworld/cmb-routine";
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import example from "@bootstrapworld/example";
+import lambda from "@bootstrapworld/lambda";
+import routine from "@bootstrapworld/routine";
+import wescheme from "@bootstrapworld/wescheme";
 import type { Language } from "../src/languages";
 import { commentProblems } from "../src/toolkit/comment-conformance";
 

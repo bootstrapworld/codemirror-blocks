@@ -1,5 +1,5 @@
 import "@bootstrapworld/codemirror-blocks/css/codemirror-blocks.css";
-import "@bootstrapworld/cmb-wescheme/css/wescheme.css";
+import "@bootstrapworld/wescheme/css/wescheme.css";
 import "@bootstrapworld/codemirror-blocks/css/example-page.css";
 import "./index.less";
 import CodeMirrorBlocks from "@bootstrapworld/codemirror-blocks";

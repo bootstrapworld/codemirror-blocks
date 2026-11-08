@@ -1,4 +1,4 @@
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 
 const parse = (code: string) => wescheme.buildAST(code).rootNodes;
 

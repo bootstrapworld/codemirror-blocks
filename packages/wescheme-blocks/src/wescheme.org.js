@@ -10,7 +10,7 @@ import {
 import "codemirror/lib/codemirror.css";
 // (the editor's stylesheets are plain CSS: this bundle takes them in)
 import "@bootstrapworld/codemirror-blocks/css/codemirror-blocks.css";
-import "@bootstrapworld/cmb-wescheme/css/wescheme.css";
+import "@bootstrapworld/wescheme/css/wescheme.css";
 import "@bootstrapworld/codemirror-blocks/css/example-page.css";
 
 const errorForm = document.createElement("div");

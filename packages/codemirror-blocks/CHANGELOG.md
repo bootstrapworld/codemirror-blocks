@@ -9,12 +9,12 @@ http://keepachangelog.com/
 
 - **Breaking: the editor comes with no languages, and each language is a package of
   its own.** `@bootstrapworld/codemirror-blocks` is the editor, and
-  `@bootstrapworld/cmb-wescheme`, `cmb-lambda`, `cmb-routine` and `cmb-example`
+  `@bootstrapworld/wescheme`, `lambda`, `routine` and `example`
   are the languages (`lib/languages/<id>` of the editor is gone). A language adds
   itself to the editor when its module is imported, and `CodeMirrorBlocks(el,
 options, "wescheme")` takes the **id** of a language as well as the object. A
   page with no bundler loads `codemirror-blocks-min.js` and then a language's
-  `cmb-<id>-min.js` (each package has its file in `dist`, made by `npm run
+  `<id>-min.js` (each package has its file in `dist`, made by `npm run
 bundle`, and its stylesheet next to it); the language's file leaves the editor,
   React and the pretty-printer to the editor's, so the page has one of each. The
   editor's file is about 400 KB and WeScheme's about 130 KB. WeScheme's reader
@@ -24,7 +24,7 @@ bundle`, and its stylesheet next to it); the language's file leaves the editor,
   `/less/*.less`, `/testing`, `/conformance` and `/debug`: the `./lib/*` that gave
   every internal file to anyone is gone, and the stylesheets are at
   `@bootstrapworld/codemirror-blocks/css/codemirror-blocks.css` (and a language's at
-  `@bootstrapworld/cmb-<id>/css/<id>.css`). The root exports what a language needs, which
+  `@bootstrapworld/<id>/css/<id>.css`). The root exports what a language needs, which
   is now more: `attachComments`, `addComment`, `placeOrphans`, `useAST`,
   `currentNode`, `withoutOrphans`, `COMMENT_RULES`, `BlockError`, `poscmp`, the
   `DropTarget` component, and the types that are in what a language makes

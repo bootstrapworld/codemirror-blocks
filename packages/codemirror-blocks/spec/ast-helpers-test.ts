@@ -1,6 +1,6 @@
 import * as P from "pretty-fast-pretty-printer";
 import { ASTNode, AST, enumerateList, pluralize } from "../src/ast";
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import { Literal } from "../src/nodes";
 
 const pos = (line: number, ch: number) => ({ line, ch });

@@ -217,10 +217,10 @@ handles CSS:
 ```js
 import "codemirror/lib/codemirror.css";
 import "@bootstrapworld/codemirror-blocks/css/codemirror-blocks.css"; // the editor
-import "@bootstrapworld/cmb-wescheme/css/wescheme.css"; // a language
+import "@bootstrapworld/wescheme/css/wescheme.css"; // a language
 ```
 
-`css/<id>.css` of the module of a language (`@bootstrapworld/cmb-wescheme/css/wescheme.css`)
+`css/<id>.css` of the module of a language (`@bootstrapworld/wescheme/css/wescheme.css`)
 is its style, which `cmb-build-css` made from its Less; a language's style
 is written under its own class, so loading all of them does no harm. A language
 of your own makes its CSS from its Less (`npx lessc style.less style.css`, or

@@ -2,10 +2,10 @@
 
 This is a guide to adding support for a new language to CodeMirror-Blocks
 (CMB). The code in each section is type-checked against the current API, and
-the [`lambda`](../packages/cmb-lambda/) and
-[`wescheme`](../packages/cmb-wescheme/) languages in this repository (each a package of its
+the [`lambda`](../packages/lambda/) and
+[`wescheme`](../packages/wescheme/) languages in this repository (each a package of its
 own, like yours) are complete examples to read alongside it, and
-[`example`](../packages/cmb-example/) is the smallest.
+[`example`](../packages/example/) is the smallest.
 
 ## Logistics
 
@@ -42,7 +42,7 @@ variables).
 
 ### Packaging a language
 
-`packages/cmb-example` is the shape of one: `src/index.ts` (the module: it calls
+`packages/example` is the shape of one: `src/index.ts` (the module: it calls
 `addLanguage` and exports the language), `src/style.less` (its style),
 and a `package.json` with these scripts, which come from `@bootstrapworld/cmb-toolkit`:
 
@@ -50,8 +50,8 @@ and a `package.json` with these scripts, which come from `@bootstrapworld/cmb-to
 lib/css/<id>.css --with-core` (the Less may `@import "default-style.less"`, the
   editor's own style, and gets plain CSS);
 - `bundle`: `webpack --config webpack.config.js`, where the configuration is
-  `getLanguageBundleConfig({ name: "cmb-<id>", global: "CMB<Id>", entry: "./src/index.ts" })`.
-  It makes `dist/cmb-<id>-min.js`, the file for a `<script>` tag that is loaded
+  `getLanguageBundleConfig({ name: "<id>", global: "CMB<Id>", entry: "./src/index.ts" })`.
+  It makes `dist/<id>-min.js`, the file for a `<script>` tag that is loaded
   after the editor's: it leaves the editor, React and the pretty-printer to it
   (they are on the global `CodeMirrorBlocks`), so that the page has one of each.
 

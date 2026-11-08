@@ -1,4 +1,4 @@
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import { areNodesEqualish } from "../src/ui/ToplevelBlock";
 
 const { parse } = wescheme;

@@ -1,7 +1,7 @@
 import { CoreAST } from "../src/nodes";
-import { LambdaAST } from "@bootstrapworld/cmb-lambda";
-import wescheme from "@bootstrapworld/cmb-wescheme";
-import { WeSchemeAST } from "@bootstrapworld/cmb-wescheme";
+import { LambdaAST } from "@bootstrapworld/lambda";
+import wescheme from "@bootstrapworld/wescheme";
+import { WeSchemeAST } from "@bootstrapworld/wescheme";
 import { nodeSpec } from "../src/nodeSpec";
 import { ASTNode } from "../src/ast";
 import { joinWithAnd, labelFromType, pluralize, pluralOf } from "../src/naming";

@@ -1,4 +1,4 @@
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 
 /**
  * The less common WeScheme forms: require, provide, case, local, quote and

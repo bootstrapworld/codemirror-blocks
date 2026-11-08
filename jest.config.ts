@@ -22,8 +22,8 @@ const sharedConfig = {
       "<rootDir>/packages/codemirror-blocks/src/toolkit/comment-conformance.ts",
     "^@bootstrapworld/codemirror-blocks/debug$":
       "<rootDir>/packages/codemirror-blocks/src/toolkit/debug.ts",
-    "^@bootstrapworld/cmb-(wescheme|lambda|routine|example)$":
-      "<rootDir>/packages/cmb-$1/src/index.ts",
+    "^@bootstrapworld/(wescheme|lambda|routine|example)$":
+      "<rootDir>/packages/$1/src/index.ts",
   },
   // The test environment that will be used for testing
   testEnvironment: "jsdom",
@@ -164,7 +164,7 @@ export default {
         "**/?(*.)+(spec|test).[tj]s?(x)",
         "<rootDir>/packages/codemirror-blocks/**/?(*-)+(spec|test).[tj]s?(x)",
         "<rootDir>/packages/cmb-toolkit/**/?(*-)+(spec|test).[tj]s?(x)",
-        "<rootDir>/packages/cmb-*/spec/**/?(*-)+(spec|test).[tj]s?(x)",
+        "<rootDir>/packages/{wescheme,lambda,routine,example}/spec/**/?(*-)+(spec|test).[tj]s?(x)",
       ],
       // (runs in Node, below)
       testPathIgnorePatterns: ["/node_modules/", "/cmb-toolkit/spec/webpack-"],

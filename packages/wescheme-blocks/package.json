@@ -9,7 +9,7 @@
     "npm": ">=11"
   },
   "dependencies": {
-    "@bootstrapworld/cmb-wescheme": "*",
+    "@bootstrapworld/wescheme": "*",
     "@bootstrapworld/codemirror-blocks": "*"
   },
   "devDependencies": {

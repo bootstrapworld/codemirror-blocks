@@ -1,4 +1,4 @@
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import { describeKinds, summarizeProgram } from "../src/summary";
 import { mountCMB, teardown } from "../src/toolkit/test-utils";
 import * as announcer from "../src/announcer";

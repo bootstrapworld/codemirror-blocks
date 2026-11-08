@@ -21,7 +21,7 @@
         .filter(Boolean);
       for (const l of languages) {
         document.write(
-          `<link rel="stylesheet" href="../../../cmb-${l}/dist/cmb-${l}.css" />`
+          `<link rel="stylesheet" href="../../../${l}/dist/${l}.css" />`
         );
       }
     </script>
@@ -39,7 +39,7 @@
     <script>
       for (const l of languages) {
         document.write(
-          `<script src="../../../cmb-${l}/dist/cmb-${l}-min.js"><\/script>`
+          `<script src="../../../${l}/dist/${l}-min.js"><\/script>`
         );
       }
     </script>

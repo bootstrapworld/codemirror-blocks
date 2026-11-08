@@ -1,5 +1,5 @@
 {
-  "name": "@bootstrapworld/cmb-lambda",
+  "name": "@bootstrapworld/lambda",
   "version": "0.9.0",
   "description": "A small language of functions and expressions (from lisperator.net) for CodeMirror-Blocks",
   "main": "./lib/index.js",
@@ -44,7 +44,7 @@
     "build-css": "node ../cmb-toolkit/bin/cmb-build-css.js src/style.less lib/css/lambda.css --with-core",
     "build-types": "npx tsc",
     "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit && tsc -p spec --noEmit",
-    "bundle": "webpack --config webpack.config.js && cp lib/css/lambda.css dist/cmb-lambda.css"
+    "bundle": "webpack --config webpack.config.js && cp lib/css/lambda.css dist/lambda.css"
   },
   "author": "The Bootstrap Team",
   "repository": "github:bootstrapworld/codemirror-blocks",
@@ -59,6 +59,6 @@
     "Preston Tunnell Wilson"
   ],
   "license": "MIT",
-  "unpkg": "dist/cmb-lambda-min.js",
-  "jsdelivr": "dist/cmb-lambda-min.js"
+  "unpkg": "dist/lambda-min.js",
+  "jsdelivr": "dist/lambda-min.js"
 }

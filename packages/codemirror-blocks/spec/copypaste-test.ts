@@ -1,4 +1,4 @@
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import { copy, pasteFromClipboard } from "../src/copypaste";
 import * as announcer from "../src/announcer";
 import { ASTNode } from "../src/ast";

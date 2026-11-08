@@ -2,7 +2,7 @@ import CodeMirror from "codemirror";
 import { act } from "@testing-library/react";
 import { AST, ASTNode } from "../src/ast";
 import type { API } from "../src/CodeMirrorBlocks";
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import { FunctionAppNode } from "../src/nodes";
 import { AppStore } from "../src/state/store";
 import * as actions from "../src/state/actions";

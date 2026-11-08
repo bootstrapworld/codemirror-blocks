@@ -2,7 +2,7 @@ import { AppStore, createAppStore } from "../../src/state/store";
 import * as selectors from "../../src/state/selectors";
 import * as actions from "../../src/state/actions";
 import { AST } from "../../src/ast";
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 
 let getState: AppStore["getState"];
 let dispatch: AppStore["dispatch"];

@@ -1,7 +1,7 @@
 import { act } from "@testing-library/react";
 import { API } from "../src/CodeMirrorBlocks";
 import { Pos } from "../src/editor";
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import * as actions from "../src/state/actions";
 import { AppStore } from "../src/state/store";
 

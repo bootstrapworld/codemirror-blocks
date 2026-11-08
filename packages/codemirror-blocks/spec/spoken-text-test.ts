@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
-import wescheme from "@bootstrapworld/cmb-wescheme";
-import lambda from "@bootstrapworld/cmb-lambda";
+import wescheme from "@bootstrapworld/wescheme";
+import lambda from "@bootstrapworld/lambda";
 import { ASTNode } from "../src/ast";
 import { spokenLabel } from "../src/components/Node";
 import { summarizeProgram } from "../src/summary";

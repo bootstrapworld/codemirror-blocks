@@ -1,4 +1,4 @@
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import wescheme from "@bootstrapworld/wescheme";
 import { click, mountCMB, teardown } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { allowConsoleErrors } from "./globalSetup";

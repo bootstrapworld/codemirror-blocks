@@ -1,7 +1,7 @@
 import { act, fireEvent, screen } from "@testing-library/react";
 import * as utils from "../src/utils";
-import lambda from "@bootstrapworld/cmb-lambda";
-import wescheme from "@bootstrapworld/cmb-wescheme";
+import lambda from "@bootstrapworld/lambda";
+import wescheme from "@bootstrapworld/wescheme";
 import {
   cmd_ctrl,
   keyDown,

@@ -11,5 +11,5 @@ doc/*.html
 .DS_Store
 compilation-stats.json
 *.json
-packages/cmb-wescheme/src/reader/*.js
-packages/cmb-wescheme/src/reader/LICENSE
+packages/wescheme/src/reader/*.js
+packages/wescheme/src/reader/LICENSE

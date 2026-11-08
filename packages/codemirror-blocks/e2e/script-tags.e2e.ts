@@ -19,8 +19,8 @@ test.beforeAll(() => {
   test.setTimeout(180_000);
   for (const w of [
     "@bootstrapworld/codemirror-blocks",
-    "@bootstrapworld/cmb-wescheme",
-    "@bootstrapworld/cmb-lambda",
+    "@bootstrapworld/wescheme",
+    "@bootstrapworld/lambda",
   ]) {
     execFileSync("npm", ["run", "bundle", `--workspace=${w}`], {
       cwd: root,

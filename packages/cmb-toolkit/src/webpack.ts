@@ -159,7 +159,7 @@ const FROM_THE_EDITOR = {
  * {@link getWebpackBundleConfig}): it adds the language to the editor on load,
  * and is the language (a global of the name `global`).
  *
- * @param config.name the name of the file: `cmb-wescheme` makes `cmb-wescheme-min.js`
+ * @param config.name the name of the file: `wescheme` makes `wescheme-min.js`
  * @param config.global the name of the global that is the language: `CMBWeScheme`
  * @param config.entry the entry point of the module
  */

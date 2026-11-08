@@ -1,5 +1,5 @@
 {
-  "name": "@bootstrapworld/cmb-routine",
+  "name": "@bootstrapworld/routine",
   "version": "0.9.0",
   "description": "Routine, a small language of plans (lets, shows, repeats, choices), to try the editor's API with CodeMirror-Blocks",
   "main": "./lib/index.js",
@@ -43,7 +43,7 @@
     "build-css": "node ../cmb-toolkit/bin/cmb-build-css.js src/style.less lib/css/routine.css --with-core",
     "build-types": "npx tsc",
     "typecheck": "tsc -p . --emitDeclarationOnly false --noEmit",
-    "bundle": "webpack --config webpack.config.js && cp lib/css/routine.css dist/cmb-routine.css"
+    "bundle": "webpack --config webpack.config.js && cp lib/css/routine.css dist/routine.css"
   },
   "author": "The Bootstrap Team",
   "repository": "github:bootstrapworld/codemirror-blocks",
@@ -58,6 +58,6 @@
     "Preston Tunnell Wilson"
   ],
   "license": "MIT",
-  "unpkg": "dist/cmb-routine-min.js",
-  "jsdelivr": "dist/cmb-routine-min.js"
+  "unpkg": "dist/routine-min.js",
+  "jsdelivr": "dist/routine-min.js"
 }
