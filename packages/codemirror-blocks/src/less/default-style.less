@@ -421,15 +421,16 @@
   visibility: visible;
 }
 
-// (the popup is held at its top edge when it would go off the top of the editor)
-.blocks-comment.blocks-comment-below:not(.blocks-comment-editing) {
-  top: 2px; // (the node's own margin: its top edge, not the wrapper's)
-  bottom: auto;
-  margin-bottom: 0;
+// (the popup hangs from the top of its block, and grows downwards; where that
+// would put it below the bottom of the editor, it is held at the bottom edge of
+// the block instead, and grows upwards: see Node.tsx)
+.blocks-comment.blocks-comment-above:not(.blocks-comment-editing) {
+  top: auto;
+  bottom: 0px;
 }
-.blocks-comment.blocks-comment-below:not(.blocks-comment-editing)::before {
-  top: 6px;
-  bottom: auto;
+.blocks-comment.blocks-comment-above:not(.blocks-comment-editing)::before {
+  top: auto;
+  bottom: 15%;
 }
 
 // A comment that goes with no node is a block of its own: the whole block

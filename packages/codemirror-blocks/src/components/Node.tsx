@@ -435,19 +435,36 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }
   }, [editor, isFocused, editable]);
 
-  // The popup with this node's comment is held at its bottom edge, and so
-  // grows upwards; where that would put it above the top of the editor (and
-  // out of sight), it is held at its top edge instead, and grows downwards.
+  // The popup with this node's comment hangs from the top of the node, and so
+  // grows downwards; where that would put it below the bottom of the editor
+  // (and out of sight), it is held at the node's bottom edge instead, and grows
+  // upwards, unless that would put it above the top of the editor too.
   const commentText = comment ? String(comment.fields.comment) : "";
   useLayoutEffect(() => {
     const node = nodeElementRef.current;
     const popup = node?.querySelector<HTMLElement>(":scope > .blocks-comment");
     if (!node || !popup) return;
-    popup.classList.remove("blocks-comment-below");
-    const top = node.closest(".CodeMirror")?.getBoundingClientRect().top;
-    if (top !== undefined && popup.getBoundingClientRect().top < top) {
-      popup.classList.add("blocks-comment-below");
-    }
+    const place = () => {
+      popup.classList.remove("blocks-comment-above");
+      const room = node.closest(".CodeMirror")?.getBoundingClientRect();
+      if (room && popup.getBoundingClientRect().bottom > room.bottom) {
+        popup.classList.add("blocks-comment-above");
+        if (popup.getBoundingClientRect().top < room.top) {
+          popup.classList.remove("blocks-comment-above");
+        }
+      }
+    };
+    place();
+    if (!isFocused) return;
+    // (the editor scrolls a block into view after it has focus, which moves it
+    // relative to the edges of the editor: and again as it is scrolled)
+    const scroller = node.closest(".CodeMirror-scroll");
+    const frame = requestAnimationFrame(place);
+    scroller?.addEventListener("scroll", place);
+    return () => {
+      cancelAnimationFrame(frame);
+      scroller?.removeEventListener("scroll", place);
+    };
   }, [isFocused, commentText]);
 
   // An edit can re-create this node's codemirror widget without changing its

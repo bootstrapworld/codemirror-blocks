@@ -187,6 +187,10 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   below it (CodeMirror draws a later line over an earlier one), is not cut off at
   the frame of the block it is in (a frame no longer has `overflow: hidden`: the
   strip at its top has its curve instead), and is as wide as its text, up to 300px.
+- The popup with a block's comment hangs from the top of the block and grows
+  downwards; where that would put it below the bottom of the editor it is held at
+  the bottom edge of the block instead and grows upwards (the class is
+  `blocks-comment-above`, it was `blocks-comment-below`).
 - `<Node editingHint={...}>` is drawn beside the edit box while a block is being
   edited (the box takes the place of the block's children), so a block can keep
   showing a hint, such as the names in scope, while its text is typed.

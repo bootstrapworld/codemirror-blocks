@@ -170,35 +170,52 @@ test.describe("a comment that goes with no block", () => {
     ).not.toBe("none");
   });
 
-  test("a comment popup that would go off the top of the editor is held at its top", async ({
+  test("a comment popup that would go off the bottom of the editor grows upwards", async ({
     page,
   }) => {
     const words = Array.from({ length: 30 }, (_, i) => `word${i}`).join(" ");
-    await openInBlockMode(page, `#| ${words} |#\n(g y)\n\n\n(f x)`);
-    const top = (selector: string) =>
+    const filler = Array.from({ length: 40 }, (_, i) => `(h ${i})`).join("\n");
+    await openInBlockMode(page, `${filler}\n#| ${words} |#\n(g y)`);
+    const edge = (selector: string, side: "top" | "bottom") =>
       page.evaluate(
-        (sel) =>
-          document.querySelector(sel)?.getBoundingClientRect().top ?? NaN,
-        selector
+        ([sel, s]) =>
+          document.querySelector(sel)?.getBoundingClientRect()[
+            s as "top" | "bottom"
+          ] ?? NaN,
+        [selector, side]
       );
     const g = page.getByRole("treeitem", { name: /g expression/ });
     const popup = g.locator("> .blocks-comment");
+    // (CodeMirror draws only the lines in view: go to the end, where g is)
+    await page.evaluate(() => {
+      const cm = (
+        document.querySelector(".CodeMirror") as unknown as {
+          CodeMirror: { scrollTo(x: number, y: number): void };
+        }
+      ).CodeMirror;
+      cm.scrollTo(0, 1e6);
+    });
     await g.click({ position: { x: 4, y: 4 } });
     await expect(popup).toBeVisible();
-    await expect(popup).toHaveClass(/blocks-comment-below/);
-    expect(await top(".blocks-comment")).toBeGreaterThanOrEqual(
-      await top(".CodeMirror")
+    await expect(popup).toHaveClass(/blocks-comment-above/);
+    // (it is all in the editor)
+    expect(await edge(".blocks-comment", "bottom")).toBeLessThanOrEqual(
+      await edge(".CodeMirror", "bottom")
     );
-    // (one with room above it keeps growing upwards)
+    expect(await edge(".blocks-comment", "top")).toBeGreaterThanOrEqual(
+      await edge(".CodeMirror", "top")
+    );
+  });
+
+  test("a comment popup that has room below hangs from the top of its block", async ({
+    page,
+  }) => {
+    await openInBlockMode(page, "; short\n(f x)\n(g y)");
     const f = page.getByRole("treeitem", { name: /f expression/ });
     await f.click({ position: { x: 4, y: 4 } });
-    await page.keyboard.press(COMMENT_KEY);
-    await page.keyboard.type("short");
-    await page.keyboard.press("Enter");
-    await f.click({ position: { x: 4, y: 4 } });
-    await expect(f.locator("> .blocks-comment")).not.toHaveClass(
-      /blocks-comment-below/
-    );
+    const popup = f.locator("> .blocks-comment");
+    await expect(popup).toBeVisible();
+    await expect(popup).not.toHaveClass(/blocks-comment-above/);
   });
 
   test("is left behind when the block it was above is deleted", async ({
