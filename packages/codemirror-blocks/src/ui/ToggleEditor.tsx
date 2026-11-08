@@ -11,7 +11,7 @@ import BlockEditor from "./BlockEditor";
 import TextEditor from "./TextEditor";
 import Dialog from "../components/Dialog";
 import Toolbar from "./Toolbar";
-import { beginMorph } from "./morph";
+import { switchWithMorph } from "./morph";
 import { ToggleButton, BugButton } from "./EditorButtons";
 import { ErrorNotice } from "./ErrorNotice";
 import { mountAnnouncer, say } from "../announcer";
@@ -105,20 +105,32 @@ function ToggleEditor(props: ToggleEditorProps) {
    */
   const handleToggle = (blockMode: boolean) => {
     recordEvent({ type: "MODE", blocks: blockMode });
-    // (the words on the screen now float to where they are after the switch)
-    const morph = beginMorph(editorElementRef.current);
-    const result = dispatch(
-      actions.setBlockMode(blockMode, editor.getValue(), props.language)
-    );
-    if (result.successful) {
-      morph?.play();
+    const makeSwitch = () => {
+      const result = dispatch(
+        actions.setBlockMode(blockMode, editor.getValue(), props.language)
+      );
+      if (!result.successful) {
+        setDialog({
+          title: "Could not convert to Blocks",
+          content: <p>{String(result.exception)}</p>,
+        });
+      }
+      return result.successful;
+    };
+    // The words float from the text to the blocks (and back): see morph.ts. A
+    // program that is not one cannot be made blocks, and says so at once.
+    let program = true;
+    if (blockMode) {
+      try {
+        props.language.buildAST(editor.getValue());
+      } catch {
+        program = false;
+      }
+    }
+    if (program) {
+      switchWithMorph(editorElementRef.current, blockMode, makeSwitch);
     } else {
-      morph?.cancel();
-      setDialog({
-        title: "Could not convert to Blocks",
-        content: <p>{String(result.exception)}</p>,
-      });
-      return;
+      makeSwitch();
     }
   };
 

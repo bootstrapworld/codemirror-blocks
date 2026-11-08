@@ -201,7 +201,11 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   others appear. It is made of the page itself, and needs nothing of a language
   (`ui/morph.ts`). It is not made for people who ask their system for reduced
   motion, and a key, a click or a scroll ends it at once. Switching with
-  `setBlockMode()` in code is not animated.
+  `setBlockMode()` in code is not animated. The toolbar is open whenever the words
+  float, so that nothing moves under them: going to blocks it opens first (the
+  editor is still text, and moves with it), the words are measured where it has
+  put them, and they float when the mode is switched, and going to text the words float first and it closes
+  after them.
 - The editor's scroller has `overflow-anchor: none`: the browser's scroll anchoring
   moved its scroll position as well as CodeMirror, and a comment box typed in at
   the bottom of the editor could end up out of view.

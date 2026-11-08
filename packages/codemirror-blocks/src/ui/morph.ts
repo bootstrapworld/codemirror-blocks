@@ -11,9 +11,7 @@
  * match fades out where it was, or in where it is. Only the words that are in
  * view before the switch, or after it, are animated.
  *
- *   const morph = beginMorph(editorElement, toBlocks);
- *   switch the mode...
- *   morph?.play();   (or morph?.cancel() if the switch did not happen)
+ *   switchWithMorph(editorElement, toBlocks, () => { switch the mode...; return ok });
  */
 
 /** where a word is on the page, and how it looks */
@@ -26,13 +24,6 @@ type Word = {
   color: string;
 };
 
-export type Morph = {
-  /** Plays the animation, from the words before the switch to those after it */
-  play(): void;
-  /** Ends it at once (the switch did not happen, or the user did something) */
-  cancel(): void;
-};
-
 /** how long the words take to float */
 export const MORPH_MS = 450;
 /** the most words that are animated (the rest appear and disappear) */
@@ -43,7 +34,7 @@ const WORD = /[^\s()[\]{}]+/g;
 const SKIP =
   '[aria-hidden="true"], .blocks-comment, .blocks-comment-badge, .screenreader-only, .CodeMirror-gutters, .cmb-morph';
 
-let active: Morph | null = null;
+let active: { cancel(): void; waiting(): boolean } | null = null;
 
 const canAnimate = () =>
   typeof Element !== "undefined" &&
@@ -52,10 +43,24 @@ const canAnimate = () =>
   !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 /** the part of the page the editor shows its lines in */
-const viewOf = (root: HTMLElement) =>
-  root
+const viewOf = (root: HTMLElement) => {
+  const scroll = root
     .querySelector<HTMLElement>(".CodeMirror-scroll")
     ?.getBoundingClientRect();
+  if (!scroll) return undefined;
+  // (what is of it inside the editor's own box: the lines can run on past it)
+  const box = root.getBoundingClientRect();
+  const left = Math.max(scroll.left, box.left);
+  const top = Math.max(scroll.top, box.top);
+  const right = Math.min(scroll.right, box.right);
+  const bottom = Math.min(scroll.bottom, box.bottom);
+  return new DOMRect(
+    left,
+    top,
+    Math.max(0, right - left),
+    Math.max(0, bottom - top)
+  );
+};
 
 const meets = (r: Word["rect"], v: DOMRect) =>
   r.left < v.right &&
@@ -167,53 +172,82 @@ function makeWord(word: Word, layer: HTMLElement): HTMLElement {
 
 const centerY = (r: Word["rect"]) => r.top + r.height / 2;
 
-/**
- * Starts a switch: the words that are on the screen now are drawn over the
- * editor (and its own text is hidden), so that nothing changes until the switch
- * is made. Returns nothing if there is nothing to animate (nobody can see it, or
- * does not want to).
- */
-export function beginMorph(root: HTMLElement | null): Morph | null {
-  if (!root || !canAnimate()) return null;
-  active?.cancel();
-  const before = collectWords(root);
-  if (!before.length) return null;
-  const layer = document.createElement("div");
-  layer.className = "cmb-morph-layer";
-  layer.setAttribute("aria-hidden", "true");
-  // (the words are seen only where the editor shows its lines: one that floats
-  // to a place out of view slides out of it)
-  const view = viewOf(root);
-  if (view) {
-    layer.style.clipPath = `inset(${view.top}px ${
-      window.innerWidth - view.right
-    }px ${window.innerHeight - view.bottom}px ${view.left}px)`;
-  }
-  document.body.appendChild(layer);
-  const fragments = before.map((w) => makeWord(w, layer));
-  root.setAttribute("data-morphing", "");
+/** set on the editor while the toolbar is held open (see Editor.less) */
+const TOOLBAR = "data-morph-toolbar";
 
+/**
+ * Switches the editor between text and blocks, with the words floating from the
+ * one to the other. `doSwitch` makes the switch (and says if it was made); it is
+ * called when the words are ready, which is not at once:
+ *
+ * - to blocks: the toolbar opens first (the editor is still text, which moves
+ *   with it), then the words of the text are measured where they now are, the
+ *   mode is switched, and the words float to the blocks;
+ * - to text: the words of the blocks are measured, the mode is switched with the
+ *   toolbar kept open, the words float to the text, and then the toolbar closes.
+ *
+ * so that nothing but the words is moving when they float. Without motion (or
+ * with nothing to see) it is just `doSwitch()`.
+ */
+export function switchWithMorph(
+  root: HTMLElement | null,
+  toBlocks: boolean,
+  doSwitch: () => boolean
+): void {
+  if (active) {
+    // (a click while the toolbar is opening makes the switch now, and that is
+    // all it does)
+    const waiting = active.waiting();
+    active.cancel();
+    if (waiting) return;
+  }
+  if (!root || !canAnimate()) {
+    doSwitch();
+    return;
+  }
+
+  let switched = false;
+  const switchOnce = () => {
+    if (switched) return true;
+    switched = true;
+    return doSwitch();
+  };
+  let waiting = false;
   let done = false;
+  let before: Word[] = [];
+  let fragments: HTMLElement[] = [];
+  let layer: HTMLElement | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const stop = () => {
+
+  const stop = (delayToolbar = false) => {
     if (done) return;
     done = true;
     clearTimeout(timer);
-    layer.remove();
+    layer?.remove();
     root.removeAttribute("data-morphing");
+    // (a toolbar that was held open closes now; one that was opened for the
+    // switch has the mode that keeps it open, a moment after it is switched)
+    if (delayToolbar) setTimeout(() => root.removeAttribute(TOOLBAR), 100);
+    else root.removeAttribute(TOOLBAR);
     window.removeEventListener("keydown", cancel, true);
     window.removeEventListener("pointerdown", cancel, true);
     window.removeEventListener("resize", cancel);
     root
       .querySelector(".CodeMirror-scroll")
       ?.removeEventListener("scroll", cancel);
-    if (active === morph) active = null;
+    if (active === handle) active = null;
   };
   function cancel() {
-    stop();
+    if (done) return;
+    // (the user wants the switch: it is made, without the words)
+    const early = !switched;
+    switchOnce();
+    stop(early);
   }
 
   const animate = (after: Word[]) => {
+    // (the blocks come in with the words: see Editor.less)
+    root.setAttribute("data-morphing", "play");
     const view = viewOf(root);
     const pairs = match(before, after);
     const matchedAfter = new Set(pairs.map(([, j]) => j));
@@ -262,48 +296,108 @@ export function beginMorph(root: HTMLElement | null): Morph | null {
     });
     // the words after that were not before fade in where they are
     after.forEach((w, j) => {
-      if (matchedAfter.has(j) || (view && !meets(w.rect, view))) return;
+      if (matchedAfter.has(j) || (view && !meets(w.rect, view)) || !layer) {
+        return;
+      }
       running.push(
         makeWord(w, layer).animate([{ opacity: 0 }, { opacity: 1 }], options)
       );
     });
     // (the text of the new mode is drawn from the start, and shown when the
     // words have got to it)
-    const finish = () => stop();
-    if (!running.length) return finish();
-    Promise.allSettled(running.map((a) => a.finished)).then(finish);
+    if (!running.length) return stop();
+    Promise.allSettled(running.map((a) => a.finished)).then(() => stop());
   };
 
-  const morph: Morph = {
-    play() {
-      // The mode is switched, and drawn a few frames later (the blocks are put
-      // on the text by the editor once it has rendered): wait until what is on
-      // the page has stopped changing.
-      let last = -1;
-      let still = 0;
-      let tries = 0;
-      const wait = () => {
-        if (done) return;
-        const now = collectWords(root);
-        still = now.length === last ? still + 1 : 0;
-        last = now.length;
-        if ((still >= 2 && now.length) || ++tries > 40) {
-          if (now.length) animate(now);
-          else stop();
-          return;
-        }
-        timer = setTimeout(wait, 16);
-      };
+  /** The mode is switched, and drawn a few frames later: wait for the page to be still */
+  const play = () => {
+    let last = "";
+    let still = 0;
+    let tries = 0;
+    const wait = () => {
+      if (done) return;
+      const now = collectWords(root);
+      // (the same words in the same places as the frame before)
+      const seen = now
+        .map(
+          (w) => `${w.text}${Math.round(w.rect.left)},${Math.round(w.rect.top)}`
+        )
+        .join(" ");
+      still = seen === last ? still + 1 : 0;
+      last = seen;
+      if ((still >= 2 && now.length) || ++tries > 40) {
+        if (now.length) animate(now);
+        else stop();
+        return;
+      }
       timer = setTimeout(wait, 16);
-      // (a hard stop, whatever happens)
-      setTimeout(stop, MORPH_MS + 1500);
-    },
-    cancel,
+    };
+    timer = setTimeout(wait, 16);
+    // (a hard stop, whatever happens)
+    setTimeout(() => stop(), MORPH_MS + 2500);
   };
+
+  /** The words as they are now are drawn over the editor, and the switch is made */
+  const float = () => {
+    if (done || !waiting) return;
+    waiting = false;
+    before = collectWords(root);
+    if (!before.length) {
+      switchOnce();
+      stop(true);
+      return;
+    }
+    layer = document.createElement("div");
+    layer.className = "cmb-morph-layer";
+    layer.setAttribute("aria-hidden", "true");
+    // (as big as the window: the clip below is measured from its box, and the
+    // words are placed in the window)
+    Object.assign(layer.style, {
+      position: "fixed",
+      inset: "0",
+      pointerEvents: "none",
+      zIndex: "100000",
+    });
+    // (the words are seen only where the editor shows its lines: one that
+    // floats to a place out of view slides out of it)
+    const view = viewOf(root);
+    if (view) {
+      layer.style.clipPath = `inset(${view.top}px ${
+        window.innerWidth - view.right
+      }px ${window.innerHeight - view.bottom}px ${view.left}px)`;
+    }
+    document.body.appendChild(layer);
+    const made = layer;
+    fragments = before.map((w) => makeWord(w, made));
+    root.setAttribute("data-morphing", "");
+    // (going to text, the toolbar stays open while the words float)
+    if (!toBlocks) root.setAttribute(TOOLBAR, "");
+    if (!switchOnce()) {
+      stop();
+      return;
+    }
+    play();
+  };
+
+  const handle = { cancel, waiting: () => waiting };
+  active = handle;
   window.addEventListener("keydown", cancel, true);
   window.addEventListener("pointerdown", cancel, true);
   window.addEventListener("resize", cancel);
   root.querySelector(".CodeMirror-scroll")?.addEventListener("scroll", cancel);
-  active = morph;
-  return morph;
+
+  const pane = root.querySelector(":scope > .toolbar-pane");
+  waiting = true;
+  if (toBlocks && pane) {
+    // the toolbar opens (the editor is text still: it moves with it), and the
+    // words are measured when it has
+    root.setAttribute(TOOLBAR, "");
+    pane.getBoundingClientRect(); // (the transition starts at the next style)
+    Promise.allSettled(pane.getAnimations().map((a) => a.finished)).then(() => {
+      timer = setTimeout(float, 30);
+    });
+    setTimeout(float, 1500); // (whatever happens)
+  } else {
+    float();
+  }
 }

@@ -26,8 +26,22 @@
   &[data-morphing] .CodeMirror-lines * {
     -webkit-text-fill-color: transparent !important;
   }
-  // (and the blocks they float into come in with them)
+  // The toolbar is open whenever the words float (see morph.ts), so that nothing
+  // is moving under them. Going to blocks it is opened first, while the editor
+  // is still text (`data-morph-toolbar` opens it, and the editor moves with it),
+  // and the words are measured when it has; going to text it is held open while
+  // the words float, and let go to close after them.
+  &.text[data-morph-toolbar] > .toolbar-pane {
+    border-right: 1px solid #ddd;
+    width: 200px;
+    opacity: 1;
+  }
+  // (and the blocks come in with the words, and not before)
   &.blocks[data-morphing] .react-container {
+    opacity: 0;
+  }
+  &.blocks[data-morphing="play"] .react-container {
+    opacity: 1;
     animation: cmb-morph-in 450ms ease-out both;
   }
 
