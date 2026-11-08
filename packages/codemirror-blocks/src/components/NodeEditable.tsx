@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useRef } from "react";
 import { recordEvent } from "../state/activityLog";
 import { useDispatch, useSelector } from "react-redux";
 import ContentEditable, {
@@ -85,8 +85,9 @@ const NodeEditable = ({
         ? props.target.getText(ast, props.editor)
         : "";
 
-    // select and focus the element on mount
-    useEffect(() => {
+    // select and focus the element on mount (before the browser goes on to what
+    // was typed: the key that opened the box is its first character)
+    useLayoutEffect(() => {
       const currentEl = elementRef.current;
       if (!currentEl) {
         // element has been unmounted already, nothing to do.
