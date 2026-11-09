@@ -7,6 +7,15 @@ http://keepachangelog.com/
 
 ### Fixed
 
+- `codemirror-blocks.css` has the style the editor shares with every language
+  (it was only in the stylesheet of our example pages since the stylesheets
+  became plain CSS): the toolbar's icons at their size, what only a screenreader
+  reads hidden, locked and collapsed blocks not taking the pointer, and the
+  animations. A page that is not ours saw the icons huge and the screenreader text.
+- The focused block takes focus back when the editor moves its widgets without
+  rendering it (found on Preact, on a slow machine).
+- The word `begin` of a WeScheme `begin` is where the reader found it, so an edit
+  by position is not written into a comment before it.
 - The popup with a block's comment no longer takes the pointer from the blocks
   it lies over (a click on the block beside the commented one was caught by it),
   and in lambda a comment of its own among the arguments of a call is printed on

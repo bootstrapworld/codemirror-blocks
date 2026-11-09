@@ -1,10 +1,13 @@
 // The editor's own style, apart from any language's (`lib/css/codemirror-blocks.css`
 // is built from this and react-tabs' stylesheet: see `scripts/build-css.js`):
 // the editor and its panes, the toolbar and its list of primitives, the trash
-// can, dialogs, and the picture of a block that is dragged.
+// can, dialogs, and the picture of a block that is dragged; and what the blocks
+// of every language share (`blocks.less`: the icons, what a screenreader alone
+// reads, a locked block, the animations).
 @import "../ui/Editor.less";
 @import "../ui/Toolbar.less";
 @import "../ui/PrimitiveList.less";
 @import "../ui/TrashCan.less";
 @import "./Dialog.less";
 @import "../dnd.less";
+@import "./blocks.less";
