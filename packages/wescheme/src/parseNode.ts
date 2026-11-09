@@ -434,14 +434,32 @@ export function parseNodeOrNull(
       blockComment: WESCHEME_BLOCK_COMMENT,
     });
   } else if (node instanceof structures.beginExpr) {
+    // (the word is where the reader found it, which is not right after the
+    // parenthesis when a comment comes first: `(#| c |# begin a)`)
+    const word = (
+      node as unknown as {
+        stx?: {
+          location?: {
+            startRow: number;
+            startCol: number;
+            endRow: number;
+            endCol: number;
+          };
+        };
+      }
+    ).stx?.location;
     return Sequence(
       from,
       to,
       {
         exprs: node.exprs.map(parseNode),
         name: Literal(
-          { line: from.line, ch: from.ch + 1 },
-          { line: from.line, ch: from.ch + 6 },
+          word
+            ? { line: word.startRow - 1, ch: word.startCol }
+            : { line: from.line, ch: from.ch + 1 },
+          word
+            ? { line: word.endRow - 1, ch: word.endCol }
+            : { line: from.line, ch: from.ch + 6 },
           { value: "begin", dataType: "symbol" },
           { ariaLabel: "begin" }
         ),
