@@ -201,3 +201,52 @@ describe("what is said about a node comes from its label", () => {
     );
   });
 });
+
+describe("the long description of each block", () => {
+  const describeAll = (code: string) => {
+    mount(code);
+    return cmb.getAst().rootNodes.map((n) => n.describe(5));
+  };
+
+  it("says whether a definition has a start", () => {
+    const [started, bare] = describeAll("(let a 1)\n(let b)");
+    expect(started).toMatch(/starting as/);
+    expect(bare).toMatch(/with no start yet/);
+  });
+
+  it("says what a show step shows", () => {
+    expect(describeAll('(show "hi")')[0]).toMatch(/^a show step of /);
+  });
+
+  it("says whether a choice has an otherwise", () => {
+    const [two, one] = describeAll(
+      '(if (< 1 2) (show "a") (show "b"))\n(if (< 1 2) (show "a"))'
+    );
+    expect(two).toMatch(/otherwise/);
+    expect(one).not.toMatch(/otherwise/);
+  });
+
+  it("lists the inputs of a calculation, if it has any", () => {
+    const [some, none] = describeAll("(+ 1 2)\n(+)");
+    expect(some).toMatch(/with \+ of .*: number 1, number 2/);
+    expect(none).not.toMatch(/:/);
+  });
+});
+
+describe("what a collapsed loop says is hidden", () => {
+  it("says 1 step for a loop of one, and the count for more", () => {
+    mount("(repeat 2 (show 1))\n(repeat 2 (show 1) (show 2))");
+    const loops = [...document.querySelectorAll(".blocks-node")].filter((el) =>
+      el.getAttribute("aria-label")?.startsWith("repeat")
+    );
+    expect(loops.length).toBe(2);
+    cmb.getAst().rootNodes.forEach((n) => {
+      mouseDown(n);
+      keyDown("ArrowLeft", {}, n);
+    });
+    const hidden = [...document.querySelectorAll(".blocks-hint")].map(
+      (el) => el.textContent
+    );
+    expect(hidden).toEqual(["1 step hidden", "2 steps hidden"]);
+  });
+});

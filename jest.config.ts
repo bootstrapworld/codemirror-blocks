@@ -196,6 +196,9 @@ export default {
     // (the reader taken from wescheme-js: code that is not ours, tested by
     // wescheme-js, and it is not to count for or against our number)
     "!packages/wescheme/src/reader/**",
+    // (the animated mode switch measures the page and animates it, which jsdom
+    // cannot: it is tested in the browser, by e2e/morph.e2e.ts and the motion soak)
+    "!packages/codemirror-blocks/src/ui/morph.ts",
   ],
 
   // The directory where Jest should output its coverage files
