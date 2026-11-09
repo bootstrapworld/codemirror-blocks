@@ -26,7 +26,11 @@ import {
  * 3277 because a block lost its marker to a box that took its place, and
  * 3463 because keyboard focus was left on the hidden clipboard buffer, and
  * 8442 because an edit box blurred while CodeMirror swapped its line in, and
- * 9874 because a block dragged to the trash was edited away mid-drag.
+ * 9874 because a block dragged to the trash was edited away mid-drag, and
+ * 270 because on Preact (CMB_PREACT=1) an undo left keyboard focus on the page
+ * body: the editor puts a block's widget on the page a moment after the render,
+ * and Preact's effects had run before that, so the check for stranded focus found
+ * nothing to do.
  */
 
 // The soak runs many browsers at once, so it allows a click longer
@@ -34,7 +38,7 @@ const ACTION_TIMEOUT = Number(process.env.CMB_E2E_ACTION_TIMEOUT) || 5000;
 
 const SEEDS = (
   process.env.CMB_E2E_SEEDS ??
-  "1,2,3,4,5,6,7,11,915,935,2596,1613,3277,3463,8442,9874"
+  "1,2,3,4,5,6,7,11,915,935,2596,1613,3277,3463,8442,9874,270"
 )
   .split(",")
   .map((s) => Number(s.trim()));

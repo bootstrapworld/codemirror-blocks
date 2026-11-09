@@ -27,12 +27,15 @@ test.beforeAll(() => {
       stdio: "ignore",
     });
   }
+  // (`bundle` of the editor makes the file on React and the file on Preact)
 });
 
-const open = async (page: Page, languages: string[]) => {
+const open = async (page: Page, languages: string[], core = "full") => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(String(e)));
-  await page.goto(`file://${page_}?languages=${languages.join(",")}`);
+  await page.goto(
+    `file://${page_}?languages=${languages.join(",")}&core=${core}`
+  );
   return errors;
 };
 
@@ -48,79 +51,84 @@ declare global {
   }
 }
 
-test("the editor's file has the editor and no language", async ({ page }) => {
-  const errors = await open(page, []);
-  const state = await page.evaluate(() => {
-    const cmb = (window as unknown as { CodeMirrorBlocks: Cmb })
-      .CodeMirrorBlocks;
-    let message = "";
-    try {
-      cmb(document.getElementById("editor")!, {}, "wescheme");
-    } catch (e) {
-      message = String(e);
-    }
-    return {
-      isAFunction: typeof cmb,
-      hasTheApi: typeof cmb.defineNode,
-      languages: Object.keys(cmb.Languages.LANGUAGES),
-      message,
-    };
-  });
-  expect(errors).toEqual([]);
-  expect(state.isAFunction).toBe("function");
-  expect(state.hasTheApi).toBe("function");
-  expect(state.languages).toEqual([]);
-  // (and asking for one says what to do)
-  expect(state.message).toMatch(
-    /There is no language "wescheme".*loading its module/
-  );
-});
-
-test("a language's file adds the language, to be asked for by its id", async ({
-  page,
-}) => {
-  const errors = await open(page, ["wescheme"]);
-  expect(
-    await page.evaluate(() =>
-      Object.keys(window.CodeMirrorBlocks.Languages.LANGUAGES)
-    )
-  ).toEqual(["wescheme"]);
-  await page.evaluate(() => {
-    window.CodeMirrorBlocks(
-      document.getElementById("editor")!,
-      { value: "(+ 1 (* 2 3))" },
-      "wescheme"
+// (the editor's file on React, and on Preact: `npm run bundle:lite`)
+for (const core of ["full", "lite"]) {
+  test(`the editor's file has the editor and no language (${core})`, async ({
+    page,
+  }) => {
+    const errors = await open(page, [], core);
+    const state = await page.evaluate(() => {
+      const cmb = (window as unknown as { CodeMirrorBlocks: Cmb })
+        .CodeMirrorBlocks;
+      let message = "";
+      try {
+        cmb(document.getElementById("editor")!, {}, "wescheme");
+      } catch (e) {
+        message = String(e);
+      }
+      return {
+        isAFunction: typeof cmb,
+        hasTheApi: typeof cmb.defineNode,
+        languages: Object.keys(cmb.Languages.LANGUAGES),
+        message,
+      };
+    });
+    expect(errors).toEqual([]);
+    expect(state.isAFunction).toBe("function");
+    expect(state.hasTheApi).toBe("function");
+    expect(state.languages).toEqual([]);
+    // (and asking for one says what to do)
+    expect(state.message).toMatch(
+      /There is no language "wescheme".*loading its module/
     );
   });
-  await page.locator(".blocks-toggle-btn").click();
-  // (blocks, drawn and styled by the files: the frame is the language's style)
-  const block = page.locator(".CodeMirror-code .blocks-functionApp").first();
-  await expect(block).toBeVisible();
-  expect(
-    await block.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)
-  ).not.toBe("0px");
-  expect(errors).toEqual([]);
-});
 
-test("more than one language can be loaded, each with its own id", async ({
-  page,
-}) => {
-  const errors = await open(page, ["wescheme", "lambda"]);
-  expect(
-    await page.evaluate(() =>
-      Object.keys(window.CodeMirrorBlocks.Languages.LANGUAGES).sort()
-    )
-  ).toEqual(["lambda", "wescheme"]);
-  await page.evaluate(() => {
-    window.CodeMirrorBlocks(
-      document.getElementById("editor")!,
-      { value: "x = 1 + 2;" },
-      "lambda"
-    );
+  test(`a language's file adds the language, to be asked for by its id (${core})`, async ({
+    page,
+  }) => {
+    const errors = await open(page, ["wescheme"], core);
+    expect(
+      await page.evaluate(() =>
+        Object.keys(window.CodeMirrorBlocks.Languages.LANGUAGES)
+      )
+    ).toEqual(["wescheme"]);
+    await page.evaluate(() => {
+      window.CodeMirrorBlocks(
+        document.getElementById("editor")!,
+        { value: "(+ 1 (* 2 3))" },
+        "wescheme"
+      );
+    });
+    await page.locator(".blocks-toggle-btn").click();
+    // (blocks, drawn and styled by the files: the frame is the language's style)
+    const block = page.locator(".CodeMirror-code .blocks-functionApp").first();
+    await expect(block).toBeVisible();
+    expect(
+      await block.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)
+    ).not.toBe("0px");
+    expect(errors).toEqual([]);
   });
-  await page.locator(".blocks-toggle-btn").click();
-  await expect(
-    page.locator(".CodeMirror-code .blocks-compound").first()
-  ).toBeVisible();
-  expect(errors).toEqual([]);
-});
+
+  test(`more than one language can be loaded, each with its own id (${core})`, async ({
+    page,
+  }) => {
+    const errors = await open(page, ["wescheme", "lambda"], core);
+    expect(
+      await page.evaluate(() =>
+        Object.keys(window.CodeMirrorBlocks.Languages.LANGUAGES).sort()
+      )
+    ).toEqual(["lambda", "wescheme"]);
+    await page.evaluate(() => {
+      window.CodeMirrorBlocks(
+        document.getElementById("editor")!,
+        { value: "x = 1 + 2;" },
+        "lambda"
+      );
+    });
+    await page.locator(".blocks-toggle-btn").click();
+    await expect(
+      page.locator(".CodeMirror-code .blocks-compound").first()
+    ).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+}

@@ -26,9 +26,10 @@ module.exports = {
     runtimeChunk: "single",
     splitChunks: {
       cacheGroups: {
+        // (with CMB_PREACT=1, Preact and the module that aliases react to it)
         react: group(
           "v-react",
-          /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/
+          /[\\/](node_modules[\\/](react|react-dom|scheduler|preact)[\\/]|webpack[\\/]preact-compat\.js)/
         ),
         redux: group(
           "v-redux",

@@ -239,6 +239,12 @@ codemirror-blocks` to `npm install @bootstrapworld/codemirror-blocks`, and
   editor is still text, and moves with it), the words are measured where it has
   put them, and they float when the mode is switched, and going to text the words float first and it closes
   after them.
+- The editor for a `<script>` tag is also a file on Preact:
+  `dist/lite/codemirror-blocks-lite-min.js` is 215 KB (71 KB gzipped) against the
+  407 KB (129 KB) of the one on React, and passes the same tests (all the browser
+  tests, and the script-tag files of the languages, run on both). `npm run bundle`
+  makes both (and, from the root, every package's files). The editor on npm still
+  uses React: see `doc/experiments/preact.md`.
 - `npm run soak -- --motion` runs sequences of the animated switch in Chromium: the
   toggle button pressed, and again, with a key, a click, a scroll or a resize in
   the middle of it, in each language, checking that nothing of the animation is

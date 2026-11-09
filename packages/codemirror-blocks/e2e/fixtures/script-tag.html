@@ -35,7 +35,14 @@
   <body>
     <div id="editor"></div>
     <script src="../../../../node_modules/codemirror/lib/codemirror.js"></script>
-    <script src="../../dist/codemirror-blocks-min.js"></script>
+    <script>
+      // `?core=lite` is the editor on Preact (dist/lite), not the one on React
+      const core =
+        new URLSearchParams(location.search).get("core") === "lite"
+          ? "../../dist/lite/codemirror-blocks-lite-min.js"
+          : "../../dist/codemirror-blocks-min.js";
+      document.write(`<script src="${core}"><\/script>`);
+    </script>
     <script>
       for (const l of languages) {
         document.write(

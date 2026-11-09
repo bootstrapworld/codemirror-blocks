@@ -18,6 +18,18 @@ config.resolve.alias = {
   "@testing-library/user-event": false,
 };
 
+// EXPERIMENT: CMB_PREACT=1 builds the page with Preact in place of React (see
+// webpack/umd-lite.config.js), to run the browser tests on it
+if (process.env.CMB_PREACT) {
+  config.resolve.alias = {
+    ...config.resolve.alias,
+    react$: path.resolve(__dirname, "preact-compat.js"),
+    "react-dom$": path.resolve(__dirname, "preact-compat.js"),
+    "react-dom/client": "preact/compat/client",
+    "react/jsx-runtime": "preact/compat/jsx-runtime",
+  };
+}
+
 // 2. Ensure Webpack resolves TypeScript file extensions
 config.resolve.extensions = Array.from(
   new Set([...(config.resolve.extensions || []), ".ts", ".tsx", ".js", ".jsx"])
