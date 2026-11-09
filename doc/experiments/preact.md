@@ -37,10 +37,27 @@ Two things were needed:
 2. `NodeEditable` focuses its box in a layout effect (the same on both, and React
    passes everything as before).
 
+## Speed on large documents
+
+The profiler of [profile-large-doc](profile-large-doc.md), on both builds (3
+repetitions, median; first response in ms, 3000 lines):
+
+| operation                                       | React   | Preact  |
+| ----------------------------------------------- | ------- | ------- |
+| load, edit, undo, redo                          | 440–470 | 440–470 |
+| arrow down x50 (react slice of the CPU profile) | 33      | 183     |
+| collapse all                                    | 475     | 1140    |
+| expand all                                      | 458     | 564     |
+
+Ordinary editing is the same: the cost is our own `parse+patchAst`, not the
+library. A change that touches many nodes at once (collapse all) costs Preact
+more, 20-25% at 200 and 1000 lines and about 2.4x at 3000. Undo also spends more
+in the DOM and CodeMirror on Preact (not looked into).
+
 ## What is not done
 
-- **The soak on Preact** (the browser batches can run it: `CMB_PREACT=1 npm run soak
--- --e2e`, and `-- --motion`), since the tests are not the whole of it.
+- **The soak on Preact**: the motion soak is clean (920 sequences, 0 failures,
+  0 crashes). The e2e soak (`CMB_PREACT=1 npm run soak -- --e2e`) is still to run.
 - **Shipped** as `dist/lite/codemirror-blocks-lite-min.js`, beside the full one (a page
   that has React already loses nothing; the languages are told only the name of the
   global, `CodeMirrorBlocks`, which both files define). `npm run bundle` makes both.
