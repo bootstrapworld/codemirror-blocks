@@ -18,6 +18,14 @@ describe("The WeScheme Parser,", function () {
     );
   });
 
+  it("should place the word begin where it is, even after a comment", function () {
+    const word = parse("(#| c |#\n begin a)")[0].fields.name;
+    expect([word.from, word.to]).toEqual([
+      { line: 1, ch: 1 },
+      { line: 1, ch: 6 },
+    ]);
+  });
+
   it("should treat vector literals like expressions", function () {
     let ast = parse("#(1 3)");
     expect(ast[0].type).toBe("functionApp");
