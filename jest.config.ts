@@ -193,6 +193,9 @@ export default {
     "packages/*/src/**/*.{ts,tsx,js,jsx}",
     "!**/*.d.ts",
     "!**/node_modules/**",
+    // (the reader taken from wescheme-js: code that is not ours, tested by
+    // wescheme-js, and it is not to count for or against our number)
+    "!packages/wescheme/src/reader/**",
   ],
 
   // The directory where Jest should output its coverage files
