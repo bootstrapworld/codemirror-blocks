@@ -600,8 +600,10 @@ const Node = ({ expandable = true, ...props }: Props) => {
         if (tries < 30) retake(tries + 1);
       });
     };
-    const onPress = () => {
-      left = true;
+    // (a press on this block itself is not leaving it: it is the focused one
+    // pressed again, and the effect is not made again for that)
+    const onPress = (e: Event) => {
+      left = !nodeElementRef.current?.contains(e.target as Node);
     };
     const observer = new MutationObserver(() => {
       if (left || !stranded()) return;
