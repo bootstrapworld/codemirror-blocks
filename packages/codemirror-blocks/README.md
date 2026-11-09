@@ -57,6 +57,8 @@ The files are in the packages' `dist` folders (`npm run bundle` makes them, and 
 
 The editor has two files, which behave the same and which every language's file works with: `dist/codemirror-blocks-min.js` (about 400 KB, 130 KB gzipped) is the editor on React, and `dist/lite/codemirror-blocks-lite-min.js` (about 215 KB, 70 KB gzipped) is the same editor on [Preact](https://preactjs.com/) (through `preact/compat`). Use the second unless the page needs React itself. Both define the global `CodeMirrorBlocks`.
 
+To try the built files, from the top of the repository: `npm run build:all && npm run bundle`, then `npm run demo`. The page it serves has a menu for the language, its look, and the library (React by default, or the Preact file).
+
 ## Making your own language module
 
 _NOTE: your IDE will need to load CodeMirror as an external dependency._ We assume it already does (otherwise, why would you be here?), so you'll need to provide it yourself.

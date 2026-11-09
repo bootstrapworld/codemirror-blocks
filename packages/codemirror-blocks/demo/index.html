@@ -1,0 +1,138 @@
+<!doctype html>
+<!--
+  The built files on a page with no bundler (see the README, "With a script
+  tag"): choose the language, its look, and the editor on React or on Preact.
+  Served by `npm run demo` at the top of the repository, after `npm run bundle`.
+  `?lang=lambda&look=maths&library=preact`
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>CMB script-tag demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="../../../node_modules/codemirror/lib/codemirror.css"
+    />
+    <link rel="stylesheet" href="../dist/codemirror-blocks.css" />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 1em 2em;
+      }
+      .controls label {
+        margin-right: 1.5em;
+      }
+      #editor {
+        height: 70vh;
+        position: relative;
+        margin-top: 1em;
+      }
+      #size {
+        color: #666;
+        font-size: 0.9em;
+      }
+    </style>
+    <script>
+      const LANGUAGES = ["wescheme", "routine", "lambda", "example"];
+      const LOOKS = {
+        wescheme: ["classic"],
+        routine: ["classic", "storyboard"],
+        lambda: ["classic", "maths"],
+        example: ["classic"],
+      };
+      const params = new URLSearchParams(location.search);
+      const lang = LANGUAGES.includes(params.get("lang"))
+        ? params.get("lang")
+        : "wescheme";
+      const look = LOOKS[lang].includes(params.get("look"))
+        ? params.get("look")
+        : "classic";
+      const library = params.get("library") === "preact" ? "preact" : "react";
+      // (the editor's file, then the language's: it adds itself to the editor)
+      const editorFile =
+        library === "preact"
+          ? "../dist/lite/codemirror-blocks-lite-min.js"
+          : "../dist/codemirror-blocks-min.js";
+      document.write(
+        `<link rel="stylesheet" href="../../${lang}/dist/${lang}.css" />`
+      );
+      document.write(
+        `<script src="../../../node_modules/codemirror/lib/codemirror.js"><\/script>`
+      );
+      document.write(`<script src="${editorFile}"><\/script>`);
+      document.write(
+        `<script src="../../${lang}/dist/${lang}-min.js"><\/script>`
+      );
+    </script>
+  </head>
+  <body>
+    <div class="controls" id="controls"></div>
+    <div id="size"></div>
+    <div id="editor"></div>
+    <script>
+      const select = (label, name, options, selected) => {
+        const el = document.createElement("label");
+        el.innerHTML = `${label} <select name="${name}">${options
+          .map(
+            ([value, text]) =>
+              `<option value="${value}"${value === selected ? " selected" : ""}>${text}</option>`
+          )
+          .join("")}</select>`;
+        el.querySelector("select").addEventListener("change", (e) => {
+          const next = new URLSearchParams(location.search);
+          next.set(name, e.target.value);
+          // (another language has its own looks)
+          if (name === "lang") next.delete("look");
+          location.search = next.toString();
+        });
+        return el;
+      };
+      document.getElementById("controls").append(
+        select(
+          "Language",
+          "lang",
+          LANGUAGES.map((l) => [l, l]),
+          lang
+        ),
+        select(
+          "Look",
+          "look",
+          LOOKS[lang].map((l) => [l, l]),
+          look
+        ),
+        select(
+          "Library",
+          "library",
+          [
+            ["react", "React (the full file)"],
+            ["preact", "Preact (the lite file)"],
+          ],
+          library
+        )
+      );
+      // (the files are made by `npm run bundle`)
+      if (typeof CodeMirrorBlocks === "undefined") {
+        document.getElementById("editor").textContent =
+          "The built files are not here: run `npm run build:all && npm run bundle` first.";
+      } else {
+        for (const l of ["classic", "storyboard", "maths"]) {
+          document.body.classList.toggle(`look-${l}`, l === look);
+        }
+        const language = CodeMirrorBlocks.Languages.LANGUAGES[lang];
+        const editor = CodeMirrorBlocks(
+          document.getElementById("editor"),
+          { value: language.exampleCode ?? "", collapseAll: false },
+          lang
+        );
+        window.cmb = window.editor = editor;
+        const file = editorFile.split("/").pop();
+        fetch(editorFile, { method: "HEAD" }).then((r) => {
+          const bytes = Number(r.headers.get("content-length"));
+          document.getElementById("size").textContent =
+            `${file}${bytes ? `, ${Math.round(bytes / 1024)} KB` : ""} (no gzip here)`;
+        });
+      }
+    </script>
+  </body>
+</html>
