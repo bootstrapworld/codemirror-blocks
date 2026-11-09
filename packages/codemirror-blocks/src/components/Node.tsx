@@ -312,7 +312,10 @@ const Node = ({ expandable = true, ...props }: Props) => {
     }
   };
 
+  // when this block was last pressed with the mouse (see the effect below)
+  const pressedAtRef = useRef(0);
   const handleMouseDown = (e: React.MouseEvent) => {
+    pressedAtRef.current = Date.now();
     if (!editor) {
       // codemirror hasn't mounted yet, do nothing
       return;
@@ -528,36 +531,64 @@ const Node = ({ expandable = true, ...props }: Props) => {
   // id (e.g. dropping a node elsewhere). The browser then drops focus, and
   // since the focused id didn't change, the effect above doesn't rerun. If
   // focus is stranded on the body or the screenreader placeholder, take it back.
+  //
+  // Not only if it is stranded when this runs: the editor puts the new widget
+  // on the page a moment after the render (and so after this, when effects run
+  // as soon as the render is done), and it is then that focus falls to the body.
+  // So the watch goes on for a while, after focus is first seen to be fine.
   useEffect(() => {
-    const active = document.activeElement;
-    const stranded =
-      !active ||
-      active === document.body ||
-      active.id === "cmb-focus-placeholder";
-    if (!stranded || !isFocused) return;
-    nodeElementRef.current?.focus();
+    if (!isFocused) return;
+    const stranded = () => {
+      const active = document.activeElement;
+      return (
+        !active ||
+        active === document.body ||
+        active.id === "cmb-focus-placeholder"
+      );
+    };
     // CodeMirror may not have put this block's widget on the page yet (an undo
     // that brings a block back, on a busy machine); focusing it then does
     // nothing, and no render follows to try again. So keep trying until it is on
-    // the page, or something else has focus.
+    // the page, or something else has focus: for a couple of seconds if focus is
+    // stranded now, and for a few frames if it is not (a swap of the widget comes
+    // within one or two: a longer watch would take focus back from someone who
+    // has clicked outside the editor).
+    const wasStranded = stranded();
+    const frames = wasStranded ? 120 : 10;
+    if (wasStranded) nodeElementRef.current?.focus();
     let frame = 0;
     let tries = 0;
-    const retry = () => {
+    const watch = () => {
       const el = nodeElementRef.current;
-      const nowActive = document.activeElement;
-      const stillStranded =
-        !nowActive ||
-        nowActive === document.body ||
-        nowActive.id === "cmb-focus-placeholder";
-      if (!el || !stillStranded || ++tries > 120) return;
-      el.focus();
-      frame = requestAnimationFrame(retry);
+      if (stranded()) el?.focus();
+      // (focus that was stranded, and has been taken back, is not watched on)
+      else if (wasStranded) return;
+      if (++tries <= frames) frame = requestAnimationFrame(watch);
     };
-    if (document.activeElement === document.body) {
-      frame = requestAnimationFrame(retry);
-    }
+    frame = requestAnimationFrame(watch);
     return () => cancelAnimationFrame(frame);
   });
+
+  // A press on a block makes it the focused block, and CodeMirror, handling the
+  // same press, then focuses its keyboard buffer (the textarea): so the block's
+  // focus is taken from it, if the effect that gives it runs before CodeMirror
+  // has done that (as it does when effects run right after the render). Only for
+  // a block that has just been pressed: the buffer has focus on purpose when
+  // someone clicks beside the blocks to type, or after an undo.
+  useEffect(() => {
+    if (!isFocused || Date.now() - pressedAtRef.current > 500) return;
+    let frame = 0;
+    let tries = 0;
+    const watch = () => {
+      const active = document.activeElement;
+      if (active?.tagName === "TEXTAREA" && active.closest(".CodeMirror")) {
+        nodeElementRef.current?.focus();
+      }
+      if (++tries <= 5) frame = requestAnimationFrame(watch);
+    };
+    frame = requestAnimationFrame(watch);
+    return () => cancelAnimationFrame(frame);
+  }, [isFocused]);
 
   // Something else took focus without the box seeing a blur (the text was
   // changed from outside while editing, and the focus moved to another node):

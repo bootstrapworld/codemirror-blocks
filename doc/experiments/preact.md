@@ -41,10 +41,9 @@ Two things were needed:
 
 - **The soak on Preact** (the browser batches can run it: `CMB_PREACT=1 npm run soak
 -- --e2e`, and `-- --motion`), since the tests are not the whole of it.
-- Whether the lite file is **shipped**: as `codemirror-blocks-lite-min.js` beside the
-  full one (a page that has React already loses nothing; the languages are told only
-  the name of the global, `CodeMirrorBlocks`, which both files define), and whether
-  `npm run bundle` makes both. This is a decision, not a technical one.
+- **Shipped** as `dist/lite/codemirror-blocks-lite-min.js`, beside the full one (a page
+  that has React already loses nothing; the languages are told only the name of the
+  global, `CodeMirrorBlocks`, which both files define). `npm run bundle` makes both.
 - Preact is a **dev dependency** of the editor for this, and a major version (11).
   The editor on npm still uses React: only the script-tag file differs.
 

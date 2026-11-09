@@ -27,12 +27,7 @@ test.beforeAll(() => {
       stdio: "ignore",
     });
   }
-  // (the editor on Preact, in dist/lite: not cleaned by the build above)
-  execFileSync(
-    "npm",
-    ["run", "bundle:lite", "--workspace=@bootstrapworld/codemirror-blocks"],
-    { cwd: root, stdio: "ignore" }
-  );
+  // (`bundle` of the editor makes the file on React and the file on Preact)
 });
 
 const open = async (page: Page, languages: string[], core = "full") => {

@@ -30,7 +30,10 @@
     "/dist/*-min.js",
     "/dist/*-min.js.map",
     "/dist/*-min.js.LICENSE.txt",
-    "/dist/*.css"
+    "/dist/*.css",
+    "/dist/lite/*-min.js",
+    "/dist/lite/*-min.js.map",
+    "/dist/lite/*-min.js.LICENSE.txt"
   ],
   "engines": {
     "node": ">=24",
@@ -103,7 +106,8 @@
     "build-types-watch": "npx tsc --watch",
     "lint": "eslint .",
     "test:e2e": "playwright test",
-    "bundle": "webpack --config webpack/umd.config.js && cp lib/css/codemirror-blocks.css dist/codemirror-blocks.css",
+    "bundle": "npm run bundle:full && npm run bundle:lite",
+    "bundle:full": "webpack --config webpack/umd.config.js && cp lib/css/codemirror-blocks.css dist/codemirror-blocks.css",
     "bundle:lite": "webpack --config webpack/umd-lite.config.js"
   },
   "author": "The Bootstrap Team",

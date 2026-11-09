@@ -53,7 +53,9 @@ No bundler: the editor is one file, and each language another, loaded after it (
 </script>
 ```
 
-The files are in the packages' `dist` folders (`npm run bundle` makes them, and they are on unpkg and jsDelivr). A page that uses no language has not shipped any: a language's file is only the language (WeScheme's is about 130 KB, the editor's about 400 KB).
+The files are in the packages' `dist` folders (`npm run bundle` makes them, and they are on unpkg and jsDelivr). A page that uses no language has not shipped any: a language's file is only the language (WeScheme's is about 130 KB).
+
+The editor has two files, which behave the same and which every language's file works with: `dist/codemirror-blocks-min.js` (about 400 KB, 130 KB gzipped) is the editor on React, and `dist/lite/codemirror-blocks-lite-min.js` (about 215 KB, 70 KB gzipped) is the same editor on [Preact](https://preactjs.com/) (through `preact/compat`). Use the second unless the page needs React itself. Both define the global `CodeMirrorBlocks`.
 
 ## Making your own language module
 

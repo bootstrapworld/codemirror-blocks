@@ -21,6 +21,13 @@ jobs:
       # Builds the library and starts the example page itself
       - run: npm run test:e2e
 
+      # The same tests on the editor with Preact in place of React, which is the
+      # editor's second file for a <script> tag (dist/lite)
+      - name: Browser tests on Preact
+        run: npm run test:e2e
+        env:
+          CMB_PREACT: "1"
+
       - name: Keep traces of failures
         if: failure()
         uses: actions/upload-artifact@v7
