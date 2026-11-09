@@ -451,6 +451,9 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const isFocused = useIdState(props.node.id, (state) =>
     selectors.isFocused(state, props.node)
   );
+  // (what the effects that outlive a render ask: is it still this block?)
+  const isFocusedRef = useRef(isFocused);
+  isFocusedRef.current = isFocused;
   useEffect(() => {
     if (
       !editor?.hasFocus() &&
@@ -568,6 +571,55 @@ const Node = ({ expandable = true, ...props }: Props) => {
     frame = requestAnimationFrame(watch);
     return () => cancelAnimationFrame(frame);
   });
+
+  // The editor can also move the page elements of a block without rendering it
+  // (a change elsewhere in the document makes it put its widgets on the page
+  // again), and the browser then drops focus to the body: no render, so no
+  // effect above runs again. So, for the block that has focus, whenever the page
+  // changes and focus is on the body, take it back: unless a press anywhere has
+  // been made since the block got focus, which is someone choosing to leave.
+  useEffect(() => {
+    if (!isFocused) return;
+    let left = false;
+    let frame = 0;
+    const stranded = () => {
+      const active = document.activeElement;
+      return (
+        !active ||
+        active === document.body ||
+        active.id === "cmb-focus-placeholder"
+      );
+    };
+    // (a frame after the change: the render that moves focus to another block
+    // may be on its way, and the widget may not be back on the page yet)
+    const retake = (tries: number) => {
+      frame = requestAnimationFrame(() => {
+        if (left || !isFocusedRef.current || !stranded()) return;
+        const el = nodeElementRef.current;
+        if (el?.isConnected) el.focus();
+        if (tries < 30) retake(tries + 1);
+      });
+    };
+    const onPress = () => {
+      left = true;
+    };
+    const observer = new MutationObserver(() => {
+      if (left || !stranded()) return;
+      cancelAnimationFrame(frame);
+      retake(0);
+    });
+    document.addEventListener("mousedown", onPress, true);
+    document.addEventListener("touchstart", onPress, true);
+    document.addEventListener("pointerdown", onPress, true);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+      document.removeEventListener("mousedown", onPress, true);
+      document.removeEventListener("touchstart", onPress, true);
+      document.removeEventListener("pointerdown", onPress, true);
+    };
+  }, [isFocused]);
 
   // A press on a block makes it the focused block, and CodeMirror, handling the
   // same press, then focuses its keyboard buffer (the textarea): so the block's

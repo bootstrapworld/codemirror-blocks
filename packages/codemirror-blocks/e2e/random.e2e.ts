@@ -201,6 +201,20 @@ const steps: Record<string, Step> = {
 const names = Object.keys(steps);
 
 async function runSequence(page: Page, seed: number) {
+  // (CMB_CPU_THROTTLE=4 makes the page four times slower, as a small CI machine
+  // is: focus lost for good on Preact that way, and not on a fast machine)
+  if (process.env.CMB_CPU_THROTTLE) {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", {
+      rate: Number(process.env.CMB_CPU_THROTTLE),
+    });
+  }
+  if (process.env.THROTTLE) {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", {
+      rate: Number(process.env.THROTTLE),
+    });
+  }
   await openInBlockMode(page, PROGRAM);
   const start = (await snapshot(page)).text;
   const random = seededRandom(seed);

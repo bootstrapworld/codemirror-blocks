@@ -37,6 +37,16 @@ Two things were needed:
 2. `NodeEditable` focuses its box in a layout effect (the same on both, and React
    passes everything as before).
 
+## Found by CI: focus dropped without a render
+
+On GitHub's slower runners seed 270 failed on Preact only. The editor puts a
+block's widgets on the page again after an edit elsewhere in the document, the
+browser then drops focus to the body, and no render of the focused block follows
+(React renders it anyway; Preact does not), so no effect runs to take focus back.
+`CMB_CPU_THROTTLE=4 npx playwright test e2e/random.e2e.ts` reproduces it on a fast
+machine. The focused block now also watches the page for changes, and takes focus
+back if it has gone to the body, unless a press anywhere was made since.
+
 ## Speed on large documents
 
 The profiler of [profile-large-doc](profile-large-doc.md), on both builds (3
