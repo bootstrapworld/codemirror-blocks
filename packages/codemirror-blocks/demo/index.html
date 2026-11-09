@@ -74,6 +74,11 @@
     <div id="size"></div>
     <div id="editor"></div>
     <script>
+      const setLook = (name) => {
+        for (const l of ["classic", "storyboard", "maths"]) {
+          document.body.classList.toggle(`look-${l}`, l === name);
+        }
+      };
       const select = (label, name, options, selected) => {
         const el = document.createElement("label");
         el.innerHTML = `${label} <select name="${name}">${options
@@ -85,6 +90,13 @@
         el.querySelector("select").addEventListener("change", (e) => {
           const next = new URLSearchParams(location.search);
           next.set(name, e.target.value);
+          if (name === "look") {
+            // (a look is a class on the page, and the language's rules under
+            // it: the blocks are the same, so there is nothing to reload)
+            setLook(e.target.value);
+            history.replaceState(null, "", `?${next}`);
+            return;
+          }
           // (another language has its own looks)
           if (name === "lang") next.delete("look");
           location.search = next.toString();
@@ -119,9 +131,7 @@
         document.getElementById("editor").textContent =
           "The built files are not here: run `npm run build:all && npm run bundle` first.";
       } else {
-        for (const l of ["classic", "storyboard", "maths"]) {
-          document.body.classList.toggle(`look-${l}`, l === look);
-        }
+        setLook(look);
         const language = CodeMirrorBlocks.Languages.LANGUAGES[lang];
         const editor = CodeMirrorBlocks(
           document.getElementById("editor"),
