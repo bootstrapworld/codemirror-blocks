@@ -203,8 +203,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const handleEditorDidMount = (codemirror: CodeMirror.Editor) => {
     const editor = new CodeMirrorFacade(codemirror);
     setEditor(editor);
-    // TODO(Emmanuel): Try to set them in the component constructor
-    // (the CodeMirror outlives block mode, so these are taken off again)
+    // The CodeMirror outlives block mode, so these are taken off again.
     const onBeforeChange = (
       ed: CodeMirror.Editor,
       change: CodeMirror.EditorChangeCancellable
