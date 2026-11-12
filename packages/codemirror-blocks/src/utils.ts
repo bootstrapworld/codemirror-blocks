@@ -239,38 +239,6 @@ export const dummyPos = { line: -1, ch: 0 };
 export function isDummyPos(pos: Pos) {
   return pos.line === -1 && pos.ch === 0;
 }
-/*
-// Announce, for testing purposes, that something important is about to update
-// (like the DOM). Make sure to call `ready` after.
-export function notReady(element) {
-  SHARED.notReady[element] = null;
-}
-
-// Announce, for testing purposes, that an update previously registered with
-// `notReady` has completed.
-export function ready(element) {
-  let thunk = SHARED.notReady[element];
-  if (thunk) thunk();
-  delete SHARED.notReady[element];
-}
-
-// For testing purposes, wait until everything (at least everything that knows
-// to register itself with the `notReady` function) is ready. This should, e.g.,
-// wait for DOM updates. DO NOT CALL THIS TWICE CONCURRENTLY, or it will not return.
-export function waitUntilReady() {
-  let waitingOn = Object.keys(SHARED.notReady).length;
-  return new Promise(function(resolve, _) {
-    for (let element of SHARED.notReady) {
-      SHARED.notReady[element] = () => {
-        waitingOn--;
-        if (waitingOn === 0) {
-          resolve();
-        }
-      };
-    }
-  });
-}
-*/
 // Compute the position of the end of a change (its 'to' property refers to the pre-change end).
 // based on https://github.com/codemirror/CodeMirror/blob/master/src/model/change_measurement.js
 export function changeEnd({ from, to, text }: EditorChange) {
