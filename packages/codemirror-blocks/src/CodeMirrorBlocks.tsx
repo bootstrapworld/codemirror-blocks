@@ -22,7 +22,7 @@ import * as Pretty from "pretty-fast-pretty-printer";
 import { PrimitiveGroup } from "./parsers/primitives";
 import Context from "./components/Context";
 import { AppStore, createAppStore } from "./state/store";
-import { API, buildAPI } from "./CodeMirror-api";
+import { API, buildAPI, createStableAPI } from "./CodeMirror-api";
 export type { API };
 
 /**
@@ -66,6 +66,11 @@ export const CodeMirrorBlocksComponent = ({
   );
 };
 
+// Calling CodeMirrorBlocks() again with the same container returns the API of
+// the editor that is there (the same object), and does not make a second one:
+// the options and the language of the second call are not used.
+const editors = new WeakMap<HTMLElement, { root: Root; api: API }>();
+
 /**
  * The main entry point for creating a new CodeMirrorBlocks editor.
  *
@@ -77,10 +82,6 @@ export const CodeMirrorBlocksComponent = ({
  * @returns An object-representation of CMB, allowing for
  *  integration with external (non-react) code
  */
-// Calling CodeMirrorBlocks() again with the same container re-renders into
-// the existing root, rather than trying to create a second one.
-const roots = new WeakMap<HTMLElement, Root>();
-
 function CodeMirrorBlocks(
   container: HTMLElement,
   options: Options = {},
@@ -99,21 +100,24 @@ function CodeMirrorBlocks(
       }).`
     );
   }
-  const apiBox: API = {} as API;
-  let root = roots.get(container);
-  if (!root) {
-    root = createRoot(container);
-    roots.set(container, root);
+  const existing = editors.get(container);
+  if (existing) {
+    Modal.setAppElement(container);
+    return existing.api;
   }
-  // Render synchronously, so that the API object has been filled in (by
-  // `onMount`) by the time this function returns.
-  const mountedRoot = root;
+  // The API has every method from the start, in both modes: it is the same
+  // object after a mode switch, and each mode (re)binds what it answers with.
+  const { api, bind } = createStableAPI();
+  const root = createRoot(container);
+  editors.set(container, { root, api });
+  // Render synchronously, so that the API has been bound (by `onMount`) by the
+  // time this function returns.
   // eslint-disable-next-line @eslint-react/dom-no-flush-sync
   flushSync(() => {
-    mountedRoot.render(
+    root.render(
       <CodeMirrorBlocksComponent
         language={language}
-        onMount={(api) => Object.assign(apiBox, api)}
+        onMount={bind}
         options={options}
         codemirrorOptions={codemirrorOptions}
       />
@@ -123,7 +127,7 @@ function CodeMirrorBlocks(
   // Used to hide the application from screen readers while a modal
   // is open.
   Modal.setAppElement(container);
-  return apiBox;
+  return api;
 }
 export { setLogReporter, BlockError, poscmp } from "./utils";
 export { useAST } from "./hooks";

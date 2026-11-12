@@ -7,6 +7,14 @@ http://keepachangelog.com/
 
 ### Fixed
 
+- The object that `CodeMirrorBlocks()` returns has every method from the start,
+  in text mode and in block mode, and is the same object after a mode switch. The
+  methods that need block mode (`getAst`, `getFocusedNode`, `getSelectedNodes`)
+  used to be missing in text mode, so that `getAst()` straight after a switch
+  was "not a function"; they now throw an `Error` that says
+  `getAst() is only available in block mode`. Calling `CodeMirrorBlocks()` again
+  on a container that has an editor returns that editor's API (it returned an
+  empty object), and does not use the options or the language of the second call.
 - `codemirror-blocks.css` has the style the editor shares with every language
   (it was only in the stylesheet of our example pages since the stylesheets
   became plain CSS): the toolbar's icons at their size, what only a screenreader

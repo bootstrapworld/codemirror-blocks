@@ -133,6 +133,7 @@ const unsupportedAPIs = [
 ] as const;
 
 type BlockModeAPI = {
+  /** (this and the next two throw an Error in text mode: see `getBlockMode()`) */
   getAst(): AST;
   getFocusedNode(): ASTNode | undefined;
   getSelectedNodes(): ASTNode[];
@@ -150,6 +151,61 @@ type ToggleEditorAPI = {
   runMode(): never;
 };
 export type API = ToggleEditorAPI & CodeMirrorAPI & BlockModeAPI;
+
+/** The methods that only exist in block mode (the others work in both). */
+export const blockModeOnlyMethods = [
+  "getAst",
+  "getFocusedNode",
+  "getSelectedNodes",
+  "executeAction",
+] as const;
+
+/** Every method of {@link API}: each is on the object from the start. */
+const apiMethodNames: string[] = [
+  ...new Set<string>([
+    ...codeMirrorAPI,
+    ...unsupportedAPIs,
+    "getBlockMode",
+    "setBlockMode",
+    "getCM",
+    "runMode",
+    ...blockModeOnlyMethods,
+  ]),
+];
+
+/**
+ * @internal
+ * The object that `CodeMirrorBlocks()` returns: it has every method, in both
+ * modes, from the start, and it is the same object for the life of the editor.
+ * Each method hands the call to the API that was built for the mode that is
+ * showing (see {@link buildAPI}), which `bind` replaces on every mode switch.
+ * A block-only method with no block mode to answer it throws an Error that says so.
+ */
+export const createStableAPI = () => {
+  type Method = (...args: unknown[]) => unknown;
+  let current: Partial<Record<string, Method>> = {};
+  const api: Record<string, Method> = {};
+  const blockOnly: readonly string[] = blockModeOnlyMethods;
+  for (const name of apiMethodNames) {
+    api[name] = (...args) => {
+      const method = current[name];
+      if (typeof method === "function") {
+        return method(...args);
+      }
+      throw new Error(
+        blockOnly.includes(name)
+          ? `${name}() is only available in block mode`
+          : `${name}() is not available yet: the editor has not been mounted`
+      );
+    };
+  }
+  return {
+    api: api as unknown as API,
+    bind: (built: unknown) => {
+      current = built as Partial<Record<string, Method>>;
+    },
+  };
+};
 
 /**
  * @internal

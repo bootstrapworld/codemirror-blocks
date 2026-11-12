@@ -346,8 +346,15 @@ async function runOnce(browser, lines) {
     }, text);
     await blocksBtn.click();
   });
-  // (the block API appears once the switch is done)
-  await page.waitForFunction(() => typeof window.cmb.getAst === "function");
+  // (the block-only methods throw until the switch is done)
+  await page.waitForFunction(() => {
+    try {
+      window.cmb.getAst();
+      return true;
+    } catch {
+      return false;
+    }
+  });
   out[out.length - 1].nodes = await page.evaluate(
     () => window.cmb.getAst().rootNodes.length
   );
