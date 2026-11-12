@@ -138,4 +138,28 @@ describe("two editors on a page", () => {
     expect(document.activeElement).toBe(el);
     expect(b.getWrapperElement().contains(document.activeElement)).toBe(false);
   });
+
+  it("focus on the placeholder of one does not let the other take it", async () => {
+    const focusBlock = async (editor: API) => {
+      const node = editor.getAst().rootNodes[0];
+      mouseDown(node);
+      elementForNode(node)!.focus();
+      await frames(15);
+    };
+    await focusBlock(b);
+    await focusBlock(a);
+    const placeholder = a
+      .getWrapperElement()
+      .closest(".Editor")!
+      .parentElement!.querySelector<HTMLElement>("#cmb-focus-placeholder")!;
+    act(() => placeholder.focus());
+    expect(document.activeElement).toBe(placeholder);
+    // (the page changes in B, and its editor draws: nothing is rendered)
+    act(() => {
+      b.getWrapperElement().appendChild(document.createElement("span"));
+      b.getCM().refresh();
+    });
+    await frames(15);
+    expect(document.activeElement).toBe(placeholder);
+  });
 });

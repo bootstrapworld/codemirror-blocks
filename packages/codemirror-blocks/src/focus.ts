@@ -44,15 +44,20 @@ export function createFocusKeeper({
   store: AppStore;
 }) {
   const wrapper = codemirror.getWrapperElement();
-  // Inside the editor: its wrapper (the blocks and CodeMirror's input), and the
-  // placeholder where focus is parked while a block is not on the page, which
-  // is outside the wrapper but is the editor's own. The toolbar, the search
-  // dialog and the trash can are not: a press on them is a press outside, and
-  // whatever they do next with focus (give it to a block, or back to the
-  // dialog's opener) puts it inside again.
+  // Inside the editor: its wrapper (the blocks and CodeMirror's input), and its
+  // own placeholder where focus is parked while a block is not on the page,
+  // which is outside the wrapper but is the editor's own (the one in the same
+  // container: every editor on a page has one). The toolbar, the search dialog
+  // and the trash can are not: a press on them is a press outside, and whatever
+  // they do next with focus (give it to a block, or back to the dialog's
+  // opener) puts it inside again.
+  const placeholder = () =>
+    wrapper
+      .closest(".Editor")
+      ?.parentElement?.querySelector("#cmb-focus-placeholder");
   const inside = (target: EventTarget | null) =>
     target instanceof Element &&
-    (wrapper.contains(target) || target.id === "cmb-focus-placeholder");
+    (wrapper.contains(target) || target === placeholder());
 
   // Has the editor been left? It has, until focus is inside it: the keeper must
   // never pull focus into an editor that the user has not been in.

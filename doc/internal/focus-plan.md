@@ -48,7 +48,9 @@ where the CodeMirror and the store are both at hand) and one rule:
   for the editor, not one per block.
 - It runs the rule when: `focusId` changes, CodeMirror fires `update`, an
   element inside the editor's wrapper is added or removed, or focus leaves an
-  element of the editor for nothing. Runs are coalesced to one per frame. The
+  element of the editor for nothing. The `focusId` and `update` triggers run at once;
+  the mutation and `focusout` triggers run in the next frame, at most once per
+  frame. The
   only retry is "the element is not on the page yet", bounded once, in one place.
 
 Then 2 to 9 above are deleted, and 1 keeps only the store update. Edit boxes
@@ -139,8 +141,8 @@ Reading it:
 **Phase 2: move the mechanisms into `focus.ts`, one at a time.** In this order,
 because it goes from the ones that already overlap to the ones that stand alone:
 
-1. 4, 6 and 7 (focus dropped with no render): the three become the rule's
-   triggers. This is the step most likely to show a difference on Preact.
+1. **Done** (2026-11-12). 4, 6 and 7 (focus dropped with no render): the three
+   became the rule's triggers. This is the step most likely to show a difference on Preact.
 2. 3 (the frame-counting watch): covered by the triggers of step 1, if they are
    complete. If a test fails here, a trigger is missing: add the trigger, not a
    frame count.
