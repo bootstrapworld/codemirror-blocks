@@ -30,8 +30,8 @@ export const Primitive = ({
     switch (defaultKeyMap[CodeMirror.keyName(e)]) {
       case "Copy": {
         e.preventDefault();
-        // copy just the name (the literal), not a whole call expression
-        const node = primitive.getLiteralNode();
+        // just the name (the literal) when the language has one, else the call
+        const node = primitive.getNodeToCopy();
         copy([node], "copied");
         break;
       }

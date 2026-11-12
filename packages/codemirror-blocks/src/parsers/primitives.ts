@@ -46,6 +46,16 @@ export class Primitive {
     );
   }
 
+  /**
+   * The node that copying this primitive copies: its literal, when the
+   * language makes one, and otherwise the whole expression.
+   */
+  getNodeToCopy() {
+    return this.language.getLiteralNodeForPrimitive
+      ? this.getLiteralNode()
+      : this.getASTNode();
+  }
+
   static fromConfig(languageId: string, config: PrimitiveConfig) {
     return new Primitive(languageId, config.name, {
       argumentTypes: config.argumentTypes,

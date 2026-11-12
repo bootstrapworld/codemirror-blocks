@@ -118,6 +118,42 @@ describe("the primitives of the toolbar", () => {
       expect(nodes).toHaveLength(1);
       expect(nodes[0].fields.dataType).toBe("symbol");
     });
+
+    it("copies the whole expression when the language has no literal for it", () => {
+      addLanguage({
+        id: "primitive-list-call-only",
+        name: "a lang with calls only",
+        parse: jest.fn(),
+        getASTNodeForPrimitive: (primitive: PrimitiveModel) =>
+          Literal(
+            { line: 0, ch: 0 },
+            { line: 0, ch: 0 },
+            { value: `(${primitive.name})`, dataType: "call" }
+          ),
+      });
+      const callOnly = GroupModel.fromConfig("primitive-list-call-only", {
+        name: "root",
+        primitives: ["star"],
+      });
+      copy.mockClear();
+      inContext(
+        <Primitive
+          primitive={[...callOnly.flatPrimitivesIter()][0]}
+          className=""
+          onFocus={jest.fn()}
+        />
+      );
+      expect(() =>
+        fireEvent.keyDown(screen.getByText("star"), {
+          key: "c",
+          keyCode: 67,
+          ctrlKey: true,
+        })
+      ).not.toThrow();
+      const [nodes] = copy.mock.calls[0];
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0].fields.dataType).toBe("call");
+    });
   });
 
   describe("a group", () => {
