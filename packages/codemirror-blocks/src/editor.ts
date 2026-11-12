@@ -1,6 +1,7 @@
 import type { ASTNode } from "./ast";
 import type { ActionFocus } from "./state/reducers";
 import { poscmp } from "./utils";
+import { keeperOf } from "./focus";
 
 /**
  * Additional declarations of codemirror apis that are not in @types/codemirror... yet.
@@ -125,6 +126,10 @@ export interface ReadonlyRangedText {
 
 export interface ReadonlyCMBEditor extends ReadonlyRangedText {
   scrollASTNodeIntoView(node: ASTNode): void;
+  /** Give the block keyboard focus: the user has moved to it (see focus.ts) */
+  focusBlock(node: ASTNode): void;
+  /** Something has happened that could have dropped keyboard focus (see focus.ts) */
+  checkFocus(): void;
 
   getTopmostAction(which: "undo" | "redo"): CodeMirror.HistoryItem;
 
@@ -297,6 +302,14 @@ export class CodeMirrorFacade implements CMBEditor {
         );
       }
     });
+  }
+
+  focusBlock(node: ASTNode) {
+    keeperOf(this.codemirror)?.request(node);
+  }
+
+  checkFocus() {
+    keeperOf(this.codemirror)?.check();
   }
 
   scrollASTNodeIntoView(node: ASTNode) {

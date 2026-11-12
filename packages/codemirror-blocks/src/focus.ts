@@ -1,5 +1,6 @@
 import type { AppStore } from "./state/store";
 import type { CodeMirrorFacade } from "./editor";
+import type { ASTNode } from "./ast";
 import * as selectors from "./state/selectors";
 
 /**
@@ -18,6 +19,19 @@ export const stranded = () => {
  * that should have focus is not on the page yet (or does not take it).
  */
 const MAX_RETRY_FRAMES = 30;
+
+export type FocusKeeper = {
+  /** Give the block focus: the user has moved to it */
+  request(node: ASTNode): void;
+  /** Run the rule now: something has happened that could have dropped focus */
+  check(): void;
+  dispose(): void;
+};
+
+/** The keeper of each editor (by its CodeMirror), for `focusBlock` to find. */
+const keepers = new WeakMap<CodeMirror.Editor, FocusKeeper>();
+export const keeperOf = (codemirror: CodeMirror.Editor) =>
+  keepers.get(codemirror);
 
 /**
  * Keeps keyboard focus on the focused block, for the focus that is dropped with
@@ -42,7 +56,7 @@ export function createFocusKeeper({
   codemirror: CodeMirror.Editor;
   editor: CodeMirrorFacade;
   store: AppStore;
-}) {
+}): FocusKeeper {
   const wrapper = codemirror.getWrapperElement();
   // Inside the editor: its wrapper (the blocks and CodeMirror's input), and its
   // own placeholder where focus is parked while a block is not on the page,
@@ -122,6 +136,28 @@ export function createFocusKeeper({
     tryAgain();
   };
 
+  // A request that a block be given focus: the user has moved to it (a key, a
+  // press, a result of the search, an edit box that closed), so it has focus
+  // even if the editor was left, and even if another block has it. If the block
+  // is not on the page (CodeMirror took its line off), focus waits on this
+  // editor's placeholder until it is drawn again.
+  const request = (node: ASTNode) => {
+    left = false;
+    const el = node.element;
+    if (el && document.contains(el)) {
+      editor.scrollASTNodeIntoView(node);
+      el.focus();
+      owesFocus = false;
+      return;
+    }
+    if (!el) return;
+    (placeholder() as HTMLElement | null)?.focus();
+    // bring its line into view, so that CodeMirror draws the block again
+    editor.scrollASTNodeIntoView(node);
+    owesFocus = true;
+    later();
+  };
+
   const onPress = (e: Event) => {
     left = !inside(e.target);
   };
@@ -148,8 +184,11 @@ export function createFocusKeeper({
     document.addEventListener(type, onPress, true);
   }
 
-  return {
+  const keeper: FocusKeeper = {
+    request,
+    check: now,
     dispose() {
+      keepers.delete(codemirror);
       unsubscribe();
       codemirror.off("update", now);
       observer.disconnect();
@@ -162,4 +201,6 @@ export function createFocusKeeper({
       frame = 0;
     },
   };
+  keepers.set(codemirror, keeper);
+  return keeper;
 }

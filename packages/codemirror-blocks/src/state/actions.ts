@@ -457,26 +457,6 @@ export function activateByNid(
       return;
     }
 
-    // If the element has been ellided by CM, it won't be in the DOM. This
-    // can lead to situations where CM ellides the *currently-focused* elt,
-    // which confuses the screenreader. In these situations, we focus on
-    // a dummy element that just says "stand by" (see ToggleEditor.tsx).
-    // When the new node is available, focus will shift automatically.
-    if (newNode.element && !document.contains(newNode.element)) {
-      const sr = document.getElementById("cmb-focus-placeholder");
-      // In the event that everything has been unmounted,
-      // for example in a unit test, then neither newNode.element nor
-      // cmb-focus-placeholder will exist. So check to see if it's still
-      // there before attempting to focus it.
-      if (sr) {
-        sr.focus();
-      }
-      // bring its line into view, so that CodeMirror draws the block again
-      if (options.allowMove) {
-        editor.scrollASTNodeIntoView(newNode);
-      }
-    }
-
     cancelAnnouncement(); // clear any overrideable announcements
     // FIXME(Oak): if possible, let's not hard code like this
     if (
@@ -487,12 +467,11 @@ export function activateByNid(
     }
 
     dispatch(setFocusedNode(newNode));
-    if (newNode.element && document.contains(newNode.element)) {
-      if (options.allowMove) {
-        editor.scrollASTNodeIntoView(newNode);
-      }
-      newNode.element.focus();
-    }
+    // The editor's keeper gives the block focus: or, if CodeMirror has taken the
+    // block off the page (which can leave the screenreader without the block it
+    // was on), waits for it on the "stand by" placeholder (see ToggleEditor.tsx)
+    // and brings its line into view, so that CodeMirror draws it again.
+    editor.focusBlock(newNode);
   };
 }
 

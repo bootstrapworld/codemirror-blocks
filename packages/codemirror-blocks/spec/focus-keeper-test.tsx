@@ -1,8 +1,10 @@
 import { act } from "@testing-library/react";
 import example from "@bootstrapworld/example";
 import CodeMirrorBlocks, { API } from "../src/CodeMirrorBlocks";
+import wescheme from "@bootstrapworld/wescheme";
 import {
   elementForNode,
+  keyDown,
   mountCMB,
   mouseDown,
   teardown,
@@ -81,7 +83,7 @@ describe("an editor", () => {
 });
 
 describe("two editors on a page", () => {
-  const open = (value: string) => {
+  const open = (value: string, language = "example") => {
     const div = document.createElement("div");
     document.body.appendChild(div);
     let editor!: API;
@@ -89,7 +91,7 @@ describe("two editors on a page", () => {
       editor = CodeMirrorBlocks(
         div,
         { value, incrementalRendering: false, collapseAll: false },
-        "example"
+        language
       );
     });
     // (jsdom has no layout: say how big the editor is, so that it draws its lines)
@@ -161,4 +163,65 @@ describe("two editors on a page", () => {
     // (A may take focus from its own placeholder: it is B that must not)
     expect(b.getWrapperElement().contains(document.activeElement)).toBe(false);
   });
+
+  it("a block that is not drawn in one is waited for on that one's placeholder", () => {
+    const c = open("a b", "wescheme");
+    const [first, second] = c.getAst().rootNodes;
+    mouseDown(first);
+    const gone = elementForNode(second)!;
+    gone.remove();
+    keyDown("ArrowDown", {}, elementForNode(first)!);
+    const own = c
+      .getWrapperElement()
+      .closest(".Editor")!
+      .parentElement!.querySelector("#cmb-focus-placeholder");
+    expect(document.activeElement).toBe(own);
+    expect(document.activeElement).not.toBe(
+      a
+        .getWrapperElement()
+        .closest(".Editor")!
+        .parentElement!.querySelector("#cmb-focus-placeholder")
+    );
+  });
+});
+
+describe("a change made through the API", () => {
+  let cmb!: API;
+  let input!: HTMLInputElement;
+  beforeEach(() => {
+    cmb = mountCMB(wescheme).cmb;
+    cmb.setValue("(+ 1 2)\n(f x)");
+    input = document.createElement("input");
+    document.body.appendChild(input);
+  });
+  afterEach(() => {
+    input.remove();
+    teardown();
+  });
+
+  for (const beenIn of [false, true]) {
+    const when = beenIn
+      ? "after the user was in the editor"
+      : "in an editor never entered";
+    it(`does not take focus from something outside the editor: setValue ${when}`, async () => {
+      if (beenIn) {
+        mouseDown(cmb.getAst().rootNodes[0]);
+        await frames();
+      }
+      act(() => input.focus());
+      cmb.setValue("(g 1)\n(h 2)");
+      await frames(6);
+      expect(document.activeElement).toBe(input);
+    });
+    it(`does not take focus from something outside the editor: replaceRange ${when}`, async () => {
+      if (beenIn) {
+        mouseDown(cmb.getAst().rootNodes[0]);
+        await frames();
+      }
+      act(() => input.focus());
+      cmb.replaceRange("9", { line: 0, ch: 3 }, { line: 0, ch: 4 });
+      await frames(6);
+      expect(document.activeElement).toBe(input);
+    });
+  }
 });

@@ -1,5 +1,5 @@
 import wescheme from "@bootstrapworld/wescheme";
-import { click, mountCMB, teardown } from "../src/toolkit/test-utils";
+import { mountCMB, mouseDown, teardown } from "../src/toolkit/test-utils";
 import { API } from "../src/CodeMirrorBlocks";
 import { allowConsoleErrors } from "./globalSetup";
 
@@ -158,7 +158,7 @@ describe("what is selected", () => {
   });
 
   it("hasFocus is true while a block has the focus", () => {
-    click(cmb.getAst().rootNodes[0]);
+    mouseDown(cmb.getAst().rootNodes[0]);
     const focused = document.activeElement;
     expect(focused?.id).toMatch(/block-node/);
     expect(cmb.hasFocus()).toBe(true);

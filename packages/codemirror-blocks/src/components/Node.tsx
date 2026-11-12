@@ -37,7 +37,6 @@ import { RootNodeContext, areNodesEqualish } from "../ui/ToplevelBlock";
 import * as selectors from "../state/selectors";
 import { useIdState } from "../state/nodeSubscriptions";
 import { useCommentBoxPlacement } from "./commentBox";
-import { useNodeFocus } from "./useNodeFocus";
 
 // TODO(Oak): make sure that all use of node.<something> is valid
 // since it might be cached and outdated
@@ -420,12 +419,16 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const isFocused = useIdState(props.node.id, (state) =>
     selectors.isFocused(state, props.node)
   );
-  useNodeFocus({
-    editor,
-    nodeElementRef,
-    isFocused,
-    editable,
-  });
+
+  // When the box this block is edited in closes, it takes the focus it had with
+  // it, and the block that takes its place is not given focus by anyone: tell
+  // the editor's keeper, once the block is on the page. (Not when the box is
+  // removed: Preact does that before the new element is in place.)
+  const wasEditableRef = useRef(false);
+  useEffect(() => {
+    if (wasEditableRef.current && !editable) editor?.checkFocus();
+    wasEditableRef.current = editable;
+  }, [editable, editor]);
 
   // The popup with this node's comment is placed (see placeCommentBox)
   const commentText = comment ? String(comment.fields.comment) : "";

@@ -112,6 +112,8 @@ describe("undo after switching modes", () => {
   it("undoes, after switching back, what was done before switching", () => {
     cmb.setBlockMode(false);
     cmb.setBlockMode(true);
+    // (switching modes through the API does not bring focus into the editor)
+    mouseDown(root(0));
     undo();
     expect(cmb.getValue()).toBe("(f x y)\n(g z)");
     expect(texts()).toEqual(["(f x y)", "(g z)"]);
