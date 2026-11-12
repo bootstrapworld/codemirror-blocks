@@ -48,7 +48,7 @@ describe("an editor", () => {
     mouseDown(node);
     const el = elementForNode(node)!;
     el.focus();
-    await frames(15);
+    await frames();
     // (not on a block: on the editor's own scrolling area)
     press(cmb.getScrollerElement());
     await dropFocus(cmb.getWrapperElement() as HTMLElement);
@@ -59,7 +59,7 @@ describe("an editor", () => {
     const node = cmb.getAst().rootNodes[0];
     mouseDown(node);
     elementForNode(node)!.focus();
-    await frames(15);
+    await frames();
     press(document.body);
     await dropFocus(cmb.getWrapperElement() as HTMLElement);
     expect(document.activeElement).toBe(document.body);
@@ -69,7 +69,7 @@ describe("an editor", () => {
     const node = cmb.getAst().rootNodes[0];
     mouseDown(node);
     elementForNode(node)!.focus();
-    await frames(15);
+    await frames();
     const input = document.createElement("input");
     document.body.appendChild(input);
     act(() => input.focus());
@@ -118,7 +118,7 @@ describe("two editors on a page", () => {
     mouseDown(node);
     const el = elementForNode(node)!;
     el.focus();
-    await frames(15);
+    await frames();
     act(() => b.setValue("(* 5 6)"));
     await frames();
     expect(document.activeElement).toBe(el);
@@ -129,11 +129,9 @@ describe("two editors on a page", () => {
     mouseDown(node);
     const el = elementForNode(node)!;
     el.focus();
-    await frames(15);
+    await frames();
     act(() => b.setValue("(* 5 6)"));
-    // (a block that was just drawn watches for a few frames for focus that is
-    // stranded: wait for that to end, so that it is only the drop that is tried)
-    await frames(15);
+    await frames();
     await dropFocus(a.getWrapperElement() as HTMLElement);
     expect(document.activeElement).toBe(el);
     expect(b.getWrapperElement().contains(document.activeElement)).toBe(false);
@@ -144,7 +142,7 @@ describe("two editors on a page", () => {
       const node = editor.getAst().rootNodes[0];
       mouseDown(node);
       elementForNode(node)!.focus();
-      await frames(15);
+      await frames();
     };
     await focusBlock(b);
     await focusBlock(a);
@@ -159,7 +157,7 @@ describe("two editors on a page", () => {
       b.getWrapperElement().appendChild(document.createElement("span"));
       b.getCM().refresh();
     });
-    await frames(15);
+    await frames();
     expect(document.activeElement).toBe(placeholder);
   });
 });

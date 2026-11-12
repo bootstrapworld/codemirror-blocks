@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import type { CMBEditor } from "../editor";
-import { stranded } from "../focus";
 
 /**
  * The effects that give a block keyboard focus when it is the focused one, and
@@ -41,40 +40,6 @@ export function useNodeFocus({
     // (the refs are parameters here, so the rule does not know they never change)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, isFocused, editable]);
-
-  // An edit can re-create this node's codemirror widget without changing its
-  // id (e.g. dropping a node elsewhere). The browser then drops focus, and
-  // since the focused id didn't change, the effect above doesn't rerun. If
-  // focus is stranded on the body or the screenreader placeholder, take it back.
-  //
-  // Not only if it is stranded when this runs: the editor puts the new widget
-  // on the page a moment after the render (and so after this, when effects run
-  // as soon as the render is done), and it is then that focus falls to the body.
-  // So the watch goes on for a while, after focus is first seen to be fine.
-  useEffect(() => {
-    if (!isFocused) return;
-    // CodeMirror may not have put this block's widget on the page yet (an undo
-    // that brings a block back, on a busy machine); focusing it then does
-    // nothing, and no render follows to try again. So keep trying until it is on
-    // the page, or something else has focus: for a couple of seconds if focus is
-    // stranded now, and for a few frames if it is not (a swap of the widget comes
-    // within one or two: a longer watch would take focus back from someone who
-    // has clicked outside the editor).
-    const wasStranded = stranded();
-    const frames = wasStranded ? 120 : 10;
-    if (wasStranded) nodeElementRef.current?.focus();
-    let frame = 0;
-    let tries = 0;
-    const watch = () => {
-      const el = nodeElementRef.current;
-      if (stranded()) el?.focus();
-      // (focus that was stranded, and has been taken back, is not watched on)
-      else if (wasStranded) return;
-      if (++tries <= frames) frame = requestAnimationFrame(watch);
-    };
-    frame = requestAnimationFrame(watch);
-    return () => cancelAnimationFrame(frame);
-  });
 
   // A press on a block makes it the focused block, and CodeMirror, handling the
   // same press, then focuses its keyboard buffer (the textarea): so the block's
