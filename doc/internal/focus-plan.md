@@ -158,18 +158,26 @@ motion, and the random suite at `CMB_CPU_THROTTLE=4` on both.
 - If Phase 0 shows behaviour that the rule above would change for a user (not
   only for a test), stop and decide it, do not let the refactor decide it.
 
-## Decisions wanted before starting
+## Decisions made
 
-1. **"Left" is per editor, and a press outside is leaving.** Today effect B
-   takes focus back for about 10 frames even after a press on the page
-   background. Under the rule it would not. I think that is the better
-   behaviour, and it is a small change for a user.
-2. **A programmatic change while focus is elsewhere** (`setValue` from the
-   page's own code, while the user is typing in another field) does not bring
-   focus into the editor. This is what happens today; the rule makes it explicit.
-3. **One lookup for a block's element.** `nodeElementMap` (filled by each
-   block) or `getElementById`. I would keep `getElementById`, and delete the map
-   if nothing else needs it: it is the page that focus is about.
+Made by the owner on 2026-11-12.
+
+1. **"Left" is per editor, and a press outside the editor is leaving.** After
+   one, the editor does not take keyboard focus back. (Today effect B takes focus
+   back for about 10 frames even after a press on the page background.)
+2. **A programmatic change while focus is elsewhere on the page** (`setValue`
+   from the page's own code, while the user is typing in another field) does not
+   bring focus into the editor. This is what happens today; the rule makes it
+   explicit.
+3. **One way to find a block's element:**
+   `document.getElementById("block-node-" + id)`. `nodeElementMap` is deleted at
+   the end, if nothing else needs it.
+4. **A programmatic edit (through the API) while a block has keyboard focus does
+   not move the focused block in the store:** the store and the keyboard stay on
+   the block the user was on. (Today the store moves `focusId` to the edited root
+   and the keyboard stays: see "A mismatch seen while looking" above.) This is a
+   change in the edit path, not in the focus code: it is Phase 2, step 6, after
+   the mechanisms have moved.
 
 ## Who does it
 
