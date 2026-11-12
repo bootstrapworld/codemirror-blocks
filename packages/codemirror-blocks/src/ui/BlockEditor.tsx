@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { recordEvent } from "../state/activityLog";
 import "codemirror/addon/search/search";
 import "codemirror/addon/search/searchcursor";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { commitChanges, focusAfterUndoOrRedo } from "../edits/commitChanges";
 import { speculateChanges } from "../edits/speculateChanges";
 import DragAndDropEditor from "./DragAndDropEditor";
@@ -11,7 +11,8 @@ import { keyDown } from "../keymap";
 import type { AST } from "../ast";
 import CodeMirror from "codemirror";
 import type { Options, Language } from "../CodeMirrorBlocks";
-import type { AppDispatch } from "../state/store";
+import type { AppDispatch, AppStore } from "../state/store";
+import { createFocusKeeper } from "../focus";
 import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import { EditorContext } from "../components/Context";
@@ -60,6 +61,7 @@ const dropDomSelection = (codemirror: CodeMirror.Editor) => {
 const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   const { language } = props;
   const dispatch: AppDispatch = useDispatch();
+  const store = useStore() as AppStore;
   const ast = useSelector(selectors.getAST);
   const quarantine = useSelector(selectors.getQuarantine);
   const [editor, setEditor] = useState<CodeMirrorFacade | null>(null);
@@ -85,15 +87,6 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     }
     hadBlocksRef.current = hasBlocks;
   }, [ast, editor]);
-
-  // CodeMirror draws a block that was scrolled out of view again without React
-  // rendering it, so nothing refocuses it. If focus was parked on the
-  // placeholder meanwhile (see activateByNid), hand it to the block now.
-  const focusedId = useSelector(selectors.getFocusedNode)?.id;
-  const focusedIdRef = useRef(focusedId);
-  focusedIdRef.current = focusedId;
-  const astRef = useRef(ast);
-  astRef.current = ast;
 
   // only refresh if there is no active quarantine
   useEffect(() => {
@@ -219,48 +212,11 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
       ed: CodeMirror.Editor,
       changes: CodeMirror.EditorChange[]
     ) => handleChanges(editor, changes);
-    // The block that had keyboard focus may be taken off the page (CodeMirror
-    // redrew its line) before the block that should have it next is on the
-    // page, and the browser then drops focus to the body without any React
-    // render to notice. Remember who had focus, so that a dropped one (as
-    // opposed to the user clicking away) can be told apart.
-    let lastFocused: EventTarget | null = null;
-    // (focus is owed to a block that had to be scrolled to first)
-    let owesFocus = false;
-    const onFocusIn = (e: FocusEvent) => {
-      lastFocused = e.target;
-    };
-    const onUpdate = () => {
-      const active = document.activeElement;
-      const parked = active?.id === "cmb-focus-placeholder";
-      const dropped =
-        (!active || active === document.body) &&
-        lastFocused instanceof Node &&
-        !document.contains(lastFocused);
-      if (!parked && !dropped && !owesFocus) return;
-      const id = focusedIdRef.current;
-      if (!id) return;
-      const el = document.getElementById(`block-node-${id}`);
-      if (el) {
-        owesFocus = false;
-        el.focus();
-        return;
-      }
-      // The block is not on the page: CodeMirror took it off when the document
-      // got shorter (collapse all) or scrolled. Scroll to it, so that
-      // CodeMirror draws it again; the next update hands it focus.
-      const node = astRef.current.getNodeById(id);
-      // (the AST may be older than the text during an edit: the block may
-      // be gone, with its lines)
-      if (node?.element && node.to.line <= codemirror.lastLine()) {
-        owesFocus = true;
-        editor.scrollASTNodeIntoView(node);
-      }
-    };
+    // Focus that is dropped with no render to notice is given back (see focus.ts)
+    const focusKeeper = createFocusKeeper({ codemirror, editor, store });
     codemirror.on("beforeChange", onBeforeChange);
     codemirror.on("change", onChange);
     codemirror.on("changes", onChanges);
-    codemirror.on("update", onUpdate);
 
     // set AST and search properties and collapse preferences
     if (options.collapseAll) {
@@ -278,7 +234,6 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
     wrapper.setAttribute("role", "tree");
     wrapper.setAttribute("aria-multiselectable", "true");
     wrapper.setAttribute("tabIndex", "-1");
-    wrapper.addEventListener("focusin", onFocusIn);
 
     // CodeMirror's scroller can take focus (it has tabindex -1), for example when
     // a press on blank space turns into a drag that ends outside the editor.
@@ -299,9 +254,8 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
       codemirror.off("beforeChange", onBeforeChange);
       codemirror.off("change", onChange);
       codemirror.off("changes", onChanges);
-      codemirror.off("update", onUpdate);
       scroller.removeEventListener("focus", onScrollerFocus);
-      wrapper.removeEventListener("focusin", onFocusIn);
+      focusKeeper.dispose();
       setEditor(null);
     };
   };

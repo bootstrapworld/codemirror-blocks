@@ -1,15 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import type { CMBEditor } from "../editor";
-
-// Is keyboard focus on nothing the user could be typing into: the page's body,
-// or the screenreader placeholder?
-const stranded = () => {
-  const active = document.activeElement;
-  return (
-    !active || active === document.body || active.id === "cmb-focus-placeholder"
-  );
-};
+import { stranded } from "../focus";
 
 /**
  * The effects that give a block keyboard focus when it is the focused one, and
@@ -32,9 +24,6 @@ export function useNodeFocus({
   const notePress = () => {
     pressedAtRef.current = Date.now();
   };
-  // (what the effects that outlive a render ask: is it still this block?)
-  const isFocusedRef = useRef(isFocused);
-  isFocusedRef.current = isFocused;
   useEffect(() => {
     if (
       !editor?.hasFocus() &&
@@ -86,51 +75,6 @@ export function useNodeFocus({
     frame = requestAnimationFrame(watch);
     return () => cancelAnimationFrame(frame);
   });
-
-  // The editor can also move the page elements of a block without rendering it
-  // (a change elsewhere in the document makes it put its widgets on the page
-  // again), and the browser then drops focus to the body: no render, so no
-  // effect above runs again. So, for the block that has focus, whenever the page
-  // changes and focus is on the body, take it back: unless a press anywhere has
-  // been made since the block got focus, which is someone choosing to leave.
-  useEffect(() => {
-    if (!isFocused) return;
-    let left = false;
-    let frame = 0;
-    // (a frame after the change: the render that moves focus to another block
-    // may be on its way, and the widget may not be back on the page yet)
-    const retake = (tries: number) => {
-      frame = requestAnimationFrame(() => {
-        if (left || !isFocusedRef.current || !stranded()) return;
-        const el = nodeElementRef.current;
-        if (el?.isConnected) el.focus();
-        if (tries < 30) retake(tries + 1);
-      });
-    };
-    // (a press on this block itself is not leaving it: it is the focused one
-    // pressed again, and the effect is not made again for that)
-    const onPress = (e: Event) => {
-      left = !nodeElementRef.current?.contains(e.target as Node);
-    };
-    const observer = new MutationObserver(() => {
-      if (left || !stranded()) return;
-      cancelAnimationFrame(frame);
-      retake(0);
-    });
-    document.addEventListener("mousedown", onPress, true);
-    document.addEventListener("touchstart", onPress, true);
-    document.addEventListener("pointerdown", onPress, true);
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => {
-      observer.disconnect();
-      cancelAnimationFrame(frame);
-      document.removeEventListener("mousedown", onPress, true);
-      document.removeEventListener("touchstart", onPress, true);
-      document.removeEventListener("pointerdown", onPress, true);
-    };
-    // (the ref is a parameter here, so the rule does not know it never changes)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFocused]);
 
   // A press on a block makes it the focused block, and CodeMirror, handling the
   // same press, then focuses its keyboard buffer (the textarea): so the block's

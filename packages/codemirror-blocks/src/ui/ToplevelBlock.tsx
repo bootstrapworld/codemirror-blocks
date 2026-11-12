@@ -9,7 +9,7 @@ import React, {
 import ReactDOM from "react-dom";
 import { useStore } from "react-redux";
 import { poscmp } from "../utils";
-import { ASTNode, Pos, currentNode, nodeElementMap } from "../ast";
+import { ASTNode, Pos, currentNode } from "../ast";
 import * as selectors from "../state/selectors";
 import type { RootState } from "../state/reducers";
 import { BlockNodeMarker, CMBEditor } from "../editor";
@@ -87,22 +87,6 @@ const ToplevelBlock = (props: Props) => {
     const mark = editor.replaceMarkerWidget(from, to, container);
     markerRef.current.marker = mark;
     markers.set(node, mark);
-  });
-  // Remaking the marker moves the block's elements, and the browser drops focus
-  // that was on one of them. The blocks inside don't notice (they are not drawn
-  // again when only their place changed), so give focus back to the focused one.
-  useEffect(() => {
-    const active = document.activeElement;
-    if (
-      active &&
-      active !== document.body &&
-      active.id !== "cmb-focus-placeholder"
-    ) {
-      return;
-    }
-    const { focusId } = store.getState();
-    const el = focusId ? nodeElementMap.get(focusId) : undefined;
-    if (el && container.contains(el)) el.focus();
   });
   // When unmounting, clean up the TextMarker
   useLayoutEffect(() => {
