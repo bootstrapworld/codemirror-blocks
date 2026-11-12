@@ -39,6 +39,12 @@ describe("the primitives of the toolbar", () => {
           { line: 0, ch: 0 },
           { value: primitive.name, dataType: "unknown" }
         ),
+      getLiteralNodeForPrimitive: (primitive: PrimitiveModel) =>
+        Literal(
+          { line: 0, ch: 0 },
+          { line: 0, ch: 0 },
+          { value: primitive.name, dataType: "symbol" }
+        ),
     });
     group = GroupModel.fromConfig("primitive-list-lang", {
       name: "root",
@@ -92,6 +98,25 @@ describe("the primitives of the toolbar", () => {
       fireEvent.keyDown(star, { key: "c", keyCode: 67, ctrlKey: true });
       fireEvent.keyDown(star, { key: "c", keyCode: 67, metaKey: true });
       expect(copy).toHaveBeenCalled();
+    });
+
+    it("copies the literal of the primitive, not a call expression", () => {
+      copy.mockClear();
+      inContext(
+        <Primitive
+          primitive={primitives()[0]}
+          className=""
+          onFocus={jest.fn()}
+        />
+      );
+      fireEvent.keyDown(screen.getByText("star"), {
+        key: "c",
+        keyCode: 67,
+        ctrlKey: true,
+      });
+      const [nodes] = copy.mock.calls[0];
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0].fields.dataType).toBe("symbol");
     });
   });
 
