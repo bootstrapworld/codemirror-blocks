@@ -10,6 +10,7 @@ import * as P from "pretty-fast-pretty-printer";
 import type { FieldsForSpec, NodeSpec } from "./nodeSpec";
 import { COMMENT_RULES } from "./commentRules";
 import type { CommentRules } from "./commentRules";
+import type { Pos } from "./editor";
 import { joinWithAnd, labelFromType, pluralOf } from "./naming";
 import { displayLines } from "./printing";
 import type React from "react";
@@ -569,10 +570,7 @@ export class AST {
   }
 }
 
-export type Pos = {
-  line: number;
-  ch: number;
-};
+export type { Pos } from "./editor";
 
 export type Range = {
   from: Pos;
