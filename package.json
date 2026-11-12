@@ -24,10 +24,10 @@
     "soak": "node scripts/soak.js",
     "test:e2e": "npm run test:e2e --workspace=@bootstrapworld/codemirror-blocks",
     "build:libs": "npm run build --workspace=@bootstrapworld/codemirror-blocks && npm run build --workspace=@bootstrapworld/example && npm run build --workspace=@bootstrapworld/lambda && npm run build --workspace=@bootstrapworld/routine && npm run build --workspace=@bootstrapworld/wescheme",
-    "build:types": "npm run build-types --workspace=@bootstrapworld/codemirror-blocks && npm run build-types --workspace=@bootstrapworld/example && npm run build-types --workspace=@bootstrapworld/lambda && npm run build-types --workspace=@bootstrapworld/routine && npm run build-types --workspace=@bootstrapworld/wescheme",
+    "build:types": "npm run build-types --workspaces --if-present",
     "build:all": "npm run build:libs && npm run build:types",
     "demo": "node scripts/demo.js",
-    "bundle": "npm run bundle --workspace=@bootstrapworld/codemirror-blocks && npm run bundle --workspace=@bootstrapworld/example && npm run bundle --workspace=@bootstrapworld/lambda && npm run bundle --workspace=@bootstrapworld/routine && npm run bundle --workspace=@bootstrapworld/wescheme"
+    "bundle": "npm run bundle --workspaces --if-present"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^5.28.8",
