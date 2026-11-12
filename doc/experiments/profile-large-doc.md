@@ -312,29 +312,31 @@ an older node object, with older positions. To make that hard to get wrong:
 
 Raw results: `profile-large-doc/after-memo/`.
 
-## Not adopted: further options, kept on the branch `perf-experiments`
+## Further options: the hub is adopted, the other two are kept on the branch `perf-experiments`
 
 The first four changes above (two commits touching `Node.tsx` and `selectors.ts`,
 about 70 lines) got most of the gain for little complexity, and the memoization
-below was adopted after them (see "Adopted, part 3"). These three others went
-further and were measured, but add machinery, so they are left out for now. The
-code is on the local branch `perf-experiments` (commits named below), with its raw
-results in `profile-large-doc/after3`…`after7`, `noplaceholder`. Each section
-below says what it does and what it costs. Numbers are 3000 lines, settled ms, and
-cumulative on top of the adopted changes.
+below was adopted after them (see "Adopted, part 3"). The keyed subscription hub
+(first row of the table) was adopted later too: it is on `master` as
+`state/nodeSubscriptions.ts` (commit `ddb81c3c`, from `03ee95f1` on the branch).
+The two other options went further and were measured, but add machinery, so they
+are left out for now: `edits/incrementalParse.ts` and viewport-only drawing do not
+exist on `master`. The code is on the local branch `perf-experiments` (commits
+named below), with its raw results in `profile-large-doc/after3`…`after7`,
+`noplaceholder`. Each section below says what it does and what it costs. Numbers
+are 3000 lines, settled ms, and cumulative on top of the adopted changes.
 
 | option                                           | commit     | arrow ×50 | edit | insert at top                                                                   | text → blocks | expand all | cost                                                                                                                                         |
 | ------------------------------------------------ | ---------- | --------- | ---- | ------------------------------------------------------------------------------- | ------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | adopted state                                    |            | 3492      | 475  | 1535                                                                            | 933           | 767        |                                                                                                                                              |
-| keyed subscription hub                           | `03ee95f1` | 99        | 342  | 984                                                                             | 1237          | 478        | `state/nodeSubscriptions.ts` (110 lines): per-id state is no longer `useSelector`, and must be wired into the hub or the UI goes stale       |
+| keyed subscription hub (adopted)                 | `03ee95f1` | 99        | 342  | 984                                                                             | 1237          | 478        | `state/nodeSubscriptions.ts` (110 lines): per-id state is no longer `useSelector`, and must be wired into the hub or the UI goes stale       |
 | parse only the forms an edit touches (WeScheme)  | `ac9136c6` | 112       | 268  | 1381 (slower than the row above, not investigated; 478 again with the next row) | 818           | 496        | `edits/incrementalParse.ts` (150 lines), `ASTData.sourceText`, a lexical guard, a differential spec; edit's first visible change 145 → 70 ms |
 | draw only blocks near the viewport (> 300 forms) | `1faa42c3` | 125       | 271  | 478                                                                             | 724           | 88         | scroll position in a long program is approximate until blocks arrive; threshold and option; only e2e covers it                               |
 
 Reading it: the hub is what makes arrow keys instant (3.5 s → 0.1 s for 50 keys
 at 3000 lines, 1000 lines 2.0 → 0.07 s); the rest matter mainly above ~1000 lines.
-At 200 lines none of them changes anything. Reconsider the hub first if arrow-key
-navigation in big programs is a complaint; viewport rendering if opening or
-switching to blocks mode in very large programs is.
+At 200 lines none of them changes anything. The hub is in. Reconsider viewport rendering if opening or
+switching to blocks mode in very large programs is a complaint.
 
 ### Blocks that only moved; keyed subscriptions
 
