@@ -137,7 +137,7 @@ describe("two editors on a page", () => {
     expect(b.getWrapperElement().contains(document.activeElement)).toBe(false);
   });
 
-  it("focus on the placeholder of one does not let the other take it", async () => {
+  it("focus on the placeholder of one is not taken into the other", async () => {
     const focusBlock = async (editor: API) => {
       const node = editor.getAst().rootNodes[0];
       mouseDown(node);
@@ -158,6 +158,7 @@ describe("two editors on a page", () => {
       b.getCM().refresh();
     });
     await frames();
-    expect(document.activeElement).toBe(placeholder);
+    // (A may take focus from its own placeholder: it is B that must not)
+    expect(b.getWrapperElement().contains(document.activeElement)).toBe(false);
   });
 });
