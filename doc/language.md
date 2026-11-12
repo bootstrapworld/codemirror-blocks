@@ -181,7 +181,7 @@ export default Languages.addLanguage({
   `String(e)`.
 - `primitivesFn(): PrimitiveGroup` is optional. It supplies the primitives shown
   in the toolbar (a language without it has no toolbar). Use `PrimitiveGroup.fromConfig(name, config)` to build one
-  from a plain description (see `codemirror-blocks/src/languages/wescheme/primitives-config.ts`).
+  from a plain description (see `packages/wescheme/src/primitives-config.ts`).
   If you supply it, also supply `getASTNodeForPrimitive` and
   `getLiteralNodeForPrimitive`, which turn a primitive into the block that is
   dropped into the editor.
@@ -449,7 +449,7 @@ Whatever `pretty` produces is what the text editor shows, and what is parsed
 again when you switch modes, so **the text must parse back to the same
 tree**. If your syntax isn't an s-expression, build a `Doc` with `P.horz`,
 `P.vert`, `P.sepBy`, and friends. The lambda language's
-[`ast.tsx`](../packages/codemirror-blocks/src/languages/lambda/ast.tsx) has
+[`ast.tsx`](../packages/lambda/src/ast.tsx) has
 infix operators, calls, and blocks as examples.
 
 Two helpers (exported from the package) cover what `Pretty` makes awkward:
@@ -648,5 +648,5 @@ Two things are worth testing in every language:
    and `longDescription` output.
 2. Round trips: `language.buildAST(code).toString()` should parse back to the
    same tree. The lambda language's
-   [`lambda-language-test.ts`](../packages/codemirror-blocks/spec/languages/lambda/lambda-language-test.ts)
+   [`lambda-language-test.ts`](../packages/lambda/spec/lambda-language-test.ts)
    does this for a list of programs.

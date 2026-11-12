@@ -1,6 +1,6 @@
 # Notes from writing Routine
 
-Routine (`packages/codemirror-blocks/src/languages/routine`) is a small
+Routine (`packages/routine`) is a small
 language written to use the editor's newer API as a language author would:
 
 | What it shows                                                                             | Where                                                                                                                                                                                                                                                                         |

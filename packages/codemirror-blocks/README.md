@@ -98,7 +98,7 @@ if (node instanceof structures.defVar) {
 
 #### _Defining your own AST Nodes_
 
-You can also define your own node types. A node type is described by a spec that lists the fields of the node, and a node is created by `makeNode`, which takes the functions that say how the node is pretty-printed, rendered as a block, and described to a screenreader. [Here is one example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/src/languages/wescheme/ast.tsx) of a language defining custom nodes.
+You can also define your own node types. A node type is described by a spec that lists the fields of the node, and a node is created by `makeNode`, which takes the functions that say how the node is pretty-printed, rendered as a block, and described to a screenreader. [Here is one example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/wescheme/src/ast.tsx) of a language defining custom nodes.
 
 Every node type **must** have:
 
@@ -112,16 +112,16 @@ See the [language guide](../../doc/language.md) for a complete walkthrough.
 
 ### Tell CMB about the Language
 
-Create an `index.ts` file ([see this example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/src/languages/wescheme/index.ts)) that hooks up your language to the CMB library by calling `Languages.addLanguage({id, name, parse, ...})`.
+Create an `index.ts` file ([see this example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/wescheme/src/index.ts)) that hooks up your language to the CMB library by calling `Languages.addLanguage({id, name, parse, ...})`.
 
 ### Style Your Blocks
 
-CMB provides [default CSS styling](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/src/less/default-style.less) for all node types, but you can always add your own! Add a `style.less` file that overrides the built-in styles, providing your own "look and feel" using standard CSS. The editor's stylesheets are plain CSS (`lib/css/codemirror-blocks.css`, and `lib/css/languages/<id>.css` for each language that comes with it), so your bundler needs no loader for them: see [loading the stylesheets](../../doc/stylesheet.md#loading-the-stylesheets).
+CMB provides [default CSS styling](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/src/less/default-style.less) for all node types, but you can always add your own! Add a `style.less` file that overrides the built-in styles, providing your own "look and feel" using standard CSS. The editor's stylesheets are plain CSS (`css/codemirror-blocks.css`, and each language package's own `css/<id>.css`, such as `@bootstrapworld/wescheme/css/wescheme.css`), so your bundler needs no loader for them: see [loading the stylesheets](../../doc/stylesheet.md#loading-the-stylesheets).
 
 Obviously, if you've added new AST node types, you'll have to provide the styling for those yourself!
 
 ### Write Your Tests
 
-In `spec/languages/YourFavLang`, add some unit tests for your parser! Make sure you test all the fields, but _especially_ the `ariaLabel` option and the `longDescription()` return values.
+In the `spec` folder of your language's package (see `packages/wescheme/spec`), add some unit tests for your parser! Make sure you test all the fields, but _especially_ the `ariaLabel` option and the `longDescription()` return values.
 
-You may find it useful to check out [this example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/codemirror-blocks/spec/languages/wescheme-node-conversion-test.js).
+You may find it useful to check out [this example](https://github.com/bootstrapworld/codemirror-blocks/blob/master/packages/wescheme/spec/wescheme-node-conversion-test.js).

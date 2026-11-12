@@ -2,7 +2,7 @@
 
 This package is the build of the WeScheme language for wescheme.org (and a dev
 page to try it). The language itself, its parser and its tests are in
-[`packages/codemirror-blocks/src/languages/wescheme`](../codemirror-blocks/src/languages/wescheme/),
+[`packages/wescheme`](../wescheme/),
 so there is one copy to fix and test.
 
 A screenreader-accessible, hybrid block and text editor for a subset of the [Racket programming language](https://www.racket-lang.org), which is used on [WeScheme.org](https://www.WeScheme.org/).
@@ -35,11 +35,11 @@ This package lives in the [codemirror-blocks repository](https://github.com/boot
 
         npm test
 
-Language-specific code is in the **src/** directory. The files there include:
+Language-specific code is in the **src/** directory of [`packages/wescheme`](../wescheme/src/). The files there include:
 
 - `ast.tsx` - a TypeScript file describing the AST nodes for this language, over-and-above the builtin nodes that the CMB library includes natively. If you are _adding support for language features_ or _changing the way existing nodes render_, this is where you'll do most of your work. You'll need some TypeScript and minimal JSX/React chops to work here.
 - `index.ts` - the interface where the language mode declares itself to the CMB library. It's unlikely you will edit anything here (except _maybe_ some of the strings).
-- `WeschemeParser.js` and `parseNode.ts` - these files contain the code that takes an AST produced by the WeScheme parser and converts it to a CMB AST. **Pay special attention to the `ariaLabel` options**! These strings are what the screenreader will announce to describe an AST node.
+- `sexpParser.ts` and `parseNode.ts` - these files contain the code that takes an AST produced by the WeScheme parser and converts it to a CMB AST. **Pay special attention to the `ariaLabel` options**! These strings are what the screenreader will announce to describe an AST node.
 - `style.less` - this is where the CSS rules are declared, for styling the rendered AST nodes. If you know CSS, learning [LESS](http://lesscss.org/features/) is pretty easy and downright fun!
 
 4.  you can generate local coverage reports in the **.coverage/** folder, from the repository root, by running:
