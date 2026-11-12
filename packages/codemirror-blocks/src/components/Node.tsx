@@ -285,7 +285,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    notePress();
     if (!editor) {
       // codemirror hasn't mounted yet, do nothing
       return;
@@ -421,7 +420,7 @@ const Node = ({ expandable = true, ...props }: Props) => {
   const isFocused = useIdState(props.node.id, (state) =>
     selectors.isFocused(state, props.node)
   );
-  const { notePress } = useNodeFocus({
+  useNodeFocus({
     editor,
     nodeElementRef,
     isFocused,
