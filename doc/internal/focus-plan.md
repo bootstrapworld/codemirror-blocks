@@ -143,10 +143,16 @@ because it goes from the ones that already overlap to the ones that stand alone:
 
 1. **Done** (2026-11-12). 4, 6 and 7 (focus dropped with no render): the three
    became the rule's triggers. This is the step most likely to show a difference on Preact.
-2. 3 (the frame-counting watch): covered by the triggers of step 1, if they are
-   complete. If a test fails here, a trigger is missing: add the trigger, not a
-   frame count.
-3. 5 (the textarea after a press).
+2. **Done** (2026-11-12). 3 (the frame-counting watch): deleted. No trigger had
+   to be added: nothing failed without it.
+3. **Done** (2026-11-12). 5 (the textarea after a press): deleted, and not moved
+   into the keeper. With the keeper in place, a press on a block no longer ends
+   with CodeMirror's textarea having focus, with or without effect D:
+   `e2e/press-focus.e2e.ts` and `moved-blocks.e2e.ts:87` pass on Preact with it
+   disabled. Before the keeper, a second focus call on the block came right
+   before the textarea took focus, so effect D was guarding against a call made
+   by a mechanism that step 1 removed. Which one was not identified.
+   `press-focus.e2e.ts` stays as the guard.
 4. 2, and the element focus in 1.
 5. 8 and 9.
 
