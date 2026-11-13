@@ -544,6 +544,40 @@ export const UnaryOperation = defineNode({
   },
 });
 
+/**
+ * Putting a value into a target (`x = 1`, `x += 1`): `operator` is its text ("=",
+ * "+=", ...). Printed `(set! target value)` for "=", else `(operator target
+ * value)`.
+ */
+export const Assignment = defineNode({
+  type: "assignment",
+  label: "assignment",
+  fields: {
+    operator: field.value<string>(),
+    target: field.required(),
+    value: field.required(),
+  },
+  pretty: (node) =>
+    P.standardSexpr(
+      node.fields.operator === "=" ? "set!" : node.fields.operator,
+      [node.fields.target, node.fields.value]
+    ),
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        {props.node.fields.target.reactElement()}
+        <span className="blocks-operator">{props.node.fields.operator}</span>
+        {props.node.fields.value.reactElement()}
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return `${node.fields.operator === "=" ? "set" : node.fields.operator} ${node.fields.target.describe(
+      level
+    )} to ${node.fields.value.describe(level)}`;
+  },
+});
+
 export type LiteralNode = ReturnType<typeof Literal>;
 export const Literal = defineNode({
   type: "literal",
@@ -716,6 +750,7 @@ const specs = {
   loop: Loop.spec,
   binaryOperation: BinaryOperation.spec,
   unaryOperation: UnaryOperation.spec,
+  assignment: Assignment.spec,
   literal: Literal.spec,
   comment: Spec.nodeSpec([Spec.value<string, "comment">("comment")], {
     label: "comment",
@@ -744,6 +779,7 @@ const customizable = {
   Loop,
   BinaryOperation,
   UnaryOperation,
+  Assignment,
   Literal,
   Blank,
 };

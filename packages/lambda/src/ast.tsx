@@ -15,12 +15,6 @@ import type { ASTNode, Pos } from "@bootstrapworld/codemirror-blocks";
 const { CoreAST, createASTSpec } = Nodes;
 export const LAMBDA_BLOCK_COMMENT = { open: "#|", close: "|#" };
 
-const operatorSpec = [
-  Spec.value<string, "operator">("operator"),
-  Spec.required("left"),
-  Spec.required("right"),
-] as const;
-
 export const LambdaAST = createASTSpec({
   ...CoreAST.config,
   prog: Spec.nodeSpec([Spec.list("exprs", { orphans: true })], {
@@ -41,7 +35,6 @@ export const LambdaAST = createASTSpec({
     [Spec.required("cond"), Spec.required("then"), Spec.optional("else")],
     { label: "conditional expression" }
   ),
-  assignment: Spec.nodeSpec(operatorSpec, { label: "assignment" }),
 });
 
 /**
@@ -318,7 +311,11 @@ export function Conditional(
  * `!x` and `a + b` are the core operations, written the way lambda writes them:
  * an operator beside its operands, in brackets where its operands need them.
  */
-const { BinaryOperation, UnaryOperation } = Nodes.forLanguage({
+const {
+  BinaryOperation,
+  UnaryOperation,
+  Assignment: AssignmentNode,
+} = Nodes.forLanguage({
   BinaryOperation: {
     pretty: (node) =>
       P.horz(
@@ -340,6 +337,27 @@ const { BinaryOperation, UnaryOperation } = Nodes.forLanguage({
         node.fields.operator
       } ${node.fields.right.describe(level)}`,
   },
+  Assignment: {
+    pretty: (node) =>
+      P.horz(
+        atomic(node.fields.target),
+        ` ${node.fields.operator} `,
+        atomic(node.fields.value)
+      ),
+    render(props) {
+      return (
+        <Node {...props} variant="compound">
+          {props.node.fields.target.reactElement()}
+          <span className="blocks-operator">{props.node.fields.operator}</span>
+          {props.node.fields.value.reactElement()}
+        </Node>
+      );
+    },
+    longDescription: (node, level) =>
+      `${node.fields.target.describe(level)} ${
+        node.fields.operator
+      } ${node.fields.value.describe(level)}`,
+  },
   UnaryOperation: {
     label: "not expression",
     pretty: (node) => P.horz(node.fields.operator, atomic(node.fields.operand)),
@@ -356,47 +374,24 @@ const { BinaryOperation, UnaryOperation } = Nodes.forLanguage({
   },
 });
 
-export function Not(from: Pos, to: Pos, body: ASTNode, options = {}) {
-  return UnaryOperation(from, to, { operator: "!", operand: body }, options);
+export function Assignment(
+  from: Pos,
+  to: Pos,
+  operator: string,
+  left: ASTNode,
+  right: ASTNode,
+  options = {}
+) {
+  return AssignmentNode(
+    from,
+    to,
+    { operator, target: left, value: right },
+    options
+  );
 }
 
-function operatorNode(type: "assignment") {
-  return (
-    from: Pos,
-    to: Pos,
-    operator: string,
-    left: ASTNode,
-    right: ASTNode,
-    options = {}
-  ) =>
-    LambdaAST.makeNode({
-      from,
-      to,
-      type,
-      fields: { operator, left, right },
-      options,
-      pretty: (node) =>
-        P.horz(
-          atomic(node.fields.left),
-          ` ${node.fields.operator} `,
-          atomic(node.fields.right)
-        ),
-      render(props) {
-        return (
-          <Node {...props} variant="compound">
-            {props.node.fields.left.reactElement()}
-            <span className="blocks-operator">
-              {props.node.fields.operator}
-            </span>
-            {props.node.fields.right.reactElement()}
-          </Node>
-        );
-      },
-      longDescription: (node, level) =>
-        `${node.fields.left.describe(level)} ${
-          node.fields.operator
-        } ${node.fields.right.describe(level)}`,
-    });
+export function Not(from: Pos, to: Pos, body: ASTNode, options = {}) {
+  return UnaryOperation(from, to, { operator: "!", operand: body }, options);
 }
 
 export function Binary(
@@ -409,4 +404,3 @@ export function Binary(
 ) {
   return BinaryOperation(from, to, { operator, left, right }, options);
 }
-export const Assignment = operatorNode("assignment");

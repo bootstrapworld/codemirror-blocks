@@ -122,3 +122,44 @@ describe("BinaryOperation and UnaryOperation", () => {
     expect(Nodes.CoreAST.isNodeOfType(sum, "binaryOperation")).toBe(true);
   });
 });
+
+describe("Assignment", () => {
+  const assign = (operator: string) =>
+    Nodes.Assignment(at(0), at(9), {
+      operator,
+      target: word("x"),
+      value: word("1"),
+    });
+
+  it("prints (set! target value) for =, and (operator target value) otherwise", () => {
+    expect(assign("=").toString()).toBe("(set! x 1)");
+    expect(assign("+=").toString()).toBe("(+= x 1)");
+  });
+
+  it("says what it is", () => {
+    expect(assign("=").type).toBe("assignment");
+    expect(assign("=").label).toBe("assignment");
+    expect(assign("=").describe(0)).toBe("set literal to literal");
+    expect(assign("+=").describe(0)).toBe("+= literal to literal");
+  });
+
+  it("can be written as target = value by a language", () => {
+    const mine = Nodes.forLanguage({
+      Assignment: {
+        pretty: (node) =>
+          P.horz(
+            node.fields.target,
+            ` ${node.fields.operator} `,
+            node.fields.value
+          ),
+      },
+    });
+    const node = mine.Assignment(at(0), at(1), {
+      operator: "=",
+      target: word("x"),
+      value: word("1"),
+    });
+    expect(node.toString()).toBe("x = 1");
+    expect(assign("=").toString()).toBe("(set! x 1)");
+  });
+});
