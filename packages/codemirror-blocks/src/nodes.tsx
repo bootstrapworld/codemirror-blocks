@@ -609,29 +609,38 @@ export const ConditionalBranch = defineNode({
 });
 
 /**
- * if, if/else and else-if chains in one node: the `branches` (of
- * `ConditionalBranch`) are tried in order, and the `otherwise` steps are taken
- * if none holds (no steps: no else). Printed as `(cond (test body...) ... (else
- * otherwise...))`.
+ * A choice between many: a `switch`, a `cond`, a `match`. The `kind` says which,
+ * the `header` holds what it looks at before the branches (a switch's subject; a
+ * cond-like form has none), the `branches` (of `ConditionalBranch`) are tried in
+ * order, and the `otherwise` steps are the default case (no steps: none). The
+ * header keeps the length the parser made, as a loop's does. Printed as `(kind
+ * header... (test body...) ... (else otherwise...))`.
  */
 export const Conditional = defineNode({
   type: "conditional",
   label: "conditional",
   fields: {
+    kind: field.value<string>(),
+    header: field.list({ fixed: true }),
     branches: field.list(),
     otherwise: field.list({ orphans: true }),
   },
   pretty: (node) =>
-    P.standardSexpr("cond", [
+    P.standardSexpr(node.fields.kind, [
+      ...node.fields.header,
       ...node.fields.branches,
       ...(node.fields.otherwise.length
         ? [P.standardSexpr("else", node.fields.otherwise)]
         : []),
     ]),
+  ariaLabel: (node) => `${node.fields.kind} ${node.label}`,
   render(props) {
     return (
       <Node {...props} variant="compound">
-        <span className="blocks-operator">conditional</span>
+        <span className="blocks-operator">{props.node.fields.kind}</span>
+        <Args className="blocks-conditional-header" field="header">
+          {props.node.fields.header}
+        </Args>
         <Args className="blocks-conditional-branches" field="branches">
           {props.node.fields.branches}
         </Args>
@@ -645,8 +654,8 @@ export const Conditional = defineNode({
     );
   },
   longDescription(node) {
-    const { branches, otherwise } = node.fields;
-    return `a conditional with ${pluralize("branch", branches)}${
+    const { kind, branches, otherwise } = node.fields;
+    return `a ${kind} with ${pluralize("branch", branches)}${
       withoutOrphans(otherwise).length ? " and an else" : ""
     }`;
   },

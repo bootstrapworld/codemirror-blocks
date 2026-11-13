@@ -126,8 +126,8 @@ are:
   `blocks-loop`: what the kind of loop needs before its steps (drawn in a row)
   and the steps (drawn in a column).
 
-- **blocks-conditional-branches**, **blocks-conditional-else** and
-  **blocks-conditional-body**: the parts of a `blocks-conditional` and of a
+- **blocks-conditional-header**, **blocks-conditional-branches**,
+  **blocks-conditional-else** and **blocks-conditional-body**: the parts of a `blocks-conditional` and of a
   `blocks-conditionalBranch`: the branches (a column), the else, and the steps
   of a branch or of the else (a column).
 

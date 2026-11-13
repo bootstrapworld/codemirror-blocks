@@ -175,6 +175,8 @@ describe("Conditional, ConditionalBranch and Return", () => {
     otherwise: string[]
   ) =>
     Nodes.Conditional(at(0), at(40), {
+      kind: "cond",
+      header: [],
       branches,
       otherwise: otherwise.map((o) => word(o)),
     });
@@ -193,11 +195,9 @@ describe("Conditional, ConditionalBranch and Return", () => {
     const withElse = conditional([branch("t", []), branch("u", [])], ["c"]);
     expect(withElse.type).toBe("conditional");
     expect(withElse.label).toBe("conditional");
-    expect(withElse.describe(0)).toBe(
-      "a conditional with 2 branches and an else"
-    );
+    expect(withElse.describe(0)).toBe("a cond with 2 branches and an else");
     expect(conditional([branch("t", [])], []).describe(0)).toBe(
-      "a conditional with 1 branch"
+      "a cond with 1 branch"
     );
     expect(branch("t", ["a", "b"]).type).toBe("conditionalBranch");
     expect(branch("t", ["a", "b"]).describe(0)).toBe(
@@ -227,6 +227,8 @@ describe("Conditional, ConditionalBranch and Return", () => {
       },
     });
     const node = mine.Conditional(at(0), at(1), {
+      kind: "if",
+      header: [],
       branches: [
         mine.ConditionalBranch(at(0), at(1), {
           test: word("t"),
