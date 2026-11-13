@@ -443,6 +443,49 @@ export const IfExpression = defineNode({
   },
 });
 
+/**
+ * A loop of any kind: `kind` says which ("while", "for-each", "for", "repeat"),
+ * the `header` holds what the kind needs before the steps (a while: its test;
+ * a for-each: the variable and the collection; a C-style for: its three parts;
+ * a repeat: the count), and the `body` the steps. Printed as `(kind header...
+ * body...)`; a language writes it its own way with `forLanguage`.
+ */
+export const Loop = defineNode({
+  type: "loop",
+  label: "loop",
+  fields: {
+    kind: field.value<string>(),
+    header: field.list(),
+    body: field.list({ orphans: true }),
+  },
+  pretty: (node) =>
+    P.standardSexpr(node.fields.kind, [
+      ...node.fields.header,
+      ...node.fields.body,
+    ]),
+  ariaLabel: (node) => `${node.fields.kind} ${node.label}`,
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">{props.node.fields.kind}</span>
+        <Args className="blocks-loop-header" field="header">
+          {props.node.fields.header}
+        </Args>
+        <Args className="blocks-loop-body" field="body">
+          {props.node.fields.body}
+        </Args>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    const { kind, header, body } = node.fields;
+    const over = header.length
+      ? ` (${header.map((h) => h.describe(level)).join(", ")})`
+      : "";
+    return `a ${kind} loop${over} with ${pluralize("step", withoutOrphans(body))}`;
+  },
+});
+
 export type LiteralNode = ReturnType<typeof Literal>;
 export const Literal = defineNode({
   type: "literal",
@@ -612,6 +655,7 @@ const specs = {
   condClause: CondClause.spec,
   condExpression: CondExpression.spec,
   ifExpression: IfExpression.spec,
+  loop: Loop.spec,
   literal: Literal.spec,
   comment: Spec.nodeSpec([Spec.value<string, "comment">("comment")], {
     label: "comment",
@@ -637,6 +681,7 @@ const customizable = {
   CondClause,
   CondExpression,
   IfExpression,
+  Loop,
   Literal,
   Blank,
 };
