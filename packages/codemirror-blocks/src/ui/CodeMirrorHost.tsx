@@ -78,6 +78,17 @@ const CodeMirrorHost = (props: CodeMirrorHostProps) => {
     host.appendChild(wrapper);
     syncValue(codemirror, propsRef.current.value);
     codemirror.refresh();
+    // CodeMirror measures the page (the width of a character, the size of the
+    // editor) when it is shown, and keeps what it measured: if the stylesheet or
+    // the font was not there yet, or the layout is not settled in this frame,
+    // the cursor is drawn (and a click placed) off the text until it measures
+    // again. So it does, once the layout of the next frame and the fonts are in.
+    let mounted = true;
+    const measureAgain = () => {
+      if (mounted) codemirror.refresh();
+    };
+    const frame = requestAnimationFrame(measureAgain);
+    document.fonts?.ready.then(measureAgain);
 
     // the handlers are read from the latest props when an event fires
     const listeners = (Object.keys(events) as (keyof typeof events)[]).map(
@@ -91,6 +102,8 @@ const CodeMirrorHost = (props: CodeMirrorHostProps) => {
     const cleanup = propsRef.current.editorDidMount?.(codemirror);
 
     return () => {
+      mounted = false;
+      cancelAnimationFrame(frame);
       cleanup?.();
       for (const [name, listener] of listeners) {
         codemirror.off(name as any, listener as any);
