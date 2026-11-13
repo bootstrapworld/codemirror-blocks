@@ -3,7 +3,7 @@ import "@bootstrapworld/wescheme/css/wescheme.css";
 import "@bootstrapworld/codemirror-blocks/css/example-page.css";
 import "./index.less";
 import CodeMirrorBlocks from "@bootstrapworld/codemirror-blocks";
-import { WeScheme } from "../src/index";
+import WeScheme from "@bootstrapworld/wescheme";
 import bigExampleCode from "./ast-test.rkt";
 
 const smallExampleCode = `(+ 1 2) ;comment\n(+ 3 4)`;
