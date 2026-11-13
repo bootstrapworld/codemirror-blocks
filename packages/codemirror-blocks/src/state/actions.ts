@@ -410,7 +410,7 @@ export function drop(
   };
 }
 
-type ActivateOptions = { allowMove?: boolean; record?: boolean };
+type ActivateOptions = { allowMove?: boolean };
 
 export function activateNode(
   editor: ReadonlyCMBEditor,
@@ -435,7 +435,7 @@ export function activateByNid(
   options: ActivateOptions = {}
 ): AppThunk {
   return (dispatch, getState) => {
-    options = { ...options, allowMove: true, record: true };
+    options = { ...options, allowMove: true };
     const state = getState();
     const ast = selectors.getAST(state);
     const focusedNode = selectors.getFocusedNode(state);

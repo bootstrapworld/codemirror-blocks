@@ -523,7 +523,6 @@ const buildBlockModeAPI = (
       if (node) {
         store.dispatch(
           actions.activateByNid(editor, node.nid, {
-            record: false,
             allowMove: true,
           })
         );

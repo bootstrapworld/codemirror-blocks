@@ -684,7 +684,6 @@ export const keyDown =
             } // nothing to activate
             dispatch(
               activateByNid(env.editor, node.nid, {
-                record: false,
                 allowMove: true,
               })
             );
