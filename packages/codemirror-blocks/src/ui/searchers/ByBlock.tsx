@@ -4,6 +4,18 @@ import { AST, ASTNode } from "../../ast";
 import * as selectors from "../../state/selectors";
 import { Searcher } from "./Searcher";
 
+/**
+ * What each block type is called, to be read or listed: the label of a node of
+ * that type (which a language can say its own way), not the type string.
+ */
+export function blockTypeLabels(ast: AST) {
+  const labels = new Map<string, string>();
+  for (const node of ast.getAllNodes()) {
+    if (!labels.has(node.type)) labels.set(node.type, node.label);
+  }
+  return labels;
+}
+
 function getAllNodeTypes(ast: AST) {
   const allNodeTypes: Set<string> = new Set();
   for (const node of ast.getAllNodes()) {
@@ -58,6 +70,7 @@ const ByBlock: Searcher<SearchSettings, Props> = {
 
       const allNodeTypes = getAllNodeTypes(ast);
       const types = Array.from(allNodeTypes).sort();
+      const labels = blockTypeLabels(ast);
       return (
         <select
           name="blockType"
@@ -66,7 +79,7 @@ const ByBlock: Searcher<SearchSettings, Props> = {
         >
           {types.map((t) => (
             <option key={t} value={t}>
-              {t}
+              {labels.get(t) ?? t}
             </option>
           ))}
         </select>

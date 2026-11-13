@@ -274,9 +274,9 @@ describe("the search rotor", () => {
     next();
     next();
     expect(said()).toEqual([
-      "Searching by function app, 1 of 2",
+      "Searching by function application, 1 of 2",
       "Searching by literal, 2 of 2",
-      "Searching by function app, 1 of 2",
+      "Searching by function application, 1 of 2",
     ]);
   });
 
@@ -286,7 +286,7 @@ describe("the search rotor", () => {
     previous();
     expect(said()).toEqual([
       "Searching by literal, 2 of 2",
-      "Searching by function app, 1 of 2",
+      "Searching by function application, 1 of 2",
       "Searching by literal, 2 of 2",
     ]);
   });
@@ -306,7 +306,7 @@ describe("the search rotor", () => {
     next(); // from the text search, on to the first type
     previous(); // and back
     expect(said()).toEqual([
-      "Searching by function app, 1 of 3",
+      "Searching by function application, 1 of 3",
       "Searching for text 'xy', 3 of 3",
     ]);
     previous();
@@ -322,7 +322,7 @@ describe("the search rotor", () => {
     });
     fireEvent.keyUp(select, { key: "Enter" });
     next();
-    expect(said().pop()).toBe("Searching by function app, 1 of 2");
+    expect(said().pop()).toBe("Searching by function application, 1 of 2");
   });
 
   it("follows the document", () => {

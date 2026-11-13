@@ -9,7 +9,7 @@ import { ASTNode, Pos } from "../ast";
 import type { ReadonlyCMBEditor } from "../editor";
 import type { RootState } from "../state/reducers";
 import { playSound, poscmp, WRAP } from "../utils";
-import ByBlock from "./searchers/ByBlock";
+import ByBlock, { blockTypeLabels } from "./searchers/ByBlock";
 import ByString from "./searchers/ByString";
 import type { Searcher } from "./searchers/Searcher";
 
@@ -60,10 +60,6 @@ const stepFrom = (pos: Pos, forward: boolean): Pos => {
 };
 
 type StringSetting = typeof ByString.setting;
-
-/** "functionApp" is said as "function app" */
-const words = (type: string) =>
-  type.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
 
 /**
  * The state of the search, and the dialog that sets it. The dialog is returned
@@ -176,7 +172,9 @@ export function useSearch(
       latestRef.current.settings = settings.map((s, i) =>
         i === BLOCK ? setting : s
       );
-      say(`Searching by ${words(types[next])}, ${position}`);
+      say(
+        `Searching by ${blockTypeLabels(ast).get(types[next]) ?? types[next]}, ${position}`
+      );
     } else {
       latestRef.current.mode = STRING;
       latestRef.current.settings = settings.map((s, i) =>
