@@ -245,7 +245,6 @@ export const DropTarget = (props: DropTargetProps) => {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isErrorFree) {
-      // TODO(Oak): is this the best way to handle this?
       return;
     }
     setEditable(true);

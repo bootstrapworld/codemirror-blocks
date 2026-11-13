@@ -38,10 +38,6 @@ import * as selectors from "../state/selectors";
 import { useIdState } from "../state/nodeSubscriptions";
 import { useCommentBoxPlacement } from "./commentBox";
 
-// TODO(Oak): make sure that all use of node.<something> is valid
-// since it might be cached and outdated
-// EVEN BETTER: is it possible to just pass an id?
-
 export type Props = {
   /** (a node that may be older than the document: see {@link DrawnNode}) */
   node: DrawnNode;
@@ -297,7 +293,6 @@ const Node = ({ expandable = true, ...props }: Props) => {
       recordEvent({ type: "MOUSE", nid: currentNode().nid });
     }
     if (!isErrorFree) {
-      // TODO(Oak): is this the best way?
       return;
     }
     dispatch(actions.activateNode(editor, currentNode(), { allowMove: false }));
