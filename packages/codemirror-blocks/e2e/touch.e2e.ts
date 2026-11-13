@@ -164,3 +164,82 @@ test.describe("dragging with a finger", () => {
     await expect(page.locator(".cmb-drag-preview")).toHaveCount(0);
   });
 });
+
+/** Tap the middle of an element once it holds still. */
+const tap = async (page: Page, l: Locator) => {
+  const p = await settled(l);
+  await page.touchscreen.tap(p.x, p.y);
+};
+const editing = (page: Page) =>
+  page.evaluate(() => document.activeElement?.getAttribute("contenteditable"));
+const text = (page: Page) =>
+  page.evaluate(() =>
+    (window as unknown as { cmb: { getValue(): string } }).cmb.getValue()
+  );
+
+test.describe("editing with a finger", () => {
+  test("a tap on an insertion gap opens it for typing, and Enter adds the block", async ({
+    page,
+  }) => {
+    await openInBlockMode(page, program);
+    const gap = page
+      .locator("[id^=block-drop-target-]", { hasNot: page.locator("*") })
+      .first();
+    await tap(page, gap);
+    await expect.poll(() => editing(page)).toBe("true");
+    await page.keyboard.type("z");
+    await page.keyboard.press("Enter");
+    const s = await expectConsistent(page);
+    expect(s.roots).toEqual(["(f z x y)", "(g z)", "(h w)"]);
+  });
+
+  test("a tap on the faded else of a lambda if opens it for typing", async ({
+    page,
+  }) => {
+    await openInBlockMode(page, "if c then a", "lambda");
+    const elseArea = page.locator(".blocks-if-else");
+    await expect(elseArea).toHaveClass(/blocks-not-live/);
+    await tap(page, elseArea.locator(".blocks-operator"));
+    await expect.poll(() => editing(page)).toBe("true");
+    await page.keyboard.type("b");
+    await page.keyboard.press("Enter");
+    await expect.poll(() => text(page)).toMatch(/else \{?\s*b/);
+    await expect(elseArea).not.toHaveClass(/blocks-not-live/);
+  });
+
+  test("a tap on a gap far down a long program opens it, without the page jumping", async ({
+    page,
+  }) => {
+    const lines = Array.from({ length: 100 }, (_, i) => `f${i}(a, b)`);
+    await openInBlockMode(page, lines.join(";\n"), "lambda");
+    const scroller = page.locator(".CodeMirror-scroll");
+    await scroller.evaluate((e) => (e.scrollTop = e.scrollHeight * 0.8));
+    await page.waitForTimeout(300);
+    const gap = page
+      .locator(".blocks-prog > .blocks-statements > .blocks-drop-target")
+      .nth(80);
+    await gap.scrollIntoViewIfNeeded();
+    const before = await scroller.evaluate((e) => e.scrollTop);
+    await tap(page, gap);
+    await expect.poll(() => editing(page)).toBe("true");
+    expect(
+      Math.abs((await scroller.evaluate((e) => e.scrollTop)) - before)
+    ).toBeLessThan(200);
+    await page.keyboard.type("q(1)");
+    await page.keyboard.press("Enter");
+    await expect.poll(() => text(page)).toMatch(/q\(1\)/);
+  });
+
+  test("a tap on a leaf opens it for typing, and Enter replaces it", async ({
+    page,
+  }) => {
+    await openInBlockMode(page, program);
+    await tap(page, block(page, /^g,/));
+    await expect.poll(() => editing(page)).toBe("true");
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.type("k");
+    await page.keyboard.press("Enter");
+    const s = await expectConsistent(page);
+    expect(s.roots).toEqual(["(f x y)", "(k z)", "(h w)"]);
+  });
+});
