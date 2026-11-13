@@ -15,7 +15,7 @@ import {
 import { attachComments, Nodes } from "@bootstrapworld/codemirror-blocks";
 import type { ASTNode, Pos } from "@bootstrapworld/codemirror-blocks";
 
-const { Literal } = Nodes;
+const { Literal, Blank } = Nodes;
 
 type Loc = { from: Pos; to: Pos };
 
@@ -54,6 +54,8 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
         value: quote(node.value),
         dataType: "string",
       });
+    case "blank":
+      return Blank(from, to, { value: "...", dataType: "blank" });
     case "bool":
       return Literal(from, to, { value: String(node.value), dataType: "bool" });
     case "var":

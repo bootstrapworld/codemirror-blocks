@@ -139,4 +139,33 @@ describe("lambda: editing the blocks of an if", () => {
     keyDown("Enter");
     expect(cmb.getValue()).toBe("if i < 3 then 2 else 9");
   });
+
+  it("leaves a blank, as other languages do, when the test of an if is deleted", () => {
+    cmb.setValue("if i < 3 then loop(i + 1) else i");
+    cmb.clearHistory();
+    const iff = [...cmb.getAst().descendants()].find((n) => n.type === "if")!;
+    const test = (iff.fields as unknown as { test: ASTNode }).test;
+    mouseDown(test);
+    keyDown(" ", {}, test);
+    keyDown("Delete");
+    expect(cmb.getValue()).toBe("if ... then loop(i + 1) else i");
+    const again = [...cmb.getAst().descendants()].find((n) => n.type === "if")!;
+    expect((again.fields as unknown as { test: ASTNode }).test.type).toBe(
+      "blank"
+    );
+    keyDown("Z", { ctrlKey: true });
+    expect(cmb.getValue()).toBe("if i < 3 then loop(i + 1) else i");
+  });
+
+  it("reads ... as a blank wherever an expression goes, and writes it as it was", () => {
+    for (const code of [
+      "f(..., x)",
+      "... + 1",
+      "x = ...",
+      "if c then ... else ...",
+    ]) {
+      expect(printed(code)).toBe(code);
+      expect(types(code)).toContain("blank");
+    }
+  });
 });

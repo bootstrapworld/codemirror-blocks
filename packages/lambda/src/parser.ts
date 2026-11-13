@@ -19,7 +19,7 @@ export type LambdaNode = {
 type Token = {
   from: Pos;
   to: Pos;
-  type: "num" | "str" | "kw" | "var" | "punc" | "op";
+  type: "num" | "str" | "kw" | "var" | "punc" | "op" | "blank";
   value: any;
 };
 
@@ -309,7 +309,12 @@ function parse(input: TokenStream): LambdaNode {
         return { from: minus.from, to: num.to, type: "num", value: -num.value };
       }
       const tok = nextToken();
-      if (tok.type == "var" || tok.type == "num" || tok.type == "str") {
+      if (
+        tok.type == "var" ||
+        tok.type == "num" ||
+        tok.type == "str" ||
+        tok.type == "blank"
+      ) {
         return tok;
       }
       unexpected();
@@ -522,6 +527,22 @@ function tokenStream(
       return readNumber();
     }
     if (isIdStart(ch)) return readIdent();
+    if (ch == ".") {
+      // `...` is a part of the program that has not been filled in (what the
+      // editor writes where a block that has to be there is deleted)
+      input.next();
+      if (input.peek() != "." || (input.next(), input.peek() != ".")) {
+        input.croak("Can't handle character: .");
+      }
+      input.next();
+      toLocation = input.inputPos();
+      return {
+        from: fromLocation,
+        to: toLocation,
+        type: "blank",
+        value: "...",
+      };
+    }
     if (isPunc(ch))
       return {
         from: fromLocation,
