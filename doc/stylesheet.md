@@ -119,7 +119,7 @@ are:
   `blocks-condExpression`, `blocks-condClause`, `blocks-identifierList`,
   `blocks-loop`, `blocks-binaryOperation`, `blocks-unaryOperation`,
   `blocks-assignment`, `blocks-conditional`, `blocks-conditionalBranch`,
-  and `blocks-comment`. Your language defines the rest: a node created with
+  `blocks-return` and `blocks-comment`. Your language defines the rest: a node created with
   `type: "whenExpr"` gets the class `blocks-whenExpr`.
 
 - **blocks-loop-header** and **blocks-loop-body**: the parts of a

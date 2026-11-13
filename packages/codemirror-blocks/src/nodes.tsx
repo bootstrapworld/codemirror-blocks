@@ -650,6 +650,28 @@ export const Conditional = defineNode({
   },
 });
 
+/** Leaving a function, with a value or without one: `(return value)` */
+export const Return = defineNode({
+  type: "return",
+  label: "return",
+  fields: { value: field.optional() },
+  pretty: (node) =>
+    P.standardSexpr("return", node.fields.value ? [node.fields.value] : []),
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">return</span>
+        {props.node.fields.value?.reactElement()}
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return node.fields.value
+      ? `a return of ${node.fields.value.describe(level)}`
+      : "a return with no value";
+  },
+});
+
 export type LiteralNode = ReturnType<typeof Literal>;
 export const Literal = defineNode({
   type: "literal",
@@ -825,6 +847,7 @@ const specs = {
   assignment: Assignment.spec,
   conditionalBranch: ConditionalBranch.spec,
   conditional: Conditional.spec,
+  return: Return.spec,
   literal: Literal.spec,
   comment: Spec.nodeSpec([Spec.value<string, "comment">("comment")], {
     label: "comment",
@@ -856,6 +879,7 @@ const customizable = {
   Assignment,
   ConditionalBranch,
   Conditional,
+  Return,
   Literal,
   Blank,
 };

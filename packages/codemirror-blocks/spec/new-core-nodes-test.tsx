@@ -164,7 +164,7 @@ describe("Assignment", () => {
   });
 });
 
-describe("Conditional and ConditionalBranch", () => {
+describe("Conditional, ConditionalBranch and Return", () => {
   const branch = (test: string, body: string[]) =>
     Nodes.ConditionalBranch(at(0), at(9), {
       test: word(test),
@@ -243,5 +243,15 @@ describe("Conditional and ConditionalBranch", () => {
     expect(conditional([branch("t", ["a"])], []).toString()).toBe(
       "(cond (t a))"
     );
+  });
+
+  it("Return prints with or without a value", () => {
+    const value = Nodes.Return(at(0), at(1), { value: word("x") });
+    const bare = Nodes.Return(at(0), at(1), { value: null });
+    expect(value.toString()).toBe("(return x)");
+    expect(bare.toString()).toBe("(return)");
+    expect(value.type).toBe("return");
+    expect(value.describe(0)).toBe("a return of literal");
+    expect(bare.describe(0)).toBe("a return with no value");
   });
 });
