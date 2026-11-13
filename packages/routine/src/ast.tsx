@@ -11,6 +11,7 @@ import {
   listItems,
   Node,
   NodeSpec as Spec,
+  Nodes,
   sexpr,
   useNodeState,
   withoutOrphans,
@@ -20,6 +21,7 @@ import type {
   AST,
   ASTNode,
   DrawnNode,
+  Pos,
 } from "@bootstrapworld/codemirror-blocks";
 
 /** How the language writes a comment, when it writes one back out */
@@ -208,47 +210,71 @@ export const Show = defineNode({
   ),
 });
 
-export const Repeat = defineNode({
-  type: "repeat",
-  label: "repeat loop",
-  fields: { times: field.required(), steps: field.list({ orphans: true }) },
-  pretty: (node) => formSexpr("repeat", node.fields.times, node.fields.steps),
-  longDescription: (node, level) =>
-    `a ${node.label}, ${node.fields.times.describe(level)} times, of ${describeKinds(node.fields.steps)}`,
-  render: (props) => {
-    const { times, steps } = props.node.fields;
-    return (
-      <Node {...props} variant="compound">
-        <header className="blocks-operator routine-loop-head">
-          <span>repeat</span>
-          {times.reactElement()}
-          <span>times</span>
-          <LoopStatus count={withoutOrphans(steps).length} />
-          {/* a step added at the end is added from the top, where it is
-              reached without scrolling past the others; the gap is drawn
-              before the rows it follows */}
-          <DropTarget field="steps" index={steps.length} />
-        </header>
-        <ol className="routine-steps">
-          {listItems(steps).map(({ node, index, number }) => (
-            <li
-              key={index}
-              className={node.options.orphan ? "routine-note" : "routine-step"}
-            >
-              <div className="routine-gutter">
-                <DropTarget field="steps" index={index} />
-                {number !== null && (
-                  <span className="routine-step-number">{number}</span>
-                )}
-              </div>
-              {node.reactElement()}
-            </li>
-          ))}
-        </ol>
-      </Node>
-    );
+/**
+ * A repeat is the core loop, of the kind "repeat": its count is the one item of
+ * the header, and its steps are the body. The table says how Routine writes and
+ * draws it, and what it is called.
+ */
+const { Loop } = Nodes.forLanguage({
+  Loop: {
+    label: "repeat loop",
+    pretty: (node) =>
+      formSexpr("repeat", node.fields.header[0], node.fields.body),
+    ariaLabel: (node) => node.label,
+    longDescription: (node, level) =>
+      `a ${node.label}, ${node.fields.header[0].describe(level)} times, of ${describeKinds(node.fields.body)}`,
+    render: (props) => {
+      const times = props.node.fields.header[0];
+      const steps = props.node.fields.body;
+      return (
+        <Node {...props} variant="compound">
+          <header className="blocks-operator routine-loop-head">
+            <span>repeat</span>
+            {times.reactElement()}
+            <span>times</span>
+            <LoopStatus count={withoutOrphans(steps).length} />
+            {/* a step added at the end is added from the top, where it is
+                reached without scrolling past the others; the gap is drawn
+                before the rows it follows */}
+            <DropTarget field="body" index={steps.length} />
+          </header>
+          <ol className="routine-steps">
+            {listItems(steps).map(({ node, index, number }) => (
+              <li
+                key={index}
+                className={
+                  node.options.orphan ? "routine-note" : "routine-step"
+                }
+              >
+                <div className="routine-gutter">
+                  <DropTarget field="body" index={index} />
+                  {number !== null && (
+                    <span className="routine-step-number">{number}</span>
+                  )}
+                </div>
+                {node.reactElement()}
+              </li>
+            ))}
+          </ol>
+        </Node>
+      );
+    },
   },
 });
+
+export function Repeat(
+  from: Pos,
+  to: Pos,
+  { times, steps }: { times: ASTNode; steps: ASTNode[] },
+  options = {}
+) {
+  return Loop(
+    from,
+    to,
+    { kind: "repeat", header: [times], body: steps },
+    options
+  );
+}
 
 export const Choice = defineNode({
   type: "choice",

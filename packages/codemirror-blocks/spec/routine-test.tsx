@@ -50,7 +50,7 @@ describe("the steps of a repeat, drawn as a numbered list with its targets elsew
 
   it("has a target for each place in the list, in the gutters and the head", () => {
     mount(code);
-    const all = targets(root(), "steps");
+    const all = targets(root(), "body");
     expect(all.map((el) => el.dataset.index)).toEqual(["0", "1", "2"]);
     const [first, , end] = all;
     expect(first.parentElement?.className).toBe("routine-gutter");
@@ -70,7 +70,7 @@ describe("the steps of a repeat, drawn as a numbered list with its targets elsew
     "typing in the target with index %i adds the step there",
     (i, expected) => {
       mount(code);
-      insertThrough(targets(root(), "steps")[i], '(show "x")');
+      insertThrough(targets(root(), "body")[i], '(show "x")');
       expect(text()).toBe(expected);
     }
   );
@@ -83,7 +83,7 @@ describe("the steps of a repeat, drawn as a numbered list with its targets elsew
       )
     ).toEqual(["1", "2"]);
     // (but the comment is in the list: the target after it is index 2)
-    const all = targets(root(), "steps");
+    const all = targets(root(), "body");
     expect(all.map((el) => el.dataset.index)).toEqual(["0", "1", "2", "3"]);
     insertThrough(all[2], "(show 9)");
     expect(text()).toBe(
