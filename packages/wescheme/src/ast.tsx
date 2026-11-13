@@ -1,11 +1,14 @@
 import React from "react";
 import * as P from "pretty-fast-pretty-printer";
 import {
+  Args,
   defineNode,
+  DropTarget,
   field,
   Node,
   Nodes,
   pluralize,
+  withoutOrphans,
 } from "@bootstrapworld/codemirror-blocks";
 import type { ASTNode } from "@bootstrapworld/codemirror-blocks";
 
@@ -127,6 +130,84 @@ export const WhenUnless = defineNode({
     } ${node.fields.predicate.describe(level)}, ${node.fields.exprs.describe(
       level
     )}`;
+  },
+});
+
+/**
+ * `cond` is the core Conditional (clauses are its branches, and the `else`
+ * clause its otherwise), written the WeScheme way: square brackets, and a table
+ * of a test and its result for each clause.
+ */
+export const { Conditional, ConditionalBranch } = Nodes.forLanguage({
+  ConditionalBranch: {
+    label: "conditional clause",
+    pretty: (node) =>
+      P.horz("[", P.sepBy([node.fields.test, ...node.fields.body], " "), "]"),
+    render(props) {
+      return (
+        <Node {...props}>
+          <div className="blocks-cond-row">
+            <div className="blocks-cond-predicate">
+              {props.node.fields.test.reactElement()}
+            </div>
+            <Args className="blocks-cond-result" field="body">
+              {props.node.fields.body}
+            </Args>
+          </div>
+        </Node>
+      );
+    },
+    longDescription: (node, level) =>
+      `condition: if ${node.fields.test.describe(
+        level
+      )}, then, ${withoutOrphans(node.fields.body).map((te) => te.describe(level))}`,
+  },
+  Conditional: {
+    label: "conditional expression",
+    pretty: (node) =>
+      P.beginLikeSexpr("cond", [
+        ...node.fields.branches,
+        ...(node.fields.otherwise.length
+          ? [P.horz("[else ", P.sepBy(node.fields.otherwise, " "), "]")]
+          : []),
+      ]),
+    render(props) {
+      const { branches, otherwise } = props.node.fields;
+      return (
+        <Node {...props} variant="compound">
+          <span className="blocks-operator">cond</span>
+          <div className="blocks-cond-table">
+            {branches.map((branch, index) =>
+              branch.reactElement({ key: index })
+            )}
+            <div
+              className={`blocks-cond-row blocks-cond-else-row${
+                otherwise.length === 0 ? " blocks-not-live" : ""
+              }`}
+            >
+              <div className="blocks-cond-predicate blocks-cond-else">else</div>
+              {otherwise.length ? (
+                <Args className="blocks-cond-result" field="otherwise">
+                  {otherwise}
+                </Args>
+              ) : (
+                <DropTarget field="otherwise" index={0} label="add an else" />
+              )}
+            </div>
+          </div>
+        </Node>
+      );
+    },
+    longDescription: (node, level) =>
+      `a conditional expression with ${pluralize(
+        "condition",
+        node.fields.branches
+      )}: 
+                ${node.fields.branches.map((c) => c.describe(level))}${
+                  withoutOrphans(node.fields.otherwise).length
+                    ? `, else ${withoutOrphans(node.fields.otherwise).map((e) => e.describe(level))}`
+                    : ""
+                }`,
   },
 });
 

@@ -50,10 +50,10 @@ literal: x,
 literal: 3,
 literal: then, big, a String,
 literal: else, small, a String,
-condExpression: conditional expression with 3 clauses,
-  long: a conditional expression with 3 conditions: 
-                condition: if < of x, 0, then, unsupported expression,condition: if = of x, 0, then, unsupported expression,condition: if else, then, unsupported expression
-condClause: condition 1,
+conditional: conditional expression with 3 clauses,
+  long: a conditional expression with 2 conditions: 
+                condition: if < of x, 0, then, unsupported expression,condition: if = of x, 0, then, unsupported expression, else unsupported expression
+conditionalBranch: condition 1,
   long: condition: if < of x, 0, then, unsupported expression
 functionApp: < expression, 2 inputs,
   long: < of x, 0
@@ -61,7 +61,7 @@ literal: <,
 literal: x,
 literal: 0,
 literal: unsupported expression,
-condClause: condition 2,
+conditionalBranch: condition 2,
   long: condition: if = of x, 0, then, unsupported expression
 functionApp: = expression, 2 inputs,
   long: = of x, 0
@@ -69,9 +69,6 @@ literal: =,
 literal: x,
 literal: 0,
 literal: unsupported expression,
-condClause: condition 3,
-  long: condition: if else, then, unsupported expression
-literal: else,
 literal: unsupported expression,
 letLikeExpr: let expression with 2 bindings,
   long: a let expression with 2 bindings

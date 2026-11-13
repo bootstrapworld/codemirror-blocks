@@ -1,5 +1,11 @@
 import * as structures from "./reader/structures";
-import { LetLikeExpr, WhenUnless, Sequence } from "./ast";
+import {
+  Conditional,
+  ConditionalBranch,
+  LetLikeExpr,
+  WhenUnless,
+  Sequence,
+} from "./ast";
 import * as types from "./reader/types";
 import { Nodes, pluralize } from "@bootstrapworld/codemirror-blocks";
 import type { ASTNode } from "@bootstrapworld/codemirror-blocks";
@@ -20,9 +26,7 @@ const {
   IdentifierList,
   FunctionDefinition,
   IfExpression,
-  CondExpression,
   LambdaExpression,
-  CondClause,
   Comment,
   VariableDefinition,
   FunctionApp,
@@ -137,8 +141,8 @@ function notNull<T>(item: T | null): item is T {
  *
  * Like {@link parseNodeOrNull}, but for positions where a node is required.
  */
-export function parseNode(node: structures.Program, i = 0): ASTNode {
-  const parsed = parseNodeOrNull(node, i);
+export function parseNode(node: structures.Program): ASTNode {
+  const parsed = parseNodeOrNull(node);
   if (parsed === null) {
     throw new Error(`Could not convert ${node} into a block`);
   }
@@ -151,10 +155,7 @@ export function parseNode(node: structures.Program, i = 0): ASTNode {
  * Some WeScheme nodes (e.g. unsupported expressions that aren't lists) have no
  * block representation, in which case this returns null.
  */
-export function parseNodeOrNull(
-  node: structures.Program,
-  i = 0
-): ASTNode | null {
+export function parseNodeOrNull(node: structures.Program): ASTNode | null {
   function locationFromNode(node: structures.Program) {
     const from = {
       line: node.location.startRow - 1,
@@ -331,21 +332,35 @@ export function parseNodeOrNull(
       }
     );
   } else if (node instanceof structures.condExpr) {
-    return CondExpression(
+    // (the `else` clause is the otherwise of the conditional, not a branch)
+    const last = node.clauses[node.clauses.length - 1] as structures.couple;
+    const hasElse =
+      last instanceof structures.couple &&
+      last.first instanceof structures.symbolExpr &&
+      last.first.val === "else";
+    const branchNodes = hasElse ? node.clauses.slice(0, -1) : node.clauses;
+    return Conditional(
       from,
       to,
-      { clauses: node.clauses.map(parseNode) },
+      {
+        kind: "cond",
+        header: [],
+        branches: branchNodes.map((clause, index) => {
+          const couple = clause as structures.couple;
+          const loc = locationFromNode(couple);
+          return ConditionalBranch(
+            loc.from,
+            loc.to,
+            { test: parseNode(couple.first), body: [parseNode(couple.second)] },
+            { ariaLabel: "condition " + (index + 1) }
+          );
+        }),
+        otherwise: hasElse ? [parseNode(last.second)] : [],
+      },
       {
         ariaLabel: (n: ASTNode) =>
           `${n.label} with ` + pluralize("clause", node.clauses),
       }
-    );
-  } else if (node instanceof structures.couple) {
-    return CondClause(
-      from,
-      to,
-      { testExpr: parseNode(node.first), thenExprs: [parseNode(node.second)] },
-      { ariaLabel: "condition " + (i + 1) }
     );
   } else if (node instanceof structures.ifExpr) {
     const predicate = parseNode(node.predicate);

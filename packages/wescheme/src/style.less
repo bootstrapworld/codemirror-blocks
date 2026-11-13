@@ -48,4 +48,53 @@
       border-radius: @large-border-radius @large-border-radius 0px 0px;
     }
   }
+
+  // a cond: a table with a row for each clause (its test, and its result) and
+  // one for the else, faded until it has a result
+  .blocks-conditional {
+    border-radius: 0px;
+    background: white;
+    > .blocks-operator {
+      justify-content: flex-start;
+    }
+    > .blocks-cond-table {
+      display: table;
+      padding: 2px;
+      margin: 1px;
+      .blocks-conditionalBranch {
+        display: table-row-group;
+        padding: 3px;
+        text-align: center;
+        min-width: 200px;
+        &:focus {
+          outline: @editing-border-color @border-width solid;
+        }
+      }
+      .blocks-cond-row {
+        border: 1px solid black;
+        text-align: left;
+        display: table-row;
+        border-top: 1px solid #aaa;
+        .blocks-cond-predicate,
+        .blocks-cond-result {
+          display: inline-block;
+          &.blocks-cond-else {
+            color: #777;
+          }
+        }
+        .blocks-cond-predicate {
+          float: left;
+        }
+        .blocks-cond-result {
+          float: right;
+        }
+      }
+      .blocks-conditionalBranch:first-child .blocks-cond-row {
+        border-top: 0px;
+      }
+      .blocks-cond-row.blocks-not-live {
+        opacity: 0.4;
+      }
+    }
+  }
 }

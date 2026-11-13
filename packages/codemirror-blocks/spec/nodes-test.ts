@@ -46,9 +46,9 @@ const nodes: [string, string, string, RegExp][] = [
   ],
   [
     "(cond [(> 1 2) 3] [else 4])",
-    "condExpression",
+    "conditional",
     "conditional expression with 2 clauses",
-    /^a conditional expression with 2 conditions: condition: if /,
+    /^a conditional expression with 1 condition: condition: if /,
   ],
   [
     "(if 1 2 3)",

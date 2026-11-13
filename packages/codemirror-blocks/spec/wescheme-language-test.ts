@@ -18,10 +18,10 @@ describe("forms that become blocks", () => {
     ["(letrec ([a 1]) a)", "letLikeExpr", "(letrec ((a 1)) a)"],
     [
       "(cond [(> 1 2) 3] [else 4])",
-      "condExpression",
+      "conditional",
       "(cond\n  [(> 1 2) 3]\n  [else 4])",
     ],
-    ["(cond [else 4])", "condExpression", "(cond\n  [else 4])"],
+    ["(cond [else 4])", "conditional", "(cond\n  [else 4])"],
     ["(if 1 2 3)", "ifExpression", "(if 1 2 3)"],
     ["(when 1 2)", "whenUnlessExpr", "(when 1 2)"],
     ["(unless 1 2)", "whenUnlessExpr", "(unless 1 2)"],
@@ -131,6 +131,29 @@ describe("forms with no block of their own are kept as text", () => {
   it("keeps an unsupported form nested inside a supported one", () => {
     expect(printed("(define x '(1 2))")).toBe("(define x '(1 2))");
     expect(printed("(f (provide x) 1)")).toBe("(f (provide x) 1)");
+  });
+});
+
+describe("a cond", () => {
+  const fieldsOf = (code: string) =>
+    parsed(code).rootNodes[0].fields as unknown as {
+      branches: unknown[];
+      otherwise: unknown[];
+    };
+
+  it("has the else clause as its otherwise, and not as a branch", () => {
+    const f = fieldsOf("(cond [a 1] [b 2] [else 3])");
+    expect(f.branches).toHaveLength(2);
+    expect(f.otherwise).toHaveLength(1);
+  });
+
+  it("has no otherwise when it has no else clause, and prints the same", () => {
+    expect(fieldsOf("(cond [a 1])").otherwise).toHaveLength(0);
+    expect(printed("(cond [a 1])")).toBe("(cond\n  [a 1])");
+  });
+
+  it("is refused, as it was, when an else is not the last clause", () => {
+    expect(typesOf("(cond [else 1] [a 2])")).not.toContain("conditional");
   });
 });
 
