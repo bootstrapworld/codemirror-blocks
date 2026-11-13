@@ -105,6 +105,22 @@ type Definition<F extends Record<string, FieldDeclaration>> = {
   ariaLabel?: (node: ASTNode) => string;
 };
 
+/**
+ * What a language can say again about a kind of node, without changing what the
+ * kind is (its `type` and its fields): how it is printed, drawn and described.
+ */
+export type Overrides<F extends Record<string, FieldDeclaration>> = Partial<
+  Pick<
+    Definition<F>,
+    | "label"
+    | "pluralLabel"
+    | "pretty"
+    | "render"
+    | "longDescription"
+    | "ariaLabel"
+  >
+>;
+
 export type NodeMaker<F extends Record<string, FieldDeclaration>> = {
   (
     from: Pos,
@@ -115,6 +131,13 @@ export type NodeMaker<F extends Record<string, FieldDeclaration>> = {
   /** the name of this kind of node */
   readonly type: string;
   readonly spec: SpecOf<F>;
+  /**
+   * The same kind of node (the same `type` and fields, so searching by type,
+   * `isNodeOfType` and the CSS class do not change), with some of what it is
+   * printed, drawn and described as said again. What is not said is as it was.
+   * The maker it is called on is not changed.
+   */
+  with(overrides: Overrides<F>): NodeMaker<F>;
 };
 
 /**
@@ -183,24 +206,40 @@ export function defineNode<F extends Record<string, FieldDeclaration>>(
     pluralLabel,
   }) as unknown as SpecOf<F>;
 
-  const make = (
-    from: Pos,
-    to: Pos,
-    fields: Spec.FieldsForSpec<SpecOf<F>>,
-    options: NodeOptions = {}
-  ) =>
-    new ASTNode<SpecOf<F>, FieldsOf<F>>({
-      from,
-      to,
+  const make = Object.assign(
+    (
+      from: Pos,
+      to: Pos,
+      fields: Spec.FieldsForSpec<SpecOf<F>>,
+      options: NodeOptions = {}
+    ) =>
+      new ASTNode<SpecOf<F>, FieldsOf<F>>({
+        from,
+        to,
+        type,
+        fields,
+        options: ariaLabel ? { ariaLabel, ...options } : options,
+        spec,
+        pretty: definition.pretty,
+        render: definition.render,
+        longDescription: definition.longDescription,
+      }),
+    {
       type,
-      fields,
-      options: ariaLabel ? { ariaLabel, ...options } : options,
       spec,
-      pretty: definition.pretty,
-      render: definition.render,
-      longDescription: definition.longDescription,
-    });
-  return Object.assign(make, { type, spec });
+      // (the same kind, so no warning about its type again)
+      with: (overrides: Overrides<F>) =>
+        defineNode({ ...definition, ...withoutUndefined(overrides) }, true),
+    }
+  );
+  return make;
+}
+
+/** `{ pretty: undefined }` says nothing: the kind keeps what it had */
+function withoutUndefined<T extends object>(object: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(object).filter(([, value]) => value !== undefined)
+  ) as Partial<T>;
 }
 
 /** A node of the kind that fields declared as `F` make (for a `pretty` that is written apart) */

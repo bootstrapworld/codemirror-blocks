@@ -14,7 +14,7 @@ import Node, { COMMENT_PREFIX } from "./components/Node";
 import Args from "./components/Args";
 import { DropTarget } from "./components/DropTarget";
 import { defineCoreNode as defineNode, field } from "./defineNode";
-import type { NodeOf } from "./defineNode";
+import type { NodeMaker, NodeOf, Overrides } from "./defineNode";
 import * as Spec from "./nodeSpec";
 import { poscmp } from "./utils";
 
@@ -621,3 +621,62 @@ const specs = {
 };
 
 export const CoreAST = createASTSpec(specs);
+
+/**
+ * The core nodes that a language can say its own syntax for (`forLanguage`).
+ * (A comment and a sequence are made in other ways, and are the same for all.)
+ */
+const customizable = {
+  Unknown,
+  FunctionApp,
+  IdentifierList,
+  StructDefinition,
+  VariableDefinition,
+  LambdaExpression,
+  FunctionDefinition,
+  CondClause,
+  CondExpression,
+  IfExpression,
+  Literal,
+  Blank,
+};
+
+/**
+ * What a language says about the core nodes it writes its own way, by the name
+ * of the maker (`FunctionApp`, `IfExpression`...): for each, any of `pretty`,
+ * `render`, `label`, `pluralLabel`, `longDescription` and `ariaLabel`.
+ */
+export type SyntaxTable = {
+  [K in keyof typeof customizable]?: (typeof customizable)[K] extends NodeMaker<
+    infer F
+  >
+    ? Overrides<F>
+    : never;
+};
+
+/**
+ * The core makers of `Nodes`, with the table's entries over the core ones, per
+ * property (a missing entry, or a missing property, is the core's). The `type`,
+ * the fields and the spec of a node do not change, so `isNodeOfType`, the search
+ * by type and the CSS class are as for the plain `Nodes.FunctionApp`, which is
+ * not changed either.
+ *
+ *   const { FunctionApp } = Nodes.forLanguage({
+ *     FunctionApp: {
+ *       pretty: (node) => P.horz(node.fields.func, "(", P.sepBy(node.fields.args, ", ", ", "), ")"),
+ *     },
+ *   });
+ */
+type WithOverrides = { with(overrides: object): unknown };
+
+export function forLanguage(table: SyntaxTable): typeof customizable {
+  return Object.fromEntries(
+    Object.entries(customizable).map(([name, maker]) => {
+      const overrides = table[name as keyof SyntaxTable];
+      return [
+        name,
+        overrides ? (maker as unknown as WithOverrides).with(overrides) : maker,
+      ];
+    })
+  ) as typeof customizable;
+}

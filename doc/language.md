@@ -395,6 +395,36 @@ goes with a node is printed for you (above it, or beside it), whether `pretty`
 returns a `Doc` or text. `When.type` and `When.spec` are there for what needs
 them.
 
+#### The core nodes, written in your language's syntax: `Nodes.forLanguage`
+
+The core nodes (`FunctionApp`, `IfExpression`, `Literal`...) print as Scheme. A
+language that has the same nodes but writes them another way does not define
+its own: it gives a table, by the name of the maker, with what it says again
+(any of `pretty`, `render`, `label`, `pluralLabel`, `longDescription` and
+`ariaLabel`), and gets the makers back:
+
+```tsx
+import * as P from "pretty-fast-pretty-printer";
+import { Nodes } from "@bootstrapworld/codemirror-blocks";
+
+export const { FunctionApp, Literal } = Nodes.forLanguage({
+  FunctionApp: {
+    pretty: (node) =>
+      P.horz(node.fields.func, "(", P.sepBy(node.fields.args, ", ", ", "), ")"),
+    label: "function call",
+  },
+});
+```
+
+What the table does not say is the core's. The `type` and the fields of a node
+do not change (so searching by block type, `isNodeOfType` and the CSS class are
+the same, and a node made by the plain `Nodes.FunctionApp` is not touched), and
+`pretty` is typed from the fields as in `defineNode`. Operator precedence is not
+the core's: your printer puts brackets where your language needs them. Nodes the
+core does not have are still your own, with `defineNode`. A comment and a
+sequence are the same for every language. `maker.with({ ... })` does the same
+for one maker.
+
 ### Speaking out Loud
 
 The `longDescription(node, level)` function describes the node aloud for a
