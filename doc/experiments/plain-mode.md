@@ -6,7 +6,7 @@ Open questions: whether rendered nodes keep the source's line breaks and indenta
 
 ## Spike findings (2026-11-03, branch `claude/spike-plain-c1d013`, not for merge)
 
-Code: `packages/codemirror-blocks/spike/` (Playwright scripts, `plain.css`; run against the example page on another port, e.g. `npm start -- --port 8124`) and a gated change in `src/components/Node.tsx` (`plainBody`, switched by `window.__cmbPlain`). Programs: `spike/programs.mjs` (wescheme only; the example page has no lambda page). Side-by-side screenshots (text mode | default blocks | plain) are in `doc/experiments/plain-mode/`.
+Code: on the branch `claude/spike-plain-c1d013` (local and on origin), not on `master`: `packages/codemirror-blocks/spike/` (Playwright scripts, `plain.css`; run against the example page on another port, e.g. `npm start -- --port 8124`) and a gated change in `src/components/Node.tsx` (`plainBody`, switched by `window.__cmbPlain`). Programs: `spike/programs.mjs` (wescheme only; the example page has no lambda page). Side-by-side screenshots (text mode | default blocks | plain) are in `doc/experiments/plain-mode/`.
 
 ### Verdict
 
