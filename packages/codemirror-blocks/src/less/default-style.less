@@ -235,6 +235,28 @@
   }
 }
 
+// a conditional: its branches in a column, then the else
+.blocks-conditional,
+.blocks-conditionalBranch {
+  > .blocks-conditional-branches {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 1px;
+  }
+  > .blocks-conditional-else {
+    display: flex;
+    flex-direction: column;
+    margin: 1px;
+  }
+  .blocks-conditional-body {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 1px;
+  }
+}
+
 // (the pill of a value; a language that gives its block `variant="value"` has it)
 .blocks-name,
 .blocks-literal,

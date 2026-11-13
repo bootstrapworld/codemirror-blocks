@@ -578,6 +578,78 @@ export const Assignment = defineNode({
   },
 });
 
+/** One branch of a `Conditional`: a test, and the steps to take if it holds */
+export const ConditionalBranch = defineNode({
+  type: "conditionalBranch",
+  label: "conditional branch",
+  fields: {
+    test: field.required(),
+    body: field.list({ orphans: true }),
+  },
+  pretty: (node) => P.standardSexpr(node.fields.test, node.fields.body),
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">if</span>
+        {props.node.fields.test.reactElement()}
+        <Args className="blocks-conditional-body" field="body">
+          {props.node.fields.body}
+        </Args>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return `a branch taken if ${node.fields.test.describe(level)}, with ${pluralize(
+      "step",
+      withoutOrphans(node.fields.body)
+    )}`;
+  },
+});
+
+/**
+ * if, if/else and else-if chains in one node: the `branches` (of
+ * `ConditionalBranch`) are tried in order, and the `otherwise` steps are taken
+ * if none holds (no steps: no else). Printed as `(cond (test body...) ... (else
+ * otherwise...))`.
+ */
+export const Conditional = defineNode({
+  type: "conditional",
+  label: "conditional",
+  fields: {
+    branches: field.list(),
+    otherwise: field.list({ orphans: true }),
+  },
+  pretty: (node) =>
+    P.standardSexpr("cond", [
+      ...node.fields.branches,
+      ...(node.fields.otherwise.length
+        ? [P.standardSexpr("else", node.fields.otherwise)]
+        : []),
+    ]),
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">conditional</span>
+        <Args className="blocks-conditional-branches" field="branches">
+          {props.node.fields.branches}
+        </Args>
+        <div className="blocks-conditional-else">
+          <span className="blocks-operator">else</span>
+          <Args className="blocks-conditional-body" field="otherwise">
+            {props.node.fields.otherwise}
+          </Args>
+        </div>
+      </Node>
+    );
+  },
+  longDescription(node) {
+    const { branches, otherwise } = node.fields;
+    return `a conditional with ${pluralize("branch", branches)}${
+      withoutOrphans(otherwise).length ? " and an else" : ""
+    }`;
+  },
+});
+
 export type LiteralNode = ReturnType<typeof Literal>;
 export const Literal = defineNode({
   type: "literal",
@@ -751,6 +823,8 @@ const specs = {
   binaryOperation: BinaryOperation.spec,
   unaryOperation: UnaryOperation.spec,
   assignment: Assignment.spec,
+  conditionalBranch: ConditionalBranch.spec,
+  conditional: Conditional.spec,
   literal: Literal.spec,
   comment: Spec.nodeSpec([Spec.value<string, "comment">("comment")], {
     label: "comment",
@@ -780,6 +854,8 @@ const customizable = {
   BinaryOperation,
   UnaryOperation,
   Assignment,
+  ConditionalBranch,
+  Conditional,
   Literal,
   Blank,
 };

@@ -163,3 +163,85 @@ describe("Assignment", () => {
     expect(assign("=").toString()).toBe("(set! x 1)");
   });
 });
+
+describe("Conditional and ConditionalBranch", () => {
+  const branch = (test: string, body: string[]) =>
+    Nodes.ConditionalBranch(at(0), at(9), {
+      test: word(test),
+      body: body.map((b) => word(b)),
+    });
+  const conditional = (
+    branches: ReturnType<typeof branch>[],
+    otherwise: string[]
+  ) =>
+    Nodes.Conditional(at(0), at(40), {
+      branches,
+      otherwise: otherwise.map((o) => word(o)),
+    });
+
+  it("print as (cond (test body...) ... (else otherwise...))", () => {
+    expect(branch("t", ["a", "b"]).toString()).toBe("(t a b)");
+    expect(conditional([branch("t", ["a"])], []).toString()).toBe(
+      "(cond (t a))"
+    );
+    expect(
+      conditional([branch("t", ["a"]), branch("u", ["b"])], ["c"]).toString()
+    ).toBe("(cond (t a) (u b) (else c))");
+  });
+
+  it("say what they are, with and without an else", () => {
+    const withElse = conditional([branch("t", []), branch("u", [])], ["c"]);
+    expect(withElse.type).toBe("conditional");
+    expect(withElse.label).toBe("conditional");
+    expect(withElse.describe(0)).toBe(
+      "a conditional with 2 branches and an else"
+    );
+    expect(conditional([branch("t", [])], []).describe(0)).toBe(
+      "a conditional with 1 branch"
+    );
+    expect(branch("t", ["a", "b"]).type).toBe("conditionalBranch");
+    expect(branch("t", ["a", "b"]).describe(0)).toBe(
+      "a branch taken if literal, with 2 steps"
+    );
+  });
+
+  it("can be written as if / else if / else by a language", () => {
+    const mine = Nodes.forLanguage({
+      Conditional: {
+        pretty: (node) =>
+          P.vert(
+            ...node.fields.branches.map((b, i) => P.horz(i ? "else " : "", b)),
+            ...(node.fields.otherwise.length
+              ? [P.horz("else ", P.sepBy(node.fields.otherwise, " ", " "))]
+              : [])
+          ),
+      },
+      ConditionalBranch: {
+        pretty: (node) =>
+          P.horz(
+            "if ",
+            node.fields.test,
+            ": ",
+            P.sepBy(node.fields.body, " ", " ")
+          ),
+      },
+    });
+    const node = mine.Conditional(at(0), at(1), {
+      branches: [
+        mine.ConditionalBranch(at(0), at(1), {
+          test: word("t"),
+          body: [word("a")],
+        }),
+        mine.ConditionalBranch(at(0), at(1), {
+          test: word("u"),
+          body: [word("b")],
+        }),
+      ],
+      otherwise: [word("c")],
+    });
+    expect(node.toString()).toBe("if t: a\nelse if u: b\nelse c");
+    expect(conditional([branch("t", ["a"])], []).toString()).toBe(
+      "(cond (t a))"
+    );
+  });
+});

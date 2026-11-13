@@ -118,12 +118,18 @@ are:
   `blocks-structDefinition`, `blocks-lambdaExpression`, `blocks-ifExpression`,
   `blocks-condExpression`, `blocks-condClause`, `blocks-identifierList`,
   `blocks-loop`, `blocks-binaryOperation`, `blocks-unaryOperation`,
-  `blocks-assignment` and `blocks-comment`. Your language defines the rest: a node created with
+  `blocks-assignment`, `blocks-conditional`, `blocks-conditionalBranch`,
+  and `blocks-comment`. Your language defines the rest: a node created with
   `type: "whenExpr"` gets the class `blocks-whenExpr`.
 
 - **blocks-loop-header** and **blocks-loop-body**: the parts of a
   `blocks-loop`: what the kind of loop needs before its steps (drawn in a row)
   and the steps (drawn in a column).
+
+- **blocks-conditional-branches**, **blocks-conditional-else** and
+  **blocks-conditional-body**: the parts of a `blocks-conditional` and of a
+  `blocks-conditionalBranch`: the branches (a column), the else, and the steps
+  of a branch or of the else (a column).
 
 - **blocks-compound** and **blocks-value**: what a block that has
   `<Node variant="compound">` or `variant="value"` is drawn as, whatever its
