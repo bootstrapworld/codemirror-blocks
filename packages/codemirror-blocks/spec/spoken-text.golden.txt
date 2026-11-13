@@ -191,7 +191,7 @@ summary: At the top level, this program contains 1 program.
 
 prog: program,
   long: a program with 1 expressions
-call: function call,
+functionApp: function call,
   long: a call to literal with 2 arguments
 literal: literal,
 literal: literal,
@@ -285,7 +285,7 @@ summary: At the top level, this program contains 1 program.
 ## lambda: comments
 prog: program,
   long: a program with 1 expressions
-call: function call with comment: about f,
+functionApp: function call with comment: about f,
   long: a call to literal with 1 arguments
 literal: literal,
 literal: literal,
@@ -294,7 +294,7 @@ summary: At the top level, this program contains 1 program.
 prog: program,
   long: a program with 1 expressions
 comment: comment: on its own,
-call: function call,
+functionApp: function call,
   long: a call to literal with 1 arguments
 literal: literal,
 literal: literal,
@@ -302,7 +302,7 @@ summary: At the top level, this program contains 1 program.
 
 prog: program,
   long: a program with 1 expressions
-call: function call with comment: after,
+functionApp: function call with comment: after,
   long: a call to literal with 2 arguments
 literal: literal,
 literal: literal,
@@ -311,7 +311,7 @@ summary: At the top level, this program contains 1 program.
 
 prog: program,
   long: a program with 1 expressions
-call: function call,
+functionApp: function call,
   long: a call to literal with 2 arguments
 literal: literal,
 literal: literal with comment: between,

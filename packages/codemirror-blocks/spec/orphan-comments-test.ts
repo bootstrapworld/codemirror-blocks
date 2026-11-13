@@ -70,7 +70,7 @@ describe("which comments go with a node, and which are orphans", () => {
         "prog prog literal comment* literal"
       );
       expect(shapeOf("f(a,\n\n# c\n\nb)")).toBe(
-        "prog call literal literal comment* literal"
+        "prog functionApp literal literal comment* literal"
       );
     });
     it("goes with the next node where the list cannot hold one", () => {
@@ -358,7 +358,9 @@ describe("printing what was found in the soak", () => {
 
   it("a call of a parenthesised operand starts where the operand does", () => {
     const ast = lambda.buildAST("(!x)(y);\n(a)(b)");
-    const calls = [...ast.getAllNodes()].filter((n) => n.type === "call");
+    const calls = [...ast.getAllNodes()].filter(
+      (n) => n.type === "functionApp"
+    );
     expect(calls.map((c) => c.srcRange().from)).toEqual([
       { line: 0, ch: 0 },
       { line: 1, ch: 0 },

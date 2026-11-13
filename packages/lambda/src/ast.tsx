@@ -26,10 +26,6 @@ export const LambdaAST = createASTSpec({
   prog: Spec.nodeSpec([Spec.list("exprs", { orphans: true })], {
     label: "program",
   }),
-  call: Spec.nodeSpec(
-    [Spec.required("func"), Spec.list("args", { orphans: true })],
-    { label: "function call" }
-  ),
   lambda: Spec.nodeSpec(
     [Spec.optional("name"), Spec.list("vars"), Spec.required("body")],
     { label: "lambda expression" }
@@ -59,7 +55,7 @@ function atomic(node: ASTNode): P.DocLike {
   // (a comment above a node makes it more than an atom: it is in parentheses)
   const above =
     node.options.comment && poscmp(node.options.comment.from, node.from) < 0;
-  return (node.type === "literal" || node.type === "call") && !above
+  return (node.type === "literal" || node.type === "functionApp") && !above
     ? node
     : P.horz("(", node, ")");
 }
@@ -126,19 +122,13 @@ export function Prog(from: Pos, to: Pos, exprs: ASTNode[], options = {}) {
   });
 }
 
-export function Call(
-  from: Pos,
-  to: Pos,
-  func: ASTNode,
-  args: ASTNode[],
-  options = {}
-) {
-  return LambdaAST.makeNode({
-    from,
-    to,
-    type: "call",
-    fields: { func, args },
-    options,
+/**
+ * A call is the core function application, written `f(a, b)`: the table says
+ * how it is printed, drawn and described, and the node is the core's otherwise.
+ */
+const { FunctionApp } = Nodes.forLanguage({
+  FunctionApp: {
+    label: "function call",
     pretty: (node) =>
       P.horz(atomic(node.fields.func), commaSeparated(node.fields.args)),
     render(props) {
@@ -155,7 +145,17 @@ export function Call(
       `a call to ${node.fields.func.describe(level)} with ${
         withoutOrphans(node.fields.args).length
       } arguments`,
-  });
+  },
+});
+
+export function Call(
+  from: Pos,
+  to: Pos,
+  func: ASTNode,
+  args: ASTNode[],
+  options = {}
+) {
+  return FunctionApp(from, to, { func, args }, options);
 }
 
 export function Lambda(

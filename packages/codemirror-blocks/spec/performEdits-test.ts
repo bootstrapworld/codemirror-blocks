@@ -613,8 +613,8 @@ describe("applyEdits on nodes that have the range of the node that holds them", 
     ast = lambda.buildAST(code);
     editor.setValue(code);
     const nodes = [...ast.descendants()];
-    const outer = nodes.find((n) => n.type === "call")!;
-    const inner = [...outer.children()].find((n) => n.type === "call")!;
+    const outer = nodes.find((n) => n.type === "functionApp")!;
+    const inner = [...outer.children()].find((n) => n.type === "functionApp")!;
     const leaf = [...inner.children()][0];
     return { outer, inner, leaf };
   };
