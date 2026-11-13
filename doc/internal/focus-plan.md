@@ -123,13 +123,15 @@ Reading it:
   of them fixed, the test for it is the thing missing. No test was written for
   these, because none could be made to fail.
 
-- **A mismatch seen while looking, not changed.** When the text of one root is
+- **A mismatch seen while looking, fixed in Phase 2, step 6.** When the text of one root is
   changed through the API (`replaceRange`) while a block of another root has
   keyboard focus, the store moves `focusId` to the edited root, and the keyboard
   focus stays on the block it was on. Effect A does not take focus then, because
   the editor does not "have focus" and something else (a block) does. This is
   today's behaviour; the rule under "The target" would bring them together
   (decision 2 above). It is a user-visible change if so decided.
+  Now (decision 4) such a change leaves `focusId` on the block that has focus, if
+  the change left it in the document.
 
 **Phase 1: split `Node.tsx`, moving code and changing none.**
 
@@ -161,6 +163,14 @@ because it goes from the ones that already overlap to the ones that stand alone:
    focus stranded, the editor not left: focus the editor) and as a trigger (focus
    arriving on the editor's own placeholder, which is where a closed dialog
    hands it back).
+6. **Done** (2026-11-12). Decision 4: an edit made by the API's caller
+   (`replaceRange`, `setValue`, `replaceSelection(s)`, which `asApiEdit` in
+   `editor.ts` marks while they run) leaves `focusId` on the block that has focus,
+   if the edit left it in the document; if it removed the block, or no block had
+   focus, the first root is focused as before. An edit the user makes (a key, a
+   drag, a paste, an edit box, typing in CodeMirror's own input) and undo and redo
+   are as before. A change made straight on `getCM()` is not marked, so it is
+   treated as the user's.
 
 **Phase 3: soak.** React (jsdom and e2e), React motion, Preact e2e, Preact
 motion, and the random suite at `CMB_CPU_THROTTLE=4` on both.

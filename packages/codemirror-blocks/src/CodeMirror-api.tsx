@@ -1,7 +1,7 @@
 import type { Activity } from "./state/activityLog";
 import type { AppAction, RootState } from "./state/reducers";
 import { ASTNode, Pos } from "./ast";
-import { CodeMirrorFacade, isBlockNodeMarker } from "./editor";
+import { CodeMirrorFacade, asApiEdit, isBlockNodeMarker } from "./editor";
 import type { AppStore } from "./state/store";
 import * as selectors from "./state/selectors";
 import { BlockError, maxpos, minpos, poscmp } from "./utils";
@@ -279,7 +279,12 @@ const buildBlockModeAPI = (
   const api: BlockModeAPI &
     Pick<
       CodeMirrorAPI,
-      "listSelections" | "setSelections" | "replaceSelections" | "undo" | "redo"
+      | "listSelections"
+      | "setSelections"
+      | "replaceSelections"
+      | "setValue"
+      | "undo"
+      | "redo"
     > = {
     /*****************************************************************
      * CM APIs WE WANT TO OVERRIDE
@@ -425,8 +430,12 @@ const buildBlockModeAPI = (
         [{ anchor: from, head: to }],
         selectors.getAST(store.getState())
       );
-      codemirror.replaceRange(text, from, to, origin);
+      asApiEdit(codemirror, () =>
+        codemirror.replaceRange(text, from, to, origin)
+      );
     },
+    setValue: (value) =>
+      asApiEdit(codemirror, () => codemirror.setValue(value)),
     setSelections: (ranges, primary, opts) => {
       const { nodeIds, textRanges } = validateSelectionRanges(
         store.getState(),
@@ -460,7 +469,7 @@ const buildBlockModeAPI = (
       const tmpCM: CodeMirror.Editor = getTempCM(codemirror);
       tmpCM.setSelections(api.listSelections());
       tmpCM.replaceSelections(rStrings, select);
-      codemirror.setValue(tmpCM.getValue());
+      asApiEdit(codemirror, () => codemirror.setValue(tmpCM.getValue()));
       if (select == "around") {
         // if one of the ranges is invalid, validateSelectionRanges will raise an error
         const { nodeIds, textRanges } = validateSelectionRanges(

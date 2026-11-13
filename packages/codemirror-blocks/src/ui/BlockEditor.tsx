@@ -16,7 +16,13 @@ import { createFocusKeeper } from "../focus";
 import * as selectors from "../state/selectors";
 import * as actions from "../state/actions";
 import { EditorContext } from "../components/Context";
-import { CMBEditor, CodeMirrorFacade, Pos, ReadonlyCMBEditor } from "../editor";
+import {
+  CMBEditor,
+  CodeMirrorFacade,
+  Pos,
+  ReadonlyCMBEditor,
+  isApiEdit,
+} from "../editor";
 import ToplevelBlockEditable from "./ToplevelBlockEditable";
 import { isChangeObject, makeChangeObject } from "../edits/performEdits";
 import ToplevelBlock from "./ToplevelBlock";
@@ -114,7 +120,11 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
    * Given a CM Change Event, manually handle our own undo and focus stack
    * This is hooked up to CodeMirror's onChange; event
    */
-  const handleChange = (editor: CMBEditor, change: CodeMirror.EditorChange) => {
+  const handleChange = (
+    editor: CMBEditor,
+    change: CodeMirror.EditorChange,
+    isApiEdit: boolean
+  ) => {
     if (isChangeObject(change)) {
       return; // trust our own changeObjects
     }
@@ -139,7 +149,8 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
         isUndoOrRedo,
         undefined,
         newASTRef.current,
-        annt
+        annt,
+        isApiEdit
       )
     );
   };
@@ -188,7 +199,7 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
       handleBeforeChange(editor, change);
     };
     const onChange = (ed: CodeMirror.Editor, change: CodeMirror.EditorChange) =>
-      handleChange(editor, change);
+      handleChange(editor, change, isApiEdit(codemirror));
     const onChanges = (
       ed: CodeMirror.Editor,
       changes: CodeMirror.EditorChange[]

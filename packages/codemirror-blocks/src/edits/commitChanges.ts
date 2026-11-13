@@ -28,6 +28,9 @@ export type FocusHint = (ast: AST) => ASTNode | undefined | "fallback";
  * @param astHint the AST you get from parsing the result of these changes (which
  *   you may know from a call to `speculateChanges()`).
  * @param annt
+ * @param isApiEdit `true` for a change made by the API's caller (`replaceRange`,
+ *   `setValue`...), not by the user: the block that has focus keeps it, if the
+ *   change left it in the document.
  *
  * @returns the new AST constructed from the changes and the id of the node that was
  *   focused (if one was found)
@@ -39,7 +42,8 @@ export const commitChanges =
     isUndoOrRedo: boolean,
     focusHint?: FocusHint,
     astHint?: AST,
-    annt?: string
+    annt?: string,
+    isApiEdit = false
   ): AppThunk<{ newAST: AST; focusId?: string }> =>
   (dispatch, getState) => {
     const oldAST = selectors.getAST(getState());
@@ -58,6 +62,12 @@ export const commitChanges =
 
     // Try to set the focus using hinting data. If that fails, use the first root
     let focusId: string | undefined = newAST.getFirstRootNode()?.id;
+    // (a change from the API leaves focus on the block that has it, if it is
+    // still there: the keyboard is on it, and a change made from outside is not
+    // the user moving)
+    if (isApiEdit && oldFocus && newAST.getNodeById(oldFocus.id)) {
+      focusId = oldFocus.id;
+    }
     if (focusHint) {
       // if there is hinting data, try that as well.
       const node = computeFocusNodeFromHint(

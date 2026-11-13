@@ -185,6 +185,24 @@ export function isBlockNodeMarker(
   return Boolean(marker.isBlockNode);
 }
 
+const apiEdits = new WeakSet<CodeMirror.Editor>();
+/**
+ * Run `fn`, a change of the text that the API's caller asked for (`replaceRange`,
+ * `setValue`...), so that the editor can tell it from an edit the user made.
+ */
+export function asApiEdit<T>(codemirror: CodeMirror.Editor, fn: () => T): T {
+  const nested = apiEdits.has(codemirror);
+  apiEdits.add(codemirror);
+  try {
+    return fn();
+  } finally {
+    if (!nested) apiEdits.delete(codemirror);
+  }
+}
+/** Is a change being made on behalf of the API's caller? */
+export const isApiEdit = (codemirror: CodeMirror.Editor) =>
+  apiEdits.has(codemirror);
+
 export class CodeMirrorFacade implements CMBEditor {
   readonly codemirror: CodeMirror.Editor;
   private redrawing = false;

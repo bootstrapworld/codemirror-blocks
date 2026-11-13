@@ -1,3 +1,4 @@
+import { act } from "@testing-library/react";
 import wescheme from "@bootstrapworld/wescheme";
 import {
   cmd_ctrl,
@@ -161,8 +162,15 @@ describe("two quick edits that CodeMirror undoes as one", () => {
     cmb.setValue("a b c d");
     cmb.clearHistory();
     mouseDown(root(3));
-    cmb.replaceRange("", { line: 0, ch: 0 }, { line: 0, ch: 2 }, "+delete");
-    cmb.replaceRange("", { line: 0, ch: 0 }, { line: 0, ch: 2 }, "+delete");
+    // (as typing in CodeMirror's own input does: a change the user made, not one
+    // the API's caller asked for)
+    for (let i = 0; i < 2; i++) {
+      act(() => {
+        cmb
+          .getCM()
+          .replaceRange("", { line: 0, ch: 0 }, { line: 0, ch: 2 }, "+delete");
+      });
+    }
     expect(cmb.getValue()).toBe("c d");
     expect(cmb.historySize().undo).toBe(1);
   });

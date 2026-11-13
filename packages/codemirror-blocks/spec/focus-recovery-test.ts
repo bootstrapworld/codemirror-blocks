@@ -104,16 +104,19 @@ describe("changing the text through the API while a block is being edited", () =
     cmb.replaceRange("\n(g w)", { line: 0, ch: 5 });
   });
 
-  it("does not leave an editing box open that nothing can type into", () => {
-    expect(document.activeElement?.id).not.toBe("cmb-focus-placeholder");
-    expect(document.activeElement).not.toBe(document.body);
-    expect(document.activeElement).not.toHaveAttribute("contenteditable");
-    expect(document.querySelectorAll("[contenteditable=true]")).toHaveLength(0);
+  // (the change leaves the block that is being edited where it was, so the box
+  // is still its place to type: it is not left open with focus gone from it)
+  it("leaves the editing box open, with keyboard focus in it", () => {
+    expect(document.activeElement).toHaveAttribute("contenteditable", "true");
+    expect(document.activeElement?.id).toBe(`block-node-${root(1).id}`);
   });
 
   it("so that the block can be moved on from", () => {
-    keyDown("ArrowDown", {}, root(0));
+    keyDown("Escape", {}, document.activeElement!);
+    expect(document.activeElement).not.toHaveAttribute("contenteditable");
     expect(document.activeElement?.id).toBe(`block-node-${root(1).id}`);
+    keyDown("ArrowDown", {}, root(1));
+    expect(document.activeElement?.id).toBe(`block-node-${root(2).id}`);
   });
 });
 
