@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import lambda from "@bootstrapworld/lambda";
 import type { ASTNode } from "../src/ast";
 import type { API } from "../src/CodeMirrorBlocks";
@@ -119,5 +120,23 @@ describe("lambda: editing the blocks of an if", () => {
       ),
     ].map((el) => el.textContent);
     expect(keywords).toEqual(["if", "then", "else"]);
+  });
+
+  it("adds an else from a click on the faded else keyword, after the else was deleted", () => {
+    cmb.setValue("if i < 3 then 2 else 5");
+    const iff = [...cmb.getAst().descendants()].find((n) => n.type === "if")!;
+    const five = f(iff).otherwise[0];
+    mouseDown(five);
+    keyDown(" ", {}, five);
+    keyDown("Delete");
+    expect(cmb.getValue()).toBe("if i < 3 then 2");
+    const keyword = document.querySelector(
+      ".blocks-if-else.blocks-not-live > .blocks-operator"
+    )!;
+    fireEvent.click(keyword);
+    expect(document.activeElement).toHaveAttribute("contenteditable", "true");
+    setEditableText("9");
+    keyDown("Enter");
+    expect(cmb.getValue()).toBe("if i < 3 then 2 else 9");
   });
 });

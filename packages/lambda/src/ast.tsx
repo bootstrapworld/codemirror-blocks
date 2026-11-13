@@ -323,6 +323,7 @@ const {
             className={`blocks-if-else${
               otherwise.length === 0 ? " blocks-not-live" : ""
             }`}
+            {...Nodes.notLiveElseHandlers(otherwise.length === 0)}
           >
             <span className="blocks-operator">else</span>
             {otherwise.length ? (

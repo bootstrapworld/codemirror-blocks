@@ -684,6 +684,24 @@ export const Return = defineNode({
 });
 
 /**
+ * An else with no steps is a faded keyword over a small place to drop a block:
+ * a press on any of it is a press on that place (the keyword is the bigger
+ * target, and is what is meant), and does not activate the if.
+ */
+export const notLiveElseHandlers = (notLive: boolean) =>
+  notLive
+    ? {
+        onMouseDown: (e: React.MouseEvent) => e.stopPropagation(),
+        onClick: (e: React.MouseEvent<HTMLElement>) => {
+          e.stopPropagation();
+          e.currentTarget
+            .querySelector<HTMLElement>(".blocks-drop-target")
+            ?.click();
+        },
+      }
+    : {};
+
+/**
  * `if test then steps [else steps]`. The else is the `otherwise` list: with no
  * steps there is no else, and it is drawn "not live" (the keyword and a place
  * to drop a block, faded) until it has one. Printed `(if test body...)`, and
@@ -720,6 +738,7 @@ export const If = defineNode({
           className={classNames("blocks-if-else", {
             "blocks-not-live": otherwise.length === 0,
           })}
+          {...notLiveElseHandlers(otherwise.length === 0)}
         >
           <span className="blocks-operator">else</span>
           {otherwise.length ? (

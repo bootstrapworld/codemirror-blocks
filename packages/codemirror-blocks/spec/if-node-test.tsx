@@ -148,6 +148,15 @@ describe("an if", () => {
     expect(elseArea()).toHaveClass("blocks-not-live");
   });
 
+  it("opens the faded else for typing from a click on its keyword, not only its small place", () => {
+    mount("(ifs t a)");
+    fireEvent.click(elseArea()!.querySelector(".blocks-operator")!);
+    expect(document.activeElement).toHaveAttribute("contenteditable", "true");
+    setEditableText("b");
+    keyDown("Enter");
+    expect(cmb.getValue()).toBe("(ifs t (then a) (otherwise b))");
+  });
+
   it("loses its else when the last step of it is deleted, and undo brings it back", () => {
     mount("(ifs t (then a) (otherwise b))");
     const b = f().otherwise[0];
