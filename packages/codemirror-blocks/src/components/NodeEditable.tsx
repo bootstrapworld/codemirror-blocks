@@ -171,7 +171,7 @@ const NodeEditable = ({
         if (value === initialValue || !value) {
           props.onDisableEditable();
           const nid = focusedNode && focusedNode.nid;
-          dispatch(activateByNid(props.editor, nid));
+          dispatch(activateByNid(props.editor, nid, { allowMove: false }));
           dispatch(keepFocusInEditor);
           return;
         }

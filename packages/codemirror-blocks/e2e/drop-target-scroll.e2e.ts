@@ -108,3 +108,26 @@ for (const scrolled of [false, true]) {
     });
   }
 }
+
+// Closing the edit box without adding anything (Escape, or leaving it empty)
+// does not take the page to the block that has focus, wherever that is.
+for (const c of cases) {
+  test(`after scrolling, cancelling the box of a drop target ${c.name} leaves the page where it is`, async ({
+    page,
+  }) => {
+    await openInBlockMode(page, code);
+    await block(page, /^f0 expression/).click({ position: { x: 4, y: 4 } });
+    await scrollDown(page, 12);
+    const target = c.target(page, true);
+    await target.scrollIntoViewIfNeeded();
+    const before = await scrollTop(page);
+    await target.click();
+    await expect.poll(async () => (await active(page)).editable).toBe("true");
+    await page.keyboard.press("Escape");
+    await expect
+      .poll(async () => (await active(page)).editable)
+      .not.toBe("true");
+    await page.waitForTimeout(300);
+    expect(Math.abs((await scrollTop(page)) - before)).toBeLessThan(200);
+  });
+}

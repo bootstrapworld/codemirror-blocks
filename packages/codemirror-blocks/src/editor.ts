@@ -125,9 +125,13 @@ export interface ReadonlyRangedText {
 }
 
 export interface ReadonlyCMBEditor extends ReadonlyRangedText {
-  scrollASTNodeIntoView(node: ASTNode): void;
+  /**
+   * Say that the block is the active one, and (unless `scroll` is false) bring
+   * it into view.
+   */
+  scrollASTNodeIntoView(node: ASTNode, scroll?: boolean): void;
   /** Give the block keyboard focus: the user has moved to it (see focus.ts) */
-  focusBlock(node: ASTNode): void;
+  focusBlock(node: ASTNode, allowMove?: boolean): void;
   /** Something has happened that could have dropped keyboard focus (see focus.ts) */
   checkFocus(): void;
 
@@ -322,15 +326,15 @@ export class CodeMirrorFacade implements CMBEditor {
     });
   }
 
-  focusBlock(node: ASTNode) {
-    keeperOf(this.codemirror)?.request(node);
+  focusBlock(node: ASTNode, allowMove = true) {
+    keeperOf(this.codemirror)?.request(node, allowMove);
   }
 
   checkFocus() {
     keeperOf(this.codemirror)?.check();
   }
 
-  scrollASTNodeIntoView(node: ASTNode) {
+  scrollASTNodeIntoView(node: ASTNode, scroll = true) {
     if (!node.element) {
       throw new Error(
         "can't scroll an ast node into view if it doesn't have an element set"
@@ -344,19 +348,26 @@ export class CodeMirrorFacade implements CMBEditor {
         // (the block may be gone by then)
         // (and the event is still the current one in a microtask run right
         // after its handler: asking again would defer for ever)
-        if (node.element) this.scrollToElement(node, node.element);
+        if (node.element) this.scrollToElement(node, node.element, scroll);
       });
       return;
     }
-    this.scrollToElement(node, node.element);
+    this.scrollToElement(node, node.element, scroll);
   }
 
-  private scrollToElement(node: ASTNode, element: HTMLElement) {
+  private scrollToElement(node: ASTNode, element: HTMLElement, move: boolean) {
     // (a block CodeMirror has dropped from a long document is drawn again once
     // its line is in view)
-    this.codemirror.scrollIntoView(node.from);
+    if (move) this.codemirror.scrollIntoView(node.from);
     // a block that was just removed still has its element, but nowhere to scroll to
     if (!element.isConnected) return;
+    if (!move) {
+      // (the editor does not move: only the active block is said)
+      this.codemirror
+        .getScrollerElement()
+        .setAttribute("aria-activedescendent", element.id);
+      return;
+    }
     // get the *actual* bounding rect
     let { top, bottom, left, right } = element.getBoundingClientRect();
     const offset = this.codemirror.getWrapperElement().getBoundingClientRect();

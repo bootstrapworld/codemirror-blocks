@@ -22,7 +22,7 @@ const MAX_RETRY_FRAMES = 30;
 
 export type FocusKeeper = {
   /** Give the block focus: the user has moved to it */
-  request(node: ASTNode): void;
+  request(node: ASTNode, allowMove?: boolean): void;
   /** Run the rule now: something has happened that could have dropped focus */
   check(): void;
   dispose(): void;
@@ -152,12 +152,14 @@ export function createFocusKeeper({
   // even if the editor was left, and even if another block has it. If the block
   // is not on the page (CodeMirror took its line off), focus waits on this
   // editor's placeholder until it is drawn again.
-  const request = (node: ASTNode) => {
+  const request = (node: ASTNode, allowMove = true) => {
     left = false;
     const el = node.element;
     if (el && document.contains(el)) {
-      editor.scrollASTNodeIntoView(node);
-      el.focus();
+      // (a block that is asked for without moving the editor is only said to be
+      // the active one)
+      editor.scrollASTNodeIntoView(node, allowMove);
+      el.focus(allowMove ? undefined : { preventScroll: true });
       owesFocus = false;
       return;
     }

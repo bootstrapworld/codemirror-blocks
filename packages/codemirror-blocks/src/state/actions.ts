@@ -435,7 +435,7 @@ export function activateByNid(
   options: ActivateOptions = {}
 ): AppThunk {
   return (dispatch, getState) => {
-    options = { ...options, allowMove: true };
+    options = { allowMove: true, ...options };
     const state = getState();
     const ast = selectors.getAST(state);
     const focusedNode = selectors.getFocusedNode(state);
@@ -471,7 +471,7 @@ export function activateByNid(
     // block off the page (which can leave the screenreader without the block it
     // was on), waits for it on the "stand by" placeholder (see ToggleEditor.tsx)
     // and brings its line into view, so that CodeMirror draws it again.
-    editor.focusBlock(newNode);
+    editor.focusBlock(newNode, options.allowMove);
   };
 }
 
