@@ -171,6 +171,17 @@ because it goes from the ones that already overlap to the ones that stand alone:
    drag, a paste, an edit box, typing in CodeMirror's own input) and undo and redo
    are as before. A change made straight on `getCM()` is not marked, so it is
    treated as the user's.
+7. **Not done: `nodeElementMap` stays** (decision 3). Its only readers are
+   `ASTNode.element` and the two `set`/`delete` calls in `Node.tsx`. Looking the
+   element up by `document.getElementById("block-node-" + id)` instead fails
+   three tests (the keeper's park-and-wait for a block CodeMirror is not drawing,
+   in `focus-recovery`, in the search dialog test, and in the two-editor test):
+   the map keeps the element of a block that CodeMirror has taken off the page,
+   and that is how the keeper tells "not on the page now" (park on the
+   placeholder, scroll, wait) from "never drawn" (nothing to do), and what
+   `scrollASTNodeIntoView` scrolls to. To delete the map, the keeper would need
+   to be told that in another way (for example by the block's id having been
+   drawn before, kept by the keeper).
 
 **Phase 3: soak.** React (jsdom and e2e), React motion, Preact e2e, Preact
 motion, and the random suite at `CMB_CPU_THROTTLE=4` on both.
