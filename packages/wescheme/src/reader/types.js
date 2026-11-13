@@ -645,7 +645,6 @@ Cons.makeInstance = function(f, r) {
 };
 
 
-// FIXME: can we reduce the recursion on this?
 Cons.prototype.isEqual = function(other, aUnionFind) {
     if (! (other instanceof Cons)) {
 	return Logic.FALSE;
@@ -1814,7 +1813,6 @@ ContMarkRecordControl.prototype.invoke = function(state) {
 ContMarkRecordControl.prototype.update = function(key, val) {
  /*
     var newDict = makeLowLevelEqHash();
-    // FIXME: what's the javascript idiom for hash key copy?
     // Maybe we should use a rbtree instead?
     var oldKeys = this.dict.keys();
     for (var i = 0; i < oldKeys.length; i++) {
@@ -2231,7 +2229,6 @@ types.exnSetContMarks = function(exn, v) { Exn.mutator(exn, 1, v); };
 // (define-struct (exn:break exn) (continuation))
 var ExnBreak = makeStructureType('exn:break', Exn, 1, 0, false,
 		function(k, msg, contMarks, cont, name) {
-		// FIXME: what type is a continuation here?
 //			helpers.check(cont, isContinuation, name, 'continuation', 3);
 			k( new ValuesWrapper([msg, contMarks, cont]) );
 		});

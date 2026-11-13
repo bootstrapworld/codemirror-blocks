@@ -56,7 +56,6 @@ var leftListDelims = /[(\u005B\u007B]/
 
 // the delimiters encountered so far, line and column, and case-sensitivity
 var delims, line, column, startCol, startRow, source, caseSensitiveSymbols;
-// UGLY HACK to track index if an error occurs. We should remove this if we can make it entirely stateless
 var endOfError;
 
 // the location struct

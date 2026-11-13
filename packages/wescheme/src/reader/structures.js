@@ -24,7 +24,7 @@ var Vector = types.Vector;
  **************************************************************************/
 // encode the msg and location as a JSON error
 export function throwError(msg, loc, errorClass) {
-  loc.source = loc.source || "<unknown>"; // FIXME -- we should have the source populated
+  loc.source = loc.source || "<unknown>";
   // rewrite a ColoredPart to match the format expected by the runtime
   function rewritePart(part){
     if(typeof(part) === 'string'){
@@ -677,7 +677,6 @@ var defaultCurrentModulePath = "";
 // default-module-resolver: symbol -> (module-binding | false)
 // loop through known modules and see if we know this name
 export var defaultModuleResolver = function(name){
-  // TODO: fix this circular dependency
   var modules = notHere('modules')
   for(var i=0; i<modules.knownModules.length; i++){
     if(modules.knownModules[i].name === name) return modules.knownModules[i];
@@ -717,7 +716,6 @@ function levenshteinDistance(a, b) {
 // moduleGuess: symbol -> symbol
 // loop through known modules and make best suggestion for a given name
 export function moduleGuess(wrongName){
-  // TODO: fix this circular dependency
   var modules = notHere('modules')
   return modules.knownModules.reduce(function(best, module){
     var dist = levenshteinDistance(module.name, wrongName);
@@ -731,7 +729,6 @@ export function defaultModulePathResolver(path){
   // anything of the form wescheme/w+, or that has a known collection AND module
   var parts = path.toString().split("/"),
     collectionName = parts[0];
-  // TODO: fix this circular dependency
   var modules = notHere('modules')
   return (modules.knownCollections.includes(collectionName)
           && defaultModuleResolver(path.toString()))
@@ -917,7 +914,6 @@ export class pinfo{
 
       // if it's a struct provide, return a list containing the constructor and predicate,
       // along with all the accessor and mutator functions
-      // TODO: fix this circular dependency
       var analyzer = notHere('analyzer')
       if(provideBinding instanceof analyzer.provideBindingStructId){
         return [ref(binding.constructor), ref(binding.predicate)].concat(
@@ -928,7 +924,6 @@ export class pinfo{
     }
 
     // decorateWithPermissions: binding -> binding
-    // THIS IS A HACK according to Danny's original sources...not sure why
     function decorateWithPermissions(binding){
       var bindingEntry = function(entry){return entry[0]===binding.name;},
         filteredPermissions = that.declaredPermissions.filter(bindingEntry);
@@ -939,7 +934,6 @@ export class pinfo{
     // Make sure that if the provide says "struct-out ...", that the exported binding
     // is really a structure.
     function checkBindingCompatibility(binding, exportedBinding){
-      // TODO: fix this circular dependency
       var analyzer = notHere('analyzer')
       if(  (binding instanceof analyzer.provideBindingStructId)
         && (!(exportedBinding instanceof structBinding))){
@@ -982,7 +976,6 @@ export function getBasePinfo(language){
     }, new emptyEnv());
 
   var info = new pinfo()
-  // TODO: fix this circular dependency
   var modules = notHere('modules')
   var topLevelEnv = modules = modules.topLevelModules.reduceRight(function(env, mod){
     return env.extendEnv_moduleBinding(mod);
