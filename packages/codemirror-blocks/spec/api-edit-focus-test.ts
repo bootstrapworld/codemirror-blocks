@@ -1,12 +1,15 @@
 import { act } from "@testing-library/react";
 import wescheme from "@bootstrapworld/wescheme";
 import { API } from "../src/CodeMirrorBlocks";
+import type { ASTNode } from "../src/ast";
 import {
   elementForNode,
+  keyDown,
   mountCMB,
   mouseDown,
   teardown,
 } from "../src/toolkit/test-utils";
+import { setEditableText } from "./helpers/editing";
 
 /**
  * A change made through the API does not move the block that has focus, if that
@@ -75,5 +78,43 @@ describe("a change through the API, while a block has keyboard focus", () => {
     cmb.replaceRange("(a bb c)", { line: 0, ch: 0 }, { line: 0, ch: 5 });
     await frames();
     expect(cmb.getFocusedNode()?.id).toBe(cmb.getAst().rootNodes[0].id);
+  });
+});
+
+describe("a change through the API while an edit box is open on another root", () => {
+  // The box stays open (the block it edits keeps focus), so it has to commit to
+  // where the block is now, and nothing else may be overwritten.
+  const editSecondRootLiteral = (value: string) => {
+    const literal = (
+      cmb.getAst().rootNodes[1] as unknown as { fields: { args: ASTNode[] } }
+    ).fields.args[1];
+    mouseDown(literal);
+    keyDown("Enter", {}, literal);
+    expect(document.activeElement).toHaveAttribute("contenteditable", "true");
+    setEditableText(value);
+  };
+  const expectEditedBlockFocused = () => {
+    const focused = cmb.getFocusedNode();
+    expect(focused?.toString()).toBe("7");
+    expect(document.activeElement).toBe(elementForNode(focused!));
+  };
+
+  it("commits to the block's new place when the change adds a line and a length", async () => {
+    editSecondRootLiteral("7");
+    cmb.replaceRange("(a bb\nc)", { line: 0, ch: 0 }, { line: 0, ch: 5 });
+    keyDown("Enter");
+    await frames();
+    expect(cmb.getValue()).toBe("(a bb\nc)\n(+ 1 7 3)");
+    expectEditedBlockFocused();
+  });
+
+  it("commits to the block's new place when the change is before it on its line", async () => {
+    cmb.setValue("(a b) (+ 1 2 3)");
+    editSecondRootLiteral("7");
+    cmb.replaceRange("(a bbbb)", { line: 0, ch: 0 }, { line: 0, ch: 5 });
+    keyDown("Enter");
+    await frames();
+    expect(cmb.getValue()).toBe("(a bbbb) (+ 1 7 3)");
+    expectEditedBlockFocused();
   });
 });
