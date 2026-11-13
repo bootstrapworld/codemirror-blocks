@@ -276,6 +276,11 @@ export const DropTarget = (props: DropTargetProps) => {
     id: `block-drop-target-${id}`,
   };
 
+  // (a list of a fixed length has no place to put a node in: it is only
+  // replaced, element by element)
+  const ownSpec = node.spec.childSpecs.find((s) => s.fieldName === props.field);
+  if (ownSpec instanceof List && ownSpec.fixed) return null;
+
   if (insertTarget) {
     if (!editor) {
       throw new Error("can't edit a DropTarget before codemirror has mounted");

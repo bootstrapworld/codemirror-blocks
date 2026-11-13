@@ -31,7 +31,7 @@ import { warn } from "./utils";
 
 type RequiredField = { kind: "required" };
 type OptionalField = { kind: "optional" };
-type ListField = { kind: "list"; orphans: boolean };
+type ListField = { kind: "list"; orphans: boolean; fixed: boolean };
 type ValueField<V> = { kind: "value"; readonly type?: V };
 type FieldDeclaration =
   | RequiredField
@@ -48,11 +48,17 @@ export const field = {
   optional: (): OptionalField => ({ kind: "optional" }),
   /**
    * any number of nodes. A list that has `orphans` can also hold comments that
-   * go with no node of their own (see `orphans.ts`).
+   * go with no node of their own (see `orphans.ts`). A `fixed` list has as many
+   * as the parser made: nothing is inserted into it, and one that is deleted,
+   * cut or dragged out leaves a blank.
    */
-  list: ({ orphans = false }: { orphans?: boolean } = {}): ListField => ({
+  list: ({
+    orphans = false,
+    fixed = false,
+  }: { orphans?: boolean; fixed?: boolean } = {}): ListField => ({
     kind: "list",
     orphans,
+    fixed,
   }),
   /** something that is not a node (a string, a number, ...) */
   value: <V>(): ValueField<V> => ({ kind: "value" }),
@@ -196,7 +202,7 @@ export function defineNode<F extends Record<string, FieldDeclaration>>(
       case "optional":
         return new Spec.Optional(name);
       case "list":
-        return new Spec.List(name, d.orphans);
+        return new Spec.List(name, d.orphans, d.fixed);
       default:
         return new Spec.Value(name);
     }

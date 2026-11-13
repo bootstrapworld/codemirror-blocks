@@ -389,6 +389,12 @@ const When = defineNode({
 When(from, to, { test, otherwise: null, body: [], id: 1 }, options);
 ```
 
+A list can be `field.list({ fixed: true })`: it has as many nodes as the parser
+made (the core does not know how many a kind of node has). Nothing is inserted
+into it (no drop targets are drawn, and the insert keys do nothing); a node in it
+that is deleted, cut or dragged out leaves a blank in its place, as the child of
+a `field.required()` does; and a block dropped on a node or a blank replaces it.
+
 The fields of `node` are typed from the declaration (`node.fields.body` is an
 array of nodes), and so are the fields given to the constructor. The comment that
 goes with a node is printed for you (above it, or beside it), whether `pretty`

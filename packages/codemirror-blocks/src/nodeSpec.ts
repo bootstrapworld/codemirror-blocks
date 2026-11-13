@@ -107,9 +107,12 @@ export function optional<FieldName extends string>(fieldName: FieldName) {
 // neighbour instead.
 export function list<FieldName extends string>(
   fieldName: FieldName,
-  { orphans = false }: { orphans?: boolean } = {}
+  {
+    orphans = false,
+    fixed = false,
+  }: { orphans?: boolean; fixed?: boolean } = {}
 ) {
-  return new List(fieldName, orphans);
+  return new List(fieldName, orphans, fixed);
 }
 
 // value :: any -> ChildSpec
@@ -296,9 +299,17 @@ export class List<FieldName extends string = string> extends BaseSpec<
 > {
   /** Whether the list can hold orphan comments among its elements */
   readonly orphans: boolean;
-  constructor(fieldName: FieldName, orphans = false) {
+  /**
+   * Whether the list has as many elements as the parser made, whatever the
+   * language says is that many: nothing is inserted into it, and an element
+   * that is deleted (or cut, or dragged out) leaves a blank in its place, as the
+   * child of a required field does.
+   */
+  readonly fixed: boolean;
+  constructor(fieldName: FieldName, orphans = false, fixed = false) {
     super(fieldName);
     this.orphans = orphans;
+    this.fixed = fixed;
   }
   validate(parent: NodeLike) {
     const array = this.getField(parent);

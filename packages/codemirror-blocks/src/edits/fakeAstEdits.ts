@@ -163,7 +163,14 @@ export class FakeAstReplacement {
 
   deleteChild(clonedParent: ASTNode, keepComment = true) {
     const comment = keepComment ? this.child.options.comment : undefined;
-    if (this.spec instanceof List && this.spec.orphans && comment) {
+    if (this.spec instanceof List && this.spec.fixed) {
+      // (the length of the list is not ours to change: a blank holds its place)
+      playSound(BEEP);
+      this.spec.getField(clonedParent)[this.index] = fakeBlankNode(
+        this.child.from,
+        this.child.to
+      );
+    } else if (this.spec instanceof List && this.spec.orphans && comment) {
       // The comment that went with the node stays, as an orphan: it is
       // followed by a blank line, which is what makes it one.
       const orphan = fakeInsertNode(
