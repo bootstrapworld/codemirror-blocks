@@ -208,10 +208,8 @@ summary: At the top level, this program contains 1 program.
 
 prog: program,
   long: a program with 1 expressions
-conditional: conditional expression,
+if: conditional expression,
   long: an if expression: if literal, then literal
-conditionalBranch: conditional branch,
-  long: if literal, then literal
 literal: literal,
 literal: literal,
 literal: literal,

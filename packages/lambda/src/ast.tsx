@@ -2,6 +2,7 @@ import React from "react";
 import * as P from "pretty-fast-pretty-printer";
 import {
   Args,
+  DropTarget,
   Node,
   Nodes,
   NodeSpec as Spec,
@@ -270,29 +271,20 @@ export function Let(
 }
 
 /**
- * `if a then x else if b then y else z` is one conditional with two branches
- * and an else (the core's); the steps of a branch are written bare if there is
- * one, and in braces if there are several, which the parser reads back as that
- * list.
+ * `if a then x else if b then y else z` is an if whose else is the one step that
+ * is another if (written `else if`): the steps of a branch are written bare if
+ * there is one, and in braces if there are several, which the parser reads
+ * back as that list.
  */
-export function Branch(
+export function Conditional(
   from: Pos,
   to: Pos,
   test: ASTNode,
   body: ASTNode[],
-  options = {}
-) {
-  return ConditionalBranch(from, to, { test, body }, options);
-}
-
-export function Conditional(
-  from: Pos,
-  to: Pos,
-  branches: ASTNode[],
   otherwise: ASTNode[],
   options = {}
 ) {
-  return CoreConditional(from, to, { branches, otherwise }, options);
+  return If(from, to, { test, body, otherwise }, options);
 }
 
 /**
@@ -303,55 +295,53 @@ const {
   BinaryOperation,
   UnaryOperation,
   Assignment: AssignmentNode,
-  Conditional: CoreConditional,
-  ConditionalBranch,
+  If,
 } = Nodes.forLanguage({
-  ConditionalBranch: {
-    pretty: (node) =>
-      P.horz("if ", node.fields.test, " then ", steps(node.fields.body)),
-    render(props) {
-      return (
-        <Node {...props} variant="compound">
-          <span className="blocks-operator">if</span>
-          {props.node.fields.test.reactElement()}
-          <span className="blocks-operator">then</span>
-          <Args className="blocks-conditional-body" field="body">
-            {props.node.fields.body}
-          </Args>
-        </Node>
-      );
-    },
-    longDescription: (node, level) =>
-      `if ${node.fields.test.describe(level)}, then ${withoutOrphans(
-        node.fields.body
-      )
-        .map((step) => step.describe(level))
-        .join(", ")}`,
-  },
-  Conditional: {
+  If: {
     label: "conditional expression",
     pretty: (node) =>
       P.horz(
-        P.sepBy(node.fields.branches, " else ", " else "),
+        "if ",
+        node.fields.test,
+        " then ",
+        steps(node.fields.body),
         node.fields.otherwise.length
           ? P.horz(" else ", steps(node.fields.otherwise))
           : ""
       ),
     render(props) {
+      const { test, body, otherwise } = props.node.fields;
       return (
         <Node {...props} variant="compound">
-          <Args className="blocks-conditional-branches" field="branches">
-            {props.node.fields.branches}
+          <span className="blocks-operator">if</span>
+          {test.reactElement()}
+          <span className="blocks-operator">then</span>
+          <Args className="blocks-conditional-body" field="body">
+            {body}
           </Args>
-          <span className="blocks-operator">else</span>
-          <Args className="blocks-conditional-body" field="otherwise">
-            {props.node.fields.otherwise}
-          </Args>
+          <div
+            className={`blocks-if-else${
+              otherwise.length === 0 ? " blocks-not-live" : ""
+            }`}
+          >
+            <span className="blocks-operator">else</span>
+            {otherwise.length ? (
+              <Args className="blocks-conditional-body" field="otherwise">
+                {otherwise}
+              </Args>
+            ) : (
+              <DropTarget field="otherwise" index={0} label="add an else" />
+            )}
+          </div>
         </Node>
       );
     },
     longDescription: (node, level) =>
-      `an if expression: ${node.fields.branches[0]?.describe(level) ?? ""}`,
+      `an if expression: if ${node.fields.test.describe(
+        level
+      )}, then ${withoutOrphans(node.fields.body)
+        .map((step) => step.describe(level))
+        .join(", ")}`,
   },
   BinaryOperation: {
     pretty: (node) =>

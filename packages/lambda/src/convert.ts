@@ -3,7 +3,6 @@ import type { LambdaNode } from "./parser";
 import {
   Assignment,
   Binary,
-  Branch,
   Call,
   Conditional,
   Lambda,
@@ -111,33 +110,19 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
         convert(node.body, loc)
       );
     case "if": {
-      // `else if` goes on as another branch of the same conditional
-      const branches: ASTNode[] = [];
-      let current: LambdaNode = node;
-      let otherwise: LambdaNode[];
-      for (;;) {
-        const here: Loc = {
-          from: current.from ?? loc.from,
-          to: current.to ?? loc.to,
-        };
-        branches.push(
-          Branch(
-            here.from,
-            current.then.to ?? here.to,
-            convert(current.cond, here),
-            steps(current.then, here)
-          )
-        );
-        if (current.else?.type === "if") {
-          current = current.else;
-        } else {
-          otherwise = current.else ? [current.else] : [];
-          // (the last else is a block of several steps, or one step)
-          if (otherwise[0]?.type === "prog") otherwise = otherwise[0].prog;
-          break;
-        }
-      }
-      return Conditional(from, to, branches, all(otherwise));
+      // (`else if` is an else of one step that is another if)
+      const otherwise = node.else
+        ? node.else.type === "prog"
+          ? node.else.prog
+          : [node.else]
+        : [];
+      return Conditional(
+        from,
+        to,
+        convert(node.cond, loc),
+        steps(node.then, loc),
+        all(otherwise)
+      );
     }
     case "not":
       return Not(from, to, convert(node.body, loc));
