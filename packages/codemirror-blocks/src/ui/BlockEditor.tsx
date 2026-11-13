@@ -69,25 +69,6 @@ const BlockEditor = ({ options = {}, ...props }: BlockEditorProps) => {
   // (an undo or redo is between two of its changes, at a text that is no program)
   const halfUndoneRef = useRef(false);
 
-  // When the last block goes away (deleted, dragged to the trash, undone...),
-  // keyboard focus has nowhere to go and falls to the page body, so typing and
-  // shortcuts stop working. Keep it in the editor instead.
-  const hadBlocksRef = useRef(false);
-  useEffect(() => {
-    const hasBlocks = ast.rootNodes.length > 0;
-    if (hadBlocksRef.current && !hasBlocks) {
-      const active = document.activeElement;
-      if (
-        !active ||
-        active === document.body ||
-        active.id === "cmb-focus-placeholder"
-      ) {
-        editor?.focus();
-      }
-    }
-    hadBlocksRef.current = hasBlocks;
-  }, [ast, editor]);
-
   // only refresh if there is no active quarantine
   useEffect(() => {
     if (!quarantine) {

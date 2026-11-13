@@ -153,8 +153,14 @@ because it goes from the ones that already overlap to the ones that stand alone:
    before the textarea took focus, so effect D was guarding against a call made
    by a mechanism that step 1 removed. Which one was not identified.
    `press-focus.e2e.ts` stays as the guard.
-4. 2, and the element focus in 1.
-5. 8 and 9.
+4. **Done** (2026-11-12). 2, and the element focus in 1: `activateByNid` keeps the
+   store update and asks its editor's keeper to give the block focus (through the
+   editor facade), and effect A is deleted. When an edit box closes, `Node` tells
+   the keeper (`checkFocus`), once the block is on the page.
+5. **Done** (2026-11-12). 8 and 9: in the keeper's rule (the last block gone,
+   focus stranded, the editor not left: focus the editor) and as a trigger (focus
+   arriving on the editor's own placeholder, which is where a closed dialog
+   hands it back).
 
 **Phase 3: soak.** React (jsdom and e2e), React motion, Preact e2e, Preact
 motion, and the random suite at `CMB_CPU_THROTTLE=4` on both.
@@ -186,6 +192,18 @@ Made by the owner on 2026-11-12.
    and the keyboard stays: see "A mismatch seen while looking" above.) This is a
    change in the edit path, not in the focus code: it is Phase 2, step 6, after
    the mechanisms have moved.
+
+Found while doing step 4:
+
+- `activateByNid` forces `allowMove: true` (`options = { ...options, allowMove:
+true, record: true }`), so the `allowMove: false` that some callers pass has
+  never had an effect, and the keeper's `request` scrolls whether or not it was
+  passed. This matches today; the oddity is in the callers.
+- A mode switch through the API (`setBlockMode`) with focus on the body no
+  longer focuses a block (the old effect did, as a side effect of the block
+  rendering). That follows decision 2. The tests that relied on it
+  (`edge-cases`: undo after switching back; `api-selection`: `hasFocus`; `search`:
+  nothing to search for) now press a block first, as a user in the editor would.
 
 ## Who does it
 

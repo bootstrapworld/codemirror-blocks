@@ -1,7 +1,12 @@
 import { act, fireEvent, screen } from "@testing-library/react";
 import wescheme from "@bootstrapworld/wescheme";
 import { API } from "../src/CodeMirrorBlocks";
-import { keyDown, mountCMB, teardown } from "../src/toolkit/test-utils";
+import {
+  keyDown,
+  mountCMB,
+  mouseDown,
+  teardown,
+} from "../src/toolkit/test-utils";
 import * as announcer from "../src/announcer";
 import * as utils from "../src/utils";
 import ByBlock from "../src/ui/searchers/ByBlock";
@@ -332,6 +337,9 @@ describe("the search rotor", () => {
   });
 
   it("says so when there is nothing to search for", () => {
+    // (the user is in the editor, and deletes the last of its blocks: setting the
+    // text through the API does not bring focus into an editor)
+    mouseDown(cmb.getAst().rootNodes[0]);
     cmb.setValue("");
     next();
     expect(said()).toEqual(["No search types available"]);

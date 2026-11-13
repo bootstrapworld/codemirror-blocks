@@ -80,12 +80,23 @@ export function createFocusKeeper({
   let owesFocus = false;
   let frame = 0;
   let retries = 0;
+  let hadBlocks = selectors.getAST(store.getState()).rootNodes.length > 0;
 
   // Is there more to do in a frame? (the block is not on the page, or did not
   // take focus)
   const reconcile = (): boolean => {
+    if (left) return false;
+    // With no block left to focus (the last was deleted, dragged to the trash,
+    // undone...), focus that was stranded would stop typing and shortcuts: keep
+    // it in the editor.
+    if (selectors.getAST(store.getState()).rootNodes.length === 0) {
+      // (only when there were blocks: an empty editor that has none yet is not
+      // one that lost its last)
+      if (hadBlocks && stranded()) codemirror.focus();
+      return false;
+    }
     const id = store.getState().focusId;
-    if (!id || left) return false;
+    if (!id) return false;
     if (!owesFocus && !stranded()) return false;
     const el = document.getElementById(`block-node-${id}`);
     if (el?.isConnected) {
@@ -150,7 +161,12 @@ export function createFocusKeeper({
       owesFocus = false;
       return;
     }
-    if (!el) return;
+    if (!el) {
+      // (a block that is not on the page yet: it has focus when it is)
+      owesFocus = true;
+      later();
+      return;
+    }
     (placeholder() as HTMLElement | null)?.focus();
     // bring its line into view, so that CodeMirror draws the block again
     editor.scrollASTNodeIntoView(node);
@@ -163,6 +179,9 @@ export function createFocusKeeper({
   };
   const onFocusIn = (e: FocusEvent) => {
     left = !inside(e.target);
+    // (a dialog that closes gives focus back to what had it when it opened: the
+    // placeholder, if the block it was waiting for was not drawn)
+    if (e.target === placeholder()) now();
   };
   const onFocusOut = (e: FocusEvent) => {
     if (!e.relatedTarget) later();
@@ -171,6 +190,9 @@ export function createFocusKeeper({
   let lastFocusId = store.getState().focusId;
   const unsubscribe = store.subscribe(() => {
     const { focusId } = store.getState();
+    if (selectors.getAST(store.getState()).rootNodes.length > 0) {
+      hadBlocks = true;
+    }
     if (focusId === lastFocusId) return;
     lastFocusId = focusId;
     now();

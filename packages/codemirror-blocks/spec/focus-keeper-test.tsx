@@ -45,6 +45,22 @@ describe("an editor", () => {
   });
   afterEach(() => teardown());
 
+  it("does not take keyboard focus when it loses its last block, if the user has not been in it", async () => {
+    act(() => (document.activeElement as HTMLElement | null)?.blur());
+    expect(document.activeElement).toBe(document.body);
+    cmb.setValue("");
+    await frames(6);
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it("keeps keyboard focus in the editor when it loses its last block, if the user is in it", async () => {
+    mouseDown(cmb.getAst().rootNodes[0]);
+    await frames();
+    cmb.setValue("");
+    await frames(6);
+    expect(cmb.getWrapperElement().contains(document.activeElement)).toBe(true);
+  });
+
   it("takes focus back after a press somewhere else inside it", async () => {
     const node = cmb.getAst().rootNodes[0];
     mouseDown(node);
@@ -153,7 +169,6 @@ describe("two editors on a page", () => {
       .closest(".Editor")!
       .parentElement!.querySelector<HTMLElement>("#cmb-focus-placeholder")!;
     act(() => placeholder.focus());
-    expect(document.activeElement).toBe(placeholder);
     // (the page changes in B, and its editor draws: nothing is rendered)
     act(() => {
       b.getWrapperElement().appendChild(document.createElement("span"));
