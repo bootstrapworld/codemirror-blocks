@@ -447,7 +447,8 @@ export const IfExpression = defineNode({
  * A loop of any kind: `kind` says which ("while", "for-each", "for", "repeat"),
  * the `header` holds what the kind needs before the steps (a while: its test;
  * a for-each: the variable and the collection; a C-style for: its three parts;
- * a repeat: the count), and the `body` the steps. Printed as `(kind header...
+ * a repeat: the count: as many as the parser made, a fixed list, so that a
+ * deleted one leaves a blank), and the `body` the steps. Printed as `(kind header...
  * body...)`; a language writes it its own way with `forLanguage`.
  */
 export const Loop = defineNode({
@@ -455,7 +456,7 @@ export const Loop = defineNode({
   label: "loop",
   fields: {
     kind: field.value<string>(),
-    header: field.list(),
+    header: field.list({ fixed: true }),
     body: field.list({ orphans: true }),
   },
   pretty: (node) =>

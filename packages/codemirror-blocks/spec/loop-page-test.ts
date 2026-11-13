@@ -1,4 +1,4 @@
-import example from "@bootstrapworld/example";
+import wescheme from "@bootstrapworld/wescheme";
 import { Languages, Nodes } from "../src/CodeMirrorBlocks";
 import type { ASTNode } from "../src/ast";
 import { API } from "../src/CodeMirrorBlocks";
@@ -49,7 +49,7 @@ function loopify(node: ASTNode): ASTNode {
 const language = Languages.addLanguage({
   id: "loop-page-test",
   name: "Loops, for a test",
-  parse: (code: string) => example.parse(code).map(loopify),
+  parse: (code: string) => wescheme.parse(code).map(loopify),
   getExceptionMessage: (e: unknown) => String(e),
 });
 
@@ -87,8 +87,9 @@ describe("a loop in a page", () => {
     const rest = block.querySelector(":scope > .blocks-loop-body")!;
     expect(head.querySelectorAll(":scope > .blocks-literal")).toHaveLength(1);
     expect(rest.querySelectorAll(":scope > .blocks-literal")).toHaveLength(2);
-    // each list has its drop targets: before, between and after
-    expect(head.querySelectorAll(".blocks-drop-target")).toHaveLength(2);
+    // the body has its drop targets (before, between and after); the header,
+    // which keeps its length, has none
+    expect(head.querySelectorAll(".blocks-drop-target")).toHaveLength(0);
     expect(rest.querySelectorAll(".blocks-drop-target")).toHaveLength(3);
   });
 
@@ -126,33 +127,42 @@ describe("a loop in a page", () => {
     expect(typeOf()).toBe(reparsed());
   });
 
-  // The header is a list, so the editor lets a block in, and the text printed is
-  // what the editor then reads; how many items belong to the header is the
-  // language's to say, so it can read the text another way than it was edited.
-  it("takes a block into its header, which a language then reads its own way", () => {
+  // The header is a list of a fixed length: as many as the parser made, so
+  // nothing goes in before, between or after them
+  it("takes no block into its header", () => {
     const t = header()[0];
     mouseDown(t);
     keyDown("]", { ctrlKey: true }, t);
-    setEditableText("8");
-    keyDown("Enter");
-    expect(cmb.getValue()).toBe("(while 1 8 2 3)");
-    // (this language's `while` has a header of one: the 8 is read as the body's)
-    expect(header()).toHaveLength(1);
-    expect(body()).toHaveLength(3);
+    expect(document.activeElement).not.toHaveAttribute("contenteditable");
+    keyDown("[", { ctrlKey: true }, t);
+    expect(document.activeElement).not.toHaveAttribute("contenteditable");
+    expect(cmb.getValue()).toBe("(while 1 2 3)");
+    expect(
+      document
+        .querySelector(".blocks-loop-header")!
+        .querySelectorAll(".blocks-drop-target")
+    ).toHaveLength(0);
   });
 
-  // The open question: nothing says a header may not be empty or short. What
-  // happens now is that the item is gone, the text is printed without it, and
-  // the next item is read as the header: the loop does not break, but it is not
-  // the loop that was edited.
-  it("losing the one item of its header: the next item is read as the header", () => {
+  it("losing the one item of its header leaves a blank: it is still a while loop", () => {
     const t = header()[0];
     mouseDown(t);
     keyDown(" ", {}, t);
     keyDown("Delete");
-    expect(cmb.getValue()).toBe("(while 2 3)");
-    expect(header().map(String)).toEqual(["2"]);
-    expect(body().map(String)).toEqual(["3"]);
+    expect(cmb.getValue()).toBe("(while ... 2 3)");
+    expect(root().type).toBe("loop");
+    expect(header().map((n) => n.type)).toEqual(["blank"]);
+    expect(body().map(String)).toEqual(["2", "3"]);
     expect(typeOf()).toBe(reparsed());
+  });
+
+  it("goes back to what it was, with the item, when that is undone", () => {
+    const t = header()[0];
+    mouseDown(t);
+    keyDown(" ", {}, t);
+    keyDown("Delete");
+    keyDown("Z", { ctrlKey: true });
+    expect(cmb.getValue()).toBe("(while 1 2 3)");
+    expect(header().map(String)).toEqual(["1"]);
   });
 });
