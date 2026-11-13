@@ -320,6 +320,9 @@ export const DropTarget = (props: DropTargetProps) => {
       onMouseOver={handleMouseDragRelated}
       onDragOver={handleMouseDragRelated}
       onDrop={handleMouseDragRelated}
+      // (a press on a gap is not a press on the block it is in: that block would
+      // be activated, and scrolled to, and the click would miss the gap)
+      onMouseDown={(e) => e.stopPropagation()}
       onClick={handleClick}
       data-field={props.field}
       data-index={props.index}
