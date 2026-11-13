@@ -235,8 +235,14 @@
   }
 }
 
+// the else of an if that has none is drawn, faded, to be dropped into
+.blocks-if-else.blocks-not-live {
+  opacity: 0.4;
+}
+
 // a conditional: its branches in a column, then the else
 .blocks-conditional,
+.blocks-if,
 .blocks-conditionalBranch {
   > .blocks-conditional-branches {
     display: flex;

@@ -1,5 +1,6 @@
 import * as P from "pretty-fast-pretty-printer";
 import React from "react";
+import classNames from "classnames";
 import {
   ASTNode,
   ASTNodeProps,
@@ -673,6 +674,66 @@ export const Return = defineNode({
   },
 });
 
+/**
+ * `if test then steps [else steps]`. The else is the `otherwise` list: with no
+ * steps there is no else, and it is drawn "not live" (the keyword and a place
+ * to drop a block, faded) until it has one. Printed `(if test body...)`, and
+ * with an else `(if test (then body...) (else otherwise...))`.
+ */
+export const If = defineNode({
+  type: "if",
+  label: "if",
+  fields: {
+    test: field.required(),
+    body: field.list({ orphans: true }),
+    otherwise: field.list({ orphans: true }),
+  },
+  pretty: (node) => {
+    const { test, body, otherwise } = node.fields;
+    return otherwise.length
+      ? P.standardSexpr("if", [
+          test,
+          P.standardSexpr("then", body),
+          P.standardSexpr("else", otherwise),
+        ])
+      : P.standardSexpr("if", [test, ...body]);
+  },
+  render(props) {
+    const { test, body, otherwise } = props.node.fields;
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">if</span>
+        {test.reactElement()}
+        <Args className="blocks-conditional-body" field="body">
+          {body}
+        </Args>
+        <div
+          className={classNames("blocks-if-else", {
+            "blocks-not-live": otherwise.length === 0,
+          })}
+        >
+          <span className="blocks-operator">else</span>
+          {otherwise.length ? (
+            <Args className="blocks-conditional-body" field="otherwise">
+              {otherwise}
+            </Args>
+          ) : (
+            <DropTarget field="otherwise" index={0} label="add an else" />
+          )}
+        </div>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    const { test, body, otherwise } = node.fields;
+    const elseSteps = withoutOrphans(otherwise);
+    return `an if: if ${test.describe(level)}, then ${pluralize(
+      "step",
+      withoutOrphans(body)
+    )}${elseSteps.length ? `, else ${pluralize("step", elseSteps)}` : ""}`;
+  },
+});
+
 export type LiteralNode = ReturnType<typeof Literal>;
 export const Literal = defineNode({
   type: "literal",
@@ -846,6 +907,7 @@ const specs = {
   binaryOperation: BinaryOperation.spec,
   unaryOperation: UnaryOperation.spec,
   assignment: Assignment.spec,
+  if: If.spec,
   conditionalBranch: ConditionalBranch.spec,
   conditional: Conditional.spec,
   return: Return.spec,
@@ -878,6 +940,7 @@ const customizable = {
   BinaryOperation,
   UnaryOperation,
   Assignment,
+  If,
   ConditionalBranch,
   Conditional,
   Return,

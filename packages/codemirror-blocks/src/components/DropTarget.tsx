@@ -153,6 +153,11 @@ type DropTargetProps = {
    * field has no index.
    */
   index?: number;
+  /**
+   * What a screenreader says of it, where the gap means something (a gap that
+   * adds an else says so): without one, a gap is not announced.
+   */
+  label?: string;
 };
 
 export const DropTarget = (props: DropTargetProps) => {
@@ -273,6 +278,7 @@ export const DropTarget = (props: DropTargetProps) => {
     "aria-setsize": 1,
     "aria-posinset": 1,
     "aria-level": 1,
+    "aria-label": props.label,
     id: `block-drop-target-${id}`,
   };
 
@@ -317,6 +323,8 @@ export const DropTarget = (props: DropTargetProps) => {
         connectDropTarget(el);
       }}
       id={`block-drop-target-${id}`}
+      role={props.label ? "button" : undefined}
+      aria-label={props.label}
       className={classNames(classes)}
       onMouseEnter={handleMouseEnterRelated}
       onDragEnter={handleMouseEnterRelated}

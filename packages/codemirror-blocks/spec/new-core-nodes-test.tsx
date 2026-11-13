@@ -255,3 +255,31 @@ describe("Conditional, ConditionalBranch and Return", () => {
     expect(bare.describe(0)).toBe("a return with no value");
   });
 });
+
+describe("If", () => {
+  const make = (body: string[], otherwise: string[]) =>
+    Nodes.If(at(0), at(40), {
+      test: word("t"),
+      body: body.map((b) => word(b)),
+      otherwise: otherwise.map((o) => word(o)),
+    });
+
+  it("prints (if test body...), and with an else (if test (then ...) (else ...))", () => {
+    expect(make(["a", "b"], []).toString()).toBe("(if t a b)");
+    expect(make(["a"], ["c", "d"]).toString()).toBe(
+      "(if t (then a) (else c d))"
+    );
+    expect(make([], []).toString()).toBe("(if t)");
+  });
+
+  it("is of type if, and says how many steps and whether it has an else", () => {
+    expect(make(["a"], []).type).toBe("if");
+    expect(make(["a"], []).label).toBe("if");
+    expect(make(["a", "b"], []).describe(0)).toBe(
+      "an if: if literal, then 2 steps"
+    );
+    expect(make(["a"], ["c"]).describe(0)).toBe(
+      "an if: if literal, then 1 step, else 1 step"
+    );
+  });
+});
