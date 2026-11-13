@@ -210,6 +210,8 @@ prog: program,
   long: a program with 1 expressions
 conditional: conditional expression,
   long: an if expression: if literal, then literal
+conditionalBranch: conditional branch,
+  long: if literal, then literal
 literal: literal,
 literal: literal,
 literal: literal,

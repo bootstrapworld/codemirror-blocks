@@ -31,10 +31,6 @@ export const LambdaAST = createASTSpec({
     [Spec.optional("name"), Spec.list("vars"), Spec.required("body")],
     { label: "let expression" }
   ),
-  conditional: Spec.nodeSpec(
-    [Spec.required("cond"), Spec.required("then"), Spec.optional("else")],
-    { label: "conditional expression" }
-  ),
 });
 
 /**
@@ -68,6 +64,23 @@ function commaSeparated(nodes: ASTNode[]) {
     : P.horz("(", P.vertArray(items), ")");
 }
 
+/** Statements in braces: `{ a; b }`, a comment on a line of its own */
+function braced(exprs: ASTNode[]): P.Doc {
+  // (a `;` goes after every statement but the last; a comment has none)
+  let remaining = withoutOrphans(exprs).length;
+  const statements = exprs.map((expr) =>
+    expr.options.orphan || --remaining === 0 ? expr : P.horz(expr, ";")
+  );
+  return exprs.some((e) => e.options.orphan)
+    ? P.vert("{", P.horz("  ", P.vertArray(statements)), "}")
+    : P.horz("{ ", P.vertArray(statements), " }");
+}
+
+/** The steps of a branch: bare if there is one, in braces if not */
+function steps(body: ASTNode[]): P.DocLike {
+  return body.length === 1 && !body[0].options.orphan ? body[0] : braced(body);
+}
+
 export function Prog(from: Pos, to: Pos, exprs: ASTNode[], options = {}) {
   return LambdaAST.makeNode({
     from,
@@ -93,9 +106,7 @@ export function Prog(from: Pos, to: Pos, exprs: ASTNode[], options = {}) {
         if (end > 0 && end < exprs.length) lines.splice(end, 0, "");
         return P.vertArray(lines);
       }
-      return node.fields.exprs.some((e) => e.options.orphan)
-        ? P.vert("{", P.horz("  ", P.vertArray(statements)), "}")
-        : P.horz("{ ", P.vertArray(statements), " }");
+      return braced(node.fields.exprs);
     },
     render(props) {
       return (
@@ -258,53 +269,30 @@ export function Let(
   });
 }
 
+/**
+ * `if a then x else if b then y else z` is one conditional with two branches
+ * and an else (the core's); the steps of a branch are written bare if there is
+ * one, and in braces if there are several, which the parser reads back as that
+ * list.
+ */
+export function Branch(
+  from: Pos,
+  to: Pos,
+  test: ASTNode,
+  body: ASTNode[],
+  options = {}
+) {
+  return ConditionalBranch(from, to, { test, body }, options);
+}
+
 export function Conditional(
   from: Pos,
   to: Pos,
-  cond: ASTNode,
-  then: ASTNode,
-  else_: ASTNode | null,
+  branches: ASTNode[],
+  otherwise: ASTNode[],
   options = {}
 ) {
-  return LambdaAST.makeNode({
-    from,
-    to,
-    type: "conditional",
-    fields: { cond, then, else: else_ },
-    options,
-    pretty: (node) =>
-      node.fields.else
-        ? P.horz(
-            "if ",
-            node.fields.cond,
-            " then ",
-            node.fields.then,
-            " else ",
-            node.fields.else
-          )
-        : P.horz("if ", node.fields.cond, " then ", node.fields.then),
-    render(props) {
-      const { cond, then, else: else_ } = props.node.fields;
-      return (
-        <Node {...props} variant="compound">
-          <span className="blocks-operator">if</span>
-          {cond.reactElement()}
-          <span className="blocks-operator">then</span>
-          {then.reactElement()}
-          {else_ ? (
-            <>
-              <span className="blocks-operator">else</span>
-              {else_.reactElement()}
-            </>
-          ) : null}
-        </Node>
-      );
-    },
-    longDescription: (node, level) =>
-      `an if expression: if ${node.fields.cond.describe(
-        level
-      )}, then ${node.fields.then.describe(level)}`,
-  });
+  return CoreConditional(from, to, { branches, otherwise }, options);
 }
 
 /**
@@ -315,7 +303,56 @@ const {
   BinaryOperation,
   UnaryOperation,
   Assignment: AssignmentNode,
+  Conditional: CoreConditional,
+  ConditionalBranch,
 } = Nodes.forLanguage({
+  ConditionalBranch: {
+    pretty: (node) =>
+      P.horz("if ", node.fields.test, " then ", steps(node.fields.body)),
+    render(props) {
+      return (
+        <Node {...props} variant="compound">
+          <span className="blocks-operator">if</span>
+          {props.node.fields.test.reactElement()}
+          <span className="blocks-operator">then</span>
+          <Args className="blocks-conditional-body" field="body">
+            {props.node.fields.body}
+          </Args>
+        </Node>
+      );
+    },
+    longDescription: (node, level) =>
+      `if ${node.fields.test.describe(level)}, then ${withoutOrphans(
+        node.fields.body
+      )
+        .map((step) => step.describe(level))
+        .join(", ")}`,
+  },
+  Conditional: {
+    label: "conditional expression",
+    pretty: (node) =>
+      P.horz(
+        P.sepBy(node.fields.branches, " else ", " else "),
+        node.fields.otherwise.length
+          ? P.horz(" else ", steps(node.fields.otherwise))
+          : ""
+      ),
+    render(props) {
+      return (
+        <Node {...props} variant="compound">
+          <Args className="blocks-conditional-branches" field="branches">
+            {props.node.fields.branches}
+          </Args>
+          <span className="blocks-operator">else</span>
+          <Args className="blocks-conditional-body" field="otherwise">
+            {props.node.fields.otherwise}
+          </Args>
+        </Node>
+      );
+    },
+    longDescription: (node, level) =>
+      `an if expression: ${node.fields.branches[0]?.describe(level) ?? ""}`,
+  },
   BinaryOperation: {
     pretty: (node) =>
       P.horz(

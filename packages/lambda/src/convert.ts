@@ -3,6 +3,7 @@ import type { LambdaNode } from "./parser";
 import {
   Assignment,
   Binary,
+  Branch,
   Call,
   Conditional,
   Lambda,
@@ -109,19 +110,46 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
         all(node.vars),
         convert(node.body, loc)
       );
-    case "if":
-      return Conditional(
-        from,
-        to,
-        convert(node.cond, loc),
-        convert(node.then, loc),
-        node.else ? convert(node.else, loc) : null
-      );
+    case "if": {
+      // `else if` goes on as another branch of the same conditional
+      const branches: ASTNode[] = [];
+      let current: LambdaNode = node;
+      let otherwise: LambdaNode[];
+      for (;;) {
+        const here: Loc = {
+          from: current.from ?? loc.from,
+          to: current.to ?? loc.to,
+        };
+        branches.push(
+          Branch(
+            here.from,
+            current.then.to ?? here.to,
+            convert(current.cond, here),
+            steps(current.then, here)
+          )
+        );
+        if (current.else?.type === "if") {
+          current = current.else;
+        } else {
+          otherwise = current.else ? [current.else] : [];
+          // (the last else is a block of several steps, or one step)
+          if (otherwise[0]?.type === "prog") otherwise = otherwise[0].prog;
+          break;
+        }
+      }
+      return Conditional(from, to, branches, all(otherwise));
+    }
     case "not":
       return Not(from, to, convert(node.body, loc));
     default:
       throw new Error("Don't know how to convert node of type " + node.type);
   }
+}
+
+/** The steps of a then-part: those of a block of several, or the one step */
+function steps(node: LambdaNode, loc: Loc): ASTNode[] {
+  const list = node.type === "prog" ? node.prog : [node];
+  return list.map((n: LambdaNode) => convert(n, loc));
 }
 
 export default function parseString(code: string): ASTNode[] {
