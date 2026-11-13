@@ -428,9 +428,11 @@ for one maker.
 The core also has nodes for what Scheme, JavaScript and Python have in common,
 each printed as an s-expression until a language says otherwise:
 
-| maker  | type   | fields                                                                | default print              | draws                                                               |
-| ------ | ------ | --------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------- |
-| `Loop` | `loop` | `kind` (text: "while", "for-each", "for", "repeat"), `header`, `body` | `(kind header... body...)` | the kind, the `header` items in a row, the `body` items in a column |
+| maker             | type              | fields                                                                | default print              | draws                                                               |
+| ----------------- | ----------------- | --------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------- |
+| `Loop`            | `loop`            | `kind` (text: "while", "for-each", "for", "repeat"), `header`, `body` | `(kind header... body...)` | the kind, the `header` items in a row, the `body` items in a column |
+| `BinaryOperation` | `binaryOperation` | `operator` (text), `left`, `right`                                    | `(operator left right)`    | the operator, then the operands                                     |
+| `UnaryOperation`  | `unaryOperation`  | `operator` (text), `operand`                                          | `(operator operand)`       | the operator, then the operand                                      |
 
 A `while` has one `header` item (its test), a `for-each` two (the variable and the
 collection), a C-style `for` three, a `repeat` one (the count). The kind is text, not a

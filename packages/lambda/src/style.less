@@ -53,7 +53,7 @@
 
   // An expression with an operator between its sides, `a + b` and `x = 1`, is
   // a row, not a block with a strip over its arguments
-  .blocks-binary,
+  .blocks-binaryOperation,
   .blocks-assignment,
   .blocks-vardef {
     flex-direction: row;
@@ -109,10 +109,10 @@
     font-style: italic;
     padding: 0 2px;
   }
-  .blocks-binary > .blocks-operator,
+  .blocks-binaryOperation > .blocks-operator,
   .blocks-assignment > .blocks-operator,
   .blocks-vardef > .blocks-operator,
-  .blocks-not > .blocks-operator {
+  .blocks-unaryOperation > .blocks-operator {
     font-style: normal;
   }
 

@@ -41,8 +41,6 @@ export const LambdaAST = createASTSpec({
     [Spec.required("cond"), Spec.required("then"), Spec.optional("else")],
     { label: "conditional expression" }
   ),
-  not: Spec.nodeSpec([Spec.required("body")], { label: "not expression" }),
-  binary: Spec.nodeSpec(operatorSpec, { label: "binary operation" }),
   assignment: Spec.nodeSpec(operatorSpec, { label: "assignment" }),
 });
 
@@ -316,28 +314,53 @@ export function Conditional(
   });
 }
 
-export function Not(from: Pos, to: Pos, body: ASTNode, options = {}) {
-  return LambdaAST.makeNode({
-    from,
-    to,
-    type: "not",
-    fields: { body },
-    options,
-    pretty: (node) => P.horz("!", atomic(node.fields.body)),
+/**
+ * `!x` and `a + b` are the core operations, written the way lambda writes them:
+ * an operator beside its operands, in brackets where its operands need them.
+ */
+const { BinaryOperation, UnaryOperation } = Nodes.forLanguage({
+  BinaryOperation: {
+    pretty: (node) =>
+      P.horz(
+        atomic(node.fields.left),
+        ` ${node.fields.operator} `,
+        atomic(node.fields.right)
+      ),
     render(props) {
       return (
         <Node {...props} variant="compound">
-          <span className="blocks-operator">!</span>
-          {props.node.fields.body.reactElement()}
+          {props.node.fields.left.reactElement()}
+          <span className="blocks-operator">{props.node.fields.operator}</span>
+          {props.node.fields.right.reactElement()}
         </Node>
       );
     },
     longDescription: (node, level) =>
-      `the negation of ${node.fields.body.describe(level)}`,
-  });
+      `${node.fields.left.describe(level)} ${
+        node.fields.operator
+      } ${node.fields.right.describe(level)}`,
+  },
+  UnaryOperation: {
+    label: "not expression",
+    pretty: (node) => P.horz(node.fields.operator, atomic(node.fields.operand)),
+    render(props) {
+      return (
+        <Node {...props} variant="compound">
+          <span className="blocks-operator">{props.node.fields.operator}</span>
+          {props.node.fields.operand.reactElement()}
+        </Node>
+      );
+    },
+    longDescription: (node, level) =>
+      `the negation of ${node.fields.operand.describe(level)}`,
+  },
+});
+
+export function Not(from: Pos, to: Pos, body: ASTNode, options = {}) {
+  return UnaryOperation(from, to, { operator: "!", operand: body }, options);
 }
 
-function operatorNode(type: "binary" | "assignment") {
+function operatorNode(type: "assignment") {
   return (
     from: Pos,
     to: Pos,
@@ -376,5 +399,14 @@ function operatorNode(type: "binary" | "assignment") {
     });
 }
 
-export const Binary = operatorNode("binary");
+export function Binary(
+  from: Pos,
+  to: Pos,
+  operator: string,
+  left: ASTNode,
+  right: ASTNode,
+  options = {}
+) {
+  return BinaryOperation(from, to, { operator, left, right }, options);
+}
 export const Assignment = operatorNode("assignment");

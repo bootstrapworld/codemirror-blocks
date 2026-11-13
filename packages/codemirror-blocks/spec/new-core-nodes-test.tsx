@@ -68,3 +68,57 @@ describe("Loop", () => {
     expect(loop("while", ["t"], ["a"]).toString()).toBe("(while t a)");
   });
 });
+
+describe("BinaryOperation and UnaryOperation", () => {
+  const binary = (operator: string) =>
+    Nodes.BinaryOperation(at(0), at(9), {
+      operator,
+      left: word("a"),
+      right: word("b"),
+    });
+  const unary = (operator: string) =>
+    Nodes.UnaryOperation(at(0), at(9), { operator, operand: word("a") });
+
+  it("print as (operator operands...)", () => {
+    expect(binary("+").toString()).toBe("(+ a b)");
+    expect(binary("and").toString()).toBe("(and a b)");
+    expect(unary("not").toString()).toBe("(not a)");
+  });
+
+  it("say what they are", () => {
+    expect(binary("+").type).toBe("binaryOperation");
+    expect(binary("+").label).toBe("binary operation");
+    expect(binary("+").describe(0)).toBe("+ of literal and literal");
+    expect(unary("-").type).toBe("unaryOperation");
+    expect(unary("-").describe(0)).toBe("- of literal");
+  });
+
+  it("can be written between the operands by a language, which brackets as it needs", () => {
+    const mine = Nodes.forLanguage({
+      BinaryOperation: {
+        pretty: (node) =>
+          P.horz(
+            node.fields.left,
+            ` ${node.fields.operator} `,
+            node.fields.right
+          ),
+      },
+      UnaryOperation: {
+        pretty: (node) => P.horz(node.fields.operator, node.fields.operand),
+      },
+    });
+    const sum = mine.BinaryOperation(at(0), at(1), {
+      operator: "+",
+      left: word("a"),
+      right: word("b"),
+    });
+    expect(sum.toString()).toBe("a + b");
+    expect(
+      mine
+        .UnaryOperation(at(0), at(1), { operator: "!", operand: word("a") })
+        .toString()
+    ).toBe("!a");
+    expect(binary("+").toString()).toBe("(+ a b)");
+    expect(Nodes.CoreAST.isNodeOfType(sum, "binaryOperation")).toBe(true);
+  });
+});

@@ -486,6 +486,64 @@ export const Loop = defineNode({
   },
 });
 
+/**
+ * An operation on two things: `operator` is its text ("+", "and", "<="...), not a
+ * node. Printed as `(operator left right)`; a language that writes operators
+ * between the operands says so in `pretty`, and puts the brackets its own
+ * precedence needs (the core does not do precedence).
+ */
+export const BinaryOperation = defineNode({
+  type: "binaryOperation",
+  label: "binary operation",
+  fields: {
+    operator: field.value<string>(),
+    left: field.required(),
+    right: field.required(),
+  },
+  pretty: (node) =>
+    P.standardSexpr(node.fields.operator, [
+      node.fields.left,
+      node.fields.right,
+    ]),
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">{props.node.fields.operator}</span>
+        {props.node.fields.left.reactElement()}
+        {props.node.fields.right.reactElement()}
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return `${node.fields.operator} of ${node.fields.left.describe(
+      level
+    )} and ${node.fields.right.describe(level)}`;
+  },
+});
+
+/** An operation on one thing (`!x`, `-x`, `not x`): printed `(operator operand)` */
+export const UnaryOperation = defineNode({
+  type: "unaryOperation",
+  label: "unary operation",
+  fields: {
+    operator: field.value<string>(),
+    operand: field.required(),
+  },
+  pretty: (node) =>
+    P.standardSexpr(node.fields.operator, [node.fields.operand]),
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">{props.node.fields.operator}</span>
+        {props.node.fields.operand.reactElement()}
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return `${node.fields.operator} of ${node.fields.operand.describe(level)}`;
+  },
+});
+
 export type LiteralNode = ReturnType<typeof Literal>;
 export const Literal = defineNode({
   type: "literal",
@@ -656,6 +714,8 @@ const specs = {
   condExpression: CondExpression.spec,
   ifExpression: IfExpression.spec,
   loop: Loop.spec,
+  binaryOperation: BinaryOperation.spec,
+  unaryOperation: UnaryOperation.spec,
   literal: Literal.spec,
   comment: Spec.nodeSpec([Spec.value<string, "comment">("comment")], {
     label: "comment",
@@ -682,6 +742,8 @@ const customizable = {
   CondExpression,
   IfExpression,
   Loop,
+  BinaryOperation,
+  UnaryOperation,
   Literal,
   Blank,
 };

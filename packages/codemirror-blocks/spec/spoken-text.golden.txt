@@ -217,10 +217,10 @@ summary: At the top level, this program contains 1 program.
 
 prog: program,
   long: a program with 1 expressions
-binary: binary operation,
+binaryOperation: binary operation,
   long: literal + literal * literal
 literal: literal,
-binary: binary operation,
+binaryOperation: binary operation,
   long: literal * literal
 literal: literal,
 literal: literal,
@@ -245,11 +245,11 @@ literal: literal,
 vardef: variable definition,
   long: a definition of literal
 literal: literal,
-binary: binary operation,
+binaryOperation: binary operation,
   long: literal * literal
 literal: literal,
 literal: literal,
-binary: binary operation,
+binaryOperation: binary operation,
   long: literal + literal
 literal: literal,
 literal: literal,
@@ -264,7 +264,7 @@ vardef: variable definition,
   long: a definition of literal
 literal: literal,
 literal: literal,
-binary: binary operation,
+binaryOperation: binary operation,
   long: literal + literal
 literal: literal,
 literal: literal,
@@ -272,7 +272,7 @@ summary: At the top level, this program contains 1 program.
 
 prog: program,
   long: a program with 1 expressions
-not: not expression,
+unaryOperation: not expression,
   long: the negation of literal
 literal: literal,
 summary: At the top level, this program contains 1 program.
