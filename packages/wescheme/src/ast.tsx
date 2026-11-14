@@ -35,10 +35,12 @@ export const LetLikeExpr = defineNode({
   },
   pretty(node) {
     const { bindings } = node.fields;
+    // (the bindings are a sequence of definitions when the reader made the block;
+    // after an edit that deleted or replaced them they are whatever is there now,
+    // a blank, say, and the block prints as that: it reads back as something
+    // that is no let, which the editor refuses, but it does not throw)
     if (!isSequence(bindings)) {
-      throw new Error(
-        `Expected letLikeExpr to be constructed with sequence for its binding field`
-      );
+      return P.lambdaLikeSexpr(node.fields.form, bindings, node.fields.expr);
     }
     return P.lambdaLikeSexpr(
       node.fields.form,
@@ -46,11 +48,7 @@ export const LetLikeExpr = defineNode({
         "(",
         P.sepBy(
           (bindings.fields.exprs as unknown as ASTNode[]).map((expr) => {
-            if (expr.type !== "variableDefinition") {
-              throw new Error(
-                `Expected letLikeExpr to have sequence of variableDefinition nodes`
-              );
-            }
+            if (expr.type !== "variableDefinition") return expr;
             return Nodes.withComment(
               P.standardSexpr(expr.fields.name as ASTNode, [
                 expr.fields.body as ASTNode,
@@ -77,11 +75,7 @@ export const LetLikeExpr = defineNode({
   },
   longDescription(node, _level) {
     const { bindings } = node.fields;
-    if (!isSequence(bindings)) {
-      throw new Error(
-        `Expected letLikeExpr to be constructed with sequence for its binding field`
-      );
-    }
+    if (!isSequence(bindings)) return `a ${node.fields.form} expression`;
     return `a ${node.fields.form} expression with ${pluralize(
       "binding",
       bindings.fields.exprs as unknown as ASTNode[]

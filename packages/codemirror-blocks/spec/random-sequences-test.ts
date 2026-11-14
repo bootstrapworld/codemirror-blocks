@@ -196,7 +196,12 @@ const hasStatements = (w: World) =>
 
 /** Languages whose parser refuses text that is no program there (WeScheme reads anything) */
 const refusesText = (id: string | undefined) =>
-  id === "lambda" || id === "routine";
+  id === "lambda" ||
+  id === "routine" ||
+  // (a let whose bindings an edit leaves malformed is refused too)
+  /\(let(rec|\*)? /.test(startedFrom);
+/** the text of the document the running sequence started from */
+let startedFrom = "";
 
 /** The language's refusal of text it cannot parse, as the editor reports it */
 const isRefusal = (e: unknown) =>
@@ -1132,11 +1137,7 @@ const documents: Doc[] = [
   { code: "(cond\n  [a 1]\n  ; about the else\n  [else 2])" },
   { code: "(cond\n  ; first\n  [a 1]\n  #| second |#\n  [b 2]\n  [else 3])" },
   { code: "(when a b c)\n(unless d e)" },
-  // (not a let, a letrec or a let*: deleting or replacing what is in one gives the
-  // letLikeExpr a binding that is no sequence, and it throws "Expected letLikeExpr
-  // to be constructed with sequence for its binding field", on master too: seeds
-  // 528, 719 and 812 of the documents when it was in this list. Put it back when
-  // that is fixed)
+  { code: "(let ([a 1] [b 2]) (+ a b))\n(letrec ([f 1]) f)\n(let* ([x 1]) x)" },
   { code: "(if ... a b)\n(f ... x)\n(cond [... 1] [else ...])" },
   { code: "f(1, 2)", language: "lambda" },
   { code: "f(x)(y)", language: "lambda" },
@@ -1223,6 +1224,7 @@ const giveLinesHeight = () => {
 
 /** Run one sequence on a fresh editor, stopping at the first problem. */
 function runSequence(sequence: Sequence): RunResult {
+  startedFrom = sequence.code;
   texts =
     sequence.language === "lambda"
       ? lambdaTexts
@@ -1892,6 +1894,39 @@ describe("sequences that once broke the editor", () => {
         {
           op: "paste over a selection",
           r: [305095761, 385060272, 664051165, 286459342],
+        },
+      ],
+    });
+  }, 120_000);
+
+  it("seeds 528, 719, 812 of the widened run: an edit that replaced the bindings of a let (the block threw instead of printing what was there)", () => {
+    check({
+      code: "(let ([a 1] [b 2]) (+ a b))\n(letrec ([f 1]) f)\n(let* ([x 1]) x)",
+      steps: [
+        {
+          op: "change the text through the API",
+          r: [69199252, 338021947, 708867953, 310379927],
+        },
+        {
+          op: "paste over a selection",
+          r: [946067871, 725548673, 338588407, 152999348],
+        },
+      ],
+    });
+    check({
+      code: "(let ([a 1] [b 2]) (+ a b))\n(letrec ([f 1]) f)\n(let* ([x 1]) x)",
+      steps: [
+        {
+          op: "change the text through the API",
+          r: [99937000, 543285791, 22941850, 534874177],
+        },
+        {
+          op: "change the text through the API",
+          r: [970482818, 379128268, 813499812, 904916776],
+        },
+        {
+          op: "paste awkward text",
+          r: [945245104, 246662488, 740508212, 785389217],
         },
       ],
     });
