@@ -104,7 +104,12 @@ for (const scrolled of [false, true]) {
       expect((await active(page)).editable).toBe("true");
       await page.keyboard.press("Enter");
       await expect.poll(() => value(page)).toMatch(c.expect);
-      expect(await scrollTop(page)).toBeGreaterThan(scrolled ? 300 : -1);
+      // (CodeMirror's height drops while the block that holds the new one is drawn
+      // again, which takes the page to the top for a moment: wait for it to come
+      // back, which a slow machine takes longer to do)
+      await expect
+        .poll(() => scrollTop(page))
+        .toBeGreaterThan(scrolled ? 300 : -1);
     });
   }
 }
