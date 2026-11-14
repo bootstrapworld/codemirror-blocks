@@ -194,6 +194,10 @@ const hasStatements = (w: World) =>
     .replace(/#\|[\s\S]*?\|#|#[^\n]*/g, "")
     .trim() !== "";
 
+/** Languages whose parser refuses text that is no program there (WeScheme reads anything) */
+const refusesText = (id: string | undefined) =>
+  id === "lambda" || id === "routine";
+
 /** The language's refusal of text it cannot parse, as the editor reports it */
 const isRefusal = (e: unknown) =>
   /An invalid change was rejected/.test(String(e));
@@ -653,7 +657,7 @@ const operations: Operation[] = [
       } catch (e) {
         // (the API refuses text the language cannot parse, such as a leading
         // `;` after lambda comments: it throws, and leaves the document alone)
-        if (w.cmb.getAst().language.id !== "lambda" || !isRefusal(e)) throw e;
+        if (!refusesText(w.cmb.getAst().language.id) || !isRefusal(e)) throw e;
         return `API: refused to add "${text}" at the end`;
       }
       return `API: add "${text}" at the end`;
@@ -791,8 +795,8 @@ const operations: Operation[] = [
           try {
             w.cmb.replaceRange(pick(texts, r[0])!, inner.from, inner.to);
           } catch (e) {
-            // (lambda refuses text that does not parse in that place)
-            if (w.cmb.getAst().language.id !== "lambda" || !isRefusal(e)) {
+            // (lambda and routine refuse text that does not parse in that place)
+            if (!refusesText(w.cmb.getAst().language.id) || !isRefusal(e)) {
               throw e;
             }
           }
@@ -1240,7 +1244,7 @@ function runSequence(sequence: Sequence): RunResult {
     forgiveRefusal: () => {
       // (a plain Enter that lambda refuses, say a newline between a comment
       // and the statement after it, is reported as an uncaught error)
-      if (sequence.language === "lambda") {
+      if (refusesText(sequence.language)) {
         const kept = uncaught.filter((u) => !isRefusal(u));
         uncaught.length = 0;
         uncaught.push(...kept);
