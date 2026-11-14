@@ -84,6 +84,14 @@ function braced(exprs: ASTNode[]): P.Doc {
 
 /** The steps of a branch: bare if there is one, in braces if not */
 function steps(body: ASTNode[]): P.DocLike {
+  // (nothing between braces is `false` to lambda, which would put a step there
+  // that nobody wrote: a blank is what stands where the steps were taken away,
+  // and it reads back as a blank)
+  if (withoutOrphans(body).length === 0) {
+    return body.length
+      ? P.vert("{", P.horz("  ", P.vertArray([...body, P.txt("...")])), "}")
+      : P.txt("...");
+  }
   return body.length === 1 && !body[0].options.orphan ? body[0] : braced(body);
 }
 

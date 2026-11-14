@@ -187,4 +187,26 @@ describe("lambda: editing the blocks of an if", () => {
       expect(cmb.getValue()).toBe(expected);
     }
   });
+
+  it("leaves a blank, and not an empty pair of braces (which is false), where the last step of a branch was deleted", () => {
+    for (const [code, expected] of [
+      ["if a then b else c", "if a then ... else c"],
+      ["if a then b", "if a then ..."],
+    ] as const) {
+      cmb.setValue(code);
+      cmb.clearHistory();
+      const b = [...cmb.getAst().descendants()].find(
+        (n) =>
+          n.type === "literal" &&
+          String(n.fields.name ?? n.fields.value) === "b"
+      )!;
+      mouseDown(b);
+      keyDown(" ", {}, b);
+      keyDown("Delete");
+      expect(cmb.getValue()).toBe(expected);
+      const body = [...cmb.getAst().descendants()].find((n) => n.type === "if")!
+        .fields as unknown as { body: ASTNode[] };
+      expect(body.body.map((n) => n.type)).toEqual(["blank"]);
+    }
+  });
 });
