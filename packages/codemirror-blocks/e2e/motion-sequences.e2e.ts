@@ -22,6 +22,24 @@ const SEEDS = (process.env.CMB_MOTION_SEEDS ?? "1,2,3")
   .map((s) => Number(s.trim()));
 const LANGUAGES = ["wescheme", "routine", "lambda", "example"];
 const BURSTS = 4;
+/**
+ * Documents that hold the core nodes each language writes its own way, put in
+ * before the switches (a language's own example code has few of them): the
+ * seed picks one, besides the example code
+ */
+const DOCUMENTS: Record<string, string[]> = {
+  wescheme: [
+    "(cond\n  [(< a b) a]\n  ; the else\n  [else b])\n(cond [x 1] [y 2])\n(when a b c)\n(f ... z)",
+  ],
+  lambda: [
+    "if a then b else if c then d else e;\nf(1, 2);\nx = y + 1;\nif p then { q; r }",
+    "if ... then loop(i + 1) else i",
+  ],
+  routine: [
+    '; plan\n(let n 10)\n(repeat 3\n  (show (+ n 1))\n  (if (> n 20) (show "late")))\n(if (< n 30)\n  (show "on time")\n  (show "late"))',
+  ],
+  example: [],
+};
 
 /** mulberry32: the same sequence for the same seed */
 const seededRandom = (seed: number) => {
@@ -145,6 +163,19 @@ async function runSequence(page: Page, seed: number) {
   await page.goto(`/?lang=${language}`);
   await page.waitForFunction(() => !!(window as { cmb?: unknown }).cmb);
   await expect(page.locator(".blocks-toggle-btn")).toBeVisible();
+  // (or the language's own example code, if the seed says so)
+  const documents = DOCUMENTS[language] ?? [];
+  const pick = Math.floor(random() * (documents.length + 1));
+  if (pick < documents.length) {
+    await page.evaluate(
+      (code) =>
+        (
+          window as unknown as { cmb: { setValue(c: string): void } }
+        ).cmb.setValue(code),
+      documents[pick]
+    );
+    log.push(`start from ${JSON.stringify(documents[pick]).slice(0, 60)}`);
+  }
   const memory: { text?: string; blocks: boolean } = { blocks: false };
   try {
     for (let burst = 0; burst < BURSTS; burst++) {

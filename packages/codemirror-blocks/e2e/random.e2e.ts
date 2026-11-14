@@ -44,9 +44,57 @@ const SEEDS = (
   .map((s) => Number(s.trim()));
 // (each step makes at most one undo step, and undoAll() presses undo ten times)
 const STEPS = 9;
-// (with a comment that goes with no block, and one that goes with `g`)
-const PROGRAM = "(f x y)\n\n#| apart |#\n\n; with g\n(g (h 1 2) z)\nw";
-const TEXTS = ["zzz", "7", "(k 1)", "foo bar", "#| note |#\n", "; note\n(k 1)"];
+// The programs the sequences start from, one language for each: the seeds of the
+// default list (above) keep the first one, which they were found on; the others
+// are chosen by the seed, so that a soak reaches the core nodes that each
+// language writes its own way (a cond, an if with an else and an else if, a
+// call, an assignment, a repeat, a blank).
+type Case = { language?: string; program: string; texts: string[] };
+const CASES: Case[] = [
+  {
+    // (with a comment that goes with no block, and one that goes with `g`)
+    program: "(f x y)\n\n#| apart |#\n\n; with g\n(g (h 1 2) z)\nw",
+    texts: ["zzz", "7", "(k 1)", "foo bar", "#| note |#\n", "; note\n(k 1)"],
+  },
+  {
+    program:
+      "(cond\n  [(< a b) a]\n  ; the else\n  [else b])\n(cond [x 1] [y 2])\n(when a b c)\n(f ... z)",
+    texts: [
+      "zzz",
+      "7",
+      "(k 1)",
+      "...",
+      "(cond [a 1] [else 2])",
+      "#| note |#\n",
+    ],
+  },
+  {
+    language: "lambda",
+    program:
+      "if a then b else if c then d else e;\nf(1, 2);\nx = y + 1;\nif p then { q; r }",
+    texts: ["zzz", "7", "x + 1", "!x", "...", "f(1, 2)", "if a then b"],
+  },
+  {
+    language: "routine",
+    program:
+      '; plan\n(let n 10)\n(repeat 3\n  (show (+ n 1))\n  (if (> n 20) (show "late")))\n(if (< n 30)\n  (show "on time")\n  (show "late"))',
+    texts: [
+      "7",
+      '"hi"',
+      "zzz",
+      '(show "x")',
+      "(let n 2)",
+      "(repeat 2 (show 1))",
+    ],
+  },
+];
+const LEGACY = new Set([
+  1, 2, 3, 4, 5, 6, 7, 11, 915, 935, 2596, 1613, 3277, 3463, 8442, 9874, 270,
+]);
+const caseFor = (seed: number) =>
+  CASES[LEGACY.has(seed) ? 0 : seed % CASES.length];
+/** the texts of the sequence that is running */
+let TEXTS = CASES[0].texts;
 
 /** mulberry32: the same sequence for the same seed */
 const seededRandom = (seed: number) => {
@@ -175,7 +223,15 @@ const steps: Record<string, Step> = {
     const first = blocks(page).first();
     const box = await first.boundingBox();
     if (!box) return "no block to click beside";
-    await page.mouse.click(box.x + box.width + 80, box.y + box.height / 2);
+    // (beside the block and inside the editor: a wide block leaves no room, and a
+    // click outside the editor is not a press on the editor's background)
+    const editor = await page.locator(".CodeMirror-scroll").boundingBox();
+    const x = Math.min(
+      box.x + box.width + 80,
+      (editor?.x ?? 0) + (editor?.width ?? 0) - 30
+    );
+    if (x < box.x + box.width + 40) return "no room beside the first block";
+    await page.mouse.click(x, box.y + box.height / 2);
     await page.keyboard.type("9");
     await page.keyboard.press(n[0] % 2 ? "Enter" : "Escape");
     return `type 9 beside the first block, ${n[0] % 2 ? "commit" : "cancel"}`;
@@ -186,6 +242,13 @@ const steps: Record<string, Step> = {
     const label =
       (await b.getAttribute("aria-label", { timeout: ACTION_TIMEOUT })) ??
       "a block";
+    // (a block below the window is scrolled to first, as a person would: a press
+    // outside the window starts no drag; and the can is where it can be reached)
+    await b.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT });
+    await trashCan(page).scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT });
+    if (!(await b.isVisible()) || !(await b.boundingBox())) {
+      return `${label} is out of reach of the trash can`;
+    }
     await dragWithMouse(page, b, trashCan(page));
     return `drag ${label} to the trash can`;
   },
@@ -215,7 +278,9 @@ async function runSequence(page: Page, seed: number) {
       rate: Number(process.env.THROTTLE),
     });
   }
-  await openInBlockMode(page, PROGRAM);
+  const chosen = caseFor(seed);
+  TEXTS = chosen.texts;
+  await openInBlockMode(page, chosen.program, chosen.language);
   const start = (await snapshot(page)).text;
   const random = seededRandom(seed);
   const log: string[] = [];
@@ -263,6 +328,9 @@ async function runSequence(page: Page, seed: number) {
     expect((await expectConsistent(page)).text).toBe(start);
     await walk("redo");
     expect((await expectConsistent(page)).text).toBe(end);
+    // (CMB_E2E_LOG=1: the steps of a sequence that passed, to compare it with another run)
+    if (process.env.CMB_E2E_LOG)
+      console.log(`LOG seed ${seed}\n  ${log.join("\n  ")}`);
   } catch (e) {
     throw new Error(
       `seed ${seed} failed after ${log.length} steps:\n  ${log.join("\n  ")}\n\n${e}`,
