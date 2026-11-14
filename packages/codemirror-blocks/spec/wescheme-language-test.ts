@@ -152,6 +152,27 @@ describe("a cond", () => {
     expect(printed("(cond [a 1])")).toBe("(cond\n  [a 1])");
   });
 
+  it.each([
+    [
+      "a line comment",
+      '(cond\n  [(< x 0) "a"]\n  ; about the else\n  [else "b"])',
+    ],
+    [
+      "a block comment",
+      '(cond\n  [(< x 0) "a"]\n  #| about the else |#\n  [else "b"])',
+    ],
+  ])("keeps %s above the else clause, and not inside it", (_, code) => {
+    const expected =
+      '(cond\n  [(< x 0) "a"]\n  #| about the else |#\n  [else "b"])';
+    expect(printed(code)).toBe(expected);
+    expect(printed(expected)).toBe(expected);
+  });
+
+  it("keeps a comment above a clause before the clause", () => {
+    const code = '(cond\n  #| first |#\n  [(< x 0) "a"]\n  [else "b"])';
+    expect(printed(code)).toBe(code);
+  });
+
   it("is refused, as it was, when an else is not the last clause", () => {
     expect(typesOf("(cond [else 1] [a 2])")).not.toContain("conditional");
   });

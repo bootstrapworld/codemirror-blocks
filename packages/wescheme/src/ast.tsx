@@ -164,13 +164,28 @@ export const { Conditional, ConditionalBranch } = Nodes.forLanguage({
   },
   Conditional: {
     label: "conditional expression",
-    pretty: (node) =>
-      P.beginLikeSexpr("cond", [
-        ...node.fields.branches,
-        ...(node.fields.otherwise.length
-          ? [P.horz("[else ", P.sepBy(node.fields.otherwise, " "), "]")]
-          : []),
-      ]),
+    pretty: (node) => {
+      const { branches, otherwise } = node.fields;
+      // The `else` clause is not a node: the comment the reader paired with its
+      // body (the next node after the comment) belongs to the clause, as a comment
+      // does to any other, so it is printed around the clause and not inside it.
+      const [first, ...rest] = otherwise;
+      const comment = first?.options.comment;
+      const clause = first
+        ? P.horz(
+            "[else ",
+            P.sepBy(
+              [comment ? first._pretty(first as never) : first, ...rest],
+              " "
+            ),
+            "]"
+          )
+        : null;
+      return P.beginLikeSexpr("cond", [
+        ...branches,
+        ...(clause ? [Nodes.withComment(clause, comment, first)] : []),
+      ]);
+    },
     render(props) {
       const { branches, otherwise } = props.node.fields;
       return (
