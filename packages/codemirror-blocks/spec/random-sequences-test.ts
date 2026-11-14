@@ -1,6 +1,7 @@
 import { act, fireEvent, screen } from "@testing-library/react";
 import * as utils from "../src/utils";
 import lambda from "@bootstrapworld/lambda";
+import routine from "@bootstrapworld/routine";
 import wescheme from "@bootstrapworld/wescheme";
 import {
   cmd_ctrl,
@@ -203,6 +204,11 @@ const schemeTexts = [
   "7",
   "(g w)",
   "(h 1 2)",
+  // (a cond, with and without an else; a blank, which is what a deleted block leaves)
+  "(cond [a 1] [else 2])",
+  "(cond [a 1])",
+  "(when a b)",
+  "...",
   "foo bar",
   '"hi"',
   // (a comment on its own, and one with the block it goes with)
@@ -210,7 +216,33 @@ const schemeTexts = [
   "; note\n(g w)",
 ];
 /** (lambda has no lists, and two names in a row are not a program) */
-const lambdaTexts = ["zzz", "7", "x + 1", "!x", "true", '"hi"'];
+const lambdaTexts = [
+  "zzz",
+  "7",
+  "x + 1",
+  "!x",
+  "true",
+  '"hi"',
+  // (a call, an if with and without an else, an else if, an assignment, a blank)
+  "f(1, 2)",
+  "if a then b",
+  "if a then b else c",
+  "if a then b else if c then d else e",
+  "x = y + 1",
+  "...",
+];
+/** Routine's forms: a repeat and an if are the core Loop and If, written its way */
+const routineTexts = [
+  "7",
+  '"hi"',
+  "zzz",
+  '(show "x")',
+  "(let n 2)",
+  "(repeat 2 (show 1))",
+  "(if (< a 1) (show 1))",
+  "(if (< a 1) (show 1) (show 2))",
+  "(+ n 1)",
+];
 /** the pool for the language of the sequence that is running */
 let texts = schemeTexts;
 
@@ -1050,9 +1082,9 @@ const allOperations = [...operations, modeSwitch];
 type Step = { op: string; r: number[] };
 /** `language` is "wescheme" when a (older) replay does not say */
 type Sequence = { code: string; language?: LanguageId; steps: Step[] };
-type LanguageId = "wescheme" | "lambda";
+type LanguageId = "wescheme" | "lambda" | "routine";
 
-const languages = { wescheme, lambda };
+const languages = { wescheme, lambda, routine };
 
 type Doc = { code: string; language?: LanguageId };
 const flat = (n: number) =>
@@ -1089,9 +1121,40 @@ const documents: Doc[] = [
     code: "(define-struct posn (x y))\n(define p (make-posn 1 2))\n((lambda (a b) (+ a b)) 1 2)",
   },
   { code: "(provide f)\n(define-values (a b) (values 1 2))\n(f a b)" },
-  // (the lambda language gives no block to calls such as f(1, 2), sugar such as
-  // `let f(n) ...`, and more than one statement, so the invariants fail on those
-  // before any step: only documents that load cleanly are used)
+  // (the core nodes that the languages write their own way)
+  { code: "(cond [(< a b) a] [(> a b) b] [else c])" },
+  { code: "(cond [a 1] [b 2])" },
+  { code: "(cond [else 4])\n(cond [x y])" },
+  { code: "(cond\n  [a 1]\n  ; about the else\n  [else 2])" },
+  { code: "(cond\n  ; first\n  [a 1]\n  #| second |#\n  [b 2]\n  [else 3])" },
+  { code: "(when a b c)\n(unless d e)" },
+  // (not a let, a letrec or a let*: deleting or replacing what is in one gives the
+  // letLikeExpr a binding that is no sequence, and it throws "Expected letLikeExpr
+  // to be constructed with sequence for its binding field", on master too: seeds
+  // 528, 719 and 812 of the documents when it was in this list. Put it back when
+  // that is fixed)
+  { code: "(if ... a b)\n(f ... x)\n(cond [... 1] [else ...])" },
+  { code: "f(1, 2)", language: "lambda" },
+  { code: "f(x)(y)", language: "lambda" },
+  { code: "if a then b", language: "lambda" },
+  { code: "if a then b else if c then d else e", language: "lambda" },
+  { code: "if a then { b; c } else { d; e }", language: "lambda" },
+  { code: "x = a + b * 2", language: "lambda" },
+  { code: "lambda (x) !x", language: "lambda" },
+  { code: "if ... then loop(i + 1) else i", language: "lambda" },
+  { code: "f(..., x)", language: "lambda" },
+  { code: "x = 1; y = 2", language: "lambda" },
+  { code: "(repeat 3 (show 1) (show 2))", language: "routine" },
+  { code: "(if (> a 1) (show 1) (show 2))", language: "routine" },
+  { code: "(if (> a 1) (show 1))", language: "routine" },
+  { code: "(let x 1)\n(let y)\n(show x)", language: "routine" },
+  {
+    code: '; Start\n(let m 10)\n#| steps |#\n(repeat 3\n  ; later\n  (show (+ m 1))\n  (if (> m 20)\n    (show "late")))\n(if (< m 30)\n  (show "on time")\n  (show "late"))',
+    language: "routine",
+  },
+  // (lambda: sugar such as `let f(n) ...` is not given a block, so the
+  // invariants fail on it before any step: only documents that load cleanly
+  // are used)
   { code: "1 + 2", language: "lambda" },
   { code: "lambda (x) x + 1", language: "lambda" },
   { code: "let (a = 1, b = 2) a + b", language: "lambda" },
@@ -1156,7 +1219,12 @@ const giveLinesHeight = () => {
 
 /** Run one sequence on a fresh editor, stopping at the first problem. */
 function runSequence(sequence: Sequence): RunResult {
-  texts = sequence.language === "lambda" ? lambdaTexts : schemeTexts;
+  texts =
+    sequence.language === "lambda"
+      ? lambdaTexts
+      : sequence.language === "routine"
+        ? routineTexts
+        : schemeTexts;
   const { cmb, store } = mountCMB(languages[sequence.language ?? "wescheme"]);
   const restoreLayout = giveLinesHeight();
   // jsdom has no scrollIntoView, which the editor calls to keep a focused block in view
