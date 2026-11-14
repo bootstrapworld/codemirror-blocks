@@ -102,6 +102,8 @@ for (const c of cases) {
       await page.keyboard.press("Escape");
       await expect.poll(() => editable(page)).not.toBe("true");
     }
-    expect(await scrollTop(page)).toBeGreaterThan(300);
+    // (the page goes to the top for a moment while the block holding the new
+    // one is drawn again: wait for it to come back)
+    await expect.poll(() => scrollTop(page)).toBeGreaterThan(300);
   });
 }
