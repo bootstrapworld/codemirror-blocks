@@ -622,7 +622,9 @@ export const Conditional = defineNode({
   fields: {
     kind: field.value<string>(),
     header: field.list({ fixed: true }),
-    branches: field.list(),
+    // (a comment among the branches goes with no branch: it stays among them,
+    // and not in the else, where it would make an else of its own)
+    branches: field.list({ orphans: true }),
     otherwise: field.list({ orphans: true }),
   },
   pretty: (node) =>
@@ -655,7 +657,7 @@ export const Conditional = defineNode({
   },
   longDescription(node) {
     const { kind, branches, otherwise } = node.fields;
-    return `a ${kind} with ${pluralize("branch", branches)}${
+    return `a ${kind} with ${pluralize("branch", withoutOrphans(branches))}${
       withoutOrphans(otherwise).length ? " and an else" : ""
     }`;
   },

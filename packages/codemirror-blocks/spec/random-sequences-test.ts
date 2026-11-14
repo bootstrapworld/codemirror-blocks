@@ -1881,6 +1881,18 @@ describe("sequences that once broke the editor", () => {
     });
   }, 120_000);
 
+  it("seed 424: pasting a comment over a clause of a cond (the comment went into the else list, which printed as an else of its own that did not read back)", () => {
+    check({
+      code: "(cond [a 1] [b 2])",
+      steps: [
+        {
+          op: "paste over a selection",
+          r: [305095761, 385060272, 664051165, 286459342],
+        },
+      ],
+    });
+  }, 120_000);
+
   it("seeds 177269, 168796, 211036: cutting bindings of a let that has a bare name among them (a binding was taken to start where the last expression did)", () => {
     check({
       code: "let (a = 1, b = 2) a + b",

@@ -173,6 +173,15 @@ describe("a cond", () => {
     expect(printed(code)).toBe(code);
   });
 
+  it("keeps a comment of its own among the clauses, and does not make an else of it", () => {
+    const code = "(cond\n  [a 1]\n\n  #| apart |#\n\n  [b 2])";
+    const f = fieldsOf(code);
+    expect(f.otherwise).toHaveLength(0);
+    expect(printed(code)).toContain("#| apart |#");
+    expect(printed(code)).not.toContain("else");
+    expect(printed(printed(code))).toBe(printed(code));
+  });
+
   it("is refused, as it was, when an else is not the last clause", () => {
     expect(typesOf("(cond [else 1] [a 2])")).not.toContain("conditional");
   });
