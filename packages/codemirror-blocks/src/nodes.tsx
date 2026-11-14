@@ -1,5 +1,6 @@
 import * as P from "pretty-fast-pretty-printer";
 import React from "react";
+import classNames from "classnames";
 import {
   ASTNode,
   ASTNodeProps,
@@ -14,7 +15,7 @@ import Node, { COMMENT_PREFIX } from "./components/Node";
 import Args from "./components/Args";
 import { DropTarget } from "./components/DropTarget";
 import { defineCoreNode as defineNode, field } from "./defineNode";
-import type { NodeOf } from "./defineNode";
+import type { NodeMaker, NodeOf, Overrides } from "./defineNode";
 import * as Spec from "./nodeSpec";
 import { poscmp } from "./utils";
 
@@ -443,6 +444,326 @@ export const IfExpression = defineNode({
   },
 });
 
+/**
+ * A loop of any kind: `kind` says which ("while", "for-each", "for", "repeat"),
+ * the `header` holds what the kind needs before the steps (a while: its test;
+ * a for-each: the variable and the collection; a C-style for: its three parts;
+ * a repeat: the count: as many as the parser made, a fixed list, so that a
+ * deleted one leaves a blank), and the `body` the steps. Printed as `(kind header...
+ * body...)`; a language writes it its own way with `forLanguage`.
+ */
+export const Loop = defineNode({
+  type: "loop",
+  label: "loop",
+  fields: {
+    kind: field.value<string>(),
+    header: field.list({ fixed: true }),
+    body: field.list({ orphans: true }),
+  },
+  pretty: (node) =>
+    P.standardSexpr(node.fields.kind, [
+      ...node.fields.header,
+      ...node.fields.body,
+    ]),
+  ariaLabel: (node) => `${node.fields.kind} ${node.label}`,
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">{props.node.fields.kind}</span>
+        <Args className="blocks-loop-header" field="header">
+          {props.node.fields.header}
+        </Args>
+        <Args className="blocks-loop-body" field="body">
+          {props.node.fields.body}
+        </Args>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    const { kind, header, body } = node.fields;
+    const over = header.length
+      ? ` (${header.map((h) => h.describe(level)).join(", ")})`
+      : "";
+    return `a ${kind} loop${over} with ${pluralize("step", withoutOrphans(body))}`;
+  },
+});
+
+/**
+ * An operation on two things: `operator` is its text ("+", "and", "<="...), not a
+ * node. Printed as `(operator left right)`; a language that writes operators
+ * between the operands says so in `pretty`, and puts the brackets its own
+ * precedence needs (the core does not do precedence).
+ */
+export const BinaryOperation = defineNode({
+  type: "binaryOperation",
+  label: "binary operation",
+  fields: {
+    operator: field.value<string>(),
+    left: field.required(),
+    right: field.required(),
+  },
+  pretty: (node) =>
+    P.standardSexpr(node.fields.operator, [
+      node.fields.left,
+      node.fields.right,
+    ]),
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">{props.node.fields.operator}</span>
+        {props.node.fields.left.reactElement()}
+        {props.node.fields.right.reactElement()}
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return `${node.fields.operator} of ${node.fields.left.describe(
+      level
+    )} and ${node.fields.right.describe(level)}`;
+  },
+});
+
+/** An operation on one thing (`!x`, `-x`, `not x`): printed `(operator operand)` */
+export const UnaryOperation = defineNode({
+  type: "unaryOperation",
+  label: "unary operation",
+  fields: {
+    operator: field.value<string>(),
+    operand: field.required(),
+  },
+  pretty: (node) =>
+    P.standardSexpr(node.fields.operator, [node.fields.operand]),
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">{props.node.fields.operator}</span>
+        {props.node.fields.operand.reactElement()}
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return `${node.fields.operator} of ${node.fields.operand.describe(level)}`;
+  },
+});
+
+/**
+ * Putting a value into a target (`x = 1`, `x += 1`): `operator` is its text ("=",
+ * "+=", ...). Printed `(set! target value)` for "=", else `(operator target
+ * value)`.
+ */
+export const Assignment = defineNode({
+  type: "assignment",
+  label: "assignment",
+  fields: {
+    operator: field.value<string>(),
+    target: field.required(),
+    value: field.required(),
+  },
+  pretty: (node) =>
+    P.standardSexpr(
+      node.fields.operator === "=" ? "set!" : node.fields.operator,
+      [node.fields.target, node.fields.value]
+    ),
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        {props.node.fields.target.reactElement()}
+        <span className="blocks-operator">{props.node.fields.operator}</span>
+        {props.node.fields.value.reactElement()}
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return `${node.fields.operator === "=" ? "set" : node.fields.operator} ${node.fields.target.describe(
+      level
+    )} to ${node.fields.value.describe(level)}`;
+  },
+});
+
+/** One branch of a `Conditional`: a test, and the steps to take if it holds */
+export const ConditionalBranch = defineNode({
+  type: "conditionalBranch",
+  label: "conditional branch",
+  fields: {
+    test: field.required(),
+    body: field.list({ orphans: true }),
+  },
+  pretty: (node) => P.standardSexpr(node.fields.test, node.fields.body),
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">if</span>
+        {props.node.fields.test.reactElement()}
+        <Args className="blocks-conditional-body" field="body">
+          {props.node.fields.body}
+        </Args>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return `a branch taken if ${node.fields.test.describe(level)}, with ${pluralize(
+      "step",
+      withoutOrphans(node.fields.body)
+    )}`;
+  },
+});
+
+/**
+ * A choice between many: a `switch`, a `cond`, a `match`. The `kind` says which,
+ * the `header` holds what it looks at before the branches (a switch's subject; a
+ * cond-like form has none), the `branches` (of `ConditionalBranch`) are tried in
+ * order, and the `otherwise` steps are the default case (no steps: none). The
+ * header keeps the length the parser made, as a loop's does. Printed as `(kind
+ * header... (test body...) ... (else otherwise...))`.
+ */
+export const Conditional = defineNode({
+  type: "conditional",
+  label: "conditional",
+  fields: {
+    kind: field.value<string>(),
+    header: field.list({ fixed: true }),
+    // (a comment among the branches goes with no branch: it stays among them,
+    // and not in the else, where it would make an else of its own)
+    branches: field.list({ orphans: true }),
+    otherwise: field.list({ orphans: true }),
+  },
+  pretty: (node) =>
+    P.standardSexpr(node.fields.kind, [
+      ...node.fields.header,
+      ...node.fields.branches,
+      ...(node.fields.otherwise.length
+        ? [P.standardSexpr("else", node.fields.otherwise)]
+        : []),
+    ]),
+  ariaLabel: (node) => `${node.fields.kind} ${node.label}`,
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">{props.node.fields.kind}</span>
+        <Args className="blocks-conditional-header" field="header">
+          {props.node.fields.header}
+        </Args>
+        <Args className="blocks-conditional-branches" field="branches">
+          {props.node.fields.branches}
+        </Args>
+        <div className="blocks-conditional-else">
+          <span className="blocks-operator">else</span>
+          <Args className="blocks-conditional-body" field="otherwise">
+            {props.node.fields.otherwise}
+          </Args>
+        </div>
+      </Node>
+    );
+  },
+  longDescription(node) {
+    const { kind, branches, otherwise } = node.fields;
+    return `a ${kind} with ${pluralize("branch", withoutOrphans(branches))}${
+      withoutOrphans(otherwise).length ? " and an else" : ""
+    }`;
+  },
+});
+
+/** Leaving a function, with a value or without one: `(return value)` */
+export const Return = defineNode({
+  type: "return",
+  label: "return",
+  fields: { value: field.optional() },
+  pretty: (node) =>
+    P.standardSexpr("return", node.fields.value ? [node.fields.value] : []),
+  render(props) {
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">return</span>
+        {props.node.fields.value?.reactElement()}
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    return node.fields.value
+      ? `a return of ${node.fields.value.describe(level)}`
+      : "a return with no value";
+  },
+});
+
+/**
+ * An else with no steps is a faded keyword over a small place to drop a block:
+ * a press on any of it is a press on that place (the keyword is the bigger
+ * target, and is what is meant), and does not activate the if.
+ */
+export const notLiveElseHandlers = (notLive: boolean) =>
+  notLive
+    ? {
+        onMouseDown: (e: React.MouseEvent) => e.stopPropagation(),
+        onClick: (e: React.MouseEvent<HTMLElement>) => {
+          e.stopPropagation();
+          e.currentTarget
+            .querySelector<HTMLElement>(".blocks-drop-target")
+            ?.click();
+        },
+      }
+    : {};
+
+/**
+ * `if test then steps [else steps]`. The else is the `otherwise` list: with no
+ * steps there is no else, and it is drawn "not live" (the keyword and a place
+ * to drop a block, faded) until it has one. Printed `(if test body...)`, and
+ * with an else `(if test (then body...) (else otherwise...))`.
+ */
+export const If = defineNode({
+  type: "if",
+  label: "if",
+  fields: {
+    test: field.required(),
+    body: field.list({ orphans: true }),
+    otherwise: field.list({ orphans: true }),
+  },
+  pretty: (node) => {
+    const { test, body, otherwise } = node.fields;
+    return otherwise.length
+      ? P.standardSexpr("if", [
+          test,
+          P.standardSexpr("then", body),
+          P.standardSexpr("else", otherwise),
+        ])
+      : P.standardSexpr("if", [test, ...body]);
+  },
+  render(props) {
+    const { test, body, otherwise } = props.node.fields;
+    return (
+      <Node {...props} variant="compound">
+        <span className="blocks-operator">if</span>
+        {test.reactElement()}
+        <Args className="blocks-conditional-body" field="body">
+          {body}
+        </Args>
+        <div
+          className={classNames("blocks-if-else", {
+            "blocks-not-live": otherwise.length === 0,
+          })}
+          {...notLiveElseHandlers(otherwise.length === 0)}
+        >
+          <span className="blocks-operator">else</span>
+          {otherwise.length ? (
+            <Args className="blocks-conditional-body" field="otherwise">
+              {otherwise}
+            </Args>
+          ) : (
+            <DropTarget field="otherwise" index={0} label="add an else" />
+          )}
+        </div>
+      </Node>
+    );
+  },
+  longDescription(node, level) {
+    const { test, body, otherwise } = node.fields;
+    const elseSteps = withoutOrphans(otherwise);
+    return `an if: if ${test.describe(level)}, then ${pluralize(
+      "step",
+      withoutOrphans(body)
+    )}${elseSteps.length ? `, else ${pluralize("step", elseSteps)}` : ""}`;
+  },
+});
+
 export type LiteralNode = ReturnType<typeof Literal>;
 export const Literal = defineNode({
   type: "literal",
@@ -612,6 +933,14 @@ const specs = {
   condClause: CondClause.spec,
   condExpression: CondExpression.spec,
   ifExpression: IfExpression.spec,
+  loop: Loop.spec,
+  binaryOperation: BinaryOperation.spec,
+  unaryOperation: UnaryOperation.spec,
+  assignment: Assignment.spec,
+  if: If.spec,
+  conditionalBranch: ConditionalBranch.spec,
+  conditional: Conditional.spec,
+  return: Return.spec,
   literal: Literal.spec,
   comment: Spec.nodeSpec([Spec.value<string, "comment">("comment")], {
     label: "comment",
@@ -621,3 +950,70 @@ const specs = {
 };
 
 export const CoreAST = createASTSpec(specs);
+
+/**
+ * The core nodes that a language can say its own syntax for (`forLanguage`).
+ * (A comment and a sequence are made in other ways, and are the same for all.)
+ */
+const customizable = {
+  Unknown,
+  FunctionApp,
+  IdentifierList,
+  StructDefinition,
+  VariableDefinition,
+  LambdaExpression,
+  FunctionDefinition,
+  CondClause,
+  CondExpression,
+  IfExpression,
+  Loop,
+  BinaryOperation,
+  UnaryOperation,
+  Assignment,
+  If,
+  ConditionalBranch,
+  Conditional,
+  Return,
+  Literal,
+  Blank,
+};
+
+/**
+ * What a language says about the core nodes it writes its own way, by the name
+ * of the maker (`FunctionApp`, `IfExpression`...): for each, any of `pretty`,
+ * `render`, `label`, `pluralLabel`, `longDescription` and `ariaLabel`.
+ */
+export type SyntaxTable = {
+  [K in keyof typeof customizable]?: (typeof customizable)[K] extends NodeMaker<
+    infer F
+  >
+    ? Overrides<F>
+    : never;
+};
+
+/**
+ * The core makers of `Nodes`, with the table's entries over the core ones, per
+ * property (a missing entry, or a missing property, is the core's). The `type`,
+ * the fields and the spec of a node do not change, so `isNodeOfType`, the search
+ * by type and the CSS class are as for the plain `Nodes.FunctionApp`, which is
+ * not changed either.
+ *
+ *   const { FunctionApp } = Nodes.forLanguage({
+ *     FunctionApp: {
+ *       pretty: (node) => P.horz(node.fields.func, "(", P.sepBy(node.fields.args, ", ", ", "), ")"),
+ *     },
+ *   });
+ */
+type WithOverrides = { with(overrides: object): unknown };
+
+export function forLanguage(table: SyntaxTable): typeof customizable {
+  return Object.fromEntries(
+    Object.entries(customizable).map(([name, maker]) => {
+      const overrides = table[name as keyof SyntaxTable];
+      return [
+        name,
+        overrides ? (maker as unknown as WithOverrides).with(overrides) : maker,
+      ];
+    })
+  ) as typeof customizable;
+}

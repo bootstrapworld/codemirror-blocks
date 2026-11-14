@@ -1,6 +1,7 @@
 import { act, fireEvent, screen } from "@testing-library/react";
 import * as utils from "../src/utils";
 import lambda from "@bootstrapworld/lambda";
+import routine from "@bootstrapworld/routine";
 import wescheme from "@bootstrapworld/wescheme";
 import {
   cmd_ctrl,
@@ -193,6 +194,15 @@ const hasStatements = (w: World) =>
     .replace(/#\|[\s\S]*?\|#|#[^\n]*/g, "")
     .trim() !== "";
 
+/** Languages whose parser refuses text that is no program there (WeScheme reads anything) */
+const refusesText = (id: string | undefined) =>
+  id === "lambda" ||
+  id === "routine" ||
+  // (a let whose bindings an edit leaves malformed is refused too)
+  /\(let(rec|\*)? /.test(startedFrom);
+/** the text of the document the running sequence started from */
+let startedFrom = "";
+
 /** The language's refusal of text it cannot parse, as the editor reports it */
 const isRefusal = (e: unknown) =>
   /An invalid change was rejected/.test(String(e));
@@ -203,6 +213,11 @@ const schemeTexts = [
   "7",
   "(g w)",
   "(h 1 2)",
+  // (a cond, with and without an else; a blank, which is what a deleted block leaves)
+  "(cond [a 1] [else 2])",
+  "(cond [a 1])",
+  "(when a b)",
+  "...",
   "foo bar",
   '"hi"',
   // (a comment on its own, and one with the block it goes with)
@@ -210,7 +225,33 @@ const schemeTexts = [
   "; note\n(g w)",
 ];
 /** (lambda has no lists, and two names in a row are not a program) */
-const lambdaTexts = ["zzz", "7", "x + 1", "!x", "true", '"hi"'];
+const lambdaTexts = [
+  "zzz",
+  "7",
+  "x + 1",
+  "!x",
+  "true",
+  '"hi"',
+  // (a call, an if with and without an else, an else if, an assignment, a blank)
+  "f(1, 2)",
+  "if a then b",
+  "if a then b else c",
+  "if a then b else if c then d else e",
+  "x = y + 1",
+  "...",
+];
+/** Routine's forms: a repeat and an if are the core Loop and If, written its way */
+const routineTexts = [
+  "7",
+  '"hi"',
+  "zzz",
+  '(show "x")',
+  "(let n 2)",
+  "(repeat 2 (show 1))",
+  "(if (< a 1) (show 1))",
+  "(if (< a 1) (show 1) (show 2))",
+  "(+ n 1)",
+];
 /** the pool for the language of the sequence that is running */
 let texts = schemeTexts;
 
@@ -621,7 +662,7 @@ const operations: Operation[] = [
       } catch (e) {
         // (the API refuses text the language cannot parse, such as a leading
         // `;` after lambda comments: it throws, and leaves the document alone)
-        if (w.cmb.getAst().language.id !== "lambda" || !isRefusal(e)) throw e;
+        if (!refusesText(w.cmb.getAst().language.id) || !isRefusal(e)) throw e;
         return `API: refused to add "${text}" at the end`;
       }
       return `API: add "${text}" at the end`;
@@ -759,8 +800,8 @@ const operations: Operation[] = [
           try {
             w.cmb.replaceRange(pick(texts, r[0])!, inner.from, inner.to);
           } catch (e) {
-            // (lambda refuses text that does not parse in that place)
-            if (w.cmb.getAst().language.id !== "lambda" || !isRefusal(e)) {
+            // (lambda and routine refuse text that does not parse in that place)
+            if (!refusesText(w.cmb.getAst().language.id) || !isRefusal(e)) {
               throw e;
             }
           }
@@ -1050,9 +1091,9 @@ const allOperations = [...operations, modeSwitch];
 type Step = { op: string; r: number[] };
 /** `language` is "wescheme" when a (older) replay does not say */
 type Sequence = { code: string; language?: LanguageId; steps: Step[] };
-type LanguageId = "wescheme" | "lambda";
+type LanguageId = "wescheme" | "lambda" | "routine";
 
-const languages = { wescheme, lambda };
+const languages = { wescheme, lambda, routine };
 
 type Doc = { code: string; language?: LanguageId };
 const flat = (n: number) =>
@@ -1089,9 +1130,36 @@ const documents: Doc[] = [
     code: "(define-struct posn (x y))\n(define p (make-posn 1 2))\n((lambda (a b) (+ a b)) 1 2)",
   },
   { code: "(provide f)\n(define-values (a b) (values 1 2))\n(f a b)" },
-  // (the lambda language gives no block to calls such as f(1, 2), sugar such as
-  // `let f(n) ...`, and more than one statement, so the invariants fail on those
-  // before any step: only documents that load cleanly are used)
+  // (the core nodes that the languages write their own way)
+  { code: "(cond [(< a b) a] [(> a b) b] [else c])" },
+  { code: "(cond [a 1] [b 2])" },
+  { code: "(cond [else 4])\n(cond [x y])" },
+  { code: "(cond\n  [a 1]\n  ; about the else\n  [else 2])" },
+  { code: "(cond\n  ; first\n  [a 1]\n  #| second |#\n  [b 2]\n  [else 3])" },
+  { code: "(when a b c)\n(unless d e)" },
+  { code: "(let ([a 1] [b 2]) (+ a b))\n(letrec ([f 1]) f)\n(let* ([x 1]) x)" },
+  { code: "(if ... a b)\n(f ... x)\n(cond [... 1] [else ...])" },
+  { code: "f(1, 2)", language: "lambda" },
+  { code: "f(x)(y)", language: "lambda" },
+  { code: "if a then b", language: "lambda" },
+  { code: "if a then b else if c then d else e", language: "lambda" },
+  { code: "if a then { b; c } else { d; e }", language: "lambda" },
+  { code: "x = a + b * 2", language: "lambda" },
+  { code: "lambda (x) !x", language: "lambda" },
+  { code: "if ... then loop(i + 1) else i", language: "lambda" },
+  { code: "f(..., x)", language: "lambda" },
+  { code: "x = 1; y = 2", language: "lambda" },
+  { code: "(repeat 3 (show 1) (show 2))", language: "routine" },
+  { code: "(if (> a 1) (show 1) (show 2))", language: "routine" },
+  { code: "(if (> a 1) (show 1))", language: "routine" },
+  { code: "(let x 1)\n(let y)\n(show x)", language: "routine" },
+  {
+    code: '; Start\n(let m 10)\n#| steps |#\n(repeat 3\n  ; later\n  (show (+ m 1))\n  (if (> m 20)\n    (show "late")))\n(if (< m 30)\n  (show "on time")\n  (show "late"))',
+    language: "routine",
+  },
+  // (lambda: sugar such as `let f(n) ...` is not given a block, so the
+  // invariants fail on it before any step: only documents that load cleanly
+  // are used)
   { code: "1 + 2", language: "lambda" },
   { code: "lambda (x) x + 1", language: "lambda" },
   { code: "let (a = 1, b = 2) a + b", language: "lambda" },
@@ -1156,7 +1224,13 @@ const giveLinesHeight = () => {
 
 /** Run one sequence on a fresh editor, stopping at the first problem. */
 function runSequence(sequence: Sequence): RunResult {
-  texts = sequence.language === "lambda" ? lambdaTexts : schemeTexts;
+  startedFrom = sequence.code;
+  texts =
+    sequence.language === "lambda"
+      ? lambdaTexts
+      : sequence.language === "routine"
+        ? routineTexts
+        : schemeTexts;
   const { cmb, store } = mountCMB(languages[sequence.language ?? "wescheme"]);
   const restoreLayout = giveLinesHeight();
   // jsdom has no scrollIntoView, which the editor calls to keep a focused block in view
@@ -1172,7 +1246,7 @@ function runSequence(sequence: Sequence): RunResult {
     forgiveRefusal: () => {
       // (a plain Enter that lambda refuses, say a newline between a comment
       // and the statement after it, is reported as an uncaught error)
-      if (sequence.language === "lambda") {
+      if (refusesText(sequence.language)) {
         const kept = uncaught.filter((u) => !isRefusal(u));
         uncaught.length = 0;
         uncaught.push(...kept);
@@ -1811,6 +1885,244 @@ describe("sequences that once broke the editor", () => {
         },
       ],
     });
+  }, 120_000);
+
+  it("seed 424: pasting a comment over a clause of a cond (the comment went into the else list, which printed as an else of its own that did not read back)", () => {
+    check({
+      code: "(cond [a 1] [b 2])",
+      steps: [
+        {
+          op: "paste over a selection",
+          r: [305095761, 385060272, 664051165, 286459342],
+        },
+      ],
+    });
+  }, 120_000);
+
+  it("seeds 528, 719, 812 of the widened run: an edit that replaced the bindings of a let (the block threw instead of printing what was there)", () => {
+    check({
+      code: "(let ([a 1] [b 2]) (+ a b))\n(letrec ([f 1]) f)\n(let* ([x 1]) x)",
+      steps: [
+        {
+          op: "change the text through the API",
+          r: [69199252, 338021947, 708867953, 310379927],
+        },
+        {
+          op: "paste over a selection",
+          r: [946067871, 725548673, 338588407, 152999348],
+        },
+      ],
+    });
+    check({
+      code: "(let ([a 1] [b 2]) (+ a b))\n(letrec ([f 1]) f)\n(let* ([x 1]) x)",
+      steps: [
+        {
+          op: "change the text through the API",
+          r: [99937000, 543285791, 22941850, 534874177],
+        },
+        {
+          op: "change the text through the API",
+          r: [970482818, 379128268, 813499812, 904916776],
+        },
+        {
+          op: "paste awkward text",
+          r: [945245104, 246662488, 740508212, 785389217],
+        },
+      ],
+    });
+  }, 120_000);
+
+  it("seed 16634: a comment that went with the word `bindings` of a let, which is not printed, was lost", () => {
+    check({
+      code: "(let ([a 1] [b 2]) (+ a b))\n(letrec ([f 1]) f)\n(let* ([x 1]) x)",
+      steps: [
+        {
+          op: "collapse a block, then change around it",
+          r: [49673975, 40309517, 182126388, 19167117],
+        },
+      ],
+    });
+  }, 120_000);
+
+  it("seed 37090: selecting a `when` body and what is in it, then cutting (the group of edits took the hidden `begin` for the parent of nodes that are not in it)", () => {
+    check({
+      code: "(when a b c)\n(unless d e)",
+      steps: [
+        {
+          op: "undo or redo several times",
+          r: [676399700, 185315432, 629870798, 532952426],
+        },
+        {
+          op: "undo or redo several times",
+          r: [336878409, 540345316, 664941631, 153352791],
+        },
+        {
+          op: "drag from the toolbar onto a block",
+          r: [329122365, 691999227, 665416420, 220701713],
+        },
+        {
+          op: "paste beside a block",
+          r: [932384752, 194096215, 560672462, 337488301],
+        },
+        { op: "undo", r: [102909577, 281277506, 276895100, 300155462] },
+        { op: "undo", r: [773201663, 505612333, 552528325, 409280055] },
+        { op: "move around", r: [210901689, 44172416, 420269316, 980777054] },
+        {
+          op: "paste over a selection",
+          r: [165011972, 581321630, 729956327, 753311177],
+        },
+        {
+          op: "change the text through the API",
+          r: [194183043, 131052221, 969635218, 566121065],
+        },
+        { op: "delete", r: [404089181, 868503216, 876356214, 546223933] },
+        { op: "undo", r: [964668687, 132071045, 557315504, 724440011] },
+        {
+          op: "delete a comment block",
+          r: [744606725, 937197388, 546485933, 190933827],
+        },
+        {
+          op: "switch to text mode and back",
+          r: [866074592, 299867614, 9385504, 929489260],
+        },
+        { op: "undo", r: [396416583, 489981640, 121517523, 734996727] },
+        {
+          op: "drag a block to the trash can",
+          r: [203442187, 354454672, 651985225, 847595446],
+        },
+        {
+          op: "paste over a selection",
+          r: [711475565, 923602514, 995370408, 428262539],
+        },
+        {
+          op: "switch to text mode and back",
+          r: [581369797, 531646067, 769655806, 878545140],
+        },
+        {
+          op: "drag from the toolbar onto a drop target",
+          r: [287697124, 980229327, 79098253, 871672471],
+        },
+        {
+          op: "drag from the toolbar onto a drop target",
+          r: [685066502, 826008800, 135534259, 693657964],
+        },
+        {
+          op: "switch to text mode and back",
+          r: [111021472, 345390582, 412322002, 531476309],
+        },
+        { op: "copy", r: [710770839, 765837420, 455893888, 565876861] },
+        { op: "edit a comment", r: [22151062, 744717189, 332444521, 14928340] },
+        {
+          op: "select many blocks, then cut, copy, delete or paste",
+          r: [908360140, 693929363, 735570360, 104946860],
+        },
+        {
+          op: "type at the top level",
+          r: [499760746, 7401858, 379685089, 656931196],
+        },
+        { op: "copy", r: [965391389, 621411263, 933132161, 433327552] },
+        {
+          op: "step through search results",
+          r: [969070503, 816363453, 947527003, 264871656],
+        },
+        { op: "redo", r: [598891461, 590507485, 749805683, 410083496] },
+        { op: "undo", r: [159111967, 126093379, 768992532, 540638663] },
+        {
+          op: "collapse or expand",
+          r: [717532610, 867403415, 598260307, 247124710],
+        },
+      ],
+    } as Sequence);
+  }, 120_000);
+
+  it("seed 40788: selecting many blocks that include the parent of a block that is also selected, then cutting (the same: the range of a hidden node took in a sibling)", () => {
+    check({
+      code: "(cond [a 1] [b 2])",
+      steps: [
+        {
+          op: "edit a block in place",
+          r: [217521127, 866429166, 357443313, 849378957],
+        },
+        { op: "redo", r: [320376971, 415686181, 721304427, 570066917] },
+        {
+          op: "edit a comment",
+          r: [971577095, 793237045, 265299387, 35284566],
+        },
+        {
+          op: "drag from the toolbar onto whitespace",
+          r: [474015656, 374528643, 449661894, 816085402],
+        },
+        {
+          op: "touch-drag a block",
+          r: [692709638, 701652946, 925293657, 717658274],
+        },
+        {
+          op: "collapse a block, then change around it",
+          r: [422181679, 716272315, 44405265, 750567612],
+        },
+        { op: "undo", r: [267818508, 191146699, 192105069, 84478053] },
+        {
+          op: "drag from the toolbar onto a block",
+          r: [500326459, 845388861, 591747317, 94545103],
+        },
+        {
+          op: "search for text",
+          r: [877998249, 469753618, 984466757, 337654946],
+        },
+        {
+          op: "paste over a selection",
+          r: [889970783, 177635700, 626773906, 444239334],
+        },
+        {
+          op: "turn the search rotor",
+          r: [973926559, 704040781, 744943992, 443691895],
+        },
+        {
+          op: "clear a comment",
+          r: [350799243, 51440760, 88471583, 834663141],
+        },
+        { op: "delete", r: [19640131, 712632248, 10168204, 514760432] },
+        { op: "copy", r: [957335948, 717956107, 161001646, 526648549] },
+        { op: "delete", r: [331004719, 721181363, 728887211, 206377604] },
+        {
+          op: "edit a comment",
+          r: [398409606, 492602994, 885950201, 520598249],
+        },
+        {
+          op: "drag from the toolbar onto a drop target",
+          r: [519209939, 219467659, 396508870, 476009262],
+        },
+        { op: "undo", r: [620719454, 908676797, 825516636, 74060999] },
+        {
+          op: "edit a block to awkward text",
+          r: [107608130, 840059966, 469153672, 110069312],
+        },
+        {
+          op: "search for text",
+          r: [364634999, 937036121, 195123571, 809500592],
+        },
+        {
+          op: "select many blocks, then cut, copy, delete or paste",
+          r: [199803887, 294871668, 233938957, 126319510],
+        },
+        {
+          op: "edit a block in place",
+          r: [499324379, 397284289, 325861091, 397782693],
+        },
+        {
+          op: "drag a block onto a drop target",
+          r: [712795134, 174793031, 486593710, 821348290],
+        },
+        {
+          op: "open the search dialog and leave it",
+          r: [377241413, 538941323, 741605075, 766417926],
+        },
+        {
+          op: "select many blocks, then cut, copy, delete or paste",
+          r: [691844117, 962548946, 520569401, 745497203],
+        },
+      ],
+    } as Sequence);
   }, 120_000);
 
   it("seeds 177269, 168796, 211036: cutting bindings of a let that has a bare name among them (a binding was taken to start where the last expression did)", () => {

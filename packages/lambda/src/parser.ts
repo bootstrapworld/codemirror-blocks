@@ -19,7 +19,7 @@ export type LambdaNode = {
 type Token = {
   from: Pos;
   to: Pos;
-  type: "num" | "str" | "kw" | "var" | "punc" | "op";
+  type: "num" | "str" | "kw" | "var" | "punc" | "op" | "blank";
   value: any;
 };
 
@@ -33,6 +33,8 @@ type InputStream = {
 
 type TokenStream = {
   pos(): { from: Pos; to: Pos };
+  /** where the last token that was taken (not only looked at) ends */
+  end(): Pos;
   next(): Token | null;
   peek(): Token | null;
   eof(): boolean;
@@ -108,15 +110,21 @@ function parse(input: TokenStream): LambdaNode {
   function unexpected(): never {
     input.croak("Unexpected token: " + JSON.stringify(input.peek()));
   }
-  function maybeBinary(left: LambdaNode, myPrec: number): LambdaNode {
-    const from = fromLocation;
+  // (`from` is where `left` starts, with the bracket that opens it if it has one)
+  function maybeBinary(
+    left: LambdaNode,
+    myPrec: number,
+    from: Pos
+  ): LambdaNode {
     const tok = isOp();
     if (tok) {
       const hisPrec = PRECEDENCE[tok.value];
       if (hisPrec > myPrec) {
         input.next();
-        const right = maybeBinary(parseAtom(), hisPrec);
-        toLocation = input.pos().to;
+        input.peek();
+        const rightFrom = input.pos().from;
+        const right = maybeBinary(parseAtom(), hisPrec, rightFrom);
+        toLocation = input.end();
         return maybeBinary(
           {
             from: from,
@@ -126,7 +134,8 @@ function parse(input: TokenStream): LambdaNode {
             left: left,
             right: right,
           },
-          myPrec
+          myPrec,
+          from
         );
       }
     }
@@ -153,7 +162,7 @@ function parse(input: TokenStream): LambdaNode {
   }
   function parseCall(func: LambdaNode, from: Pos): LambdaNode {
     const args = delimited("(", ")", ",", parseExpression);
-    toLocation = input.pos().to;
+    toLocation = input.end();
     return {
       from: from,
       to: toLocation,
@@ -168,7 +177,7 @@ function parse(input: TokenStream): LambdaNode {
   function parseVarnameNode(): LambdaNode {
     const from = input.pos().from;
     const name = nextToken();
-    const to = input.pos().to;
+    const to = input.end();
     if (name.type != "var") input.croak("Expecting variable name");
     return { from, to, type: "literal", dataType: "var", name };
   }
@@ -182,7 +191,7 @@ function parse(input: TokenStream): LambdaNode {
       input.next();
       body = parseExpression();
     }
-    toLocation = input.pos().to;
+    toLocation = input.end();
     return {
       from: name.from,
       to: toLocation,
@@ -198,7 +207,7 @@ function parse(input: TokenStream): LambdaNode {
     const name = peekToken().type == "var" ? parseVarname() : undefined;
     const vars = delimited("(", ")", ",", parseVardef);
     const body = parseExpression();
-    toLocation = input.pos().to;
+    toLocation = input.end();
     return {
       from: from,
       to: toLocation,
@@ -214,7 +223,7 @@ function parse(input: TokenStream): LambdaNode {
     const cond = parseExpression();
     if (!isPunc("{")) skipKw("then");
     const then = parseExpression();
-    toLocation = input.pos().to;
+    toLocation = input.end();
     const ret: LambdaNode = {
       from: from,
       to: toLocation,
@@ -225,7 +234,7 @@ function parse(input: TokenStream): LambdaNode {
     if (isKw("else")) {
       input.next();
       ret.else = parseExpression();
-      toLocation = input.pos().to;
+      toLocation = input.end();
       ret.to = toLocation;
     }
     return ret;
@@ -235,7 +244,7 @@ function parse(input: TokenStream): LambdaNode {
     const name = peekToken().type == "var" ? nextToken().value : null;
     const vars = delimited("(", ")", ",", parseVarname);
     const body = parseExpression();
-    toLocation = input.pos().to;
+    toLocation = input.end();
     return {
       from: from,
       to: toLocation,
@@ -246,13 +255,9 @@ function parse(input: TokenStream): LambdaNode {
     };
   }
   function parseBool(): LambdaNode {
-    toLocation = input.pos().to;
-    return {
-      from: fromLocation,
-      to: toLocation,
-      type: "bool",
-      value: nextToken().value == "true",
-    };
+    const value = nextToken().value == "true";
+    toLocation = input.end();
+    return { from: fromLocation, to: toLocation, type: "bool", value };
   }
   function parseRaw(): LambdaNode {
     skipKw("js:raw");
@@ -288,7 +293,7 @@ function parse(input: TokenStream): LambdaNode {
         const from = fromLocation;
         input.next();
         const body = parseExpression();
-        toLocation = input.pos().to;
+        toLocation = input.end();
         return { from: from, to: toLocation, type: "not", body: body };
       }
       if (isKw("let")) return parseLet();
@@ -309,7 +314,12 @@ function parse(input: TokenStream): LambdaNode {
         return { from: minus.from, to: num.to, type: "num", value: -num.value };
       }
       const tok = nextToken();
-      if (tok.type == "var" || tok.type == "num" || tok.type == "str") {
+      if (
+        tok.type == "var" ||
+        tok.type == "num" ||
+        tok.type == "str" ||
+        tok.type == "blank"
+      ) {
         return tok;
       }
       unexpected();
@@ -323,7 +333,7 @@ function parse(input: TokenStream): LambdaNode {
     }
     return {
       from: input.pos().from,
-      to: input.pos().to,
+      to: input.end(),
       type: "prog",
       prog,
     };
@@ -333,7 +343,7 @@ function parse(input: TokenStream): LambdaNode {
     const prog = delimited("{", "}", ";", parseExpression);
     if (prog.length == 0) return { ...FALSE };
     if (prog.length == 1) return prog[0];
-    toLocation = input.pos().to;
+    toLocation = input.end();
     return { from: from, to: toLocation, type: "prog", prog: prog }; //return { type: "prog", prog: prog };
   }
   // (looking at the first token of a node first sets where the node starts)
@@ -344,7 +354,9 @@ function parse(input: TokenStream): LambdaNode {
   function parseExpression(): LambdaNode {
     return startingAt(() =>
       maybeCall(function () {
-        return maybeBinary(parseAtom(), 0);
+        input.peek();
+        const from = input.pos().from;
+        return maybeBinary(parseAtom(), 0, from);
       })
     );
   }
@@ -397,9 +409,11 @@ function tokenStream(
   let current: Token | null = null;
   let fromLocation = input.inputPos(),
     toLocation = input.inputPos();
+  let takenTo = input.inputPos();
   const keywords = " let if then else lambda λ true false js:raw ";
   return {
     pos: pos,
+    end: end,
     next: next,
     peek: peek,
     eof: eof,
@@ -522,26 +536,39 @@ function tokenStream(
       return readNumber();
     }
     if (isIdStart(ch)) return readIdent();
-    if (isPunc(ch))
+    if (ch == ".") {
+      // `...` is a part of the program that has not been filled in (what the
+      // editor writes where a block that has to be there is deleted)
+      input.next();
+      if (input.peek() != "." || (input.next(), input.peek() != ".")) {
+        input.croak("Can't handle character: .");
+      }
+      input.next();
+      toLocation = input.inputPos();
       return {
         from: fromLocation,
         to: toLocation,
-        type: "punc",
-        value: input.next(),
+        type: "blank",
+        value: "...",
       };
+    }
+    if (isPunc(ch)) {
+      const value = input.next();
+      toLocation = input.inputPos();
+      return { from: fromLocation, to: toLocation, type: "punc", value };
+    }
     if (ch == "!") {
       // a ! is a prefix of its own, so !!a is two of them: only != is longer
       input.next();
       const value = input.peek() == "=" ? "!" + readWhite(isOpChar) : "!";
+      toLocation = input.inputPos();
       return { from: fromLocation, to: toLocation, type: "op", value };
     }
-    if (isOpChar(ch))
-      return {
-        from: fromLocation,
-        to: toLocation,
-        type: "op",
-        value: readWhite(isOpChar),
-      };
+    if (isOpChar(ch)) {
+      const value = readWhite(isOpChar);
+      toLocation = input.inputPos();
+      return { from: fromLocation, to: toLocation, type: "op", value };
+    }
     input.croak("Can't handle character: " + ch);
   }
   function peek() {
@@ -550,7 +577,13 @@ function tokenStream(
   function next() {
     const tok = current;
     current = null;
-    return tok || readToken();
+    const taken = tok || readToken();
+    // (the stream is just past the token that was read last, which is this one)
+    if (taken) takenTo = input.inputPos();
+    return taken;
+  }
+  function end() {
+    return takenTo;
   }
   function eof() {
     return peek() == null;

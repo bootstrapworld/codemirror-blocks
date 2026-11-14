@@ -15,7 +15,7 @@ import {
 import { attachComments, Nodes } from "@bootstrapworld/codemirror-blocks";
 import type { ASTNode, Pos } from "@bootstrapworld/codemirror-blocks";
 
-const { Literal } = Nodes;
+const { Literal, Blank } = Nodes;
 
 type Loc = { from: Pos; to: Pos };
 
@@ -54,6 +54,8 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
         value: quote(node.value),
         dataType: "string",
       });
+    case "blank":
+      return Blank(from, to, { value: "...", dataType: "blank" });
     case "bool":
       return Literal(from, to, { value: String(node.value), dataType: "bool" });
     case "var":
@@ -109,19 +111,32 @@ function convert(node: LambdaNode, parent: Loc): ASTNode {
         all(node.vars),
         convert(node.body, loc)
       );
-    case "if":
+    case "if": {
+      // (`else if` is an else of one step that is another if)
+      const otherwise = node.else
+        ? node.else.type === "prog"
+          ? node.else.prog
+          : [node.else]
+        : [];
       return Conditional(
         from,
         to,
         convert(node.cond, loc),
-        convert(node.then, loc),
-        node.else ? convert(node.else, loc) : null
+        steps(node.then, loc),
+        all(otherwise)
       );
+    }
     case "not":
       return Not(from, to, convert(node.body, loc));
     default:
       throw new Error("Don't know how to convert node of type " + node.type);
   }
+}
+
+/** The steps of a then-part: those of a block of several, or the one step */
+function steps(node: LambdaNode, loc: Loc): ASTNode[] {
+  const list = node.type === "prog" ? node.prog : [node];
+  return list.map((n: LambdaNode) => convert(n, loc));
 }
 
 export default function parseString(code: string): ASTNode[] {

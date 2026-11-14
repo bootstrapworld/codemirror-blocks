@@ -18,10 +18,10 @@ describe("forms that become blocks", () => {
     ["(letrec ([a 1]) a)", "letLikeExpr", "(letrec ((a 1)) a)"],
     [
       "(cond [(> 1 2) 3] [else 4])",
-      "condExpression",
+      "conditional",
       "(cond\n  [(> 1 2) 3]\n  [else 4])",
     ],
-    ["(cond [else 4])", "condExpression", "(cond\n  [else 4])"],
+    ["(cond [else 4])", "conditional", "(cond\n  [else 4])"],
     ["(if 1 2 3)", "ifExpression", "(if 1 2 3)"],
     ["(when 1 2)", "whenUnlessExpr", "(when 1 2)"],
     ["(unless 1 2)", "whenUnlessExpr", "(unless 1 2)"],
@@ -131,6 +131,72 @@ describe("forms with no block of their own are kept as text", () => {
   it("keeps an unsupported form nested inside a supported one", () => {
     expect(printed("(define x '(1 2))")).toBe("(define x '(1 2))");
     expect(printed("(f (provide x) 1)")).toBe("(f (provide x) 1)");
+  });
+});
+
+describe("a cond", () => {
+  const fieldsOf = (code: string) =>
+    parsed(code).rootNodes[0].fields as unknown as {
+      branches: unknown[];
+      otherwise: unknown[];
+    };
+
+  it("has the else clause as its otherwise, and not as a branch", () => {
+    const f = fieldsOf("(cond [a 1] [b 2] [else 3])");
+    expect(f.branches).toHaveLength(2);
+    expect(f.otherwise).toHaveLength(1);
+  });
+
+  it("has no otherwise when it has no else clause, and prints the same", () => {
+    expect(fieldsOf("(cond [a 1])").otherwise).toHaveLength(0);
+    expect(printed("(cond [a 1])")).toBe("(cond\n  [a 1])");
+  });
+
+  it.each([
+    [
+      "a line comment",
+      '(cond\n  [(< x 0) "a"]\n  ; about the else\n  [else "b"])',
+    ],
+    [
+      "a block comment",
+      '(cond\n  [(< x 0) "a"]\n  #| about the else |#\n  [else "b"])',
+    ],
+  ])("keeps %s above the else clause, and not inside it", (_, code) => {
+    const expected =
+      '(cond\n  [(< x 0) "a"]\n  #| about the else |#\n  [else "b"])';
+    expect(printed(code)).toBe(expected);
+    expect(printed(expected)).toBe(expected);
+  });
+
+  it("keeps a comment above a clause before the clause", () => {
+    const code = '(cond\n  #| first |#\n  [(< x 0) "a"]\n  [else "b"])';
+    expect(printed(code)).toBe(code);
+  });
+
+  it("keeps a comment of its own among the clauses, and does not make an else of it", () => {
+    const code = "(cond\n  [a 1]\n\n  #| apart |#\n\n  [b 2])";
+    const f = fieldsOf(code);
+    expect(f.otherwise).toHaveLength(0);
+    expect(printed(code)).toContain("#| apart |#");
+    expect(printed(code)).not.toContain("else");
+    expect(printed(printed(code))).toBe(printed(code));
+  });
+
+  it("is refused, as it was, when an else is not the last clause", () => {
+    expect(typesOf("(cond [else 1] [a 2])")).not.toContain("conditional");
+  });
+});
+
+describe("a comment on the line of the opening bracket of a let or a when", () => {
+  it.each([
+    "(letrec (; note\n(g w)) f)",
+    "(let (; note\n[a 1]) a)",
+    "(when ; note\n a b c)",
+  ])("%s is not lost when printed", (code) => {
+    const text = printed(code);
+    expect(text).toContain("#| note |#");
+    // (it may move to the other side of what it was beside, but it is kept)
+    expect(printed(text)).toContain("#| note |#");
   });
 });
 

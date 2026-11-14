@@ -632,10 +632,9 @@ class EditGroup {
 function holds(outer: ASTNode, inner: ASTNode) {
   if (outer.id === inner.id) return true;
   if (!srcRangeIncludes(outer.srcRange(), inner.srcRange())) return false;
-  const a = outer.srcRange();
-  const b = inner.srcRange();
-  const same = poscmp(a.from, b.from) === 0 && poscmp(a.to, b.to) === 0;
-  if (!same) return true;
+  // (the range says it may be: a node can be given a range that takes in
+  // nodes that are not in it, a word that is not in the source, say, so it is
+  // the tree that answers)
   for (const node of outer.descendants()) {
     if (node.id === inner.id) return true;
   }

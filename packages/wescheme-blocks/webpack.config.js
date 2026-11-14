@@ -34,24 +34,4 @@ const bundleConfig = {
   devtool: "source-map",
 };
 
-// TODO(pcardune): figure out what needs to be part of the bundle
-// for wescheme.org
-// bundleConfig.externals = {
-//   codemirror: "codemirror",
-//   "codemirror/addon/search/search": "codemirror",
-//   "codemirror/addon/search/searchcursor": "codemirror",
-//   "wescheme-js/src/runtime/js-numbers": "jsnums",
-//   "wescheme-js/src/lex": {
-//     commonjs: "plt.compiler",
-//     commonjs2: "plt.compiler",
-//     root: ["plt", "compiler"],
-//   },
-//   "wescheme-js/src/runtime/types": "types",
-//   "wescheme-js/src/structures": {
-//     commonjs: "plt.compiler",
-//     commonjs2: "plt.compiler",
-//     root: ["plt", "compiler"],
-//   },
-// };
-
 module.exports = [devServerConfig, bundleConfig];

@@ -1,11 +1,14 @@
 import React from "react";
 import * as P from "pretty-fast-pretty-printer";
 import {
+  Args,
   defineNode,
+  DropTarget,
   field,
   Node,
   Nodes,
   pluralize,
+  withoutOrphans,
 } from "@bootstrapworld/codemirror-blocks";
 import type { ASTNode } from "@bootstrapworld/codemirror-blocks";
 
@@ -32,34 +35,43 @@ export const LetLikeExpr = defineNode({
   },
   pretty(node) {
     const { bindings } = node.fields;
+    // (the bindings are a sequence of definitions when the reader made the block;
+    // after an edit that deleted or replaced them they are whatever is there now,
+    // a blank, say, and the block prints as that: it reads back as something
+    // that is no let, which the editor refuses, but it does not throw)
     if (!isSequence(bindings)) {
-      throw new Error(
-        `Expected letLikeExpr to be constructed with sequence for its binding field`
-      );
+      return P.lambdaLikeSexpr(node.fields.form, bindings, node.fields.expr);
     }
+    const list = P.horz(
+      "(",
+      P.sepBy(
+        (bindings.fields.exprs as unknown as ASTNode[]).map((expr) => {
+          if (expr.type !== "variableDefinition") return expr;
+          return Nodes.withComment(
+            P.standardSexpr(expr.fields.name as ASTNode, [
+              expr.fields.body as ASTNode,
+            ]),
+            expr.options.comment,
+            expr as unknown as Parameters<typeof Nodes.withComment>[2]
+          );
+        }),
+        " "
+      ),
+      ")"
+    );
+    // (the sequence has a word of its own, `bindings`, that is not in the source
+    // and is not printed: a comment that the reader gave it, being on the line of
+    // the opening bracket, goes before the list of bindings instead)
+    const word = bindings.fields.name as ASTNode | undefined;
     return P.lambdaLikeSexpr(
       node.fields.form,
-      P.horz(
-        "(",
-        P.sepBy(
-          (bindings.fields.exprs as unknown as ASTNode[]).map((expr) => {
-            if (expr.type !== "variableDefinition") {
-              throw new Error(
-                `Expected letLikeExpr to have sequence of variableDefinition nodes`
-              );
-            }
-            return Nodes.withComment(
-              P.standardSexpr(expr.fields.name as ASTNode, [
-                expr.fields.body as ASTNode,
-              ]),
-              expr.options.comment,
-              expr as unknown as Parameters<typeof Nodes.withComment>[2]
-            );
-          }),
-          " "
-        ),
-        ")"
-      ),
+      word?.options.comment
+        ? Nodes.withComment(
+            list,
+            word.options.comment,
+            bindings as unknown as Parameters<typeof Nodes.withComment>[2]
+          )
+        : list,
       node.fields.expr
     );
   },
@@ -74,11 +86,7 @@ export const LetLikeExpr = defineNode({
   },
   longDescription(node, _level) {
     const { bindings } = node.fields;
-    if (!isSequence(bindings)) {
-      throw new Error(
-        `Expected letLikeExpr to be constructed with sequence for its binding field`
-      );
-    }
+    if (!isSequence(bindings)) return `a ${node.fields.form} expression`;
     return `a ${node.fields.form} expression with ${pluralize(
       "binding",
       bindings.fields.exprs as unknown as ASTNode[]
@@ -108,9 +116,12 @@ export const WhenUnless = defineNode({
     ]);
     // (the comment of the body is the node's own, if it has none: the editor
     // prints the node's own comment)
-    return node.options.comment
-      ? doc
-      : Nodes.withComment(doc, body.options.comment, node);
+    // (the same for a comment that went with the word that is not printed)
+    const word = isSequence(body)
+      ? (body.fields.name as ASTNode | undefined)
+      : undefined;
+    const comment = body.options.comment ?? word?.options.comment;
+    return node.options.comment ? doc : Nodes.withComment(doc, comment, node);
   },
   render(props) {
     return (
@@ -127,6 +138,114 @@ export const WhenUnless = defineNode({
     } ${node.fields.predicate.describe(level)}, ${node.fields.exprs.describe(
       level
     )}`;
+  },
+});
+
+/**
+ * `cond` is the core Conditional (clauses are its branches, and the `else`
+ * clause its otherwise), written the WeScheme way: square brackets, and a table
+ * of a test and its result for each clause.
+ */
+/** "2 clauses and an else" */
+const clauses = (fields: { branches: ASTNode[]; otherwise: ASTNode[] }) =>
+  pluralize("clause", withoutOrphans(fields.branches)) +
+  (withoutOrphans(fields.otherwise).length ? " and an else" : "");
+
+export const { Conditional, ConditionalBranch } = Nodes.forLanguage({
+  ConditionalBranch: {
+    label: "conditional clause",
+    pretty: (node) =>
+      P.horz("[", P.sepBy([node.fields.test, ...node.fields.body], " "), "]"),
+    render(props) {
+      return (
+        <Node {...props}>
+          <div className="blocks-cond-row">
+            <div className="blocks-cond-predicate">
+              {props.node.fields.test.reactElement()}
+            </div>
+            <Args className="blocks-cond-result" field="body">
+              {props.node.fields.body}
+            </Args>
+          </div>
+        </Node>
+      );
+    },
+    longDescription: (node, level) =>
+      `condition: if ${node.fields.test.describe(
+        level
+      )}, then, ${withoutOrphans(node.fields.body).map((te) => te.describe(level))}`,
+  },
+  Conditional: {
+    label: "conditional expression",
+    pretty: (node) => {
+      const { branches, otherwise } = node.fields;
+      // The `else` clause is not a node: the comment the reader paired with its
+      // body (the next node after the comment) belongs to the clause, as a comment
+      // does to any other, so it is printed around the clause and not inside it.
+      const [first, ...rest] = otherwise;
+      const comment = first?.options.comment;
+      const clause = first
+        ? P.horz(
+            "[else ",
+            P.sepBy(
+              [comment ? first._pretty(first as never) : first, ...rest],
+              " "
+            ),
+            "]"
+          )
+        : null;
+      return P.beginLikeSexpr("cond", [
+        ...branches,
+        ...(clause ? [Nodes.withComment(clause, comment, first)] : []),
+      ]);
+    },
+    render(props) {
+      const { branches, otherwise } = props.node.fields;
+      return (
+        <Node {...props} variant="compound">
+          <span className="blocks-operator">cond</span>
+          <div className="blocks-cond-table">
+            {branches.map((branch, index) =>
+              branch.reactElement({ key: index })
+            )}
+            <div
+              className={`blocks-cond-row blocks-cond-else-row${
+                otherwise.length === 0 ? " blocks-not-live" : ""
+              }`}
+              // (a click on any of the faded row opens its place for a block)
+              {...Nodes.notLiveElseHandlers(otherwise.length === 0)}
+            >
+              <div className="blocks-cond-predicate blocks-cond-else">else</div>
+              {otherwise.length ? (
+                <Args className="blocks-cond-result" field="otherwise">
+                  {otherwise}
+                </Args>
+              ) : (
+                <DropTarget field="otherwise" index={0} label="add an else" />
+              )}
+            </div>
+          </div>
+        </Node>
+      );
+    },
+    // (the count is of the clauses before the else, and the else is said
+    // after it, in the label and in the longer words alike; from the node's
+    // own fields, so that it is right after an edit)
+    ariaLabel: (node) =>
+      `${node.label} with ${clauses(node.fields as unknown as Parameters<typeof clauses>[0])}`,
+    longDescription: (node, level) => {
+      const { branches, otherwise } = node.fields;
+      const elseSteps = withoutOrphans(otherwise);
+      return `a conditional expression with ${clauses(node.fields)}: ${branches
+        .map((c) => c.describe(level))
+        .join(", ")}${
+        elseSteps.length
+          ? `${branches.length ? ", " : ""}else ${elseSteps
+              .map((e) => e.describe(level))
+              .join(", ")}`
+          : ""
+      }`;
+    },
   },
 });
 

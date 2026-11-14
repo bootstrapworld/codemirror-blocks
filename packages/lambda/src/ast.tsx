@@ -2,6 +2,7 @@ import React from "react";
 import * as P from "pretty-fast-pretty-printer";
 import {
   Args,
+  DropTarget,
   Node,
   Nodes,
   NodeSpec as Spec,
@@ -15,21 +16,11 @@ import type { ASTNode, Pos } from "@bootstrapworld/codemirror-blocks";
 const { CoreAST, createASTSpec } = Nodes;
 export const LAMBDA_BLOCK_COMMENT = { open: "#|", close: "|#" };
 
-const operatorSpec = [
-  Spec.value<string, "operator">("operator"),
-  Spec.required("left"),
-  Spec.required("right"),
-] as const;
-
 export const LambdaAST = createASTSpec({
   ...CoreAST.config,
   prog: Spec.nodeSpec([Spec.list("exprs", { orphans: true })], {
     label: "program",
   }),
-  call: Spec.nodeSpec(
-    [Spec.required("func"), Spec.list("args", { orphans: true })],
-    { label: "function call" }
-  ),
   lambda: Spec.nodeSpec(
     [Spec.optional("name"), Spec.list("vars"), Spec.required("body")],
     { label: "lambda expression" }
@@ -41,13 +32,6 @@ export const LambdaAST = createASTSpec({
     [Spec.optional("name"), Spec.list("vars"), Spec.required("body")],
     { label: "let expression" }
   ),
-  conditional: Spec.nodeSpec(
-    [Spec.required("cond"), Spec.required("then"), Spec.optional("else")],
-    { label: "conditional expression" }
-  ),
-  not: Spec.nodeSpec([Spec.required("body")], { label: "not expression" }),
-  binary: Spec.nodeSpec(operatorSpec, { label: "binary operation" }),
-  assignment: Spec.nodeSpec(operatorSpec, { label: "assignment" }),
 });
 
 /**
@@ -59,7 +43,12 @@ function atomic(node: ASTNode): P.DocLike {
   // (a comment above a node makes it more than an atom: it is in parentheses)
   const above =
     node.options.comment && poscmp(node.options.comment.from, node.from) < 0;
-  return (node.type === "literal" || node.type === "call") && !above
+  return (node.type === "literal" ||
+    node.type === "blank" ||
+    // (what an edit puts where a block was deleted, until the text is read again)
+    node.type === "fakeBlankNode" ||
+    node.type === "functionApp") &&
+    !above
     ? node
     : P.horz("(", node, ")");
 }
@@ -79,6 +68,31 @@ function commaSeparated(nodes: ASTNode[]) {
   return nodes[0].options.orphan
     ? P.vert("(", P.horz("  ", P.vertArray(items)), ")")
     : P.horz("(", P.vertArray(items), ")");
+}
+
+/** Statements in braces: `{ a; b }`, a comment on a line of its own */
+function braced(exprs: ASTNode[]): P.Doc {
+  // (a `;` goes after every statement but the last; a comment has none)
+  let remaining = withoutOrphans(exprs).length;
+  const statements = exprs.map((expr) =>
+    expr.options.orphan || --remaining === 0 ? expr : P.horz(expr, ";")
+  );
+  return exprs.some((e) => e.options.orphan)
+    ? P.vert("{", P.horz("  ", P.vertArray(statements)), "}")
+    : P.horz("{ ", P.vertArray(statements), " }");
+}
+
+/** The steps of a branch: bare if there is one, in braces if not */
+function steps(body: ASTNode[]): P.DocLike {
+  // (nothing between braces is `false` to lambda, which would put a step there
+  // that nobody wrote: a blank is what stands where the steps were taken away,
+  // and it reads back as a blank)
+  if (withoutOrphans(body).length === 0) {
+    return body.length
+      ? P.vert("{", P.horz("  ", P.vertArray([...body, P.txt("...")])), "}")
+      : P.txt("...");
+  }
+  return body.length === 1 && !body[0].options.orphan ? body[0] : braced(body);
 }
 
 export function Prog(from: Pos, to: Pos, exprs: ASTNode[], options = {}) {
@@ -106,9 +120,7 @@ export function Prog(from: Pos, to: Pos, exprs: ASTNode[], options = {}) {
         if (end > 0 && end < exprs.length) lines.splice(end, 0, "");
         return P.vertArray(lines);
       }
-      return node.fields.exprs.some((e) => e.options.orphan)
-        ? P.vert("{", P.horz("  ", P.vertArray(statements)), "}")
-        : P.horz("{ ", P.vertArray(statements), " }");
+      return braced(node.fields.exprs);
     },
     render(props) {
       return (
@@ -126,19 +138,13 @@ export function Prog(from: Pos, to: Pos, exprs: ASTNode[], options = {}) {
   });
 }
 
-export function Call(
-  from: Pos,
-  to: Pos,
-  func: ASTNode,
-  args: ASTNode[],
-  options = {}
-) {
-  return LambdaAST.makeNode({
-    from,
-    to,
-    type: "call",
-    fields: { func, args },
-    options,
+/**
+ * A call is the core function application, written `f(a, b)`: the table says
+ * how it is printed, drawn and described, and the node is the core's otherwise.
+ */
+const { FunctionApp } = Nodes.forLanguage({
+  FunctionApp: {
+    label: "function call",
     pretty: (node) =>
       P.horz(atomic(node.fields.func), commaSeparated(node.fields.args)),
     render(props) {
@@ -155,7 +161,17 @@ export function Call(
       `a call to ${node.fields.func.describe(level)} with ${
         withoutOrphans(node.fields.args).length
       } arguments`,
-  });
+  },
+});
+
+export function Call(
+  from: Pos,
+  to: Pos,
+  func: ASTNode,
+  args: ASTNode[],
+  options = {}
+) {
+  return FunctionApp(from, to, { func, args }, options);
 }
 
 export function Lambda(
@@ -267,114 +283,165 @@ export function Let(
   });
 }
 
+/**
+ * `if a then x else if b then y else z` is an if whose else is the one step that
+ * is another if (written `else if`): the steps of a branch are written bare if
+ * there is one, and in braces if there are several, which the parser reads
+ * back as that list.
+ */
 export function Conditional(
   from: Pos,
   to: Pos,
-  cond: ASTNode,
-  then: ASTNode,
-  else_: ASTNode | null,
+  test: ASTNode,
+  body: ASTNode[],
+  otherwise: ASTNode[],
   options = {}
 ) {
-  return LambdaAST.makeNode({
-    from,
-    to,
-    type: "conditional",
-    fields: { cond, then, else: else_ },
-    options,
+  return If(from, to, { test, body, otherwise }, options);
+}
+
+/**
+ * `!x` and `a + b` are the core operations, written the way lambda writes them:
+ * an operator beside its operands, in brackets where its operands need them.
+ */
+const {
+  BinaryOperation,
+  UnaryOperation,
+  Assignment: AssignmentNode,
+  If,
+} = Nodes.forLanguage({
+  If: {
+    label: "conditional expression",
     pretty: (node) =>
-      node.fields.else
-        ? P.horz(
-            "if ",
-            node.fields.cond,
-            " then ",
-            node.fields.then,
-            " else ",
-            node.fields.else
-          )
-        : P.horz("if ", node.fields.cond, " then ", node.fields.then),
+      P.horz(
+        "if ",
+        node.fields.test,
+        " then ",
+        steps(node.fields.body),
+        node.fields.otherwise.length
+          ? P.horz(" else ", steps(node.fields.otherwise))
+          : ""
+      ),
     render(props) {
-      const { cond, then, else: else_ } = props.node.fields;
+      const { test, body, otherwise } = props.node.fields;
       return (
         <Node {...props} variant="compound">
           <span className="blocks-operator">if</span>
-          {cond.reactElement()}
+          {test.reactElement()}
           <span className="blocks-operator">then</span>
-          {then.reactElement()}
-          {else_ ? (
-            <>
-              <span className="blocks-operator">else</span>
-              {else_.reactElement()}
-            </>
-          ) : null}
+          <Args className="blocks-conditional-body" field="body">
+            {body}
+          </Args>
+          <div
+            className={`blocks-if-else${
+              otherwise.length === 0 ? " blocks-not-live" : ""
+            }`}
+            {...Nodes.notLiveElseHandlers(otherwise.length === 0)}
+          >
+            <span className="blocks-operator">else</span>
+            {otherwise.length ? (
+              <Args className="blocks-conditional-body" field="otherwise">
+                {otherwise}
+              </Args>
+            ) : (
+              <DropTarget field="otherwise" index={0} label="add an else" />
+            )}
+          </div>
         </Node>
       );
     },
     longDescription: (node, level) =>
-      `an if expression: if ${node.fields.cond.describe(
+      `an if expression: if ${node.fields.test.describe(
         level
-      )}, then ${node.fields.then.describe(level)}`,
-  });
-}
-
-export function Not(from: Pos, to: Pos, body: ASTNode, options = {}) {
-  return LambdaAST.makeNode({
-    from,
-    to,
-    type: "not",
-    fields: { body },
-    options,
-    pretty: (node) => P.horz("!", atomic(node.fields.body)),
+      )}, then ${withoutOrphans(node.fields.body)
+        .map((step) => step.describe(level))
+        .join(", ")}`,
+  },
+  BinaryOperation: {
+    pretty: (node) =>
+      P.horz(
+        atomic(node.fields.left),
+        ` ${node.fields.operator} `,
+        atomic(node.fields.right)
+      ),
     render(props) {
       return (
         <Node {...props} variant="compound">
-          <span className="blocks-operator">!</span>
-          {props.node.fields.body.reactElement()}
+          {props.node.fields.left.reactElement()}
+          <span className="blocks-operator">{props.node.fields.operator}</span>
+          {props.node.fields.right.reactElement()}
         </Node>
       );
     },
     longDescription: (node, level) =>
-      `the negation of ${node.fields.body.describe(level)}`,
-  });
+      `${node.fields.left.describe(level)} ${
+        node.fields.operator
+      } ${node.fields.right.describe(level)}`,
+  },
+  Assignment: {
+    pretty: (node) =>
+      P.horz(
+        atomic(node.fields.target),
+        ` ${node.fields.operator} `,
+        atomic(node.fields.value)
+      ),
+    render(props) {
+      return (
+        <Node {...props} variant="compound">
+          {props.node.fields.target.reactElement()}
+          <span className="blocks-operator">{props.node.fields.operator}</span>
+          {props.node.fields.value.reactElement()}
+        </Node>
+      );
+    },
+    longDescription: (node, level) =>
+      `${node.fields.target.describe(level)} ${
+        node.fields.operator
+      } ${node.fields.value.describe(level)}`,
+  },
+  UnaryOperation: {
+    label: "not expression",
+    pretty: (node) => P.horz(node.fields.operator, atomic(node.fields.operand)),
+    render(props) {
+      return (
+        <Node {...props} variant="compound">
+          <span className="blocks-operator">{props.node.fields.operator}</span>
+          {props.node.fields.operand.reactElement()}
+        </Node>
+      );
+    },
+    longDescription: (node, level) =>
+      `the negation of ${node.fields.operand.describe(level)}`,
+  },
+});
+
+export function Assignment(
+  from: Pos,
+  to: Pos,
+  operator: string,
+  left: ASTNode,
+  right: ASTNode,
+  options = {}
+) {
+  return AssignmentNode(
+    from,
+    to,
+    { operator, target: left, value: right },
+    options
+  );
 }
 
-function operatorNode(type: "binary" | "assignment") {
-  return (
-    from: Pos,
-    to: Pos,
-    operator: string,
-    left: ASTNode,
-    right: ASTNode,
-    options = {}
-  ) =>
-    LambdaAST.makeNode({
-      from,
-      to,
-      type,
-      fields: { operator, left, right },
-      options,
-      pretty: (node) =>
-        P.horz(
-          atomic(node.fields.left),
-          ` ${node.fields.operator} `,
-          atomic(node.fields.right)
-        ),
-      render(props) {
-        return (
-          <Node {...props} variant="compound">
-            {props.node.fields.left.reactElement()}
-            <span className="blocks-operator">
-              {props.node.fields.operator}
-            </span>
-            {props.node.fields.right.reactElement()}
-          </Node>
-        );
-      },
-      longDescription: (node, level) =>
-        `${node.fields.left.describe(level)} ${
-          node.fields.operator
-        } ${node.fields.right.describe(level)}`,
-    });
+export function Not(from: Pos, to: Pos, body: ASTNode, options = {}) {
+  return UnaryOperation(from, to, { operator: "!", operand: body }, options);
 }
 
-export const Binary = operatorNode("binary");
-export const Assignment = operatorNode("assignment");
+export function Binary(
+  from: Pos,
+  to: Pos,
+  operator: string,
+  left: ASTNode,
+  right: ASTNode,
+  options = {}
+) {
+  return BinaryOperation(from, to, { operator, left, right }, options);
+}

@@ -219,6 +219,57 @@
   }
 }
 
+// a loop: what it needs before its steps in a row, the steps below, in a column
+.blocks-loop {
+  > .blocks-loop-header {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 1px;
+  }
+  > .blocks-loop-body {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 1px;
+  }
+}
+
+// the else of an if that has none is drawn, faded, to be dropped into
+.blocks-if-else.blocks-not-live {
+  opacity: 0.4;
+  text-align: center;
+}
+
+// a conditional: its branches in a column, then the else
+.blocks-conditional,
+.blocks-if,
+.blocks-conditionalBranch {
+  > .blocks-conditional-header {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 1px;
+  }
+  > .blocks-conditional-branches {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 1px;
+  }
+  > .blocks-conditional-else {
+    display: flex;
+    flex-direction: column;
+    margin: 1px;
+  }
+  .blocks-conditional-body {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 1px;
+  }
+}
+
 // (the pill of a value; a language that gives its block `variant="value"` has it)
 .blocks-name,
 .blocks-literal,
@@ -231,7 +282,7 @@
   border-radius: 5px;
   padding: 0px 2px;
   border: @border-width solid transparent;
-  min-width: 15px;
+  min-width: 20px;
   text-align: center;
   line-height: @height - @border-width * 2;
   height: @height;
@@ -336,7 +387,7 @@
   font-weight: bold;
   border-radius: @border-radius;
   margin: 0px 5px;
-  min-width: 15px;
+  min-width: 20px;
   display: inline-block;
   cursor: default;
   height: 20px;

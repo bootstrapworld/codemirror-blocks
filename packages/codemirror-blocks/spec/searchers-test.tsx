@@ -3,7 +3,8 @@ import React from "react";
 import wescheme from "@bootstrapworld/wescheme";
 import { CodeMirrorFacade } from "../src/editor";
 import { collapseNode } from "../src/state/actions";
-import ByBlock from "../src/ui/searchers/ByBlock";
+import lambda from "@bootstrapworld/lambda";
+import ByBlock, { blockTypeLabels } from "../src/ui/searchers/ByBlock";
 import ByString from "../src/ui/searchers/ByString";
 import { mountCMB, teardown } from "../src/toolkit/test-utils";
 
@@ -286,5 +287,18 @@ describe("the search by block form", () => {
       target: { name: "blockType", value: "functionApp" },
     });
     expect(onChange).toHaveBeenCalledWith({ blockType: "functionApp" });
+  });
+});
+
+describe("the names of the block types", () => {
+  it("are the labels of the nodes, which a language can say its own way", () => {
+    expect([...blockTypeLabels(wescheme.buildAST("(f x)"))]).toEqual([
+      ["functionApp", "function application"],
+      ["literal", "literal"],
+    ]);
+    // (lambda writes the core function application as a call)
+    expect(blockTypeLabels(lambda.buildAST("f(x)")).get("functionApp")).toBe(
+      "function call"
+    );
   });
 });

@@ -2,7 +2,7 @@
  * This file is meant to be used on the wescheme.org website.
  * It is bundled using the webpack.
  */
-import { WeScheme } from "./index";
+import WeScheme from "@bootstrapworld/wescheme";
 import {
   CodeMirrorBlocks,
   setLogReporter,
@@ -17,7 +17,7 @@ const errorForm = document.createElement("div");
 errorForm.innerHTML = `<iframe
   name="hidden_iframe"
   id="hidden_iframe"
-  style={{ display: "none" }}
+  style="display: none"
 ></iframe>
 <form
   method="post"
@@ -25,24 +25,12 @@ errorForm.innerHTML = `<iframe
   name="theForm"
   id="errorLogForm"
   target="hidden_iframe"
-  style={{ display: "none" }}
+  style="display: none"
 >
-  <textarea
-    name="entry.1311696515"
-    id="description"
-    defaultValue="Auto-Generated Crash Log"
-  />
-  <textarea
-    name="entry.1568521986"
-    id="history"
-    defaultValue="default_history"
-  />
-  <textarea
-    name="entry.785063835"
-    id="exception"
-    defaultValue="default_exception"
-  />
-  <input type="button" value="Submit" className="submit" />
+  <textarea name="entry.1311696515" id="description"></textarea>
+  <textarea name="entry.1568521986" id="history"></textarea>
+  <textarea name="entry.785063835" id="exception"></textarea>
+  <input type="button" value="Submit" class="submit" />
 </form>`;
 
 export default function WeschemeBlocks(container, options) {

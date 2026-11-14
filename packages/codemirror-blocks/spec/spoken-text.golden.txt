@@ -50,10 +50,9 @@ literal: x,
 literal: 3,
 literal: then, big, a String,
 literal: else, small, a String,
-condExpression: conditional expression with 3 clauses,
-  long: a conditional expression with 3 conditions: 
-                condition: if < of x, 0, then, unsupported expression,condition: if = of x, 0, then, unsupported expression,condition: if else, then, unsupported expression
-condClause: condition 1,
+conditional: conditional expression with 2 clauses and an else,
+  long: a conditional expression with 2 clauses and an else: condition: if < of x, 0, then, unsupported expression, condition: if = of x, 0, then, unsupported expression, else unsupported expression
+conditionalBranch: condition 1,
   long: condition: if < of x, 0, then, unsupported expression
 functionApp: < expression, 2 inputs,
   long: < of x, 0
@@ -61,7 +60,7 @@ literal: <,
 literal: x,
 literal: 0,
 literal: unsupported expression,
-condClause: condition 2,
+conditionalBranch: condition 2,
   long: condition: if = of x, 0, then, unsupported expression
 functionApp: = expression, 2 inputs,
   long: = of x, 0
@@ -69,9 +68,6 @@ literal: =,
 literal: x,
 literal: 0,
 literal: unsupported expression,
-condClause: condition 3,
-  long: condition: if else, then, unsupported expression
-literal: else,
 literal: unsupported expression,
 letLikeExpr: let expression with 2 bindings,
   long: a let expression with 2 bindings
@@ -191,7 +187,7 @@ summary: At the top level, this program contains 1 program.
 
 prog: program,
   long: a program with 1 expressions
-call: function call,
+functionApp: function call,
   long: a call to literal with 2 arguments
 literal: literal,
 literal: literal,
@@ -208,7 +204,7 @@ summary: At the top level, this program contains 1 program.
 
 prog: program,
   long: a program with 1 expressions
-conditional: conditional expression,
+if: conditional expression,
   long: an if expression: if literal, then literal
 literal: literal,
 literal: literal,
@@ -217,10 +213,10 @@ summary: At the top level, this program contains 1 program.
 
 prog: program,
   long: a program with 1 expressions
-binary: binary operation,
+binaryOperation: binary operation,
   long: literal + literal * literal
 literal: literal,
-binary: binary operation,
+binaryOperation: binary operation,
   long: literal * literal
 literal: literal,
 literal: literal,
@@ -245,11 +241,11 @@ literal: literal,
 vardef: variable definition,
   long: a definition of literal
 literal: literal,
-binary: binary operation,
+binaryOperation: binary operation,
   long: literal * literal
 literal: literal,
 literal: literal,
-binary: binary operation,
+binaryOperation: binary operation,
   long: literal + literal
 literal: literal,
 literal: literal,
@@ -264,7 +260,7 @@ vardef: variable definition,
   long: a definition of literal
 literal: literal,
 literal: literal,
-binary: binary operation,
+binaryOperation: binary operation,
   long: literal + literal
 literal: literal,
 literal: literal,
@@ -272,7 +268,7 @@ summary: At the top level, this program contains 1 program.
 
 prog: program,
   long: a program with 1 expressions
-not: not expression,
+unaryOperation: not expression,
   long: the negation of literal
 literal: literal,
 summary: At the top level, this program contains 1 program.
@@ -285,7 +281,7 @@ summary: At the top level, this program contains 1 program.
 ## lambda: comments
 prog: program,
   long: a program with 1 expressions
-call: function call with comment: about f,
+functionApp: function call with comment: about f,
   long: a call to literal with 1 arguments
 literal: literal,
 literal: literal,
@@ -294,7 +290,7 @@ summary: At the top level, this program contains 1 program.
 prog: program,
   long: a program with 1 expressions
 comment: comment: on its own,
-call: function call,
+functionApp: function call,
   long: a call to literal with 1 arguments
 literal: literal,
 literal: literal,
@@ -302,7 +298,7 @@ summary: At the top level, this program contains 1 program.
 
 prog: program,
   long: a program with 1 expressions
-call: function call with comment: after,
+functionApp: function call with comment: after,
   long: a call to literal with 2 arguments
 literal: literal,
 literal: literal,
@@ -311,7 +307,7 @@ summary: At the top level, this program contains 1 program.
 
 prog: program,
   long: a program with 1 expressions
-call: function call,
+functionApp: function call,
   long: a call to literal with 2 arguments
 literal: literal,
 literal: literal with comment: between,

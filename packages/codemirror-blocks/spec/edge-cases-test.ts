@@ -201,7 +201,7 @@ describe("mounting again with a different language", () => {
     expect(texts()).toEqual(["1 + 2"]);
     expect([...cmb.getAst().descendants()].map((n) => n.type)).toEqual([
       "prog",
-      "binary",
+      "binaryOperation",
       "literal",
       "literal",
     ]);
@@ -217,7 +217,7 @@ describe("mounting again with a different language", () => {
     cmb.setValue("(f x y)");
     expect(cmb.getAst().language.id).toBe("wescheme");
     expect(texts()).toEqual(["(f x y)"]);
-    expect(document.querySelector(".blocks-binary")).toBeNull();
+    expect(document.querySelector(".blocks-binaryOperation")).toBeNull();
     expect(document.querySelectorAll(".Primitive").length).toBeGreaterThan(0);
   });
 });

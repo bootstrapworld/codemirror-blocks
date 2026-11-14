@@ -116,9 +116,23 @@ are:
   node. The core node types have the classes `blocks-functionApp`,
   `blocks-variableDefinition`, `blocks-functionDefinition`,
   `blocks-structDefinition`, `blocks-lambdaExpression`, `blocks-ifExpression`,
-  `blocks-condExpression`, `blocks-condClause`, `blocks-identifierList` and
-  `blocks-comment`. Your language defines the rest: a node created with
+  `blocks-condExpression`, `blocks-condClause`, `blocks-identifierList`,
+  `blocks-loop`, `blocks-binaryOperation`, `blocks-unaryOperation`,
+  `blocks-assignment`, `blocks-if`, `blocks-conditional`, `blocks-conditionalBranch`,
+  `blocks-return` and `blocks-comment`. Your language defines the rest: a node created with
   `type: "whenExpr"` gets the class `blocks-whenExpr`.
+
+- **blocks-loop-header** and **blocks-loop-body**: the parts of a
+  `blocks-loop`: what the kind of loop needs before its steps (drawn in a row)
+  and the steps (drawn in a column).
+
+- **blocks-conditional-header**, **blocks-conditional-branches**,
+  **blocks-conditional-else** and **blocks-conditional-body**: the parts of a `blocks-conditional` and of a
+  `blocks-conditionalBranch`: the branches (a column), the else, and the steps
+  of a branch or of the else (a column).
+
+- **blocks-if-else** and **blocks-not-live**: the else of a `blocks-if`, which
+  has the second class (and is drawn faded) while it has no steps.
 
 - **blocks-compound** and **blocks-value**: what a block that has
   `<Node variant="compound">` or `variant="value"` is drawn as, whatever its

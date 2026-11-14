@@ -184,14 +184,14 @@ describe("The WeScheme Parser,", function () {
       );
     });
 
-    it("should convert condExpr to condExpression", function () {
-      expect(this.ast[0].type).toBe("condExpression");
+    it("should convert condExpr to a conditional", function () {
+      expect(this.ast[0].type).toBe("conditional");
     });
 
     it("should convert the clauses correctly", function () {
-      const clauses = this.ast[0].fields.clauses;
+      const clauses = this.ast[0].fields.branches;
       expect(clauses.length).toBe(3);
-      expect(clauses[0].type).toBe("condClause");
+      expect(clauses[0].type).toBe("conditionalBranch");
     });
 
     it("should have a sane toString method", function () {

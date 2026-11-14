@@ -389,11 +389,65 @@ const When = defineNode({
 When(from, to, { test, otherwise: null, body: [], id: 1 }, options);
 ```
 
+A list can be `field.list({ fixed: true })`: it has as many nodes as the parser
+made (the core does not know how many a kind of node has). Nothing is inserted
+into it (no drop targets are drawn, and the insert keys do nothing); a node in it
+that is deleted, cut or dragged out leaves a blank in its place, as the child of
+a `field.required()` does; and a block dropped on a node or a blank replaces it.
+
 The fields of `node` are typed from the declaration (`node.fields.body` is an
 array of nodes), and so are the fields given to the constructor. The comment that
 goes with a node is printed for you (above it, or beside it), whether `pretty`
 returns a `Doc` or text. `When.type` and `When.spec` are there for what needs
 them.
+
+#### The core nodes, written in your language's syntax: `Nodes.forLanguage`
+
+The core nodes (`FunctionApp`, `IfExpression`, `Literal`...) print as Scheme. A
+language that has the same nodes but writes them another way does not define
+its own: it gives a table, by the name of the maker, with what it says again
+(any of `pretty`, `render`, `label`, `pluralLabel`, `longDescription` and
+`ariaLabel`), and gets the makers back:
+
+```tsx
+import * as P from "pretty-fast-pretty-printer";
+import { Nodes } from "@bootstrapworld/codemirror-blocks";
+
+export const { FunctionApp, Literal } = Nodes.forLanguage({
+  FunctionApp: {
+    pretty: (node) =>
+      P.horz(node.fields.func, "(", P.sepBy(node.fields.args, ", ", ", "), ")"),
+    label: "function call",
+  },
+});
+```
+
+What the table does not say is the core's. The `type` and the fields of a node
+do not change (so searching by block type, `isNodeOfType` and the CSS class are
+the same, and a node made by the plain `Nodes.FunctionApp` is not touched), and
+`pretty` is typed from the fields as in `defineNode`. Operator precedence is not
+the core's: your printer puts brackets where your language needs them. Nodes the
+core does not have are still your own, with `defineNode`. A comment and a
+sequence are the same for every language. `maker.with({ ... })` does the same
+for one maker.
+
+The core also has nodes for what Scheme, JavaScript and Python have in common,
+each printed as an s-expression until a language says otherwise:
+
+| maker               | type                | fields                                                                | default print                                                                                  | draws                                                                                                                                                                            |
+| ------------------- | ------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Loop`              | `loop`              | `kind` (text: "while", "for-each", "for", "repeat"), `header`, `body` | `(kind header... body...)`                                                                     | the kind, the `header` items in a row, the `body` items in a column                                                                                                              |
+| `BinaryOperation`   | `binaryOperation`   | `operator` (text), `left`, `right`                                    | `(operator left right)`                                                                        | the operator, then the operands                                                                                                                                                  |
+| `UnaryOperation`    | `unaryOperation`    | `operator` (text), `operand`                                          | `(operator operand)`                                                                           | the operator, then the operand                                                                                                                                                   |
+| `Assignment`        | `assignment`        | `operator` (text: "=", "+="...), `target`, `value`                    | `(set! target value)` for "=", else `(operator target value)`                                  | the target, the operator, the value                                                                                                                                              |
+| `If`                | `if`                | `test`, `body`, `otherwise` (the else: no steps, no else)             | `(if test body...)`, and with an else `(if test (then body...) (else otherwise...))`           | `if`, the test, the body in a column, and the else: drawn faded (`blocks-not-live`, with a place to drop a block that a screenreader hears as "add an else") until it has a step |
+| `ConditionalBranch` | `conditionalBranch` | `test`, `body`                                                        | `(test body...)`                                                                               | `if`, the test, the body in a column (a branch of a `Conditional`; a plain if is `If`)                                                                                           |
+| `Conditional`       | `conditional`       | `branches` (of `ConditionalBranch`), `otherwise`                      | `(cond (test body...) ... (else otherwise...))`, with no else clause when `otherwise` is empty | the branches in a column, then `else` and its body                                                                                                                               |
+| `Return`            | `return`            | `value` (optional)                                                    | `(return value)`, or `(return)`                                                                | `return` and the value                                                                                                                                                           |
+
+A `while` has one `header` item (its test), a `for-each` two (the variable and the
+collection), a C-style `for` three, a `repeat` one (the count). The kind is text, not a
+node: a language that wants it drawn another way says so in `render`.
 
 ### Speaking out Loud
 

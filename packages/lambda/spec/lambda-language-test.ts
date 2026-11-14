@@ -28,7 +28,7 @@ describe("The lambda language", () => {
     expect(ast.rootNodes.map((n) => n.type)).toEqual(["prog"]);
     expect([...ast.descendants()].map((n) => n.type)).toEqual([
       "prog",
-      "binary",
+      "binaryOperation",
       "literal",
       "literal",
     ]);

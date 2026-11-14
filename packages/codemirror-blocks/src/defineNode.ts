@@ -31,7 +31,7 @@ import { warn } from "./utils";
 
 type RequiredField = { kind: "required" };
 type OptionalField = { kind: "optional" };
-type ListField = { kind: "list"; orphans: boolean };
+type ListField = { kind: "list"; orphans: boolean; fixed: boolean };
 type ValueField<V> = { kind: "value"; readonly type?: V };
 type FieldDeclaration =
   | RequiredField
@@ -48,11 +48,17 @@ export const field = {
   optional: (): OptionalField => ({ kind: "optional" }),
   /**
    * any number of nodes. A list that has `orphans` can also hold comments that
-   * go with no node of their own (see `orphans.ts`).
+   * go with no node of their own (see `orphans.ts`). A `fixed` list has as many
+   * as the parser made: nothing is inserted into it, and one that is deleted,
+   * cut or dragged out leaves a blank.
    */
-  list: ({ orphans = false }: { orphans?: boolean } = {}): ListField => ({
+  list: ({
+    orphans = false,
+    fixed = false,
+  }: { orphans?: boolean; fixed?: boolean } = {}): ListField => ({
     kind: "list",
     orphans,
+    fixed,
   }),
   /** something that is not a node (a string, a number, ...) */
   value: <V>(): ValueField<V> => ({ kind: "value" }),
@@ -105,6 +111,22 @@ type Definition<F extends Record<string, FieldDeclaration>> = {
   ariaLabel?: (node: ASTNode) => string;
 };
 
+/**
+ * What a language can say again about a kind of node, without changing what the
+ * kind is (its `type` and its fields): how it is printed, drawn and described.
+ */
+export type Overrides<F extends Record<string, FieldDeclaration>> = Partial<
+  Pick<
+    Definition<F>,
+    | "label"
+    | "pluralLabel"
+    | "pretty"
+    | "render"
+    | "longDescription"
+    | "ariaLabel"
+  >
+>;
+
 export type NodeMaker<F extends Record<string, FieldDeclaration>> = {
   (
     from: Pos,
@@ -115,6 +137,13 @@ export type NodeMaker<F extends Record<string, FieldDeclaration>> = {
   /** the name of this kind of node */
   readonly type: string;
   readonly spec: SpecOf<F>;
+  /**
+   * The same kind of node (the same `type` and fields, so searching by type,
+   * `isNodeOfType` and the CSS class do not change), with some of what it is
+   * printed, drawn and described as said again. What is not said is as it was.
+   * The maker it is called on is not changed.
+   */
+  with(overrides: Overrides<F>): NodeMaker<F>;
 };
 
 /**
@@ -173,7 +202,7 @@ export function defineNode<F extends Record<string, FieldDeclaration>>(
       case "optional":
         return new Spec.Optional(name);
       case "list":
-        return new Spec.List(name, d.orphans);
+        return new Spec.List(name, d.orphans, d.fixed);
       default:
         return new Spec.Value(name);
     }
@@ -183,24 +212,40 @@ export function defineNode<F extends Record<string, FieldDeclaration>>(
     pluralLabel,
   }) as unknown as SpecOf<F>;
 
-  const make = (
-    from: Pos,
-    to: Pos,
-    fields: Spec.FieldsForSpec<SpecOf<F>>,
-    options: NodeOptions = {}
-  ) =>
-    new ASTNode<SpecOf<F>, FieldsOf<F>>({
-      from,
-      to,
+  const make = Object.assign(
+    (
+      from: Pos,
+      to: Pos,
+      fields: Spec.FieldsForSpec<SpecOf<F>>,
+      options: NodeOptions = {}
+    ) =>
+      new ASTNode<SpecOf<F>, FieldsOf<F>>({
+        from,
+        to,
+        type,
+        fields,
+        options: ariaLabel ? { ariaLabel, ...options } : options,
+        spec,
+        pretty: definition.pretty,
+        render: definition.render,
+        longDescription: definition.longDescription,
+      }),
+    {
       type,
-      fields,
-      options: ariaLabel ? { ariaLabel, ...options } : options,
       spec,
-      pretty: definition.pretty,
-      render: definition.render,
-      longDescription: definition.longDescription,
-    });
-  return Object.assign(make, { type, spec });
+      // (the same kind, so no warning about its type again)
+      with: (overrides: Overrides<F>) =>
+        defineNode({ ...definition, ...withoutUndefined(overrides) }, true),
+    }
+  );
+  return make;
+}
+
+/** `{ pretty: undefined }` says nothing: the kind keeps what it had */
+function withoutUndefined<T extends object>(object: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(object).filter(([, value]) => value !== undefined)
+  ) as Partial<T>;
 }
 
 /** A node of the kind that fields declared as `F` make (for a `pretty` that is written apart) */
