@@ -50,9 +50,8 @@ literal: x,
 literal: 3,
 literal: then, big, a String,
 literal: else, small, a String,
-conditional: conditional expression with 3 clauses,
-  long: a conditional expression with 2 conditions: 
-                condition: if < of x, 0, then, unsupported expression,condition: if = of x, 0, then, unsupported expression, else unsupported expression
+conditional: conditional expression with 2 clauses and an else,
+  long: a conditional expression with 2 clauses and an else: condition: if < of x, 0, then, unsupported expression, condition: if = of x, 0, then, unsupported expression, else unsupported expression
 conditionalBranch: condition 1,
   long: condition: if < of x, 0, then, unsupported expression
 functionApp: < expression, 2 inputs,

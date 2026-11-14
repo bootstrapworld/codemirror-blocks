@@ -138,6 +138,11 @@ export const WhenUnless = defineNode({
  * clause its otherwise), written the WeScheme way: square brackets, and a table
  * of a test and its result for each clause.
  */
+/** "2 clauses and an else" */
+const clauses = (fields: { branches: ASTNode[]; otherwise: ASTNode[] }) =>
+  pluralize("clause", withoutOrphans(fields.branches)) +
+  (withoutOrphans(fields.otherwise).length ? " and an else" : "");
+
 export const { Conditional, ConditionalBranch } = Nodes.forLanguage({
   ConditionalBranch: {
     label: "conditional clause",
@@ -215,16 +220,24 @@ export const { Conditional, ConditionalBranch } = Nodes.forLanguage({
         </Node>
       );
     },
-    longDescription: (node, level) =>
-      `a conditional expression with ${pluralize(
-        "condition",
-        node.fields.branches
-      )}: 
-                ${node.fields.branches.map((c) => c.describe(level))}${
-                  withoutOrphans(node.fields.otherwise).length
-                    ? `, else ${withoutOrphans(node.fields.otherwise).map((e) => e.describe(level))}`
-                    : ""
-                }`,
+    // (the count is of the clauses before the else, and the else is said
+    // after it, in the label and in the longer words alike; from the node's
+    // own fields, so that it is right after an edit)
+    ariaLabel: (node) =>
+      `${node.label} with ${clauses(node.fields as unknown as Parameters<typeof clauses>[0])}`,
+    longDescription: (node, level) => {
+      const { branches, otherwise } = node.fields;
+      const elseSteps = withoutOrphans(otherwise);
+      return `a conditional expression with ${clauses(node.fields)}: ${branches
+        .map((c) => c.describe(level))
+        .join(", ")}${
+        elseSteps.length
+          ? `${branches.length ? ", " : ""}else ${elseSteps
+              .map((e) => e.describe(level))
+              .join(", ")}`
+          : ""
+      }`;
+    },
   },
 });
 

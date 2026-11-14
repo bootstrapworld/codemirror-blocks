@@ -53,4 +53,21 @@ describe("the else of a cond", () => {
     keyDown("Enter");
     expect(cmb.getValue()).toBe("(cond\n  [a 1]\n  [else b])");
   });
+
+  it("says its clauses and its else the same way in both, also after an edit", () => {
+    mount("(cond [a 1] [b 2])");
+    const label = () =>
+      document.querySelector(".blocks-conditional")!.getAttribute("aria-label");
+    expect(label()).toMatch(/^conditional expression with 2 clauses,/);
+    fireEvent.click(addElse()!);
+    setEditableText("c");
+    keyDown("Enter");
+    expect(label()).toMatch(
+      /^conditional expression with 2 clauses and an else,/
+    );
+    const root = cmb.getAst().rootNodes[0];
+    expect(root.describe(1)).toMatch(
+      /^a conditional expression with 2 clauses and an else: /
+    );
+  });
 });

@@ -357,10 +357,7 @@ export function parseNodeOrNull(node: structures.Program): ASTNode | null {
         }),
         otherwise: hasElse ? [parseNode(last.second)] : [],
       },
-      {
-        ariaLabel: (n: ASTNode) =>
-          `${n.label} with ` + pluralize("clause", node.clauses),
-      }
+      {}
     );
   } else if (node instanceof structures.ifExpr) {
     const predicate = parseNode(node.predicate);
