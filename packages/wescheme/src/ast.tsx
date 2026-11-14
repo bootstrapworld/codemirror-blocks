@@ -199,6 +199,8 @@ export const { Conditional, ConditionalBranch } = Nodes.forLanguage({
               className={`blocks-cond-row blocks-cond-else-row${
                 otherwise.length === 0 ? " blocks-not-live" : ""
               }`}
+              // (a click on any of the faded row opens its place for a block)
+              {...Nodes.notLiveElseHandlers(otherwise.length === 0)}
             >
               <div className="blocks-cond-predicate blocks-cond-else">else</div>
               {otherwise.length ? (
