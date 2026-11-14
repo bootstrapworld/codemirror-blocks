@@ -145,14 +145,21 @@ const pick = async (page: Page, index: number) => {
       ) ?? null
     );
   });
-  if (at) {
-    await b.click({
-      position: { x: at[0], y: at[1] },
-      timeout: ACTION_TIMEOUT,
-    });
-  }
+  // (nothing to press on: the step is not done, and its keys are not pressed
+  // either, as they would go to whatever has focus, the toggle button maybe)
+  if (!at) throw new NothingToPress(label);
+  await b.click({
+    position: { x: at[0], y: at[1] },
+    timeout: ACTION_TIMEOUT,
+  });
   return label;
 };
+
+class NothingToPress extends Error {
+  constructor(label: string) {
+    super(`no point to press on ${label}`);
+  }
+}
 
 const isEditing = (page: Page) =>
   page.evaluate(
@@ -329,7 +336,13 @@ async function runSequence(page: Page, seed: number) {
       if ((await blocks(page).count()) === 0) break; // nothing left to do
       const name = names[Math.floor(random() * names.length)];
       const n = [0, 1, 2].map(() => Math.floor(random() * 1_000_000));
-      const what = await steps[name](page, n);
+      let what: string;
+      try {
+        what = await steps[name](page, n);
+      } catch (e) {
+        if (!(e instanceof NothingToPress)) throw e;
+        what = `${name}: ${e.message}`;
+      }
       log.push(what);
       expect(pageErrors, "uncaught errors in the page").toEqual([]);
       const now = await expectConsistent(page);
