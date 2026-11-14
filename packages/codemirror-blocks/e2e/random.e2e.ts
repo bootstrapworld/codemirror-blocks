@@ -127,7 +127,30 @@ const pick = async (page: Page, index: number) => {
   const label =
     (await b.getAttribute("aria-label", { timeout: ACTION_TIMEOUT })) ??
     "a block";
-  await b.click({ position: { x: 4, y: 4 }, timeout: ACTION_TIMEOUT });
+  await b.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT });
+  // (a point on the block's own padding: a corner of a block of several lines can
+  // be under a line of the editor, which is what a click there would reach)
+  const at = await b.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const spots = [
+      [4, 4],
+      [4, r.height / 2],
+      [r.width / 2, 4],
+      [r.width - 4, 4],
+      [4, r.height - 4],
+    ];
+    return (
+      spots.find(
+        ([dx, dy]) => document.elementFromPoint(r.x + dx, r.y + dy) === el
+      ) ?? null
+    );
+  });
+  if (at) {
+    await b.click({
+      position: { x: at[0], y: at[1] },
+      timeout: ACTION_TIMEOUT,
+    });
+  }
   return label;
 };
 

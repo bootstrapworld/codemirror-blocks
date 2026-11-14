@@ -1944,6 +1944,187 @@ describe("sequences that once broke the editor", () => {
     });
   }, 120_000);
 
+  it("seed 37090: selecting a `when` body and what is in it, then cutting (the group of edits took the hidden `begin` for the parent of nodes that are not in it)", () => {
+    check({
+      code: "(when a b c)\n(unless d e)",
+      steps: [
+        {
+          op: "undo or redo several times",
+          r: [676399700, 185315432, 629870798, 532952426],
+        },
+        {
+          op: "undo or redo several times",
+          r: [336878409, 540345316, 664941631, 153352791],
+        },
+        {
+          op: "drag from the toolbar onto a block",
+          r: [329122365, 691999227, 665416420, 220701713],
+        },
+        {
+          op: "paste beside a block",
+          r: [932384752, 194096215, 560672462, 337488301],
+        },
+        { op: "undo", r: [102909577, 281277506, 276895100, 300155462] },
+        { op: "undo", r: [773201663, 505612333, 552528325, 409280055] },
+        { op: "move around", r: [210901689, 44172416, 420269316, 980777054] },
+        {
+          op: "paste over a selection",
+          r: [165011972, 581321630, 729956327, 753311177],
+        },
+        {
+          op: "change the text through the API",
+          r: [194183043, 131052221, 969635218, 566121065],
+        },
+        { op: "delete", r: [404089181, 868503216, 876356214, 546223933] },
+        { op: "undo", r: [964668687, 132071045, 557315504, 724440011] },
+        {
+          op: "delete a comment block",
+          r: [744606725, 937197388, 546485933, 190933827],
+        },
+        {
+          op: "switch to text mode and back",
+          r: [866074592, 299867614, 9385504, 929489260],
+        },
+        { op: "undo", r: [396416583, 489981640, 121517523, 734996727] },
+        {
+          op: "drag a block to the trash can",
+          r: [203442187, 354454672, 651985225, 847595446],
+        },
+        {
+          op: "paste over a selection",
+          r: [711475565, 923602514, 995370408, 428262539],
+        },
+        {
+          op: "switch to text mode and back",
+          r: [581369797, 531646067, 769655806, 878545140],
+        },
+        {
+          op: "drag from the toolbar onto a drop target",
+          r: [287697124, 980229327, 79098253, 871672471],
+        },
+        {
+          op: "drag from the toolbar onto a drop target",
+          r: [685066502, 826008800, 135534259, 693657964],
+        },
+        {
+          op: "switch to text mode and back",
+          r: [111021472, 345390582, 412322002, 531476309],
+        },
+        { op: "copy", r: [710770839, 765837420, 455893888, 565876861] },
+        { op: "edit a comment", r: [22151062, 744717189, 332444521, 14928340] },
+        {
+          op: "select many blocks, then cut, copy, delete or paste",
+          r: [908360140, 693929363, 735570360, 104946860],
+        },
+        {
+          op: "type at the top level",
+          r: [499760746, 7401858, 379685089, 656931196],
+        },
+        { op: "copy", r: [965391389, 621411263, 933132161, 433327552] },
+        {
+          op: "step through search results",
+          r: [969070503, 816363453, 947527003, 264871656],
+        },
+        { op: "redo", r: [598891461, 590507485, 749805683, 410083496] },
+        { op: "undo", r: [159111967, 126093379, 768992532, 540638663] },
+        {
+          op: "collapse or expand",
+          r: [717532610, 867403415, 598260307, 247124710],
+        },
+      ],
+    } as Sequence);
+  }, 120_000);
+
+  it("seed 40788: selecting many blocks that include the parent of a block that is also selected, then cutting (the same: the range of a hidden node took in a sibling)", () => {
+    check({
+      code: "(cond [a 1] [b 2])",
+      steps: [
+        {
+          op: "edit a block in place",
+          r: [217521127, 866429166, 357443313, 849378957],
+        },
+        { op: "redo", r: [320376971, 415686181, 721304427, 570066917] },
+        {
+          op: "edit a comment",
+          r: [971577095, 793237045, 265299387, 35284566],
+        },
+        {
+          op: "drag from the toolbar onto whitespace",
+          r: [474015656, 374528643, 449661894, 816085402],
+        },
+        {
+          op: "touch-drag a block",
+          r: [692709638, 701652946, 925293657, 717658274],
+        },
+        {
+          op: "collapse a block, then change around it",
+          r: [422181679, 716272315, 44405265, 750567612],
+        },
+        { op: "undo", r: [267818508, 191146699, 192105069, 84478053] },
+        {
+          op: "drag from the toolbar onto a block",
+          r: [500326459, 845388861, 591747317, 94545103],
+        },
+        {
+          op: "search for text",
+          r: [877998249, 469753618, 984466757, 337654946],
+        },
+        {
+          op: "paste over a selection",
+          r: [889970783, 177635700, 626773906, 444239334],
+        },
+        {
+          op: "turn the search rotor",
+          r: [973926559, 704040781, 744943992, 443691895],
+        },
+        {
+          op: "clear a comment",
+          r: [350799243, 51440760, 88471583, 834663141],
+        },
+        { op: "delete", r: [19640131, 712632248, 10168204, 514760432] },
+        { op: "copy", r: [957335948, 717956107, 161001646, 526648549] },
+        { op: "delete", r: [331004719, 721181363, 728887211, 206377604] },
+        {
+          op: "edit a comment",
+          r: [398409606, 492602994, 885950201, 520598249],
+        },
+        {
+          op: "drag from the toolbar onto a drop target",
+          r: [519209939, 219467659, 396508870, 476009262],
+        },
+        { op: "undo", r: [620719454, 908676797, 825516636, 74060999] },
+        {
+          op: "edit a block to awkward text",
+          r: [107608130, 840059966, 469153672, 110069312],
+        },
+        {
+          op: "search for text",
+          r: [364634999, 937036121, 195123571, 809500592],
+        },
+        {
+          op: "select many blocks, then cut, copy, delete or paste",
+          r: [199803887, 294871668, 233938957, 126319510],
+        },
+        {
+          op: "edit a block in place",
+          r: [499324379, 397284289, 325861091, 397782693],
+        },
+        {
+          op: "drag a block onto a drop target",
+          r: [712795134, 174793031, 486593710, 821348290],
+        },
+        {
+          op: "open the search dialog and leave it",
+          r: [377241413, 538941323, 741605075, 766417926],
+        },
+        {
+          op: "select many blocks, then cut, copy, delete or paste",
+          r: [691844117, 962548946, 520569401, 745497203],
+        },
+      ],
+    } as Sequence);
+  }, 120_000);
+
   it("seeds 177269, 168796, 211036: cutting bindings of a let that has a bare name among them (a binding was taken to start where the last expression did)", () => {
     check({
       code: "let (a = 1, b = 2) a + b",
