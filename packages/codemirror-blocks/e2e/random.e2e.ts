@@ -221,6 +221,9 @@ const steps: Record<string, Step> = {
   },
   "type at the top level": async (page, n) => {
     const first = blocks(page).first();
+    // (scrolled to, as a person would: a block above the editor's window has the
+    // page header, and not the editor, beside it)
+    await first.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT });
     const box = await first.boundingBox();
     if (!box) return "no block to click beside";
     // (beside the block and inside the editor: a wide block leaves no room, and a
@@ -246,9 +249,17 @@ const steps: Record<string, Step> = {
     // outside the window starts no drag; and the can is where it can be reached)
     await b.scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT });
     await trashCan(page).scrollIntoViewIfNeeded({ timeout: ACTION_TIMEOUT });
-    if (!(await b.isVisible()) || !(await b.boundingBox())) {
-      return `${label} is out of reach of the trash can`;
-    }
+    // (and a block at the very edge of the editor, under its scrollbar, cannot be
+    // pressed: nothing starts)
+    const reachable = await b.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const at = document.elementFromPoint(
+        r.x + r.width / 2,
+        r.y + r.height / 2
+      );
+      return !!at && el.contains(at);
+    });
+    if (!reachable) return `${label} is out of reach of the trash can`;
     await dragWithMouse(page, b, trashCan(page));
     return `drag ${label} to the trash can`;
   },
