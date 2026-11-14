@@ -42,25 +42,36 @@ export const LetLikeExpr = defineNode({
     if (!isSequence(bindings)) {
       return P.lambdaLikeSexpr(node.fields.form, bindings, node.fields.expr);
     }
+    const list = P.horz(
+      "(",
+      P.sepBy(
+        (bindings.fields.exprs as unknown as ASTNode[]).map((expr) => {
+          if (expr.type !== "variableDefinition") return expr;
+          return Nodes.withComment(
+            P.standardSexpr(expr.fields.name as ASTNode, [
+              expr.fields.body as ASTNode,
+            ]),
+            expr.options.comment,
+            expr as unknown as Parameters<typeof Nodes.withComment>[2]
+          );
+        }),
+        " "
+      ),
+      ")"
+    );
+    // (the sequence has a word of its own, `bindings`, that is not in the source
+    // and is not printed: a comment that the reader gave it, being on the line of
+    // the opening bracket, goes before the list of bindings instead)
+    const word = bindings.fields.name as ASTNode | undefined;
     return P.lambdaLikeSexpr(
       node.fields.form,
-      P.horz(
-        "(",
-        P.sepBy(
-          (bindings.fields.exprs as unknown as ASTNode[]).map((expr) => {
-            if (expr.type !== "variableDefinition") return expr;
-            return Nodes.withComment(
-              P.standardSexpr(expr.fields.name as ASTNode, [
-                expr.fields.body as ASTNode,
-              ]),
-              expr.options.comment,
-              expr as unknown as Parameters<typeof Nodes.withComment>[2]
-            );
-          }),
-          " "
-        ),
-        ")"
-      ),
+      word?.options.comment
+        ? Nodes.withComment(
+            list,
+            word.options.comment,
+            bindings as unknown as Parameters<typeof Nodes.withComment>[2]
+          )
+        : list,
       node.fields.expr
     );
   },
@@ -105,9 +116,12 @@ export const WhenUnless = defineNode({
     ]);
     // (the comment of the body is the node's own, if it has none: the editor
     // prints the node's own comment)
-    return node.options.comment
-      ? doc
-      : Nodes.withComment(doc, body.options.comment, node);
+    // (the same for a comment that went with the word that is not printed)
+    const word = isSequence(body)
+      ? (body.fields.name as ASTNode | undefined)
+      : undefined;
+    const comment = body.options.comment ?? word?.options.comment;
+    return node.options.comment ? doc : Nodes.withComment(doc, comment, node);
   },
   render(props) {
     return (

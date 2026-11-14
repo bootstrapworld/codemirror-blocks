@@ -187,6 +187,19 @@ describe("a cond", () => {
   });
 });
 
+describe("a comment on the line of the opening bracket of a let or a when", () => {
+  it.each([
+    "(letrec (; note\n(g w)) f)",
+    "(let (; note\n[a 1]) a)",
+    "(when ; note\n a b c)",
+  ])("%s is not lost when printed", (code) => {
+    const text = printed(code);
+    expect(text).toContain("#| note |#");
+    // (it may move to the other side of what it was beside, but it is kept)
+    expect(printed(text)).toContain("#| note |#");
+  });
+});
+
 describe("text that is not a program", () => {
   it.each(["(f", ")", "(f . x)"])("%s is refused", (code) => {
     expect(() => parsed(code)).toThrow();

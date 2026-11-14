@@ -1932,6 +1932,18 @@ describe("sequences that once broke the editor", () => {
     });
   }, 120_000);
 
+  it("seed 16634: a comment that went with the word `bindings` of a let, which is not printed, was lost", () => {
+    check({
+      code: "(let ([a 1] [b 2]) (+ a b))\n(letrec ([f 1]) f)\n(let* ([x 1]) x)",
+      steps: [
+        {
+          op: "collapse a block, then change around it",
+          r: [49673975, 40309517, 182126388, 19167117],
+        },
+      ],
+    });
+  }, 120_000);
+
   it("seeds 177269, 168796, 211036: cutting bindings of a let that has a bare name among them (a binding was taken to start where the last expression did)", () => {
     check({
       code: "let (a = 1, b = 2) a + b",
