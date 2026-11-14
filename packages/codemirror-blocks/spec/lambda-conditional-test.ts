@@ -168,4 +168,23 @@ describe("lambda: editing the blocks of an if", () => {
       expect(types(code)).toContain("blank");
     }
   });
+
+  it("leaves a blank without brackets where an operand or the value of an assignment was deleted", () => {
+    for (const [code, find, expected] of [
+      ["x = y + 1", "1", "x = y + ..."],
+      ["x = 1", "1", "x = ..."],
+      ["f(1, 2)", "1", "f(2)"],
+      ["g(f(1, 2), 3)", "3", "g(f(1, 2))"],
+    ] as const) {
+      cmb.setValue(code);
+      cmb.clearHistory();
+      const lit = [...cmb.getAst().descendants()].find(
+        (n) => n.type === "literal" && String(n.fields.value) === find
+      )!;
+      mouseDown(lit);
+      keyDown(" ", {}, lit);
+      keyDown("Delete");
+      expect(cmb.getValue()).toBe(expected);
+    }
+  });
 });

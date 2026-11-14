@@ -10,7 +10,7 @@ import {
   edit_replace,
   performEdits,
 } from "../src/edits/performEdits";
-import lambda from "@bootstrapworld/lambda";
+import { Nodes } from "../src/CodeMirrorBlocks";
 import wescheme from "@bootstrapworld/wescheme";
 import { AppStore, createAppStore } from "../src/state/store";
 import * as actions from "../src/state/actions";
@@ -606,17 +606,24 @@ describe("focusHint", () => {
 });
 
 describe("applyEdits on nodes that have the range of the node that holds them", () => {
-  // (in `f()()` a call holds a call that holds a literal, all of one range: the
-  // edits of such nodes are grouped by the tree, as the ranges say nothing)
+  // (a call that holds a call that holds a literal, all of one range, as a language
+  // can make them when one thing is written for another: the edits of such nodes
+  // are grouped by the tree, as the ranges say nothing)
   const code = "f()()";
   const nodesOf = () => {
-    ast = lambda.buildAST(code);
+    const from = { line: 0, ch: 0 };
+    const to = { line: 0, ch: code.length };
+    const leaf = Nodes.Literal(from, to, { value: "f", dataType: "symbol" });
+    const inner = Nodes.FunctionApp(from, to, { func: leaf, args: [] });
+    const outer = Nodes.FunctionApp(from, to, { func: inner, args: [] });
+    ast = AST.from("lambda", [outer]);
     editor.setValue(code);
-    const nodes = [...ast.descendants()];
-    const outer = nodes.find((n) => n.type === "functionApp")!;
-    const inner = [...outer.children()].find((n) => n.type === "functionApp")!;
-    const leaf = [...inner.children()][0];
-    return { outer, inner, leaf };
+    const all = [...ast.descendants()];
+    return {
+      outer: all.find((n) => n.id === outer.id)!,
+      inner: all.find((n) => n.id === inner.id)!,
+      leaf: all.find((n) => n.id === leaf.id)!,
+    };
   };
 
   it("really has nodes of one range, one in the other", () => {

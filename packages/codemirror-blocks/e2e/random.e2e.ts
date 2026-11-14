@@ -341,7 +341,7 @@ async function runSequence(page: Page, seed: number) {
     expect((await expectConsistent(page)).text).toBe(end);
     // (CMB_E2E_LOG=1: the steps of a sequence that passed, to compare it with another run)
     if (process.env.CMB_E2E_LOG)
-      console.log(`LOG seed ${seed}\n  ${log.join("\n  ")}`);
+      process.stderr.write(`LOG seed ${seed}\n  ${log.join("\n  ")}\n`);
   } catch (e) {
     throw new Error(
       `seed ${seed} failed after ${log.length} steps:\n  ${log.join("\n  ")}\n\n${e}`,

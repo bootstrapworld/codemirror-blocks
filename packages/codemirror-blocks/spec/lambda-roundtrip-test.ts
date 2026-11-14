@@ -90,8 +90,9 @@ describe("lambda, from text to blocks and back", () => {
         "lambda (x #| why |#, y) x"
       );
     });
-    it("before a closing bracket go with what the bracket closes", () => {
-      expect(roundTrips("f(1 # last\n) + 2")).toBe("f(1) #| last |# + 2");
+    it("before a closing bracket go with the last thing in it", () => {
+      // (the call is written up to its bracket: the comment is inside it)
+      expect(roundTrips("f(1 # last\n) + 2")).toBe("f(1 #| last |#) + 2");
     });
     it("at the end of the program go with the last thing in it", () => {
       expect(roundTrips("x = 1\n# own line at the end")).toBe(

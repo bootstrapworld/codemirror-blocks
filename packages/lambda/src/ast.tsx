@@ -45,6 +45,8 @@ function atomic(node: ASTNode): P.DocLike {
     node.options.comment && poscmp(node.options.comment.from, node.from) < 0;
   return (node.type === "literal" ||
     node.type === "blank" ||
+    // (what an edit puts where a block was deleted, until the text is read again)
+    node.type === "fakeBlankNode" ||
     node.type === "functionApp") &&
     !above
     ? node

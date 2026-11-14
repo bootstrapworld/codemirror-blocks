@@ -91,7 +91,7 @@ const testData: { input: string; output: any }[] = [
     input: "foo(a, 1)",
     output: {
       from: { line: 0, ch: 0 },
-      to: { line: 0, ch: 8 },
+      to: { line: 0, ch: 9 },
       type: "call",
       func: {
         from: { line: 0, ch: 0 },
