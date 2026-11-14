@@ -71,7 +71,7 @@
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
-    "@testing-library/user-event": "^14.6.8",
+    "@testing-library/user-event": "^14.6.9",
     "@types/codemirror": "^5.60.5",
     "@types/jest": "^30.0.0",
     "@types/react": "^19.2.0",
