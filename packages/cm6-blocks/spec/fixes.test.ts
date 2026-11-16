@@ -52,6 +52,11 @@ describe("A2: a missing 'one' slot (zero-width blank) is filled where it belongs
 
 describe.each(Object.keys(OPTS))("A3: focus after Delete: %s", (l) => {
   const key = (el: Element, k: string) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
+/** select the block (Space), then Delete: the old editor deletes only what is selected */
+const del = (el: Element, k = "Delete") => {
+  key(el, " ");
+  key(el, k);
+};
   const focusedText = (ed: LezerBlockEditor) => {
     const n = ed.focusedNode();
     return n ? ed.view.state.doc.sliceString(n.from, n.to) : null;
@@ -61,13 +66,13 @@ describe.each(Object.keys(OPTS))("A3: focus after Delete: %s", (l) => {
   test("next sibling, else previous sibling, else parent", () => {
     const ed = make(l);
     ed.focusNode(withText(ed, "1"));
-    key(ed.renderer.element(ed.focusedNode()!), "Delete");
+    del(ed.renderer.element(ed.focusedNode()!), "Delete");
     expect(focusedText(ed)).toBe(l === "scheme" ? "(g 2)" : "g(2)");
     ed.focusNode(withText(ed, l === "scheme" ? "3" : "3"));
-    key(ed.renderer.element(ed.focusedNode()!), "Delete");
+    del(ed.renderer.element(ed.focusedNode()!), "Delete");
     expect(focusedText(ed)).toBe(l === "scheme" ? "(g 2)" : "g(2)");
     ed.focusNode(withText(ed, "4"));
-    key(ed.renderer.element(ed.focusedNode()!), "Delete");
+    del(ed.renderer.element(ed.focusedNode()!), "Delete");
     expect(focusedText(ed)).toBe(l === "scheme" ? "(h)" : l === "python" ? "h()" : "h()");
     ok(ed);
   });

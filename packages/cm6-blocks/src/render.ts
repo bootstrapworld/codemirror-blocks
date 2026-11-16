@@ -38,6 +38,8 @@ function flagClass(el: Element, name: string, on: boolean): void {
 export class Renderer {
   /** the comment that goes with a block (the editor says which: see `commentOf` in lezer-view.ts) */
   attached: (node: BNode) => BNode | null = () => null;
+  /** does the block hold comments that are no blocks (it has no list to hold them)? Its children are repainted after each edit. */
+  mayHaveStrays: (node: BNode) => boolean = () => false;
   private els = new Map<BNode, HTMLElement>();
   private byId = new Map<number, BNode>();
   private stats: RenderStats = { created: 0, removed: 0, attrWrites: 0 };
@@ -66,6 +68,7 @@ export class Renderer {
   refreshComments(): void {
     const todo = new Set<BNode>(this.marked);
     for (const n of this.els.keys()) {
+      if (n.slots.length && this.mayHaveStrays(n)) for (const s of n.slots) for (const c of s.nodes) todo.add(c);
       if (n.kind !== "comment" || !n.slot) continue;
       const i = n.slot.nodes.indexOf(n);
       for (const m of [n.slot.nodes[i - 1], n.slot.nodes[i + 1]]) if (m) todo.add(m);

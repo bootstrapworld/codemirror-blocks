@@ -1,66 +1,66 @@
 {
   "scheme": {
-    "waitForSelectorMs": 101,
+    "waitForSelectorMs": 111,
     "lines": 2751,
     "roots": 1250,
     "nodes": 13750,
-    "firstDrawMs": 82.40000000596046,
-    "paintedMs": 88.19999998807907,
-    "createMs": 60.60000002384186,
+    "firstDrawMs": 90.09999996423721,
+    "paintedMs": 97.89999997615814,
+    "createMs": 66,
     "widgetsAtLoad": 36,
-    "rootsInDomAtLoad": 14,
+    "rootsInDomAtLoad": 8,
     "viewport": {
       "from": 0,
-      "to": 650,
+      "to": 418,
       "docLength": 55750
     },
     "edit_near_top": {
-      "syncWithLayoutMs": 3.7000000178813934,
-      "toPaintMs": 16.30000001192093,
-      "undoToPaintMs": 17,
+      "syncWithLayoutMs": 4.600000023841858,
+      "toPaintMs": 16.19999998807907,
+      "undoToPaintMs": 17.30000001192093,
       "all": [
-        13,
-        16.2,
-        16.4,
+        10.7,
         16.6,
+        14.8,
+        16.2,
         16.3,
-        15.2,
-        16.6
+        16.2,
+        16
       ]
     },
     "edit_near_middle": {
-      "syncWithLayoutMs": 2.7000000178813934,
-      "toPaintMs": 16.19999998807907,
-      "undoToPaintMs": 17.099999994039536,
+      "syncWithLayoutMs": 3.599999964237213,
+      "toPaintMs": 15.699999988079071,
+      "undoToPaintMs": 17.700000047683716,
       "all": [
-        16.9,
-        16.2,
+        16.3,
+        14.7,
+        14.3,
+        16,
         15.9,
-        16.2,
-        16.6,
-        15.9,
-        16.8
+        15.6,
+        15.7
       ]
     },
-    "middleRootIndex": 537,
+    "middleRootIndex": 494,
     "scroll": {
-      "steps": 193,
-      "widgetsBuiltWhileScrolling": 1955,
-      "maxRootsInDomAtOnce": 37,
-      "rootsInDomAtBottom": 26,
-      "scrollHeight": 108657
+      "steps": 307,
+      "widgetsBuiltWhileScrolling": 2120,
+      "maxRootsInDomAtOnce": 24,
+      "rootsInDomAtBottom": 10,
+      "scrollHeight": 173993
     },
     "focusRoots": {
-      "inViewWithLists": 13,
-      "midRoot": 627,
+      "inViewWithLists": 9,
+      "midRoot": 626,
       "earlier": 622,
-      "later": 631
+      "later": 630
     },
     "focus": {
       "edit_in_the_focused_blocks_parent": {
-        "focusedBefore": "score",
+        "focusedBefore": "n",
         "focusWasOnIt": true,
-        "focusedAfter": "score",
+        "focusedAfter": "n",
         "stillTheSameBlock": true,
         "focusOnABlock": true,
         "restores": 0,
@@ -69,9 +69,9 @@
         "f0StillConnected": true
       },
       "edit_in_a_later_root": {
-        "focusedBefore": "score",
+        "focusedBefore": "n",
         "focusWasOnIt": true,
-        "focusedAfter": "score",
+        "focusedAfter": "n",
         "stillTheSameBlock": true,
         "focusOnABlock": true,
         "restores": 0,
@@ -80,42 +80,42 @@
         "f0StillConnected": true
       },
       "edit_in_an_earlier_root": {
-        "focusedBefore": "score",
+        "focusedBefore": "n",
         "focusWasOnIt": true,
-        "focusedAfter": "score",
+        "focusedAfter": "n",
         "stillTheSameBlock": true,
         "focusOnABlock": true,
         "restores": 0,
         "activeIsBody": false,
-        "scrollShift": 0,
+        "scrollShift": -52,
         "f0StillConnected": true
       },
       "undo_of_an_edit_in_an_earlier_root": {
-        "focusedBefore": "score",
+        "focusedBefore": "n",
         "focusWasOnIt": true,
-        "focusedAfter": "score",
+        "focusedAfter": "n",
         "stillTheSameBlock": true,
         "focusOnABlock": true,
-        "restores": 1,
+        "restores": 2,
         "activeIsBody": false,
-        "scrollShift": -243,
+        "scrollShift": -293,
         "f0StillConnected": true
       },
       "undo_of_an_edit_in_a_later_root": {
-        "focusedBefore": "score",
+        "focusedBefore": "n",
         "focusWasOnIt": true,
-        "focusedAfter": "score",
+        "focusedAfter": "n",
         "stillTheSameBlock": true,
         "focusOnABlock": true,
-        "restores": 1,
+        "restores": 2,
         "activeIsBody": false,
-        "scrollShift": 132,
+        "scrollShift": 415,
         "f0StillConnected": true
       },
       "edit_the_focused_block_itself": {
-        "focusedBefore": "score",
+        "focusedBefore": "n",
         "focusWasOnIt": true,
-        "focusedAfter": "(grade)",
+        "focusedAfter": "(fact)",
         "stillTheSameBlock": false,
         "focusOnABlock": true,
         "restores": 0,
@@ -127,29 +127,29 @@
     "stats": {
       "edits": 18,
       "reparses": 34,
-      "widgetsBuilt": 2455,
-      "focusRestores": 2,
+      "widgetsBuilt": 2511,
+      "focusRestores": 4,
       "rootsKept": 42398,
       "rootsRebuilt": 0,
       "rootsReconciled": 102,
-      "nodesRebuilt": 41,
-      "nodesCompared": 301,
-      "nodesAnchored": 267,
+      "nodesRebuilt": 36,
+      "nodesCompared": 295,
+      "nodesAnchored": 254,
       "anchorBails": 0,
       "maxRootNodes": 0,
-      "parseMs": 19.099999994039536,
-      "restMs": 90.79999992251396
+      "parseMs": 18.099999964237213,
+      "restMs": 102.70000034570694
     },
     "errors": []
   },
   "javascript": {
-    "waitForSelectorMs": 90,
+    "waitForSelectorMs": 101,
     "lines": 2821,
     "roots": 940,
     "nodes": 11656,
-    "firstDrawMs": 72.40000000596046,
-    "paintedMs": 78,
-    "createMs": 50.20000001788139,
+    "firstDrawMs": 80.60000002384186,
+    "paintedMs": 87.60000002384186,
+    "createMs": 56.10000002384186,
     "widgetsAtLoad": 36,
     "rootsInDomAtLoad": 8,
     "viewport": {
@@ -158,31 +158,31 @@
       "docLength": 45120
     },
     "edit_near_top": {
-      "syncWithLayoutMs": 3.0999999940395355,
-      "toPaintMs": 16.299999982118607,
-      "undoToPaintMs": 16.899999976158142,
+      "syncWithLayoutMs": 3.5,
+      "toPaintMs": 16.099999964237213,
+      "undoToPaintMs": 17.19999998807907,
       "all": [
-        8.8,
+        13.1,
         16.1,
-        16.5,
-        16.3,
-        16.8,
-        16.7,
-        15.7
+        16.1,
+        15.9,
+        16,
+        16.4,
+        16.1
       ]
     },
     "edit_near_middle": {
-      "syncWithLayoutMs": 3.2000000178813934,
-      "toPaintMs": 16.399999976158142,
-      "undoToPaintMs": 17,
+      "syncWithLayoutMs": 2.800000011920929,
+      "toPaintMs": 16.100000023841858,
+      "undoToPaintMs": 17.19999998807907,
       "all": [
-        17,
+        16.9,
+        16.3,
+        16,
+        16.1,
+        16.1,
         16.2,
-        16.2,
-        16.4,
-        16.4,
-        16.4,
-        16.2
+        15.9
       ]
     },
     "middleRootIndex": 324,
@@ -239,7 +239,7 @@
         "focusedAfter": "n",
         "stillTheSameBlock": true,
         "focusOnABlock": true,
-        "restores": 1,
+        "restores": 2,
         "activeIsBody": false,
         "scrollShift": -726,
         "f0StillConnected": true
@@ -250,7 +250,7 @@
         "focusedAfter": "n",
         "stillTheSameBlock": true,
         "focusOnABlock": true,
-        "restores": 1,
+        "restores": 2,
         "activeIsBody": false,
         "scrollShift": 670,
         "f0StillConnected": true
@@ -271,7 +271,7 @@
       "edits": 18,
       "reparses": 34,
       "widgetsBuilt": 1972,
-      "focusRestores": 2,
+      "focusRestores": 4,
       "rootsKept": 31854,
       "rootsRebuilt": 0,
       "rootsReconciled": 106,
@@ -280,19 +280,19 @@
       "nodesAnchored": 216,
       "anchorBails": 0,
       "maxRootNodes": 0,
-      "parseMs": 36.199999928474426,
-      "restMs": 50.900000005960464
+      "parseMs": 35.80000030994415,
+      "restMs": 52.19999980926514
     },
     "errors": []
   },
   "python": {
-    "waitForSelectorMs": 97,
+    "waitForSelectorMs": 107,
     "lines": 2773,
     "roots": 1155,
     "nodes": 13629,
-    "firstDrawMs": 78,
-    "paintedMs": 83.60000002384186,
-    "createMs": 55.599999994039536,
+    "firstDrawMs": 86.90000003576279,
+    "paintedMs": 93.70000004768372,
+    "createMs": 62.09999996423721,
     "widgetsAtLoad": 60,
     "rootsInDomAtLoad": 10,
     "viewport": {
@@ -301,30 +301,30 @@
       "docLength": 47817
     },
     "edit_near_top": {
-      "syncWithLayoutMs": 2.5999999940395355,
-      "toPaintMs": 16.400000005960464,
+      "syncWithLayoutMs": 3.5,
+      "toPaintMs": 16.19999998807907,
       "undoToPaintMs": 16.80000001192093,
       "all": [
-        9.2,
+        10.9,
+        15.8,
+        16.7,
         16.2,
-        16.6,
         16.4,
-        16.4,
-        16.3,
-        16.5
+        16,
+        16.6
       ]
     },
     "edit_near_middle": {
-      "syncWithLayoutMs": 1.9000000059604645,
-      "toPaintMs": 16.200000017881393,
-      "undoToPaintMs": 17.099999994039536,
+      "syncWithLayoutMs": 2.399999976158142,
+      "toPaintMs": 16.19999998807907,
+      "undoToPaintMs": 17.19999998807907,
       "all": [
-        16.5,
+        13.5,
+        16.6,
+        15.8,
+        16.3,
         16.2,
-        15.7,
-        16.3,
-        16.3,
-        16.1,
+        16,
         16.2
       ]
     },
@@ -382,7 +382,7 @@
         "focusedAfter": ">",
         "stillTheSameBlock": true,
         "focusOnABlock": true,
-        "restores": 1,
+        "restores": 2,
         "activeIsBody": false,
         "scrollShift": -403,
         "f0StillConnected": true
@@ -393,7 +393,7 @@
         "focusedAfter": ">",
         "stillTheSameBlock": true,
         "focusOnABlock": true,
-        "restores": 1,
+        "restores": 2,
         "activeIsBody": false,
         "scrollShift": 485,
         "f0StillConnected": true
@@ -414,7 +414,7 @@
       "edits": 18,
       "reparses": 34,
       "widgetsBuilt": 2461,
-      "focusRestores": 2,
+      "focusRestores": 4,
       "rootsKept": 39164,
       "rootsRebuilt": 0,
       "rootsReconciled": 106,
@@ -423,8 +423,8 @@
       "nodesAnchored": 186,
       "anchorBails": 0,
       "maxRootNodes": 0,
-      "parseMs": 32.29999986290932,
-      "restMs": 48.20000001788139
+      "parseMs": 32.39999973773956,
+      "restMs": 55.400000274181366
     },
     "errors": []
   }

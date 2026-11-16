@@ -17,6 +17,11 @@ const src = (ed: LezerBlockEditor, n: BNode) => text(ed).slice(n.from, n.to);
 const lit = (ed: LezerBlockEditor, s: string): BNode => all(ed).filter((n) => n.kind === "literal" && src(ed, n) === s)[0];
 const g = (ed: LezerBlockEditor): BNode => all(ed).filter((n) => n.slots.length > 0 && /^[(]?g[( ]2/.test(src(ed, n)))[0];
 const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
+/** select the block (Space), then Delete: the old editor deletes only what is selected */
+const del = (el: Element, k = "Delete") => {
+  key(el, " ");
+  key(el, k);
+};
 const focusOn = (ed: LezerBlockEditor, n: BNode) => {
   ed.focusNode(n);
   return ed.renderer.element(n);
@@ -120,7 +125,7 @@ describe.each(LANGS)("collapse and expand: %s", (l) => {
     ed.replaceText(lit(ed, "3"), "7");
     expect(ed.renderer.isCollapsed(g(ed))).toBe(true);
     // removed
-    key(focusOn(ed, g(ed)), "Delete");
+    del(focusOn(ed, g(ed)), "Delete");
     expect(ed.renderer.collapsedNodes().filter((n) => ed.doc.byId.get(n.id) !== n)).toEqual([]);
     expect(two).toBeDefined();
     ok(ed);

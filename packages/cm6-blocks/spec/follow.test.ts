@@ -17,6 +17,11 @@ const src = (ed: LezerBlockEditor, n: BNode) => text(ed).slice(n.from, n.to);
 const lit = (ed: LezerBlockEditor, s: string): BNode => all(ed).filter((n) => n.kind === "literal" && src(ed, n) === s)[0];
 const g = (ed: LezerBlockEditor): BNode => all(ed).filter((n) => n.slots.length > 0 && /^[(]?g[( ]2/.test(src(ed, n)))[0];
 const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
+/** select the block (Space), then Delete: the old editor deletes only what is selected */
+const del = (el: Element, k = "Delete") => {
+  key(el, " ");
+  key(el, k);
+};
 const focusOn = (ed: LezerBlockEditor, n: BNode) => {
   ed.focusNode(n);
   return ed.renderer.element(n);
@@ -84,7 +89,7 @@ describe.each(LANGS)("focus follows a rebuilt block: %s", (l) => {
   });
   test("a blank filled in: focus on the new block", () => {
     const ed = make(l);
-    key(focusOn(ed, lit(ed, "2")), "Delete");
+    del(focusOn(ed, lit(ed, "2")), "Delete");
     const blank = ed.focusedNode()!;
     ed.replaceText(blank, "5");
     const f = ed.focusedNode()!;
@@ -143,7 +148,7 @@ describe.each(LANGS)("selection follows a rebuilt block: %s", (l) => {
     const ed = make(l);
     const three = lit(ed, "3");
     space(ed, three);
-    key(focusOn(ed, three), "Delete");
+    del(focusOn(ed, three), "Delete");
     expect(ed.renderer.selected().filter((n) => ed.doc.byId.get(n.id) !== n)).toEqual([]);
     expect(ed.selectedBlocks().map((n) => src(ed, n))).not.toContain("3");
     ok(ed);

@@ -46,6 +46,11 @@ const withText = (ed: LezerBlockEditor, t: string, nth = 0): BNode => {
 };
 const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) =>
   el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
+/** select the block (Space), then Delete: the old editor deletes only what is selected */
+const del = (el: Element, k = "Delete") => {
+  key(el, " ");
+  key(el, k);
+};
 const focusOn = (ed: LezerBlockEditor, n: BNode) => {
   ed.focusNode(n);
   expect(ed.focusedNode()).toBe(n);
@@ -104,12 +109,12 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
     const ed = make(l);
     const t0 = textOf(ed);
     const el = focusOn(ed, withText(ed, "2"));
-    key(el, "Delete");
+    del(el, "Delete");
     expect(textOf(ed)).not.toBe(t0);
     ok(ed);
     const el2 = focusOn(ed, withText(ed, "3"));
     const t1 = textOf(ed);
-    key(el2, "Backspace");
+    del(el2, "Backspace");
     expect(textOf(ed).length).toBeLessThan(t1.length);
     ok(ed);
   });
@@ -121,7 +126,7 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
     expect(leaf).toBeDefined();
     const src = textOf(ed).slice(leaf.from, leaf.to);
     const el = focusOn(ed, leaf);
-    key(el, "Delete");
+    del(el, "Delete");
     expect(textOf(ed)).toContain(LANGS[l].blank);
     expect(textOf(ed).slice(leaf.from, leaf.from + LANGS[l].blank.length)).toBe(LANGS[l].blank);
     expect(src).not.toBe(LANGS[l].blank);
@@ -200,7 +205,7 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
   test("Ctrl-Z and Ctrl-Shift-Z undo and redo", () => {
     const ed = make(l);
     const t0 = textOf(ed);
-    key(focusOn(ed, withText(ed, "2")), "Delete");
+    del(focusOn(ed, withText(ed, "2")), "Delete");
     const t1 = textOf(ed);
     expect(t1).not.toBe(t0);
     key(focusOn(ed, ed.roots()[ed.roots().length - 1]), "z", { ctrlKey: true });
@@ -213,7 +218,7 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
 
   test("focus survives a delete: it lands on a block", () => {
     const ed = make(l);
-    key(focusOn(ed, withText(ed, "2")), "Delete");
+    del(focusOn(ed, withText(ed, "2")), "Delete");
     expect(ed.focusedNode()).not.toBeNull();
   });
 });

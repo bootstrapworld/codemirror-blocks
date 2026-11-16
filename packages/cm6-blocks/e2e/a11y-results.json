@@ -34,7 +34,7 @@
    "focusRestoresDuringTheCase": 0,
    "treeitems": 11
   },
-  "2 delete (the focused block, with the Delete key)": {
+  "2 delete (the focused block: selected with Space, then the Delete key)": {
    "treeProblems": [],
    "domProblems": [],
    "sameAsAFreshEditor": true,
@@ -127,7 +127,7 @@
    "focusRestoresDuringTheCase": 0,
    "treeitems": 13
   },
-  "2 delete (the focused block, with the Delete key)": {
+  "2 delete (the focused block: selected with Space, then the Delete key)": {
    "treeProblems": [],
    "domProblems": [],
    "sameAsAFreshEditor": true,
@@ -220,7 +220,7 @@
    "focusRestoresDuringTheCase": 0,
    "treeitems": 13
   },
-  "2 delete (the focused block, with the Delete key)": {
+  "2 delete (the focused block: selected with Space, then the Delete key)": {
    "treeProblems": [],
    "domProblems": [],
    "sameAsAFreshEditor": true,

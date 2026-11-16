@@ -185,7 +185,8 @@ for (const lang of Object.keys(SMALL)) {
     });
     // delete the 3 with the key
     await lit("3").click({ modifiers: ["Shift"] });
-    await record("2 delete (the focused block, with the Delete key)", async () => {
+    await record("2 delete (the focused block: selected with Space, then the Delete key)", async () => {
+      await page.keyboard.press("Space");
       await page.keyboard.press("Delete");
     });
     // select two blocks with Space

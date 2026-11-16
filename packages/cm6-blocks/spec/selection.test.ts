@@ -15,6 +15,11 @@ const all = (ed: LezerBlockEditor): BNode[] => {
 };
 const lit = (ed: LezerBlockEditor, src: string, nth = 0): BNode => all(ed).filter((n) => n.kind === "literal" && text(ed).slice(n.from, n.to) === src)[nth];
 const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
+/** select the block (Space), then Delete: the old editor deletes only what is selected */
+const del = (el: Element, k = "Delete") => {
+  key(el, " ");
+  key(el, k);
+};
 const space = (ed: LezerBlockEditor, n: BNode) => {
   ed.focusNode(n);
   key(ed.renderer.element(n), " ");
@@ -116,7 +121,7 @@ describe.each(LANGS)("selection: %s", (l) => {
     expect(ed.selectedBlocks()).toEqual([lit(ed, "1")]);
   });
 
-  test("Delete removes the selected blocks in one undo step; with none selected it removes the focused block", () => {
+  test("Delete removes the selected blocks in one undo step; with none selected it says so and deletes nothing", () => {
     const ed = make(l);
     space(ed, lit(ed, "1"));
     space(ed, lit(ed, "3"));
@@ -133,11 +138,13 @@ describe.each(LANGS)("selection: %s", (l) => {
     undo(ed.view);
     expect(text(ed)).toBe(TEXT[l]);
     ok(ed);
-    // nothing selected: the focused block goes
+    // nothing selected: as in the old editor, "Nothing selected" and nothing is deleted
     const four = lit(ed, "4");
     ed.focusNode(four);
+    const before = text(ed);
     key(ed.renderer.element(four), "Delete");
-    expect(text(ed)).not.toMatch(/4/);
+    expect(text(ed)).toBe(before);
+    expect(ed.said[ed.said.length - 1]).toBe("Nothing selected");
     ok(ed);
   });
 

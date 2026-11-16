@@ -55,18 +55,17 @@ describe.each(LANGS)("edit a block as text: %s", (l) => {
     ok(ed);
   });
 
-  test("Escape and Alt-Q cancel, blur cancels; unchanged text changes nothing", () => {
+  test("Escape and Alt-Q cancel; unchanged text changes nothing", () => {
     const ed = make(l);
     const before = text(ed);
     const call = withText(ed, /^[(]?g[( ]2/);
-    for (const how of ["escape", "altq", "blur", "same"]) {
+    for (const how of ["escape", "altq", "same"]) {
       ed.focusNode(call);
       key(ed.renderer.element(call), "Enter", ctrl);
       const b = box(ed)!;
       b.value = "zzz";
       if (how === "escape") key(b, "Escape");
       else if (how === "altq") key(b, "q", { altKey: true, code: "KeyQ" });
-      else if (how === "blur") b.dispatchEvent(new FocusEvent("blur"));
       else {
         b.value = b.defaultValue;
         b.value = l === "scheme" ? "(g 2)" : "g(2)";
@@ -77,6 +76,29 @@ describe.each(LANGS)("edit a block as text: %s", (l) => {
       expect(ed.renderer.element(call).classList.contains("blocks-editing")).toBe(false);
       ok(ed);
     }
+  });
+
+  test("blur commits what was typed (as the old editor does); blur with empty or unchanged text changes nothing", () => {
+    const ed = make(l);
+    const before = text(ed);
+    const call = withText(ed, /^[(]?g[( ]2/);
+    for (const v of ["", l === "scheme" ? "(g 2)" : "g(2)"]) {
+      ed.focusNode(call);
+      key(ed.renderer.element(call), "Enter", ctrl);
+      const b = box(ed)!;
+      b.value = v;
+      b.dispatchEvent(new FocusEvent("blur"));
+      expect(box(ed)).toBeNull();
+      expect(text(ed)).toBe(before);
+    }
+    ed.focusNode(call);
+    key(ed.renderer.element(call), "Enter", ctrl);
+    const b = box(ed)!;
+    b.value = l === "scheme" ? "(g 22)" : "g(22)";
+    b.dispatchEvent(new FocusEvent("blur"));
+    expect(box(ed)).toBeNull();
+    expect(text(ed)).toContain("22");
+    ok(ed);
   });
 
   test("text that does not parse is accepted and shown as text", () => {

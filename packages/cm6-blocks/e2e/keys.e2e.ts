@@ -69,6 +69,7 @@ for (const lang of Object.keys(SMALL)) {
     await step("Delete", async () => {
       const before = await text();
       await page.locator(".cm-content .blocks-literal", { hasText: /^55$/ }).first().click({ modifiers: ["Shift"] });
+      await page.keyboard.press("Space");
       await page.keyboard.press("Delete");
       const t = await text();
       return { shorter: t.length < before.length, text: t, focused: await active() };
@@ -76,6 +77,7 @@ for (const lang of Object.keys(SMALL)) {
     await step("Backspace", async () => {
       const before = await text();
       await page.locator(".cm-content .blocks-literal", { hasText: /^77$/ }).first().click({ modifiers: ["Shift"] });
+      await page.keyboard.press("Space");
       await page.keyboard.press("Backspace");
       return { shorter: (await text()).length < before.length, text: await text() };
     });

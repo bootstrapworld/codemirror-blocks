@@ -95,7 +95,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     setTimeout(again(5), 0);
   }
 
-  /** a text box, placed by `put`; Enter calls `commit(text)`, Escape or blur cancels */
+  /** a text box, placed by `put`; Enter or blur calls `commit(text)` (an empty text on blur does not), Escape or Alt-Q cancels */
   function box(initial: string, put: (input: Field) => void, done: () => void, commit: (text: string) => void, select = true, multiline = false): void {
     open?.cancel();
     ed.clearSelection(); // (the old editor clears the selection when a box opens)
@@ -132,7 +132,15 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
         finish();
       }
     }) as EventListener);
-    input.addEventListener("blur", () => finish());
+    // (blur commits, as in the old editor, unless the text is empty: that cancels. Focus goes where the click put it)
+    input.addEventListener("blur", (e) => {
+      if (finished) return;
+      const t = input.value;
+      const to = (e as FocusEvent).relatedTarget as HTMLElement | null;
+      finish();
+      if (t.trim() !== "") commit(t);
+      if (to && to.isConnected && to.focus) to.focus();
+    });
     put(input);
     open = self;
     input.focus();
@@ -366,8 +374,9 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
         ed.clearSelection();
         ed.removeNodes(sel);
       } else {
-        ed.say("deleted " + ed.language.describe(node));
-        ed.removeNode(node);
+        // (the old editor: "Nothing selected", and nothing is deleted; Cut and Copy do take the focused block)
+        ed.say("Nothing selected");
+        beep();
       }
     } else if (k === "Enter") {
       handled();
@@ -416,7 +425,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     ed.say((cut ? "cut " : "copied ") + nodes.map((n) => ed.language.describe(n)).join(" and "));
     if (cut) {
       ed.clearSelection();
-      ed.removeNodes(nodes);
+      ed.removeNodes(nodes, true);
     }
   }
   function onPaste(e: ClipboardEvent): void {

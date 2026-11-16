@@ -94,7 +94,7 @@ export interface LezerBlockEditor {
   /** remove a node: out of a list with one separator, or (a "one" slot) put the table's blank there */
   removeNode(node: BNode): void;
   /** remove several nodes (none inside another) in ONE text change, one undo step */
-  removeNodes(nodes: BNode[]): void;
+  removeNodes(nodes: BNode[], withComments?: boolean): void;
   /** the selected blocks (Space), in document order, each with the blocks inside it (like the old editor's selection set) */
   selection(): BNode[];
   /** the selected blocks that have no selected ancestor, in document order: what Delete, cut, copy and drag use */
@@ -130,8 +130,8 @@ export interface LezerBlockEditor {
   pasteTexts(anchor: BNode | null, texts: string[], before?: boolean): BNode | null;
   /** replace the text of a node */
   replaceText(node: BNode, snippet: string): void;
-  /** the source text of a block, its later lines moved left by the indentation of its first line (what the clipboard holds) */
-  copyText(node: BNode): string;
+  /** the source text of a block, its later lines moved left by the indentation of its first line (what the clipboard holds); `withComment`: with the comment that goes with it, on a line above */
+  copyText(node: BNode, withComment?: boolean): string;
   /**
    * Write source text `text` after `anchor` (in the nearest list that holds it; replacing `anchor` if it is a blank; at
    * the end of the program when there is no anchor). The new block is focused. Returns it, if found.
@@ -207,9 +207,53 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
    * The comment that goes with a block: a comment block that is the sibling directly above it (only a line break and indentation between,
    * and that comment is not the trailing comment of the block before it), or one on the same line after it. Comments stay blocks of their own.
    */
+  const commentNames = new Set(Object.entries(table.nodes).filter(([, r]) => r.kind === "comment").map(([k]) => k));
+  const SIGNS = [table.lineComment ?? "", "#|", "/*"].filter(Boolean);
+  /**
+   * Comments inside a block whose slots are all "one" (a Scheme `define`) are not blocks (there is no list to hold them): they are read from
+   * the owner's text (the parser, run on that text alone, finds the comments; those inside a child are the child's) and stand for the
+   * comment of the child next to them. They are made up (no id, no slot), and cached while the owner's text is the same.
+   */
+  const strays = new WeakMap<BNode, { src: string; at: number; list: BNode[] }>();
+  const allOne = (o: BNode): boolean => o.kind !== "program" && o.slots.length > 0 && o.slots.every((s) => s.kind === "one" && !s.pieces);
+  const strayComments = (owner: BNode): BNode[] => {
+    if (!allOne(owner)) return [];
+    const src = curDoc.slice(owner.from, owner.to);
+    if (!SIGNS.some((g) => src.includes(g))) return [];
+    const have = strays.get(owner);
+    if (have && have.src === src && have.at === owner.from) return have.list;
+    const kids = owner.slots.flatMap((s) => s.nodes);
+    const list: BNode[] = [];
+    parser.parse(src).iterate({
+      enter(n) {
+        if (!commentNames.has(n.name)) return;
+        const a = n.from + owner.from;
+        const b = n.to + owner.from;
+        if (kids.some((k) => k.from <= a && b <= k.to)) return;
+        list.push({ id: -1, kind: "comment", from: a, to: b, parent: owner, slot: null, slots: [], value: curDoc.slice(a, b) });
+      },
+    });
+    strays.set(owner, { src, at: owner.from, list });
+    return list;
+  };
+  /** the text change that removes a stray comment: it, and the line break and indentation after it (or the spaces before it) */
+  const strayRemoval = (n: BNode): TextChange => {
+    const after = /^[ \t]*\r?\n[ \t]*/.exec(curDoc.slice(n.to, n.to + 400));
+    let from = n.from;
+    if (!after) while (from > 0 && /[ \t]/.test(curDoc[from - 1])) from--;
+    return { from, to: n.to + (after ? after[0].length : 0), insert: "" };
+  };
+  /** does this block have a comment of the kind above in its own text (the renderer repaints the children of such a block after an edit)? */
+  const hasStrays = (o: BNode): boolean => strayComments(o).length > 0;
   const commentOf = (n: BNode): BNode | null => {
     if (!n.slot || n.kind === "comment" || n.kind === "error") return null;
-    const sibs = n.slot.nodes;
+    let sibs = n.slot.nodes;
+    const owner = n.parent;
+    if (owner && allOne(owner)) {
+      const st = strayComments(owner);
+      if (!st.length) return null;
+      sibs = [...owner.slots.flatMap((s) => s.nodes), ...st].sort((a, b) => a.from - b.from);
+    }
     const i = sibs.indexOf(n);
     const trailing = (a: BNode | undefined, c: BNode): boolean => !!a && a.kind !== "comment" && /^[ \t,]*$/.test(curDoc.slice(a.to, c.from));
     const prev = sibs[i - 1];
@@ -219,6 +263,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     return null;
   };
   renderer.attached = commentOf;
+  renderer.mayHaveStrays = hasStrays;
   const stats: LezerStats = {
     edits: 0, reparses: 0, widgetsBuilt: 0, focusRestores: 0,
     rootsKept: 0, rootsRebuilt: 0, rootsReconciled: 0, nodesRebuilt: 0, nodesCompared: 0, nodesAnchored: 0, anchorBails: 0, maxRootNodes: 0, parseMs: 0, restMs: 0,
@@ -811,21 +856,29 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     removeNode(node) {
       ed.removeNodes([node]);
     },
-    removeNodes(nodes) {
+    removeNodes(nodes, withComments = false) {
       if (!nodes.length) return;
       for (const n of nodes) {
         live(n);
         if (!n.slot) throw new Error("not removable");
       }
+      if (withComments) {
+        // (cut takes the comment that goes with a block; delete leaves it, as the old editor does)
+        const more = nodes.map((n) => commentOf(n)).filter((c): c is BNode => !!c && !nodes.includes(c));
+        nodes = [...nodes, ...new Set(more)];
+      }
       const sorted = [...nodes].sort((x, y) => x.from - y.from || x.to - y.to);
-      const node = sorted[0];
+      const node = sorted.find((n) => n.slot) as BNode;
       // where focus should go afterwards, if it is on a node (or inside one): the node now at the place of the first
       const f = ed.focusedNode();
       let inside = false;
       for (let c: BNode | null = f; c; c = c.parent) if (sorted.includes(c)) inside = true;
       const place = placeOf(node);
       const t = currentText();
-      const cs = sorted.map((n): TextChange => (n.slot!.kind === "one" || n.slot!.pieces ? { from: n.from, to: n.to, insert: table.blank ?? "..." } : removeChange(n, t)));
+      const cs = sorted.map((n): TextChange => {
+        if (!n.slot) return strayRemoval(n);
+        return n.slot.kind === "one" || n.slot.pieces ? { from: n.from, to: n.to, insert: table.blank ?? "..." } : removeChange(n, t);
+      });
       holdFocus = inside;
       try {
         dispatchAll(mergeChanges(cs));
@@ -874,6 +927,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     },
     commentOf: (n) => commentOf(n),
     commentHost(n) {
+      if (commentOf(n)) return n; // (a block that has a comment already is where it is edited, wherever it stands on its line)
       let c = n;
       for (;;) {
         while (c.parent && c.parent.kind !== "program" && c.parent.from === c.from) c = c.parent;
@@ -891,7 +945,8 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       const prefix = table.lineComment ?? "#";
       if (c) {
         if (!t) {
-          ed.removeNode(c);
+          if (c.slot) ed.removeNode(c);
+          else dispatch(strayRemoval(c));
           return;
         }
         const raw = curDoc.slice(c.from, c.to);
@@ -925,7 +980,8 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     clearSelection() {
       for (const m of renderer.selected()) renderer.setSelected(m, false);
     },
-    copyTexts: (nodes) => nodes.map((n) => ed.copyText(n)),
+    // (a comment that is listed with its block is in the block's text already)
+    copyTexts: (nodes) => nodes.filter((n) => !(n.kind === "comment" && nodes.some((m) => m !== n && commentOf(m) === n))).map((n) => ed.copyText(n, true)),
     pasteTexts(anchor, texts, before) {
       if (texts.length === 1) return ed.pasteText(anchor, texts[0], before);
       if (anchor) live(anchor);
@@ -943,9 +999,11 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       dispatch(replaceChange(node, snippet));
     },
     isBlank,
-    copyText(node) {
+    copyText(node, withComment = false) {
       live(node);
-      return dedent(view.state.doc.sliceString(node.from, node.to), indentAt(node.from)).replace(/\s+$/, "");
+      const own = dedent(view.state.doc.sliceString(node.from, node.to), indentAt(node.from)).replace(/\s+$/, "");
+      const c = withComment ? commentOf(node) : null;
+      return c ? dedent(view.state.doc.sliceString(c.from, c.to), indentAt(c.from)).replace(/\s+$/, "") + "\n" + own : own;
     },
     pasteText(anchor, text, before) {
       if (anchor) live(anchor);
@@ -963,7 +1021,9 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       const snippet = text.replace(/\n/g, "\n" + where.indent);
       const change = changeFor(slot, index, snippet);
       dispatch(change);
-      const found = blockAt(change.from + change.insert.indexOf(snippet), snippet.length);
+      let found = blockAt(change.from + change.insert.indexOf(snippet), snippet.length);
+      // (a block that was copied with its comment: the focus goes to the block, not to the comment line above it)
+      if (found && found.kind === "comment" && found.slot && found.to - found.from < snippet.length) found = found.slot.nodes[found.slot.nodes.indexOf(found) + 1] ?? found;
       if (found) ed.focusNode(found);
       return found;
     },
