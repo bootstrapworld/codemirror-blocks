@@ -114,7 +114,14 @@ interface LState {
   fragments: readonly TreeFragment[];
   roots: BNode[];
   decos: DecorationSet;
+  /** where the Lezer error nodes of the tree are, [from, to] (sorted by from) */
+  errs: [number, number][];
 }
+const errorsOf = (tree: Tree, from = 0): [number, number][] => {
+  const out: [number, number][] = [];
+  tree.iterate({ from, enter: (n) => { if (n.type.isError) out.push([n.from, n.to]); } });
+  return out;
+};
 
 const drawn = (n: BNode): boolean => n.kind !== "error";
 const widgetNode = (d: Decoration): BNode => (d.spec.widget as RootWidget).node;
@@ -165,6 +172,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         tree,
         fragments: TreeFragment.addTree(tree),
         roots,
+        errs: errorsOf(tree),
         decos: Decoration.set(roots.filter(drawn).map((r) => decoFor(r).range(r.from, r.to)), true),
       };
     },
@@ -211,13 +219,28 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         if (to > from) old.set(from, { node: r, to, touched: affected.has(k), from0: r.from, to0: r.to });
       });
       // Context: a change can alter how UNCHANGED text after it reads without touching it (an unclosed
-      // bracket makes the newlines after it mean nothing; a dedent moves a line out of a body). That always
-      // leaves an error node somewhere after the change, so no root between the first change and the last
-      // error node is kept without being compared (found by the fuzzer on a larger program).
+      // bracket makes the newlines after it mean nothing; a dedent moves a line out of a body). That
+      // always changes the error nodes after the change (found by the fuzzer on a larger program). So: if
+      // the error nodes beyond the last root the change touched are not the old ones (moved by the
+      // change), no root between the first change and the last error node is kept without being compared.
+      // A document that has errors but whose errors the change leaves alone keeps its fast path.
       let firstChange = s.length;
-      for (const c of cr) firstChange = Math.min(firstChange, c.fromB);
-      let lastError = -1;
-      tree.iterate({ from: firstChange, enter: (n) => { if (n.type.isError) lastError = Math.max(lastError, n.to); } });
+      let firstChangeA = s.length;
+      for (const c of cr) {
+        firstChange = Math.min(firstChange, c.fromB);
+        firstChangeA = Math.min(firstChangeA, c.fromA);
+      }
+      const merged = new Map<string, [number, number]>();
+      for (const e of [...v.errs.filter((e) => e[1] <= firstChangeA), ...errorsOf(tree, firstChange)]) merged.set(e[0] + ":" + e[1], e);
+      const errs = [...merged.values()].sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+      let lastAffected = -1;
+      affected.forEach((k) => (lastAffected = Math.max(lastAffected, k)));
+      const oldB = lastAffected >= 0 ? rs[lastAffected].to : firstChangeA;
+      const newB = tr.changes.mapPos(oldB, 1);
+      const oldBeyond = v.errs.filter((e) => e[0] >= oldB).map((e) => [tr.changes.mapPos(e[0], 1), tr.changes.mapPos(e[1], -1)]);
+      const newBeyond = errs.filter((e) => e[0] >= newB);
+      const sameErrors = oldBeyond.length === newBeyond.length && oldBeyond.every((e, i) => e[0] === newBeyond[i][0] && e[1] === newBeyond[i][1]);
+      const lastError = sameErrors ? -1 : errs.reduce((m, e) => Math.max(m, e[1]), -1);
       const kept = new Set<BNode>();
       const roots = language.fromTree(tree, s, (from, to, key) => {
         const o = old.get(from);
@@ -294,7 +317,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         });
       }
       stats.restMs += performance.now() - tq;
-      return { tree, fragments: TreeFragment.addTree(tree, frags), roots, decos };
+      return { tree, fragments: TreeFragment.addTree(tree, frags), roots, decos, errs };
     },
   });
 

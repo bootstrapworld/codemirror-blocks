@@ -12,3 +12,14 @@ for (const lang of ["scheme", "javascript", "python"]) {
     expect(errors).toEqual([]);
   });
 }
+
+// the toolbar with a template just inserted (JavaScript): the new block is in its first hole's edit box
+test("screenshot: the toolbar with a template just inserted", async ({ page }) => {
+  await page.goto(`/index.html?lang=javascript&constructs=1`);
+  await page.waitForSelector(".cm-content .blocks-node");
+  await page.locator(".cm-content .blocks-literal").first().click();
+  await page.locator('#templates button[data-template="if-else"]').click();
+  await page.waitForSelector("input.blocks-edit");
+  await page.screenshot({ path: `packages/cm6-blocks/e2e/screens/toolbar-template.png` });
+  expect(await page.locator("input.blocks-edit").count()).toBe(1);
+});

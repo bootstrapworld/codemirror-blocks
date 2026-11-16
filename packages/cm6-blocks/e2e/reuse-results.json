@@ -1,77 +1,102 @@
 {
- "round4-after": {
+ "round4": {
   "js 618-line class (core.js)": {
    "lines": 618,
    "before": {
+    "typedCharInLeaf": {
+     "medianMs": 99.28,
+     "nodesRebuiltPerEdit": 2624,
+     "nodesComparedPerEdit": 0
+    },
     "typedSpaceInBiggestRoot": {
-     "medianMs": 104.44,
-     "nodesRebuiltPerEdit": 2595,
+     "medianMs": 96.89,
+     "nodesRebuiltPerEdit": 2624,
      "nodesComparedPerEdit": 0
     },
     "typedSpaceInMiddleRoot": {
-     "medianMs": 104.29,
-     "nodesRebuiltPerEdit": 2595,
+     "medianMs": 95.91,
+     "nodesRebuiltPerEdit": 2624,
      "nodesComparedPerEdit": 0
     },
-    "biggestRootNodes": 1999,
+    "biggestRootNodes": 2028,
     "oracle": true
    },
    "after": {
+    "typedCharInLeaf": {
+     "medianMs": 5.12,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 2624
+    },
     "typedSpaceInBiggestRoot": {
-     "medianMs": 5.63,
+     "medianMs": 4.66,
      "nodesRebuiltPerEdit": 0,
-     "nodesComparedPerEdit": 2595
+     "nodesComparedPerEdit": 2624
     },
     "typedSpaceInMiddleRoot": {
-     "medianMs": 4.82,
+     "medianMs": 4.58,
      "nodesRebuiltPerEdit": 0,
-     "nodesComparedPerEdit": 2595
+     "nodesComparedPerEdit": 2624
     },
-    "biggestRootNodes": 1999,
+    "biggestRootNodes": 2028,
     "oracle": true
    }
   },
   "py 4006-line file (__init__.py)": {
    "lines": 4006,
    "before": {
+    "typedCharInLeaf": {
+     "medianMs": 9.37,
+     "nodesRebuiltPerEdit": 4968,
+     "nodesComparedPerEdit": 0
+    },
     "typedSpaceInBiggestRoot": {
-     "medianMs": 9.47,
-     "nodesRebuiltPerEdit": 4934,
+     "medianMs": 8.77,
+     "nodesRebuiltPerEdit": 4968,
      "nodesComparedPerEdit": 0
     },
     "typedSpaceInMiddleRoot": {
-     "medianMs": 3.35,
-     "nodesRebuiltPerEdit": 1463,
+     "medianMs": 3.48,
+     "nodesRebuiltPerEdit": 1476,
      "nodesComparedPerEdit": 0
     },
-    "biggestRootNodes": 4864,
+    "biggestRootNodes": 4898,
     "oracle": true
    },
    "after": {
+    "typedCharInLeaf": {
+     "medianMs": 10.18,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 4968
+    },
     "typedSpaceInBiggestRoot": {
-     "medianMs": 9.96,
-     "nodesRebuiltPerEdit": 0,
-     "nodesComparedPerEdit": 4934
+     "medianMs": 7.26,
+     "nodesRebuiltPerEdit": 1326.2,
+     "nodesComparedPerEdit": 2613
     },
     "typedSpaceInMiddleRoot": {
-     "medianMs": 3.35,
-     "nodesRebuiltPerEdit": 0,
-     "nodesComparedPerEdit": 1463
+     "medianMs": 6.63,
+     "nodesRebuiltPerEdit": 267.1,
+     "nodesComparedPerEdit": 2631
     },
-    "biggestRootNodes": 4864,
+    "biggestRootNodes": 2400,
     "oracle": true
    }
   },
   "scheme 3000 lines (constructs sample repeated)": {
    "lines": 2801,
    "before": {
+    "typedCharInLeaf": {
+     "medianMs": 7.4,
+     "nodesRebuiltPerEdit": 39,
+     "nodesComparedPerEdit": 0
+    },
     "typedSpaceInBiggestRoot": {
-     "medianMs": 6.74,
+     "medianMs": 7.13,
      "nodesRebuiltPerEdit": 39,
      "nodesComparedPerEdit": 0
     },
     "typedSpaceInMiddleRoot": {
-     "medianMs": 4.2,
+     "medianMs": 4.69,
      "nodesRebuiltPerEdit": 12,
      "nodesComparedPerEdit": 0
     },
@@ -79,30 +104,40 @@
     "oracle": true
    },
    "after": {
-    "typedSpaceInBiggestRoot": {
-     "medianMs": 4.84,
-     "nodesRebuiltPerEdit": 0,
+    "typedCharInLeaf": {
+     "medianMs": 6.09,
+     "nodesRebuiltPerEdit": 1,
      "nodesComparedPerEdit": 39
     },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 5.76,
+     "nodesRebuiltPerEdit": 0.2,
+     "nodesComparedPerEdit": 40
+    },
     "typedSpaceInMiddleRoot": {
-     "medianMs": 4.17,
+     "medianMs": 4.66,
      "nodesRebuiltPerEdit": 1,
      "nodesComparedPerEdit": 11
     },
-    "biggestRootNodes": 14,
+    "biggestRootNodes": 15,
     "oracle": true
    }
   },
   "js 3000 lines (constructs sample repeated)": {
    "lines": 2925,
    "before": {
+    "typedCharInLeaf": {
+     "medianMs": 4.51,
+     "nodesRebuiltPerEdit": 58,
+     "nodesComparedPerEdit": 0
+    },
     "typedSpaceInBiggestRoot": {
-     "medianMs": 4.19,
+     "medianMs": 4.4,
      "nodesRebuiltPerEdit": 58,
      "nodesComparedPerEdit": 0
     },
     "typedSpaceInMiddleRoot": {
-     "medianMs": 1.96,
+     "medianMs": 2.14,
      "nodesRebuiltPerEdit": 10,
      "nodesComparedPerEdit": 0
     },
@@ -110,13 +145,18 @@
     "oracle": true
    },
    "after": {
+    "typedCharInLeaf": {
+     "medianMs": 2.65,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 58
+    },
     "typedSpaceInBiggestRoot": {
-     "medianMs": 2.57,
+     "medianMs": 2.62,
      "nodesRebuiltPerEdit": 0,
      "nodesComparedPerEdit": 58
     },
     "typedSpaceInMiddleRoot": {
-     "medianMs": 1.92,
+     "medianMs": 2.11,
      "nodesRebuiltPerEdit": 1,
      "nodesComparedPerEdit": 9
     },
@@ -127,13 +167,18 @@
   "py 3000 lines (constructs sample repeated)": {
    "lines": 2913,
    "before": {
+    "typedCharInLeaf": {
+     "medianMs": 4.56,
+     "nodesRebuiltPerEdit": 68,
+     "nodesComparedPerEdit": 0
+    },
     "typedSpaceInBiggestRoot": {
-     "medianMs": 4.69,
-     "nodesRebuiltPerEdit": 69,
+     "medianMs": 4.6,
+     "nodesRebuiltPerEdit": 71,
      "nodesComparedPerEdit": 0
     },
     "typedSpaceInMiddleRoot": {
-     "medianMs": 3.04,
+     "medianMs": 2.94,
      "nodesRebuiltPerEdit": 97,
      "nodesComparedPerEdit": 0
     },
@@ -141,17 +186,22 @@
     "oracle": true
    },
    "after": {
+    "typedCharInLeaf": {
+     "medianMs": 2.34,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 68
+    },
     "typedSpaceInBiggestRoot": {
-     "medianMs": 2.56,
-     "nodesRebuiltPerEdit": 0.4,
-     "nodesComparedPerEdit": 69
+     "medianMs": 5.85,
+     "nodesRebuiltPerEdit": 666.4,
+     "nodesComparedPerEdit": 2513
     },
     "typedSpaceInMiddleRoot": {
-     "medianMs": 2.07,
+     "medianMs": 5.61,
      "nodesRebuiltPerEdit": 0,
-     "nodesComparedPerEdit": 97
+     "nodesComparedPerEdit": 1873
     },
-    "biggestRootNodes": 30,
+    "biggestRootNodes": 15,
     "oracle": true
    }
   }

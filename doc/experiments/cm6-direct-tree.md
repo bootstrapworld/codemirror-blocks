@@ -1069,31 +1069,153 @@ look at. For scale (measured): CodeMirror 5's `lib/codemirror.js` minified with 
 everything and 334 KB Scheme-only (a, c with CM6 included). The old figures are the owner's, summed with my CM5
 measurement; the sum is a judgement, not a build.
 
-### 2. Node-level reuse (work in progress, 2026-11-16)
+### 2. Node-level reuse (done, 2026-11-16)
 
-- Code: `src/reconcile.ts` (about 120 lines), `adoptMeta` in lezer.ts (8), `Renderer.refresh` (5), about 60 lines in the
-  field update of lezer-view.ts, an option `reconcile: false` that restores the old rebuild-the-root path (to measure both).
-- The rule (the safe one, as it came out): a touched root (a change in it or in a neighbour) is still built whole from the new
-  Lezer tree, as before (cheap: no DOM). Then the new tree is laid over the old one, node by node: the old `BNode` is KEPT
-  where the table row, the kind, the keyword, the glue words, the slot shapes and (for a leaf) the value and data type agree;
-  it is then given ALL the fields of the new node (range, `brackets`, source text, error flag), so the result is the fresh
-  tree by construction, whatever Lezer's error recovery or Python's dedents did. Where they disagree the old node is replaced
-  by the new one. In a list, the common prefix and suffix of nodes with the same shape AND the same source text are paired
-  first; the middle is paired by position (so a typed edit in one child recurses into it) and the rest is inserted or
-  removed. Each insert / remove / replace is a `TreeChange` that the renderer patches, one at a time. Nothing is assumed from
-  "the range and text did not change", which is what the earlier rounds found unsafe.
-- One thing the first run caught (fuzzer, 60 seeds): the glue word of a LIST slot (`=` of a `let x = ...`) is drawn only while
-  the list is non-empty, so a list that gains or loses its first element is a different shape: `compatible` says so.
-- Oracle: the fuzzers (3 languages x 60 seeds x 25 steps) pass; the fuzzer now has a second test on the constructs sample
-  (about 30 lines per language, classes, nested bodies). Stale-node tests changed: a node whose owner is edited in place is
-  NOT stale any more, so the tests now make the owner into another thing first.
-- 2026-11-16 (later): the larger-program fuzzer (800 seeds x 25 steps, 3 languages, on the constructs sample) found a hole in
-  the OLD keep rule that the small programs never reached, and it fails the same with `reconcile: false` (so it was already
-  there): an edit that opens a context (Python `f(` with no `)`: newlines stop meaning anything) changes how UNCHANGED, untouched
-  roots further down are read (here: 3 elements of a flat list where a fresh parse has 4), with the same range and the same
-  text. New guard (lezer-view.ts, 8 lines): when the new Lezer tree has an error node at or after the first change, no root
-  between the first change and the LAST error node is kept without comparing: it goes through reconcile (exact by construction).
-  Cost: in a document with an error late in it, an edit above the error compares every root down to it (a walk of the new tree
-  of those roots; no DOM work), not just 3. 800 seeds x 25 steps x 2 fuzzers x 3 languages: clean after the guard.
-- Steps 3 started: modifier words, function-expression names, imports (JS), comments inside blocks, paired clauses and dict
-  entries (Python) are in; see the third-round list below for what each cost.
+Code: `src/reconcile.ts` (128 lines), `adoptMeta` in lezer.ts (8), `Renderer.refresh` (5), about 100 lines in the field
+update of lezer-view.ts (including the context guard below), and an option `reconcile: false` that restores the old
+rebuild-the-root path, so before and after are measured by the same code.
+
+The rule that settled (judgement about why it is safe; evidence is the oracle runs below). A touched root (a change in
+it or in a neighbour, as before) is still built whole from the new Lezer tree: cheap, it makes no DOM. The new tree is then
+laid over the old one node by node. An old `BNode` is KEPT where the table row, the kind, keyword, modifier, glue words, slot
+shape and (for a leaf) value and data type agree; it then takes ALL the fields of the new node (range, brackets, source text,
+error flag). Where they disagree it is replaced. In a list the common prefix and suffix of nodes with the same shape AND the
+same source text are paired first, the middle is paired by position (so an edit inside one child recurses into it) and the
+rest is inserted or removed, each as a `TreeChange` that the renderer patches at once. So nothing is assumed from "same range
+and same text", which rounds one and two found unsafe: a node that is not the same as in a fresh parse is replaced. The
+result equals the fresh tree by construction wherever the compared nodes come from the new tree; the old objects survive
+where they agree.
+
+Two things the oracle found on the way (both fixed, both with a test or a fuzzer run that fails without the fix):
+- The glue word of a LIST slot (`=` of a `let x = ...`) is drawn only while the list has something in it, so a list that
+  gains its first element is a different shape (`compatible` says so).
+- The old rule for keeping an UNTOUCHED root was unsafe in a way the small fuzz programs never reached. On the 30-line
+  constructs sample (seed 74, step 18; it fails the same with `reconcile: false`, so it was there since round two) an edit that
+  opened a context (Python `f(` with no `)`) changed how unchanged roots further down read, with the same range and text.
+  Guard (lezer-view.ts, about 20 lines): the Lezer error nodes are kept with the state; if the error nodes beyond the last
+  touched root are not the old ones (mapped through the change), no root between the first change and the last error node is
+  kept without being compared. A document with errors that the edit does not move keeps the fast path. (The first version of
+  the guard, "any error after the change", cost 30 ms per edit on a Python document with a persistent indentation error and
+  was replaced.) Judgement: this is a heuristic, not a proof (a context change that makes no new error node would slip
+  through); evidence is only that 800 seeds x 25 steps x 3 languages x 2 fuzzers are clean.
+
+Oracle: the model fuzzers at 800 seeds x 25 steps per language (20,000 steps each): small programs and a second fuzzer on the
+30-line constructs sample (classes, nested bodies): 6 runs, all clean, `divergences from a fresh parse` 0. Corpus
+run (`CMB_CORPUS=full CMB_STEP=round4`, 182 real files, 3,640 random edits): 0 oracle failures. Counts in the 800-seed run
+(Python, constructs sample): roots reconciled 88,647, kept untouched 226,496, rebuilt whole 50,764 (mean 2.6 nodes).
+
+Measurements. jsdom (node, no layout; `spec/reuse.test.ts`, `CMB_REUSE=1`, median of 9 typed edits; "n" = nodes new in the
+tree per edit, from the editor's `stats().nodesRebuilt`):
+
+| document (biggest root) | edit | before: ms / n | after: ms / n |
+|---|---|---|---|
+| JS 618-line class (2,028 nodes) | one space inside the class | 96.9 / 2,624 | 4.7 / 0 |
+| same | a character typed at the end of a name | 99.3 / 2,624 | 5.1 / 1 |
+| Python 4,006-line file (a 4,898-node class, not drawn in jsdom) | one space in it | 8.8 / 4,968 | 7.3 / 1,326 (an indentation change: a different shape) |
+| same | a character at the end of a name | 9.4 / 4,968 | 10.2 / 1 |
+| Scheme 3000 lines (roots of 15 nodes) | char in a name | 7.4 / 39 | 6.1 / 1 |
+| JS 3000 lines (roots of 27 nodes) | char in a name | 4.5 / 58 | 2.7 / 1 |
+| Python 3000 lines (roots of 15 to 27 nodes) | char in a name | 4.6 / 68 | 2.3 / 1 |
+
+("Before" is the old path; the new path also WALKS the whole touched root to compare it: 2,624 comparisons for the class.)
+Real Chromium with layout (`e2e/reuse.e2e.ts`, same documents, the biggest root scrolled into view, sync = until a forced
+layout, median of 9; `e2e/reuse-chromium.json`):
+
+| | before: sync ms (to next frame) | after: sync ms (to next frame) |
+|---|---|---|
+| JS 618-line class, space inside it | 25.8 (29.5) | 4.4 (16.6 = one frame) |
+| same, char typed at the end of a name | 26.7 (30.8) | 3.8 (16.6) |
+| Python 4,898-node class, space in it | 50.1 (54.9) | 6.5 (16.6) |
+| same, char at the end of a name | 47.5 (52.3) | 6.6 (16.6) |
+
+Focus (Chromium, same documents): with a block focused elsewhere in the SAME root and a character typed in another leaf of
+that root: restores needed 1 -> 0, and the focused block is the same element afterwards (JS and Python). In the 3000-line
+focus cases of round two (`e2e/results.json`): "edit in the focused block's parent" went from 1 restore and a new block to
+0 restores and the same block, in all three languages; "edit the focused block itself" (its element is replaced) and the
+two undo cases still need 1 restore each (an undo is a text change; CodeMirror moves the line, `e2e/results.json`).
+
+What is left of the cost (measurement for the jsdom numbers; the split is my reading): the new tree for the touched root is
+still built whole and compared: about 2 microseconds per node (the 4,898-node Python class: about 7 to 10 ms in jsdom, where
+nothing is drawn). To make that proportional to the change too, the new tree would have to be built only for the Lezer nodes
+that overlap the change (Lezer's own incremental tree already knows which parts are reused), which is a second step; for
+the 618-line class the remaining 4 to 5 ms is already below a frame. For Python the safe rule gives reuse
+at the leaf and statement level, but an indentation edit changes the shape of the whole block under it (1,326 nodes new in
+the 4,898-node class when a space moved a line out of its body): that is the grammar saying the structure changed.
+
+### 3. Constructs that needed more than a row (evidence: `spec/constructs.test.ts`, 14 tests; `spec/comments.test.ts`; the corpus run)
+
+Cheapest first, with lines (table lines are `nodes` rows; adapter lines are in `lezer.ts` unless stated):
+| item | status | cost |
+|---|---|---|
+| modifier words (`async`, `static`, `get`, `set`) | done, JS and Python | `modifiers: [...]` on a row (1 field on 8 rows); adapter 6 lines, `BNode.modifier` 1, renderer 5 (a word before the keyword), `compatible` and the checker 1 each |
+| `export default`, `export * from`, `export {..} from` | done (JS) | 2 rows + 2 `kind` rule lines |
+| named function expressions keep their name | done (JS) | 1 slot on the row (`@before:ParamList`, the take that Round 3 added); no adapter change |
+| imports as real blocks | JS done; Python NOT done | JS: 5 rows + 3 rule lines (`import a, {b as c} from "x"` is: default names, `* as ns`, the `{...}` group as one text block, the source with a `from` glue; the `{..}` group stays text because `b as c` has no Lezer node). Python: needs `x as y` pairs and dotted module paths, see below |
+| comments inside a block as blocks | done, all three | adapter 22 lines (+4 in `describe`, +5 in `insertChange`): a comment is no candidate for numbering, it goes into the nearest list slot without a glue word, in text order; writing after a trailing line comment goes before it, or on a new line |
+| paired clauses: Python `elif`/`else`, `except`/`finally`/`else`; dict entries | done (Python) | adapter 55 lines (a `groups` spec on a row: groups started by a bare token, or split by a separator token; built with the same `fill` as any node, `fill`/`blanks` were pulled out of `build1`), 3 rows (`Branch`, `Entry`, 2 `groups` fields), 6 lines of separator rule (a new branch goes on its own line at the indentation of the first one) |
+| template strings | NOT done (stopped, needs a renderer change) | needs text between children: a template string is text with `${...}` holes and Lezer has no node for the text pieces, so a compound node would have to draw `source text between its children` too (a `pieces` field, 20 to 40 lines in the renderer and in the editing code, and a way to edit a text piece). Left as one opaque block |
+
+Not drawn right, unchanged: JS comma-grouping `let a = 1, b = 2` (flat `rest`), `with a as b`; Python `from x import y as z` and plain
+`import`, which remain opaque text (19% of Python top-level statements, 797 of 4,181 in the library sample, are imports).
+
+Corpus re-run (`CMB_CORPUS=full CMB_STEP=round4`, `e2e/corpus-results.json`, row `round4` against row `final`):
+| corpus | real / opaque / not drawn, final -> round4 | top-level statements fully, final -> round4 |
+|---|---|---|
+| js-node_modules-library | 97.7 / 1.2 / 1.1 -> 98.4 / 1.2 / 0.4 | 1425 -> 1551 of 1,682 (85% -> 92%) |
+| js-repo-own | 87.8 / 11.3 / 0.9 -> 88.0 / 11.3 / 0.8 | 245 -> 258 of 338 |
+| js-node_modules-examples | 96.7 / 3.3 / 0 (unchanged) | 188 -> 189 of 196 |
+| Python (stdlib, turtledemo), Scheme (2 corpora) | unchanged | unchanged (the Python gain is not in this measure: branches and entries were counted real before; they are structure now, not coverage) |
+Oracle: 0 failures in 3,640 edits on 182 files. Typed edit on the largest file: JS class 108.3 ms -> 5.6 ms (jsdom).
+
+### 4. Moving blocks (evidence: `spec/move.test.ts`, 23 tests; `e2e/move.e2e.ts`, 6 Chromium tests, 2 per language)
+
+- Cut, copy and paste: the browser's `copy`, `cut` and `paste` events on the editor (so the real clipboard works, in
+  Chromium Ctrl/Cmd-C/X/V with a block focused fire them); copy puts the node's source text, its later lines moved left by the
+  indentation of its line; paste writes after the focused block, in the nearest list that holds it (the roots at the end),
+  replacing a focused blank; the pasted block is focused. `copyText`, `pasteText` in `lezer-view.ts` (about 45 lines),
+  handlers 30 lines in `interact.ts`. Each is one text change; undo takes it back (tested in Chromium: cut, paste, two undos).
+- Drag and drop: pointer events (no library, so a pen or a finger work as far as the browser sends pointer events: NOT
+  tried on a touch device, and a block has no `touch-action`, so on a touch screen the page scrolls instead): pointer down on a
+  block, a 5 px threshold, the gaps widen while dragging (CSS 8 lines), the drop target (a gap, a blank, or the top or bottom 30% of a
+  top-level block) is outlined, release calls `moveNode(node, target)`: ONE transaction holding the removal and the
+  insertion (so one undo step), both computed from ranges and separators, the indentation of the target's line applied to a multi-line block, no-op
+  when dropped where it is, refused (throws, `lastError` set) when the target is inside the block. 110 lines in `interact.ts`,
+  45 in `lezer-view.ts`. Real mouse drag in Chromium, all three languages: `3` of `f(1, g(2), 3)` dropped on the first gap
+  gives `f(3, 1, g(2))`, drop target outlined during the drag, focus on the moved block, one undo restores.
+- Two cosmetic fixes found by the tests, in code that also serves the old edits: removing the LAST statement used to leave an
+  extra blank line (it takes its own newline now), and inserting after a statement that already ends in a newline no longer
+  adds a second one.
+- Not done: multi-selection (cut and drag of several blocks): the clipboard, `moveNode` and the drop code would take a list of
+  nodes in one slot and a range, but selecting several blocks has no UI yet. Not tried: a drop between two top-level
+  blocks that have no space between them; dragging a block onto a text-only (opaque) block.
+
+### 5. Chromium, round one against now (3000-line documents; `e2e/results.json` now, `e2e/results-round2.json` the end of round two; round one from the table in Step 4 above)
+
+| | Scheme | JavaScript | Python |
+|---|---|---|---|
+| first blocks in the DOM / to after first frame, round one | 88 / 94 | 66 / 72 | 70 / 75 |
+| same, now | 81 / 86 | 71 / 76 | 76 / 81 |
+| create editor (parse + build + first draw), round one / now | 64 / 58 | 43 / 49 | 48 / 54 |
+| one edit, sync with layout near top / middle: round one | 9.8 / 9.2 | 2.5 / 3.5 | 2.2 / 1.9 |
+| round two (after the Scheme fix) | 3.4 / 2.9 | 3.3 / 3.5 | 2.9 / 2.6 |
+| now | 4.3 / 3.6 | 3.0 / 3.3 | 3.1 / 2.3 |
+| roots in the DOM at load / at most while scrolling, now | 14 / 37 | 8 / 22 | 10 / 26 |
+| widgets built while scrolling the whole document, round one / now | 1861 / 1955 | 1603 / 1586 | 1999 / 1950 |
+| roots / nodes, now | 1,250 / 13,750 | 940 / 11,656 | 1,155 / 13,629 |
+
+Judgement: nothing got slower except Scheme's edit (3.4 -> 4.3 ms near the top, 2.9 -> 3.6: the new comparison pass over the touched root,
+the error scan from the first change on, and 15-node roots, so a few tenths of a millisecond each); the numbers are single runs of a
+laptop, so differences under a millisecond are noise. The focus cases are in Step 2 above. Screenshots retaken:
+`e2e/screens/{scheme,javascript,python}.png` (the constructs sample, with the new blocks: imports, modifier words, comments inside blocks,
+branches, entries) and `e2e/screens/toolbar-template.png` (the toolbar after the `if-else` button: the new block with its first hole in an edit box).
+
+### What is not done, and what I would do next
+- Python imports (`from a.b import c as d`) are still text: needs `x as y` pairs inside a separator group, with the pair's `as`
+  found relative to the pair, not to the whole node (the `@after:` takes look at the first `as` of the node), and a dotted
+  module path drawn as one name. About 20 lines of adapter. Template strings: a renderer change (text between children).
+- Reconcile still builds the whole new tree of a touched root; making that proportional to the change needs the Lezer tree's
+  own reuse information (which subtrees the incremental parse kept) so the adapter builds only the overlapping nodes. The guard for
+  context changes is a heuristic.
+- Touch: no `touch-action`, no long-press to start a drag; multi-selection; a drop between top-level blocks only works on the 30%
+  edges; the keyboard has no cut/paste of a block without the browser's clipboard events (a page that blocks them has no fallback).
+- Preact and screen-reader checks (is the focus restore or a drag announced?) are still not made.

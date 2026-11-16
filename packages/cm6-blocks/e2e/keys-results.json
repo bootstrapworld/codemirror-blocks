@@ -132,8 +132,8 @@
       "undoChanged": true,
       "redoRestored": true,
       "focused": {
-        "kind": "literal",
-        "text": "g"
+        "kind": "call",
+        "text": "g(2)"
       }
     },
     "template_if_else_then_type_into_hole": {
@@ -206,8 +206,8 @@
       "undoChanged": true,
       "redoRestored": true,
       "focused": {
-        "kind": "literal",
-        "text": "g"
+        "kind": "call",
+        "text": "g(2)"
       }
     },
     "template_if_else_then_type_into_hole": {
