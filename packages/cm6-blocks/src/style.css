@@ -228,7 +228,7 @@
 .blocks-lang-scheme .blocks-cond > .blocks-operator,
 .blocks-lang-scheme .blocks-if > .blocks-operator { border-radius: 0; justify-content: flex-start; }
 .blocks-lang-scheme .blocks-operator > .blocks-node { box-shadow: 0 0 10px 1px #fff; }
-.blocks-lang-scheme .blocks-operator > .blocks-literal { box-shadow: none; }
+.blocks-lang-scheme .blocks-operator > .blocks-value { box-shadow: none; }
 
 /* the pill of a value */
 .blocks-lang-scheme .blocks-literal.blocks-node,
@@ -244,6 +244,11 @@
   text-align: center;
   cursor: pointer;
 }
+/* a blank: gold, with a question mark where its text is */
+.blocks-lang-scheme .blocks-blank.blocks-node { background: gold; color: #fff; }
+.blocks-lang-scheme .blocks-blank.blocks-node > .blocks-blank { display: none; }
+.blocks-lang-scheme .blocks-blank.blocks-node::after { content: "?"; color: #000; display: inline-block; width: 20px; }
+
 /* what goes under the strip: the arguments, or the one block of a slot */
 .blocks-lang-scheme .blocks-compound > .blocks-args,
 .blocks-lang-scheme .blocks-compound > .blocks-slot:not(.blocks-operator) {
@@ -253,9 +258,9 @@
   justify-content: center;
   padding: 1px 1px 1px 0;
 }
-.blocks-lang-scheme .blocks-args > .blocks-literal,
-.blocks-lang-scheme .blocks-slot > .blocks-literal { background: #fff; border: 2px inset #d3d3d3; }
-.blocks-lang-scheme .blocks-operator > .blocks-literal { background: transparent; border: 2px inset #000; }
+.blocks-lang-scheme .blocks-args > .blocks-value,
+.blocks-lang-scheme .blocks-slot > .blocks-value { background: #fff; border: 2px inset #d3d3d3; }
+.blocks-lang-scheme .blocks-operator > .blocks-value { background: transparent; border: 2px inset #000; }
 
 .blocks-lang-scheme .blocks-literal.blocks-node:hover { border-color: rgba(255, 165, 0, 0.3); }
 .blocks-lang-scheme .blocks-literal.blocks-node * { pointer-events: none; }
@@ -271,11 +276,6 @@
 .blocks-lang-scheme .blocks-compound .blocks-literal-string,
 .blocks-lang-scheme .blocks-compound .blocks-literal-boolean { font-weight: inherit; }
 .blocks-lang-scheme .blocks-operator .blocks-literal-symbol { font-weight: bold; }
-
-/* a blank: gold, with a question mark where its text is */
-.blocks-lang-scheme .blocks-blank.blocks-node { background: gold; color: #fff; }
-.blocks-lang-scheme .blocks-blank.blocks-node > .blocks-blank { display: none; }
-.blocks-lang-scheme .blocks-blank.blocks-node::after { content: "?"; color: #000; display: inline-block; width: 20px; }
 
 /* the places where a block can be dropped or typed in: always drawn, dotted */
 .blocks-lang-scheme .blocks-gap {
@@ -385,7 +385,7 @@
 
 /* the states of a block: what the existing editor draws */
 .blocks-lang-scheme .blocks-node:focus { outline: 0; border-style: solid; border-color: orange; }
-.blocks-lang-scheme .blocks-selected { outline: 0; background-image: none; border-style: dotted; border-color: orange; box-shadow: 5px 5px 5px #888; }
+.blocks-lang-scheme .blocks-node.blocks-selected { outline: 0; background-image: none; border-style: dotted; border-color: orange; box-shadow: 5px 5px 5px #888; }
 .blocks-lang-scheme .blocks-drag-source { opacity: 0.5; }
 .blocks-lang-scheme .blocks-edit {
   font: 12px monospace;
@@ -401,6 +401,8 @@
   outline: 0;
 }
 .blocks-lang-scheme .blocks-edit-all { height: auto; }
+/* (the box takes the place of the pill, it is not inside one) */
+.blocks-lang-scheme .blocks-value:has(> .blocks-edit) { border-color: transparent !important; background: none !important; padding: 0; min-width: 0; box-shadow: none; }
 
 /* collapsed: a black-to-white strip with only the word */
 .blocks-lang-scheme .blocks-compound.blocks-collapsed {
@@ -411,10 +413,13 @@
   padding-left: 5px;
   background: linear-gradient(to right, #000, #fff 90%);
 }
-.blocks-lang-scheme .blocks-collapsed > * { display: none; }
+.blocks-lang-scheme .blocks-compound.blocks-collapsed > :not(.blocks-operator) { display: none; }
 .blocks-lang-scheme .blocks-collapsed > .blocks-operator,
 .blocks-lang-scheme .blocks-define.blocks-collapsed > .blocks-slot[data-slot="name"] {
   display: inline; padding: 0; margin: 0 2px; border: 0; color: #fff; background: none; transform: none; text-align: left; line-height: 20px; overflow: hidden;
+}
+.blocks-lang-scheme .blocks-collapsed > .blocks-operator * {
+  display: inline; border: 0; background: none; color: #fff; box-shadow: none; padding: 0; margin: 0 2px; min-width: 0; height: auto; line-height: 20px; font-weight: bold; font-size: 14px; pointer-events: none;
 }
 .blocks-lang-scheme .blocks-collapsed::after { content: none; }
 
@@ -435,13 +440,18 @@
   opacity: 0.5;
   z-index: 3;
 }
-.blocks-lang-scheme .blocks-has-comment:focus::before { display: none; }
+/* (the arrow of the box takes the place of the balloon while the block has focus) */
+.blocks-lang-scheme .blocks-has-comment:focus:not(.blocks-collapsed)::before {
+  content: ""; left: 100%; right: auto; top: -2px; width: 0; height: 0; font-size: 14px; transform: none; opacity: 1; z-index: 999;
+  border: 0.5em solid transparent; border-right: 10px solid #444;
+}
+.blocks-lang-scheme .blocks-has-comment:focus.blocks-collapsed::before { display: none; }
 .blocks-lang-scheme .blocks-has-comment::after { content: none; }
 .blocks-lang-scheme .blocks-has-comment:focus:not(.blocks-collapsed)::after {
   content: attr(data-comment);
   position: absolute;
   left: 100%;
-  top: -3px;
+  top: -7px;
   margin-left: 15px;
   padding: 2px 10px;
   width: max-content;

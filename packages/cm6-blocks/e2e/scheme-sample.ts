@@ -11,3 +11,12 @@ export const SAMPLE = `; compute some things
 (g)
 (+ (* 2 3) (area (square 4)))
 `;
+
+/** a program for the states: one block each to be focused, selected, collapsed, a blank, and a comment above the first */
+export const STATES = `; a comment about x
+(define x 5)
+(f "a" 1)
+(g 2)
+(h (m 3 4) 5)
+(k ... 1)
+`;

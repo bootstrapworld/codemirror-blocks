@@ -8,6 +8,7 @@ const HEADS: Record<string, [number, string]> = { define: [3, "DefineForm"], lam
 export const schemeTable: BlockTable = {
   lang: "scheme",
   nodes: {
+    Blank: { kind: "blank", label: "blank", leaf: true },
     Symbol: atom("symbol"), Define: atom("symbol"), CatchHead: atom("symbol"), Number: atom("number"),
     String: atom("string"), Boolean: atom("boolean"), Char: atom("char"),
     QuoteForm: { kind: "quote", label: "quote", keyword: "\'", slots: [{ name: "datum", kind: "one", take: ["#0"] }] },
@@ -45,6 +46,7 @@ export const schemeTable: BlockTable = {
     name: "kind",
     // "a list whose first element is the symbol define is a definition", checked for the arity wescheme demands
     apply(n: import("@lezer/common").SyntaxNode, text: string) {
+      if (n.name === "Symbol" && text.slice(n.from, n.to) === "...") return "Blank"; // the placeholder of the exercises: a blank
       if (n.name !== "ParenList" && n.name !== "BracketList") return undefined;
       const items = (l: import("@lezer/common").SyntaxNode) => { const c = l.getChild("ListContent"); return c ? c.getChildren("Datum") : []; };
       // the head first (one child), the rest only when it is define/lambda/if/cond
