@@ -119,6 +119,11 @@ export class Renderer {
     }
   }
 
+  /** aria-setsize / aria-posinset of every drawn node of a slot (after nodes were added or removed around them) */
+  renumberSlot(slot: Slot): void {
+    this.renumber(slot, 0);
+  }
+
   // ---- building
 
   private create(tag: string, cls?: string): HTMLElement {

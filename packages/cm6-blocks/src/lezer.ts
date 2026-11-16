@@ -6,7 +6,7 @@
  * a leaf, which is punctuation or a keyword and is dropped (the table's
  * `keyword` says what is drawn at the head).
  */
-import type { Parser, SyntaxNode } from "@lezer/common";
+import type { Parser, SyntaxNode, Tree } from "@lezer/common";
 import { makeNode } from "./wescheme";
 import type { BNode, Language, Slot, TextChange } from "./types";
 
@@ -30,6 +30,8 @@ export interface BlockTable {
   nodes: Record<string, BlockRow>;
   /** types drawn as their own text ("unknown" leaf) */
   opaque?: string[];
+  /** text put where a node that has to be there (a "one" slot) is deleted; default "..." */
+  blank?: string;
   /** how elements of a list are separated, by list-slot name or node kind */
   separators?: Record<string, string>;
   /**
@@ -40,7 +42,15 @@ export interface BlockTable {
   rules?: { name: string; apply: (...args: any[]) => any }[]; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
-export type LezerLanguage = Language & { table: BlockTable };
+export type LezerLanguage = Language & {
+  table: BlockTable;
+  /**
+   * Blocks for the top-level nodes of an already parsed `tree` of `text`.
+   * `keep(from, to)` may hand back an existing node for a top-level Lezer node
+   * with that range; it is used as is (and not read again).
+   */
+  fromTree(tree: Tree, text: string, keep?: (from: number, to: number, key: string) => BNode | null): BNode[];
+};
 
 interface Cand {
   node: SyntaxNode;
@@ -50,6 +60,14 @@ interface Cand {
 
 /** the exact source of every node this adapter built (to print it again) */
 const sources = new WeakMap<BNode, string>();
+/** the source text a node was built from (undefined if this adapter did not build it) */
+export const sourceOf = (n: BNode): string | undefined => sources.get(n);
+/** the table key (or "@error" / "@opaque") a node was built from */
+const keys = new WeakMap<BNode, string>();
+export const keyOfNode = (n: BNode): string | undefined => keys.get(n);
+/** nodes that are, or contain, a Lezer error node: their shape depends on the error recovery, which depends on the text around them */
+const dirty = new WeakSet<BNode>();
+export const hasError = (n: BNode): boolean => dirty.has(n);
 
 export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage {
   const rule = (name: string) => table.rules?.filter((r) => r.name === name) ?? [];
@@ -82,6 +100,12 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
   }
 
   function build(c: Cand, text: string, offset: number): BNode {
+    const b = build1(c, text, offset);
+    keys.set(b, c.key);
+    if (b.kind === "error" || b.slots.some((s) => s.nodes.some((k) => dirty.has(k)))) dirty.add(b);
+    return b;
+  }
+  function build1(c: Cand, text: string, offset: number): BNode {
     if (c.key === "@error") return leaf("error", c.node, text, offset);
     if (c.key === "@opaque") return leaf("unknown", c.node, text, offset);
     const row = table.nodes[c.key];
@@ -150,6 +174,11 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       const out: Cand[] = [];
       collect(top, [], out, text);
       return out.map((c) => build(c, text, offset));
+    },
+    fromTree(tree, text, keep) {
+      const out: Cand[] = [];
+      collect(tree.topNode, [], out, text);
+      return out.map((c) => keep?.(c.node.from, c.node.to, c.key) ?? build(c, text, 0));
     },
     print(node) {
       const s = sources.get(node);

@@ -352,3 +352,54 @@ should work similarly, but need not work identically." Nothing below is started.
    Each of these says how much a language really costs beyond its table.
 5. Guard or replace the vendored WeScheme lexer's hanging inputs (only matters
    if `wescheme.ts` is kept; with Lezer it is not used).
+
+## Pushing it further (2026-11-15, late)
+
+Owner's direction: see how far it goes; need not match CM5 exactly. Order of work:
+the Lezer editor, a demo page, keyboard and mouse, real-browser measurements, then
+what the tables cannot do yet. Running table (evidence = a test or measurement;
+"judgement" = mine):
+
+| step | done? | lines added | what it showed | what did not work |
+|---|---|---|---|---|
+| 1 Lezer editor | yes | `src/lezer-view.ts` 464, spec 231, +25 in lezer.ts/render.ts/tables | see below | see below |
+
+### Step 1: `createLezerBlockEditor` (`src/lezer-view.ts`)
+
+- Design: one `StateField` holds the Lezer tree (incremental reparse with
+  `TreeFragment.applyChanges`/`addTree`, no @codemirror/language), the block roots
+  and the root decorations. Every document-changing transaction runs the same path;
+  block edits (`insertText`, `removeNode`, `replaceText`) are plain text changes from
+  `insertChange`/`removeChange` dispatched as one-undo-step transactions. No `settle`,
+  no own-operation path. `view.ts` is untouched. `RootWidget` is reused by import.
+- Evidence: `npx jest packages/cm6-blocks` 136 tests; fuzzer (60 seeds x 25 steps per
+  language, random text edits including broken syntax, inserts, removes, undo, redo)
+  with `checkLezerEditor` after every step: live blocks == fresh parse (kinds, slots,
+  values, ranges), decorations == roots, live DOM == fresh drawing. Also run once at
+  800 seeds x 25 steps per language (20,000 steps each), clean.
+- Finding 1 (important): reusing an old root because its range (mapped) and text are
+  unchanged is NOT safe. The fuzzer found two ways a root with identical range and
+  text parses differently: (a) it contains a Lezer error node, whose recovery depends
+  on text outside it (zero-width error nodes move); (b) text AFTER it changes what is
+  inside it (Python: an inconsistent dedent after a `while` adds an error node at the
+  end of its body). The rule now used: keep a root only if its key (table row) is the
+  same, it contains no error node, and no change touches it or either neighbour
+  (changes in the gap between two roots affect both). So an edit rebuilds 2 or 3
+  roots, not 1. Cost: slightly more rebuilding; benefit: the oracle is clean.
+- Finding 2: aria-posinset/setsize of root elements change when roots are inserted or
+  removed; kept roots need `renderer.renumberSlot` (new, 3 lines in render.ts), called
+  whenever the set of roots changes.
+- Size of changed roots, measured in the fuzzer (60 seeds x 25 steps, tiny programs):
+  rebuilt roots average 5.0 (Scheme), 6.5 (JS), 5.6 (Python) nodes, maximum 36, 43,
+  38. Per step 2.3 / 2.4 / 2.9 roots were rebuilt. Within a changed root everything is
+  rebuilt (no node-level reuse), as the brief said; the focus snapshot is by node,
+  falling back to the node at the mapped position.
+- Divergence between an incremental and a fresh parse: the checker counts documents
+  where the editor equals its OWN incrementally reparsed tree but not a fresh parse
+  while Lezer error nodes exist. Count in the fuzz runs: 0 (so in these runs Lezer's
+  incremental parse always agreed with a fresh one).
+- Caveat (design, not measured): the field mutates BNodes in place (positions of kept
+  roots), so a state made by `state.update` and thrown away has already changed them.
+- Positions are still absolute; kept roots after an edit are shifted by walking them.
+- The tables gained `roots: "\n"` as the separator for top-level insertion and an
+  exported `table`/`parser` each (`schemeTable`, `schemeParser`, ...), one line each.

@@ -1,13 +1,13 @@
 // EXPERIMENT: Python blocks from @lezer/python. Raw trees: spec/lezer.test.ts "raw trees".
 import { parser } from "@lezer/python";
-import { lezerLanguage, BlockRow } from "./lezer";
+import { lezerLanguage, BlockRow, BlockTable } from "./lezer";
 import type { Slot } from "./types";
 
 const leaf = (kind: string, label: string): BlockRow => ({ kind, label, leaf: true });
 const list = (name: string, take: string[] | "*") => ({ name, kind: "list" as const, take });
 const one = (name: string, take: string[]) => ({ name, kind: "one" as const, take });
 
-export const python = lezerLanguage(parser as never, {
+export const pythonTable: BlockTable = {
   nodes: {
     Number: { ...leaf("literal", "number"), dataType: "number" },
     String: { ...leaf("literal", "string"), dataType: "string" },
@@ -26,7 +26,7 @@ export const python = lezerLanguage(parser as never, {
     CallExpression: { kind: "call", label: "call", slots: [one("func", ["#0"]), list("args", ["ArgList"])] },
     ArrayExpression: { kind: "array", label: "list", slots: [list("elements", "*")] },
   },
-  separators: { args: ", ", elements: ", " },
+  separators: { args: ", ", elements: ", ", roots: "\n" },
   rules: [{
     // statements of a body are one per line, at the indentation of their neighbour
     name: "separator",
@@ -36,4 +36,6 @@ export const python = lezerLanguage(parser as never, {
       return "\n" + text.slice(text.lastIndexOf("\n", at - 1) + 1, at);
     },
   }],
-});
+};
+export { parser as pythonParser };
+export const python = lezerLanguage(parser as never, pythonTable);

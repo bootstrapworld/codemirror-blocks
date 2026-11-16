@@ -1,11 +1,11 @@
 // EXPERIMENT: Scheme blocks from the Lezer grammar `cm6-lezer-scheme-common-lang`.
 import { parser } from "cm6-lezer-scheme-common-lang";
-import { lezerLanguage, BlockRow } from "./lezer";
+import { lezerLanguage, BlockRow, BlockTable } from "./lezer";
 
 const atom = (dataType: string): BlockRow => ({ kind: "literal", label: dataType, leaf: true, dataType });
 const HEADS: Record<string, [number, string]> = { define: [3, "DefineForm"], lambda: [3, "LambdaForm"], if: [4, "IfForm"], cond: [0, "CondForm"] };
 
-export const scheme = lezerLanguage(parser as never, {
+export const schemeTable: BlockTable = {
   nodes: {
     Symbol: atom("symbol"), Define: atom("symbol"), CatchHead: atom("symbol"), Number: atom("number"),
     String: atom("string"), Boolean: atom("boolean"), Char: atom("char"),
@@ -16,6 +16,7 @@ export const scheme = lezerLanguage(parser as never, {
     CondForm: { kind: "cond", label: "cond", keyword: "cond", brackets: true, slots: [{ name: "clauses", kind: "list", take: ["ClauseForm"] }] },
     ClauseForm: { kind: "clause", label: "clause", brackets: true, slots: [{ name: "test", kind: "one", take: ["#0"] }, { name: "body", kind: "list", take: "*" }] },
   },
+  separators: { roots: "\n" },
   rules: [{
     name: "kind",
     // "a list whose first element is the symbol define is a definition", checked for the arity wescheme demands
@@ -35,4 +36,6 @@ export const scheme = lezerLanguage(parser as never, {
       return head && h ? "ParenList" : undefined;
     },
   }],
-});
+};
+export { parser as schemeParser };
+export const scheme = lezerLanguage(parser as never, schemeTable);

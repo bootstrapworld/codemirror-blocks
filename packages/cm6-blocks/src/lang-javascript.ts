@@ -1,13 +1,13 @@
 // EXPERIMENT: JavaScript blocks from @lezer/javascript. Raw trees: spec/lezer.test.ts "raw trees".
 import { parser } from "@lezer/javascript";
-import { lezerLanguage, BlockRow } from "./lezer";
+import { lezerLanguage, BlockRow, BlockTable } from "./lezer";
 
 const leaf = (kind: string, label: string): BlockRow => ({ kind, label, leaf: true });
 const list = (name: string, take: string[] | "*") => ({ name, kind: "list" as const, take });
 const one = (name: string, take: string[]) => ({ name, kind: "one" as const, take });
 const stmts = (kind: string, label: string): BlockRow => ({ kind, label, slots: [list("body", "*")] });
 
-export const javascript = lezerLanguage(parser as never, {
+export const javascriptTable: BlockTable = {
   nodes: {
     Number: { ...leaf("literal", "number"), dataType: "number" },
     String: { ...leaf("literal", "string"), dataType: "string" },
@@ -33,5 +33,7 @@ export const javascript = lezerLanguage(parser as never, {
     ObjectExpression: { kind: "object", label: "object", slots: [list("properties", "*")] },
     Property: { kind: "property", label: "property", slots: [one("key", ["PropertyDefinition"]), one("value", ["#1"])] },
   },
-  separators: { args: ", ", elements: ", ", properties: ", ", body: " " },
-});
+  separators: { args: ", ", elements: ", ", properties: ", ", body: " ", roots: "\n" },
+};
+export { parser as javascriptParser };
+export const javascript = lezerLanguage(parser as never, javascriptTable);
