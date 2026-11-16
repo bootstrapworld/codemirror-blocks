@@ -115,6 +115,8 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   function editLeaf(node: BNode, typed?: string): void {
     ed.focusNode(node);
     const el = renderer.element(node);
+    // a node that is not drawn (outside the viewport) has no place for a box: it would sit in a detached element and show up later
+    if (!el.isConnected) return;
     const text = el.firstElementChild as HTMLElement | null;
     const back = () => {
       if (text) text.removeAttribute("style");

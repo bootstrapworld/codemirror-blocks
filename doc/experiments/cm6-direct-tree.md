@@ -810,3 +810,35 @@ Judgement (mine, not measured):
   are per language, and not reducible to a table with the present design.
 - The risk I would watch: rules and templates that look at the tree or the text are code, and the
   Scheme rule shows they can hide a quadratic cost that small tests do not show.
+
+## Third round: real programs (2026-11-16)
+
+Script: `packages/cm6-blocks/scripts/corpus-lib.ts` (corpus lists and the measures) and
+`spec/corpus.test.ts` (gated: `CMB_CORPUS=coverage` measures only, `CMB_CORPUS=full` also
+runs the oracle on 30 sampled files and times edits; `CMB_STEP=<label>` names the row written
+to `e2e/corpus-results.json`). Files are read where they are; none are copied. Only result
+tables (with a few 40-character snippets) are committed.
+
+### Step 1 and 2: corpora and the measure (baseline = the tables at the end of round two)
+Found locally (only inside the allowed places):
+- Scheme: 11 `.rkt` files in the repo (1,931 lines); 582 programs extracted as string literals
+  from the repo's tests and soak generator with a script (1,014 lines: many are one-liners,
+  27 contain a Lezer error node because some are intentionally broken). Small corpora.
+- JavaScript: 30 own files (3,314 lines, mostly webpack/babel/eslint config and scripts);
+  200 non-minified `.js`/`.mjs` files sampled with seed 7 from node_modules (14,733 lines,
+  library code); 40 `example/`, `examples/`, `demo/` files from node_modules (758 lines): the
+  nearest thing to beginner-style programs.
+- Python: 200 files sampled with seed 5 from the standard library of the `python3` here, which is
+  Python 3.6 (90,370 lines, tests and idle_test skipped); the 21 `turtledemo` programs (2,429
+  lines): beginner-style, the best local match.
+- Library code is harder than what students write (decorators, try/except, many classes, nested
+  expressions, tricks); the example/turtledemo groups are the closer match but are small.
+
+How coverage is counted (judgement on the method, so read the limits): every non-space,
+non-comment character is one of: REAL (a leaf value, a keyword, or punctuation of a block with
+slots: the punctuation counts as real whether or not the renderer draws it), OPAQUE (a
+recognised node drawn as its own text), or NOT DRAWN: dropped from a block that is drawn (the
+`else` of an `if`), outside every block, or STRAY: a block built from inside a construct the
+table has no row for (the `x` of `throw x` would show as a block on its own, so it is not
+counted as real). A statement is "fully blocks" when none of its characters is opaque or not
+drawn, "none" when none is real.

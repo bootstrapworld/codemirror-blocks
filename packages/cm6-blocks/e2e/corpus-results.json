@@ -1,0 +1,1599 @@
+{
+ "baseline": {
+  "scheme-repo-files": {
+   "note": "every .rkt/.scm/.ss tracked in this repository",
+   "language": "scheme",
+   "files": 11,
+   "lines": 1931,
+   "chars": 36546,
+   "coverage": {
+    "real": 87.3,
+    "opaque": 0,
+    "fallback": 12.7
+   },
+   "topStatements": {
+    "fully": 296,
+    "partly": 43,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 296,
+    "partly": 43,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 19.4,
+   "tableLines": {
+    "file": 64,
+    "nodes": 14,
+    "rules": 24
+   },
+   "missingTop25": [
+    {
+     "type": "TaggedParenList",
+     "chars": 4484,
+     "n": 175,
+     "examples": [
+      "\" comment\\n\\t2)\\n\\n(* (- 1 2) (+ 9 8))\\n\\n; we \" @ token CatchHead",
+      "\" 9))) (- 2 (+ (* \\n(+ (+ (* 3 (+ (* 3 5 (\" @ token CatchHead",
+      "\"\\n        (and (>= (- (posn-x img-p) img-\" @ token CatchHead"
+     ]
+    },
+    {
+     "type": "BracketList",
+     "chars": 146,
+     "n": 10,
+     "examples": [
+      "\"-struct world [player shots aliens])\\n\\n;S\" @ token Symbol",
+      "\"ty)\\n          [on-tick tick]\\n          [\" @ token Symbol",
+      "\"ck]\\n          [to-draw render]\\n         \" @ token Symbol"
+     ]
+    }
+   ],
+   "opaqueTop10": [],
+   "correctness": {
+    "files": 11,
+    "edits": 220,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "packages/codemirror-blocks/example/huge-code.rkt",
+    "lines": 776,
+    "typedEditMedianMs": 0.51
+   }
+  },
+  "scheme-test-literals": {
+   "note": "string literals in the repo's own tests that look like programs (what students' programs look like)",
+   "language": "scheme",
+   "files": 582,
+   "lines": 1014,
+   "chars": 9064,
+   "coverage": {
+    "real": 93.8,
+    "opaque": 0,
+    "fallback": 6.2
+   },
+   "topStatements": {
+    "fully": 740,
+    "partly": 33,
+    "none": 18
+   },
+   "allStatements": {
+    "fully": 740,
+    "partly": 33,
+    "none": 18
+   },
+   "errorNodes": 27,
+   "filesWithErrors": 27,
+   "parseBuildMsPer1000Lines": 12,
+   "tableLines": {
+    "file": 64,
+    "nodes": 14,
+    "rules": 24
+   },
+   "missingTop25": [
+    {
+     "type": "BracketList",
+     "chars": 504,
+     "n": 62,
+     "examples": [
+      "\"[contenteditable=true]\" @ token Symbol",
+      "\"[role=\\\"treeitem\\\"]:not([ari\" @ token Symbol",
+      "\"reeitem\\\"]:not([aria-expanded=\\\"false\\\"] [r\" @ token Symbol"
+     ]
+    },
+    {
+     "type": "Form",
+     "chars": 52,
+     "n": 18,
+     "examples": [
+      "\"[contenteditable=true]\" @ token OpenBracket",
+      "\"[role=\\\"treeitem\\\"]:not([ar\" @ token OpenBracket",
+      "\"ole=\\\"treeitem\\\"]:not([aria-expanded=\\\"fals\" @ token Keyword"
+     ]
+    },
+    {
+     "type": "BraceList",
+     "chars": 6,
+     "n": 2,
+     "examples": [
+      "\"[{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\" @ token String",
+      "\"[{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token String"
+     ]
+    }
+   ],
+   "opaqueTop10": [],
+   "correctness": {
+    "files": 30,
+    "edits": 600,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "packages/codemirror-blocks/spec/random-sequences-test.ts:1157",
+    "lines": 11,
+    "typedEditMedianMs": 0.97
+   }
+  },
+  "js-repo-own": {
+   "note": "plain .js/.mjs tracked in this repository (not dist/lib, not the vendored WeScheme reader)",
+   "language": "javascript",
+   "files": 30,
+   "lines": 3314,
+   "chars": 70400,
+   "coverage": {
+    "real": 32.4,
+    "opaque": 61.8,
+    "fallback": 5.8
+   },
+   "topStatements": {
+    "fully": 131,
+    "partly": 162,
+    "none": 45
+   },
+   "allStatements": {
+    "fully": 258,
+    "partly": 510,
+    "none": 602
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 12.9,
+   "tableLines": {
+    "file": 82,
+    "nodes": 37,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "IfStatement>IfStatement",
+     "chars": 596,
+     "n": 4,
+     "examples": [
+      "\"dle\\\";\\n    else if (name === \\\"(program)\\\")\" @ token if",
+      "\"se;\\n      else if (c === \\\"\\\\\\\\\\\") escaped =\" @ token if",
+      "\"se;\\n    } else if (c === '\\\"') {\\n      in\" @ token if"
+     ]
+    },
+    {
+     "type": "IfStatement>ExpressionStatement",
+     "chars": 527,
+     "n": 17,
+     "examples": [
+      "\" === \\\"(idle)\\\") b = \\\"idle\\\";\\n    else if (\" @ token VariableName",
+      "\" )\\n    )\\n      incl[k] = +v.toFixed(1);\\n\" @ token VariableName",
+      "\" )\\n    )\\n      sums[e.name] = (sums[e.na\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "MemberExpression>RegExp",
+     "chars": 466,
+     "n": 14,
+     "examples": [
+      "\"s(k) ||\\n      /patchAst|replaceMarkerWid\" @ token RegExp",
+      "\" if (\\n      /^(UpdateLayoutTree|Layout|P\" @ token RegExp",
+      "\"onst where = /\\\\bat (\\\\S+)/.exec(String(re\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 368,
+     "n": 34,
+     "examples": [
+      "\" Map();\\n  for (const n of profile.nodes)\" @ token const",
+      "\" + ms);\\n  for (const [id, ms] of self) {\" @ token const",
+      "\"et();\\n    for (const f of stack) {\\n     \" @ token const"
+     ]
+    },
+    {
+     "type": "ObjectPattern",
+     "chars": 232,
+     "n": 16,
+     "examples": [
+      "\"n) {\\n  const { page, cdp } = env;\\n  cons\" @ token VariableDefinition",
+      "\" {\\n    const { profile } = await cdp.sen\" @ token VariableDefinition",
+      "\"er);\\n  const { page, errors } = env;\\n  c\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 220,
+     "n": 21,
+     "examples": [
+      "\"st types = { \\\".html\\\": \\\"text/html\\\", \\\".js\\\"\" @ token String",
+      "\"\\\"text/html\\\", \\\".js\\\": \\\"text/javascript\\\", \\\"\" @ token String",
+      "\"javascript\\\", \\\".map\\\": \\\"application/json\\\" \" @ token String"
+     ]
+    },
+    {
+     "type": "IfStatement>ReturnStatement",
+     "chars": 215,
+     "n": 7,
+     "examples": [
+      "\"\\n  if (!m)\\n    return { skip: \\\"no cmb-re\" @ token return",
+      "\"\\n  if (!first) return `field :: reported\" @ token return",
+      "\"stsSync(file)) return [];\\n  return fs\\n  \" @ token return"
+     ]
+    },
+    {
+     "type": "ForStatement>ExpressionStatement",
+     "chars": 212,
+     "n": 9,
+     "examples": [
+      "\".get(p))\\n      stack.push(nodes.get(p).c\" @ token VariableName",
+      "\"L_TOP)))\\n      incl[k] = +v.toFixed(1);\\n\" @ token VariableName",
+      "\"keys(buckets)) buckets[k] = +buckets[k].\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 194,
+     "n": 6,
+     "examples": [
+      "\"t [from, to] = args.filter(\\n  (a, i) => \" @ token VariableName",
+      "\"aseConfig,\\n} = require(\\\"@bootstrapworld/\" @ token VariableName",
+      "\"n, skipped } = ingest(\\n    issues,\\n    r\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "CallExpression>ArgList",
+     "chars": 180,
+     "n": 8,
+     "examples": [
+      "\"        /[\\\\\\\\/](node_modules[\\\\\\\\/](react|r\" @ token RegExp",
+      "\"         /[\\\\\\\\/]node_modules[\\\\\\\\/](redux|r\" @ token RegExp",
+      "\"mirror\\\", /[\\\\\\\\/]node_modules[\\\\\\\\/]codemirr\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>RegExp",
+     "chars": 134,
+     "n": 3,
+     "examples": [
+      "\"const PARSE = /parse|patchAst|speculate|\" @ token RegExp",
+      "\"t REDUXFN =\\n  /useSelector|useSyncExtern\" @ token RegExp",
+      "\"st FENCE = /```json cmb-report[^\\\\n]*\\\\n([\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "Property>MemberExpression",
+     "chars": 92,
+     "n": 6,
+     "examples": [
+      "\"evServer: { ...base.devServer, client: {\" @ token VariableName",
+      "\"alias = {\\n  ...config.resolve.alias,\\n  \\\"\" @ token VariableName",
+      "\"ias = {\\n    ...config.resolve.alias,\\n   \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Hashbang",
+     "chars": 72,
+     "n": 4,
+     "examples": [
+      "\"#!/usr/bin/env node\\n/**\\n \" @ token Hashbang",
+      "\"#!/usr/bin/env node\\n/**\\n \" @ token Hashbang",
+      "\"#!/usr/bin/env node\\n// Do\" @ token Hashbang"
+     ]
+    },
+    {
+     "type": "CatchClause",
+     "chars": 65,
+     "n": 1,
+     "examples": [
+      "\"]);\\n  } catch (e) {\\n    return { skip: `\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ObjectPattern",
+     "chars": 64,
+     "n": 6,
+     "examples": [
+      "\" const { page, cdp } = env;\\n  const prof\" @ token VariableDefinition",
+      "\" const { page, errors } = env;\\n  const t\" @ token VariableDefinition",
+      "\"erverConfig,\\n  getBaseConfig,\\n} = requir\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "Property>RegExp",
+     "chars": 62,
+     "n": 7,
+     "examples": [
+      "\", {\\n    name: /switch to blocks mode/i,\\n\" @ token RegExp",
+      "\"ton\\\", { name: /switch to text mode/i });\" @ token RegExp",
+      "\"m\\\", { name: /^\\\\d+,?$/ }).nth(2);\\n  await\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "IfStatement>ContinueStatement",
+     "chars": 48,
+     "n": 6,
+     "examples": [
+      "\"seen.has(key)) continue;\\n      seen.add(\" @ token continue",
+      "\"=== undefined) continue;\\n    if (\\n      \" @ token continue",
+      "\");\\n    if (!r) continue;\\n    const top =\" @ token continue"
+     ]
+    },
+    {
+     "type": "PatternProperty",
+     "chars": 36,
+     "n": 4,
+     "examples": [
+      "\"(batchIndex, { steps = 30, ramp = false \" @ token VariableDefinition",
+      "\" { steps = 30, ramp = false } = {}) {\\n  \" @ token VariableDefinition",
+      "\" min,\\n  max,\\n  quietSamples = 0,\\n  load \" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ForStatement>ForStatement",
+     "chars": 33,
+     "n": 1,
+     "examples": [
+      "\"ile.nodes)\\n    for (const c of n.childre\" @ token for"
+     ]
+    },
+    {
+     "type": "ArrayPattern",
+     "chars": 27,
+     "n": 8,
+     "examples": [
+      "\"\\n  for (const [id, ms] of self) {\\n    co\" @ token VariableDefinition",
+      "\"   for (const [k, v] of Object.entries(i\" @ token VariableDefinition",
+      "\"\\n  for (const [k, v] of Object.entries(i\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ThrowStatement",
+     "chars": 27,
+     "n": 1,
+     "examples": [
+      "\" \\\")}`;\\n  throw new Error(`no language ${\" @ token new"
+     ]
+    },
+    {
+     "type": "Property>VariableName",
+     "chars": 26,
+     "n": 4,
+     "examples": [
+      "\"t = {\\n      ...result,\\n      ...bucketPr\" @ token VariableName",
+      "\"ports = {\\n  ...base,\\n  mode: \\\"production\" @ token VariableName",
+      "\"onfig = {\\n  ...baseConfig,\\n  name: \\\"bund\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "TryStatement",
+     "chars": 26,
+     "n": 1,
+     "examples": [
+      "\" report;\\n  try {\\n    report = JSON.parse\" @ token {"
+     ]
+    },
+    {
+     "type": "UnaryExpression>MemberExpression",
+     "chars": 24,
+     "n": 2,
+     "examples": [
+      "\"}\\n  if (typeof report.language !== \\\"stri\" @ token VariableName",
+      "\"ing\\\" || typeof report.code !== \\\"string\\\")\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 20,
+     "n": 5,
+     "examples": [
+      "\" = \\\"idle\\\";\\n    else if (name === \\\"(progr\" @ token else",
+      "\"= false;\\n      else if (c === \\\"\\\\\\\\\\\") esca\" @ token else",
+      "\"= false;\\n    } else if (c === '\\\"') {\\n   \" @ token else"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ArrowFunction",
+     "chars": 30553,
+     "n": 135
+    },
+    {
+     "type": "TemplateString",
+     "chars": 4407,
+     "n": 86
+    },
+    {
+     "type": "AwaitExpression",
+     "chars": 3190,
+     "n": 62
+    },
+    {
+     "type": "ImportDeclaration",
+     "chars": 1769,
+     "n": 41
+    },
+    {
+     "type": "ExportDeclaration",
+     "chars": 1611,
+     "n": 4
+    },
+    {
+     "type": "ConditionalExpression",
+     "chars": 1076,
+     "n": 24
+    },
+    {
+     "type": "NewExpression",
+     "chars": 795,
+     "n": 15
+    },
+    {
+     "type": "FunctionExpression",
+     "chars": 106,
+     "n": 1
+    },
+    {
+     "type": "PostfixExpression",
+     "chars": 6,
+     "n": 2
+    }
+   ],
+   "correctness": {
+    "files": 30,
+    "edits": 600,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "scripts/soak.js",
+    "lines": 713,
+    "typedEditMedianMs": 0.99
+   }
+  },
+  "js-node_modules-library": {
+   "note": "~200 non-minified .js/.mjs sampled (seed 7) from 12067 files under node_modules: library code",
+   "language": "javascript",
+   "files": 200,
+   "lines": 14733,
+   "chars": 331186,
+   "coverage": {
+    "real": 49.8,
+    "opaque": 32.7,
+    "fallback": 17.4
+   },
+   "topStatements": {
+    "fully": 873,
+    "partly": 597,
+    "none": 212
+   },
+   "allStatements": {
+    "fully": 2647,
+    "partly": 2879,
+    "none": 2650
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 13.4,
+   "tableLines": {
+    "file": 82,
+    "nodes": 37,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "SwitchBody",
+     "chars": 10188,
+     "n": 26,
+     "examples": [
+      "\"orever\\\":\\n      cachedValue = [{\\n        \" @ token VariableName",
+      "\"er\\\":\\n          optimiseIndexGetter(path,\" @ token VariableName",
+      "\" case 1:\\n      c = \\\"accessor\\\";\\n      bre\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Property>Block",
+     "chars": 9493,
+     "n": 12,
+     "examples": [
+      "\"er(path) {\\n    const {\\n      node,\\n     \" @ token const",
+      "\"n\\\"(path) {\\n    path.skip();\\n  },\\n  Refer\" @ token VariableName",
+      "\"ope\\n  }) {\\n    if (scope.hasOwnBinding(p\" @ token if"
+     ]
+    },
+    {
+     "type": "ThrowStatement",
+     "chars": 4401,
+     "n": 82,
+     "examples": [
+      "\" {\\n      throw new Error(\\\"Cannot change \" @ token new",
+      "\" {\\n      throw new Error(\\\"Caching has al\" @ token new",
+      "\" {\\n      throw new Error(\\\"Cannot change \" @ token new"
+     ]
+    },
+    {
+     "type": "IfStatement>IfStatement",
+     "chars": 3871,
+     "n": 23,
+     "examples": [
+      "\"set);\\n  } else if (offset === 0) {\\n    i\" @ token if",
+      "\"lar);\\n  } else if (rest.name === \\\"argume\" @ token if",
+      "\"er\\\");\\n  } else if (\\\"function\\\" !== a) thr\" @ token if"
+     ]
+    },
+    {
+     "type": "CallExpression>ParenthesizedExpression",
+     "chars": 2382,
+     "n": 125,
+     "examples": [
+      "\"const fn = (0, _async.maybeAsync)(handle\" @ token VariableName",
+      "\");\\n    if ((0, _async.isThenable)(key)) \" @ token VariableName",
+      "\"e) {\\n  if ((0, _async.isThenable)(value)\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "SequenceExpression",
+     "chars": 2153,
+     "n": 157,
+     "examples": [
+      "\"   const fn = (0, _async.maybeAsync)(han\" @ token Number",
+      "\"ly`);\\n    if ((0, _async.isThenable)(key\" @ token Number",
+      "\"alue) {\\n  if ((0, _async.isThenable)(val\" @ token Number"
+     ]
+    },
+    {
+     "type": "IfStatement>ReturnStatement",
+     "chars": 1775,
+     "n": 122,
+     "examples": [
+      "\"* valid(data)) return {\\n        valid: t\" @ token return",
+      "\" (this._never) return \\\"never\\\";\\n    if (t\" @ token return",
+      "\"this._forever) return \\\"forever\\\";\\n    if \" @ token return"
+     ]
+    },
+    {
+     "type": "IfStatement>ThrowStatement",
+     "chars": 1304,
+     "n": 28,
+     "examples": [
+      "\") {\\n  if (e.v) throw Error(\\\"attempted to\" @ token throw",
+      "\"!= _typeof(e)) throw new TypeError(\\\"Meta\" @ token throw",
+      "\"\\\" != typeof e) throw new TypeError(t + \\\"\" @ token throw"
+     ]
+    },
+    {
+     "type": "IfStatement>ExpressionStatement",
+     "chars": 1200,
+     "n": 47,
+     "examples": [
+      "\".configured()) config.forever();\\n  let c\" @ token VariableName",
+      "\"      if (val) cache.forever();else cach\" @ token VariableName",
+      "\"forever();else cache.never();\\n      retu\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Block>SwitchStatement",
+     "chars": 1199,
+     "n": 26,
+     "examples": [
+      "\"eactivate();\\n  switch (config.mode()) {\\n\" @ token switch",
+      "\"argsId);\\n      switch (cause) {\\n        \" @ token switch",
+      "\") {\\n  var c;\\n  switch (i) {\\n    case 1:\\n\" @ token switch"
+     ]
+    },
+    {
+     "type": "CaseLabel",
+     "chars": 1195,
+     "n": 182,
+     "examples": [
+      "\"()) {\\n    case \\\"forever\\\":\\n      cachedVa\" @ token String",
+      "\"reak;\\n    case \\\"invalidate\\\":\\n      cache\" @ token String",
+      "\"reak;\\n    case \\\"valid\\\":\\n      if (cached\" @ token String"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ObjectPattern",
+     "chars": 1058,
+     "n": 37,
+     "examples": [
+      "\"    scope,\\n    parentPath\\n  } = path;\\n  \" @ token VariableDefinition",
+      "\"\\n    node,\\n    scope\\n  } = path;\\n  if (!\" @ token VariableDefinition",
+      "\"isBlockScoped: nodeIsBlockScoped,\\n  isEx\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "DoStatement",
+     "chars": 1053,
+     "n": 5,
+     "examples": [
+      "\"te;\\n        do {\\n            byte = this\" @ token {",
+      "\"te;\\n        do {\\n            byte = this\" @ token {",
+      "\" };\\n        do {\\n            const posit\" @ token {"
+     ]
+    },
+    {
+     "type": "TryStatement",
+     "chars": 1007,
+     "n": 13,
+     "examples": [
+      "\" a, c) {\\n  try {\\n    var i = n[a](c),\\n  \" @ token {",
+      "\", u = t;\\n  try {\\n    return e(s, Object.\" @ token {",
+      "\"  };\\n      try {\\n        var c = Object.\" @ token {"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 864,
+     "n": 27,
+     "examples": [
+      "\"[o],\\n      a = Object.getOwnPropertyDesc\" @ token VariableName",
+      "\"ta\\\")],\\n    r = Object.getOwnPropertySymb\" @ token VariableName",
+      "\", globParts] = mms.reduce((set, m) => {\\n\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "LabeledStatement",
+     "chars": 810,
+     "n": 1,
+     "examples": [
+      "\"\\n        scan: for (let i = 0; i < chunk\" @ token for"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 795,
+     "n": 310,
+     "examples": [
+      "\"Visitor = {\\n  \\\"TSTypeAnnotation|TypeAnno\" @ token String",
+      "\"leClassTDZ,\\n  \\\"TSTypeAnnotation|TypeAnno\" @ token String",
+      "\"ses = {\\n    '[:alnum:]': ['\\\\\\\\p{L}\\\\\\\\p{Nl}\" @ token String"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ClassExpression",
+     "chars": 788,
+     "n": 9,
+     "examples": [
+      "\"onInfoChoice = class RevocationInfoChoic\" @ token class",
+      "\"hmIdentifier = class DigestAlgorithmIden\" @ token class",
+      "\"hmIdentifier = class SignatureAlgorithmI\" @ token class"
+     ]
+    },
+    {
+     "type": "ExpressionStatement>SequenceExpression",
+     "chars": 703,
+     "n": 17,
+     "examples": [
+      "\"tedDescriptor, module.exports.__esModule\" @ token VariableName",
+      "\"ncToGenerator, module.exports.__esModule\" @ token VariableName",
+      "\"eStaticAccess, module.exports.__esModule\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "CatchClause",
+     "chars": 699,
+     "n": 8,
+     "examples": [
+      "\"ue;\\n  } catch (n) {\\n    return void e(n)\" @ token VariableDefinition",
+      "\"\\n        catch {\\n            return fals\" @ token {",
+      "\"\\n        catch {\\n            return fals\" @ token {"
+     ]
+    },
+    {
+     "type": "PropertyDeclaration",
+     "chars": 693,
+     "n": 44,
+     "examples": [
+      "\"ass Glob {\\n    absolute;\\n    cwd;\\n    ro\" @ token PropertyDefinition",
+      "\" absolute;\\n    cwd;\\n    root;\\n    dot;\\n \" @ token PropertyDefinition",
+      "\";\\n    cwd;\\n    root;\\n    dot;\\n    dotRel\" @ token PropertyDefinition"
+     ]
+    },
+    {
+     "type": "ForStatement>IfStatement",
+     "chars": 485,
+     "n": 6,
+     "examples": [
+      "\"opts))\\n        if (v != null)\\n          \" @ token if",
+      "\"tries)\\n        if (knownKey in knownProp\" @ token if",
+      "\"nKeys)\\n        if (!knownKeys.includes(k\" @ token if"
+     ]
+    },
+    {
+     "type": "UnaryExpression>typeof",
+     "chars": 462,
+     "n": 77,
+     "examples": [
+      "\"val) {\\n    if (typeof val === \\\"boolean\\\")\" @ token typeof",
+      "\"lue != null && typeof value !== \\\"string\\\"\" @ token typeof",
+      "\"== \\\"string\\\" && typeof value !== \\\"boolean\" @ token typeof"
+     ]
+    },
+    {
+     "type": "ObjectPattern",
+     "chars": 441,
+     "n": 70,
+     "examples": [
+      "\"(const {\\n      value,\\n      valid\\n    } \" @ token VariableDefinition",
+      "\"\\n  const {\\n    scope\\n  } = path;\\n  const\" @ token VariableDefinition",
+      "\"\\n  const {\\n    node\\n  } = path;\\n  const \" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "UnaryExpression>MemberExpression",
+     "chars": 434,
+     "n": 25,
+     "examples": [
+      "\"\\n\\t\\t}\\n\\n\\t\\tdelete config.extends;\\n\\t\\tconst f\" @ token VariableName",
+      "\"lues || typeof schema.values !== 'object\" @ token VariableName",
+      "\" return typeof schema.size === 'number' \" @ token VariableName"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ArrowFunction",
+     "chars": 50010,
+     "n": 120
+    },
+    {
+     "type": "ExportDeclaration",
+     "chars": 16572,
+     "n": 110
+    },
+    {
+     "type": "FunctionExpression",
+     "chars": 15279,
+     "n": 82
+    },
+    {
+     "type": "ConditionalExpression",
+     "chars": 13105,
+     "n": 133
+    },
+    {
+     "type": "NewExpression",
+     "chars": 6162,
+     "n": 136
+    },
+    {
+     "type": "ImportDeclaration",
+     "chars": 5043,
+     "n": 101
+    },
+    {
+     "type": "AwaitExpression",
+     "chars": 1054,
+     "n": 16
+    },
+    {
+     "type": "TemplateString",
+     "chars": 843,
+     "n": 24
+    },
+    {
+     "type": "PostfixExpression",
+     "chars": 366,
+     "n": 68
+    }
+   ],
+   "correctness": {
+    "files": 30,
+    "edits": 600,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "node_modules/ajv-formats/node_modules/ajv/dist/core.js",
+    "lines": 618,
+    "typedEditMedianMs": 61.51
+   }
+  },
+  "js-node_modules-examples": {
+   "note": "up to 40 example/demo .js sampled (seed 11) from 48 files: the nearest thing to beginner-style programs found locally",
+   "language": "javascript",
+   "files": 40,
+   "lines": 758,
+   "chars": 12529,
+   "coverage": {
+    "real": 61.4,
+    "opaque": 32.7,
+    "fallback": 5.9
+   },
+   "topStatements": {
+    "fully": 118,
+    "partly": 78,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 128,
+    "partly": 88,
+    "none": 94
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 9.1,
+   "tableLines": {
+    "file": 82,
+    "nodes": 37,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 363,
+     "n": 26,
+     "examples": [
+      "\"es, tokens } = parseArgs({ options, toke\" @ token VariableName",
+      "\"es, tokens } = parseArgs({ options, toke\" @ token VariableName",
+      "\"es, tokens } = parseArgs({ options, toke\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>VariableDefinition",
+     "chars": 120,
+     "n": 21,
+     "examples": [
+      "\"ire('fs'),\\n    stream = require('stream'\" @ token VariableDefinition",
+      "\"'stream'),\\n    needle = require('./../')\" @ token VariableDefinition",
+      "\"ire('fs'),\\n    needle = require('./..'),\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ObjectPattern",
+     "chars": 92,
+     "n": 12,
+     "examples": [
+      "\"ackage\\nconst { parseArgs } = require('..\" @ token VariableDefinition",
+      "\"},\\n};\\n\\nconst { values, tokens } = parseA\" @ token VariableDefinition",
+      "\"ackage\\nconst { parseArgs } = require('..\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ThrowStatement",
+     "chars": 91,
+     "n": 1,
+     "examples": [
+      "\"ken) {\\n  throw new Error(`Option value f\" @ token new"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ObjectPattern",
+     "chars": 35,
+     "n": 5,
+     "examples": [
+      "\"onst { values, tokens } = parseArgs({ op\" @ token VariableDefinition",
+      "\"onst { values, tokens } = parseArgs({ op\" @ token VariableDefinition",
+      "\"onst { values, tokens } = parseArgs({ op\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 28,
+     "n": 4,
+     "examples": [
+      "\"options = {\\n  'color': { type: 'boolean'\" @ token String",
+      "\"boolean' },\\n  'no-color': { type: 'boole\" @ token String",
+      "\"boolean' },\\n  'logfile': { type: 'string\" @ token String"
+     ]
+    },
+    {
+     "type": "Block>ThrowStatement",
+     "chars": 5,
+     "n": 1,
+     "examples": [
+      "\"(badToken) {\\n  throw new Error(`Option v\" @ token throw"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\" index);\\n    } else {\\n\\n        writeStre\" @ token else"
+     ]
+    },
+    {
+     "type": "Property>RegExp",
+     "chars": 2,
+     "n": 1,
+     "examples": [
+      "\"      regex: /^x/i,\\n        buf: Buffer.\" @ token RegExp"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "FunctionExpression",
+     "chars": 2871,
+     "n": 39
+    },
+    {
+     "type": "ArrowFunction",
+     "chars": 943,
+     "n": 11
+    },
+    {
+     "type": "NewExpression",
+     "chars": 153,
+     "n": 6
+    },
+    {
+     "type": "TemplateString",
+     "chars": 124,
+     "n": 5
+    }
+   ],
+   "correctness": {
+    "files": 30,
+    "edits": 600,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "node_modules/needle/examples/stream-multiple/stream-multiple.js",
+    "lines": 50,
+    "typedEditMedianMs": 3.83
+   }
+  },
+  "py-stdlib-library": {
+   "note": "~200 .py sampled (seed 5) from 597 files of the standard library of /Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6 (Python 3.6): library code",
+   "language": "python",
+   "files": 200,
+   "lines": 90370,
+   "chars": 1736020,
+   "coverage": {
+    "real": 75.7,
+    "opaque": 7,
+    "fallback": 17.3
+   },
+   "topStatements": {
+    "fully": 1634,
+    "partly": 1687,
+    "none": 860
+   },
+   "allStatements": {
+    "fully": 24571,
+    "partly": 9778,
+    "none": 8329
+   },
+   "errorNodes": 29,
+   "filesWithErrors": 10,
+   "parseBuildMsPer1000Lines": 11,
+   "tableLines": {
+    "file": 74,
+    "nodes": 32,
+    "rules": 8
+   },
+   "missingTop25": [
+    {
+     "type": "TryStatement",
+     "chars": 107626,
+     "n": 742,
+     "examples": [
+      "\"]\\nelse:\\n    try:\\n        _locale.CODESET\" @ token :",
+      "\"\\\"\\\"\\\"\\n        try:\\n            self.throw(\" @ token :",
+      "\"\\\"\\\"\\\"\\n        try:\\n            await self.\" @ token :"
+     ]
+    },
+    {
+     "type": "DecoratedStatement",
+     "chars": 41264,
+     "n": 174,
+     "examples": [
+      "\"ractmethod\\n    def __hash__(self):\\n     \" @ token def",
+      "\"lassmethod\\n    def __subclasshook__(cls,\" @ token def",
+      "\"ractmethod\\n    def __await__(self):\\n    \" @ token def"
+     ]
+    },
+    {
+     "type": "RaiseStatement",
+     "chars": 35866,
+     "n": 781,
+     "examples": [
+      "\"         raise KeyError(value)\\n        s\" @ token VariableName",
+      "\"         raise TypeError(\\\"descriptor 'up\" @ token VariableName",
+      "\"         raise TypeError('update expecte\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>ParenthesizedExpression",
+     "chars": 23078,
+     "n": 43,
+     "examples": [
+      "\"               b\\\"abcdefghijklmnopqrstuvw\" @ token String",
+      "\"             \\\"(e.g. setup.py sdist uploa\" @ token String",
+      "\"             \\\"'user_options' attribute (\" @ token String"
+     ]
+    },
+    {
+     "type": "WithStatement",
+     "chars": 19078,
+     "n": 107,
+     "examples": [
+      "\":\\n        with memoryview(b) as view, vi\" @ token VariableName",
+      "\"cache\\n    with _cache_lock:\\n        loca\" @ token VariableName",
+      "\"gv[1]\\n    with open(fn, 'r') as f:\\n     \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ClassDefinition>ArgList",
+     "chars": 11456,
+     "n": 669,
+     "examples": [
+      "\"class Hashable(metaclass=ABCMeta):\\n\\n    \" @ token VariableName",
+      "\"lass Awaitable(metaclass=ABCMeta):\\n\\n    \" @ token VariableName",
+      "\"lass Coroutine(Awaitable):\\n\\n    __slots_\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ContinuedString",
+     "chars": 7469,
+     "n": 144,
+     "examples": [
+      "\"               \\\"asynchronous generator {\" @ token String",
+      "\"               \\\"loop.set_debug(True): ca\" @ token String",
+      "\"               \\\"loop.set_debug(False): c\" @ token String"
+     ]
+    },
+    {
+     "type": "Body>TryStatement",
+     "chars": 7272,
+     "n": 692,
+     "examples": [
+      "\")[1]\\nelse:\\n    try:\\n        _locale.CODE\" @ token try",
+      "\"   \\\"\\\"\\\"\\n        try:\\n            self.thr\" @ token try",
+      "\"   \\\"\\\"\\\"\\n        try:\\n            await se\" @ token try"
+     ]
+    },
+    {
+     "type": "AssignStatement>CallExpression",
+     "chars": 6982,
+     "n": 328,
+     "examples": [
+      "\"year, julian = _calc_julian_from_V(iso_y\" @ token VariableName",
+      "\"tt, fraction = _strptime(data_string, fo\" @ token VariableName",
+      "\"fmant, expon = math.frexp(x)\\n        if \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 4184,
+     "n": 1046,
+     "examples": [
+      "\"ultlocale()[1]\\nelse:\\n    try:\\n        _l\" @ token else",
+      "\"lear()\\n        else:\\n            if not \" @ token else",
+      "\"               else:\\n                   \" @ token else"
+     ]
+    },
+    {
+     "type": "Body>RaiseStatement",
+     "chars": 3926,
+     "n": 782,
+     "examples": [
+      "\"f:\\n            raise KeyError(value)\\n   \" @ token raise",
+      "\"s:\\n            raise TypeError(\\\"descript\" @ token raise",
+      "\"1:\\n            raise TypeError('update e\" @ token raise"
+     ]
+    },
+    {
+     "type": "IfStatement>elif",
+     "chars": 2664,
+     "n": 666,
+     "examples": [
+      "\"y]\\n            elif hasattr(other, \\\"keys\" @ token elif",
+      "\"  pass\\n        elif whence == io.SEEK_CU\" @ token elif",
+      "\"offset\\n        elif whence == io.SEEK_EN\" @ token elif"
+     ]
+    },
+    {
+     "type": "AssertStatement",
+     "chars": 2592,
+     "n": 96,
+     "examples": [
+      "\"        assert isinstance(ok, bool)\\n    \" @ token VariableName",
+      "\"        assert self.sockets is not None\\n\" @ token VariableName",
+      "\"        assert self._active_count > 0\\n  \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "DeleteStatement",
+     "chars": 2358,
+     "n": 142,
+     "examples": [
+      "\"esourceWarning\\ndel _coro\\n## asynchronous\" @ token del",
+      "\"or = type(_ag)\\ndel _ag\\n\\n\\n### ONE-TRICK P\" @ token del",
+      "\"y]\\n        del self[key]\\n        return \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>VariableName",
+     "chars": 2358,
+     "n": 417,
+     "examples": [
+      "\"  key, value = item\\n        try:\\n       \" @ token VariableName",
+      "\" self, *args = args\\n        if len(args)\" @ token VariableName",
+      "\"our = minute = second = fraction = 0\\n   \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Decorator",
+     "chars": 1817,
+     "n": 174,
+     "examples": [
+      "\"s__ = ()\\n\\n    @abstractmethod\\n    def __\" @ token VariableName",
+      "\"return 0\\n\\n    @classmethod\\n    def __sub\" @ token VariableName",
+      "\"s__ = ()\\n\\n    @abstractmethod\\n    def __\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>None",
+     "chars": 1580,
+     "n": 395,
+     "examples": [
+      "\"f start is not None and start < 0:\\n     \" @ token None",
+      "\"if stop is not None and stop < 0:\\n      \" @ token None",
+      "\"if size is not None:\\n        raise error\" @ token None"
+     ]
+    },
+    {
+     "type": "ForStatement>in",
+     "chars": 1442,
+     "n": 721,
+     "examples": [
+      "\"    for method in methods:\\n        for B\" @ token in",
+      "\"\\n        for B in mro:\\n            if me\" @ token in",
+      "\"      for elem in self:\\n            if e\" @ token in"
+     ]
+    },
+    {
+     "type": "BinaryExpression>not",
+     "chars": 1278,
+     "n": 426,
+     "examples": [
+      "\"   if start is not None and start < 0:\\n \" @ token not",
+      "\"    if stop is not None and stop < 0:\\n  \" @ token not",
+      "\"    if size is not None:\\n        raise e\" @ token not"
+     ]
+    },
+    {
+     "type": "BinaryExpression>MemberExpression",
+     "chars": 1274,
+     "n": 94,
+     "examples": [
+      "\"k._loop is not self._loop:\\n            r\" @ token VariableName",
+      "\"ername' not in self._extra:\\n            \" @ token VariableName",
+      "\"CCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAP\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>VariableName",
+     "chars": 1213,
+     "n": 153,
+     "examples": [
+      "\"if elem not in other:\\n                re\" @ token VariableName",
+      "\"if elem not in self:\\n                ret\" @ token VariableName",
+      "\"f value not in other)\\n\\n    def __rsub__(\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>MemberExpression",
+     "chars": 1155,
+     "n": 100,
+     "examples": [
+      "\" self[n-i-1] = self[n-i-1], self[i]\\n\\n   \" @ token VariableName",
+      "\"= self[n-i-1], self[i]\\n\\n    def extend(s\" @ token VariableName",
+      "\"name, gmtoff = tt[-2:]\\n    args = tt[:6]\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>SetExpression",
+     "chars": 1118,
+     "n": 8,
+     "examples": [
+      "\"x0008\\n    0x1, 0x2, 0x3, 0x4, 0x5, 0x6, \" @ token Number",
+      "\" = {'secure', 'httponly'}\\n\\n    def __ini\" @ token String",
+      "\"S = {\\\"class\\\", \\\"def\\\", \\\"elif\\\", \\\"else\\\", \\\"ex\" @ token String"
+     ]
+    },
+    {
+     "type": "ForStatement>Body",
+     "chars": 996,
+     "n": 27,
+     "examples": [
+      "\"e:\\n            return NotImplemented\\n   \" @ token return",
+      "\"e:\\n            return ''\\n        regex =\" @ token return",
+      "\" else:\\n        if symbol != \\\"eval\\\":\\n    \" @ token if"
+     ]
+    },
+    {
+     "type": "ForStatement>CallExpression",
+     "chars": 954,
+     "n": 63,
+     "examples": [
+      "\" key, value in kwds.items():\\n           \" @ token VariableName",
+      "\" index, arg in enumerate([data_string, f\" @ token VariableName",
+      "\", tz_values in enumerate(locale_time.tim\" @ token VariableName"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "DictionaryExpression",
+     "chars": 53535,
+     "n": 355
+    },
+    {
+     "type": "TupleExpression",
+     "chars": 37031,
+     "n": 1222
+    },
+    {
+     "type": "ImportStatement",
+     "chars": 20582,
+     "n": 1009
+    },
+    {
+     "type": "ArrayComprehensionExpression",
+     "chars": 5952,
+     "n": 121
+    },
+    {
+     "type": "ConditionalExpression",
+     "chars": 2465,
+     "n": 66
+    },
+    {
+     "type": "YieldStatement",
+     "chars": 1126,
+     "n": 58
+    },
+    {
+     "type": "FormatString",
+     "chars": 167,
+     "n": 7
+    },
+    {
+     "type": "AwaitExpression",
+     "chars": 21,
+     "n": 1
+    }
+   ],
+   "correctness": {
+    "files": 30,
+    "edits": 600,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "stdlib/tkinter/__init__.py",
+    "lines": 4006,
+    "typedEditMedianMs": 2.93
+   }
+  },
+  "py-turtledemo": {
+   "note": "the standard library's turtledemo programs: beginner-style, the best local match",
+   "language": "python",
+   "files": 21,
+   "lines": 2429,
+   "chars": 41598,
+   "coverage": {
+    "real": 90.2,
+    "opaque": 5.3,
+    "fallback": 4.5
+   },
+   "topStatements": {
+    "fully": 94,
+    "partly": 71,
+    "none": 39
+   },
+   "allStatements": {
+    "fully": 1298,
+    "partly": 264,
+    "none": 100
+   },
+   "errorNodes": 5,
+   "filesWithErrors": 3,
+   "parseBuildMsPer1000Lines": 9.9,
+   "tableLines": {
+    "file": 74,
+    "nodes": 32,
+    "rules": 8
+   },
+   "missingTop25": [
+    {
+     "type": "TryStatement",
+     "chars": 723,
+     "n": 5,
+     "examples": [
+      "\"NG\\n\\n        try:\\n            result = se\" @ token :",
+      "\"te/60.0\\n    try:\\n        tracer(False)  \" @ token :",
+      "\"            try:\\n                b.__nex\" @ token :"
+     ]
+    },
+    {
+     "type": "AssignStatement>CallExpression",
+     "chars": 325,
+     "n": 22,
+     "examples": [
+      "\"turtle._root = Tk()\\n        root.title('\" @ token VariableName",
+      "\"= text_frame = Frame(root)\\n        self.\" @ token VariableName",
+      "\".text = text = Text(text_frame, name='te\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>in",
+     "chars": 138,
+     "n": 69,
+     "examples": [
+      "\"     for entry in getExampleEntries():\\n \" @ token in",
+      "\"      for size in font_sizes:\\n          \" @ token in",
+      "\"bel, help_file in help_entries:\\n        \" @ token in"
+     ]
+    },
+    {
+     "type": "ScopeStatement",
+     "chars": 96,
+     "n": 9,
+     "examples": [
+      "\"():\\n    global second_hand, minute_hand,\" @ token VariableName",
+      "\"():\\n    global screen, red, green, blue\\n\" @ token VariableName",
+      "\"():\\n    global t1, t2, t3\\n    ht(); penu\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ClassDefinition>ArgList",
+     "chars": 89,
+     "n": 15,
+     "examples": [
+      "\"ass DemoWindow(object):\\n\\n    def __init_\" @ token VariableName",
+      "\"class Designer(Turtle):\\n\\n    def design(\" @ token VariableName",
+      "\"ss ColorTurtle(Turtle):\\n\\n    def __init_\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "StatementGroup",
+     "chars": 77,
+     "n": 4,
+     "examples": [
+      "\"cale):\\n        self.forward(s); self.lef\" @ token VariableName",
+      "\"pto(x, y):\\n    penup(); goto(x,y)\\n\\ndef l\" @ token VariableName",
+      "\"t1, t2, t3\\n    ht(); penup(); goto(0, -2\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Body>ScopeStatement",
+     "chars": 54,
+     "n": 9,
+     "examples": [
+      "\"f setup():\\n    global second_hand, minut\" @ token global",
+      "\"ef main():\\n    global screen, red, green\" @ token global",
+      "\"ef main():\\n    global t1, t2, t3\\n    ht(\" @ token global"
+     ]
+    },
+    {
+     "type": "ForStatement>VariableName",
+     "chars": 48,
+     "n": 10,
+     "examples": [
+      "\", help_file in help_entries:\\n           \" @ token VariableName",
+      "\"n second_hand, minute_hand, hour_hand:\\n \" @ token VariableName",
+      "\", minute_hand, hour_hand:\\n        hand.r\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "WithStatement",
+     "chars": 46,
+     "n": 1,
+     "examples": [
+      "\"]\\n        with open(self.module.__file__\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Body>TryStatement",
+     "chars": 45,
+     "n": 5,
+     "examples": [
+      "\"NNING\\n\\n        try:\\n            result =\" @ token try",
+      "\"inute/60.0\\n    try:\\n        tracer(False\" @ token try",
+      "\"t:\\n            try:\\n                b.__\" @ token try"
+     ]
+    },
+    {
+     "type": "ForStatement>CallExpression",
+     "chars": 38,
+     "n": 2,
+     "examples": [
+      "\" branchlist in list(zip(tlist,branchlist\" @ token VariableName",
+      "\"   for i, t in enumerate(target):\\n      \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ContinuedString",
+     "chars": 36,
+     "n": 1,
+     "examples": [
+      "\"         '-e', 'set frontmost of the fir\" @ token String"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 24,
+     "n": 6,
+     "examples": [
+      "\"size()\\n        else:\\n            return \" @ token else",
+      "\"us-25)\\n        else:\\n            dot(3)\\n\" @ token else",
+      "\"farbe)\\n        else:\\n            self.di\" @ token else"
+     ]
+    },
+    {
+     "type": "ReturnStatement>BinaryExpression",
+     "chars": 20,
+     "n": 1,
+     "examples": [
+      "\" + WUNIT // 2, SCREENHEIGHT // 2 - y - H\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>ArrayExpression",
+     "chars": 17,
+     "n": 1,
+     "examples": [
+      "\".state not in [Nim.CREATED, Nim.OVER]:\\n \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "MemberExpression>ContinuedString",
+     "chars": 14,
+     "n": 1,
+     "examples": [
+      "\"              'unix id is {} to true'.fo\" @ token String"
+     ]
+    },
+    {
+     "type": "AssignStatement>VariableName",
+     "chars": 12,
+     "n": 7,
+     "examples": [
+      "\"self._canvas = canvas = turtle.ScrolledC\" @ token VariableName",
+      "\"\\n        h, x, y = int(heading()), round\" @ token VariableName",
+      "\"\\n        h, x, y = int(heading()), round\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>MemberExpression",
+     "chars": 12,
+     "n": 2,
+     "examples": [
+      "\"d = state[0] ^ state[1] ^ state[2]\\n    i\" @ token VariableName",
+      "\"] ^ state[1] ^ state[2]\\n    if xored == \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>MemberExpression",
+     "chars": 11,
+     "n": 1,
+     "examples": [
+      "\".root = root = turtle._root = Tk()\\n     \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "IfStatement>elif",
+     "chars": 8,
+     "n": 2,
+     "examples": [
+      "\"esult)\\n        elif self.state == EVENTD\" @ token elif",
+      "\"over()\\n        elif self.player == 0:\\n  \" @ token elif"
+     ]
+    },
+    {
+     "type": "Body>WithStatement",
+     "chars": 6,
+     "n": 1,
+     "examples": [
+      "\"dname]\\n        with open(self.module.__f\" @ token with"
+     ]
+    },
+    {
+     "type": "BinaryExpression>VariableName",
+     "chars": 5,
+     "n": 1,
+     "examples": [
+      "\"s = state[z] ^ xored\\n        if s <= sta\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ReturnStatement>VariableName",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"\\n    return z, rand\\n\\n\\nclass NimModel(obj\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>None",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"if msg2 is not None:\\n            self.wr\" @ token None"
+     ]
+    },
+    {
+     "type": "BinaryExpression>not",
+     "chars": 3,
+     "n": 1,
+     "examples": [
+      "\"    if msg2 is not None:\\n            sel\" @ token not"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ImportStatement",
+     "chars": 993,
+     "n": 43
+    },
+    {
+     "type": "TupleExpression",
+     "chars": 674,
+     "n": 42
+    },
+    {
+     "type": "ArrayComprehensionExpression",
+     "chars": 282,
+     "n": 5
+    },
+    {
+     "type": "ConditionalExpression",
+     "chars": 135,
+     "n": 5
+    },
+    {
+     "type": "DictionaryExpression",
+     "chars": 116,
+     "n": 6
+    },
+    {
+     "type": "YieldStatement",
+     "chars": 24,
+     "n": 3
+    }
+   ],
+   "correctness": {
+    "files": 21,
+    "edits": 420,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "stdlib/turtledemo/__main__.py",
+    "lines": 387,
+    "typedEditMedianMs": 2.45
+   }
+  }
+ }
+}

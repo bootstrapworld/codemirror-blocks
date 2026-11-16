@@ -60,3 +60,16 @@ describe.each(Object.keys(CONTEXTS))("templates: %s", (l) => {
     expect(ed.templates().map((t) => t.name)).toEqual(names);
   });
 });
+
+// found by the corpus run (cow-game.rkt): a template written far from the viewport opened its box in a
+// detached element, which then showed up as a stray <input> and made the page differ from a fresh drawing
+test("a template inserted outside the viewport leaves no edit box behind", () => {
+  const text = Array.from({ length: 600 }, (_, i) => `(f ${i} 2)`).join("\n");
+  const ed = make("scheme", text);
+  const lit = all(ed).filter((n) => n.kind === "literal").pop()!;
+  const found = ed.insertTemplate("boolean", lit)!;
+  expect(found).not.toBeNull();
+  expect(ed.renderer.element(found).querySelector("input")).toBeNull();
+  expect(ed.view.dom.querySelector("input.blocks-edit")).toBeNull();
+  expect(checkLezerEditor(ed)).toEqual([]);
+});
