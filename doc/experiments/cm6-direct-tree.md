@@ -1474,3 +1474,16 @@ focus EVENTS; it is not evidence about what NVDA, JAWS or VoiceOver say. Results
 - Found, not fixed: a tap on a call block's own area (its border, away from any child) was taken by Chromium's touch adjustment as a tap on a neighbouring gap and opened an insertion box instead of the whole-block
   box, so the second-tap-on-a-compound case is tested in jsdom only. A real finger is wide: small blocks and the 8-px gaps are hard targets (judgement; the gaps could be larger on touch screens).
 - Not tried: a real device, a pen, iOS Safari (Pointer Events and `touchmove` cancelling differ), two-finger gestures, the virtual keyboard moving the page when a box opens.
+
+### Fifth round: what is not done, and what I would do next
+- Per-edit cost that grows with the number of roots (3 to 4 ms at 3000 lines, unchanged by step 2): the map of old roots with `mapPos`, the merged error list, `fromTree` collecting every top-level node, the decoration filter.
+  Next: make each proportional to the roots near the change.
+- The anchors rule is a heuristic (as the root-level rule is); bails are about 1 percent of reconciled roots in the fuzzers. A bail redraws one root, which costs focus identity there.
+- Parity table "no" rows (see 1c): collapse and expand (and `aria-expanded` that means something), search, help dialog, drag from a toolbar, comments attached to blocks, sounds, the activity log, click-to-edit a literal with the mouse.
+- Selection: by node object, so a block that an edit rebuilds leaves it; no keyboard way to select a range; Delete with a selection keeps the old editor's "outermost" rule but the focus after it is the first removed block's place only.
+- Cmd/Ctrl-Enter: blur cancels (the old editor commits on blur); a text that does not parse is accepted, not shown with an error.
+- Accessibility: no real screen reader (NVDA, JAWS, VoiceOver) was run: everything above is about the tree and the events. The accessible names have no trailing pause comma; the pieces of a template string are plain text; a block and its
+  visible text are both in the tree.
+- Touch: one language, Chromium only, no real device; the gaps are small targets for a finger; tap on a call's own area is taken by touch adjustment.
+- Not re-measured this round: bundle sizes (the code grew by about 25 KB of source: selection, edit-as-text, anchors, chunks, pieces, touch).
+- Preact was not checked (the package has no React or Preact).
