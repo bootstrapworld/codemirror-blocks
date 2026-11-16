@@ -145,7 +145,7 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     collect(n, [], cands, text);
     const seen: Record<string, number> = {};
     const taken: [Cand, number][] = cands.map((cd, i) => {
-      const slotIx = pick(row, cd, i, seen);
+      const slotIx = pick(row, cd, i, seen, n);
       return [cd, slotIx];
     });
     taken.forEach(([cd, si]) => {
@@ -171,21 +171,35 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     return b;
   }
 
-  /** index of the slot taking candidate `cd` (the i-th), or -1 */
-  function pick(row: BlockRow, cd: Cand, i: number, seen: Record<string, number>): number {
+  /**
+   * index of the slot taking candidate `cd` (the i-th), or -1. Takes that name a TYPE are tried before
+   * positional ones (`#n`, `@before:Tok`, `@after:Tok`), so that `Body` is not mistaken for "whatever follows `in`".
+   */
+  function pick(row: BlockRow, cd: Cand, i: number, seen: Record<string, number>, n: SyntaxNode): number {
     const slots = row.slots ?? [];
     const occ: Record<string, number> = {};
     for (const p of new Set(cd.path)) occ[p] = seen[p] = (seen[p] ?? -1) + 1;
-    let star = -1;
-    for (let s = 0; s < slots.length; s++) {
-      const take = slots[s].take;
-      if (take === "*") {
-        star = s;
-        continue;
+    const matches = (t: string): boolean => {
+      if (t.startsWith("@")) {
+        const [kind, tok] = t.slice(1).split(":");
+        const at = n.getChild(tok);
+        return !!at && (kind === "before" ? cd.node.to <= at.from : cd.node.from >= at.to);
       }
-      for (const t of take) {
-        const [ty, nth] = t.split("#");
-        if (nth === undefined ? cd.path.includes(ty) : ty === "" ? i === +nth : occ[ty] === +nth) return s;
+      const [ty, nth] = t.split("#");
+      return nth === undefined ? cd.path.includes(ty) : ty === "" ? i === +nth : occ[ty] === +nth;
+    };
+    let star = -1;
+    for (const pass of [0, 1]) {
+      for (let s = 0; s < slots.length; s++) {
+        const take = slots[s].take;
+        if (take === "*") {
+          star = s;
+          continue;
+        }
+        for (const t of take) {
+          const typed = !t.startsWith("@") && !t.startsWith("#") && !/^[^#]+#/.test(t) ? true : false;
+          if ((pass === 0) === typed && matches(t)) return s;
+        }
       }
     }
     return star;

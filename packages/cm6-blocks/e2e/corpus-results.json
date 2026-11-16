@@ -5322,5 +5322,1665 @@
     }
    ]
   }
+ },
+ "py-P1": {
+  "py-stdlib-library": {
+   "note": "~200 .py sampled (seed 5) from 597 files of the standard library of /Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6 (Python 3.6): library code",
+   "language": "python",
+   "files": 200,
+   "lines": 90370,
+   "chars": 1736020,
+   "coverage": {
+    "real": 86.2,
+    "opaque": 7.6,
+    "fallback": 6.2
+   },
+   "topStatements": {
+    "fully": 1661,
+    "partly": 1716,
+    "none": 804
+   },
+   "allStatements": {
+    "fully": 29869,
+    "partly": 11283,
+    "none": 1526
+   },
+   "errorNodes": 29,
+   "filesWithErrors": 10,
+   "parseBuildMsPer1000Lines": 8.2,
+   "tableLines": {
+    "file": 79,
+    "nodes": 37,
+    "rules": 8
+   },
+   "missingTop25": [
+    {
+     "type": "AssignStatement>ParenthesizedExpression",
+     "chars": 23108,
+     "n": 44,
+     "examples": [
+      "\"               b\\\"abcdefghijklmnopqrstuvw\" @ token String",
+      "\"             \\\"(e.g. setup.py sdist uploa\" @ token String",
+      "\"             \\\"'user_options' attribute (\" @ token String"
+     ]
+    },
+    {
+     "type": "ContinuedString",
+     "chars": 15124,
+     "n": 282,
+     "examples": [
+      "\"aise TypeError(\\\"descriptor 'update' of '\" @ token String",
+      "\"ortedOperation(\\\"Seeking is only supporte\" @ token String",
+      "\"ortedOperation(\\\"The underlying file obje\" @ token String"
+     ]
+    },
+    {
+     "type": "ClassDefinition>ArgList",
+     "chars": 11477,
+     "n": 672,
+     "examples": [
+      "\"class Hashable(metaclass=ABCMeta):\\n\\n    \" @ token VariableName",
+      "\"lass Awaitable(metaclass=ABCMeta):\\n\\n    \" @ token VariableName",
+      "\"lass Coroutine(Awaitable):\\n\\n    __slots_\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>CallExpression",
+     "chars": 8970,
+     "n": 421,
+     "examples": [
+      "\"year, julian = _calc_julian_from_V(iso_y\" @ token VariableName",
+      "\"tt, fraction = _strptime(data_string, fo\" @ token VariableName",
+      "\"fmant, expon = math.frexp(x)\\n        if \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "TryStatement>except",
+     "chars": 5064,
+     "n": 844,
+     "examples": [
+      "\"le.CODESET\\n    except AttributeError:\\n  \" @ token except",
+      "\"rExit)\\n        except (GeneratorExit, St\" @ token except",
+      "\"rExit)\\n        except (GeneratorExit, St\" @ token except"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 4680,
+     "n": 1170,
+     "examples": [
+      "\"ultlocale()[1]\\nelse:\\n    try:\\n        _l\" @ token else",
+      "\"lear()\\n        else:\\n            if not \" @ token else",
+      "\"               else:\\n                   \" @ token else"
+     ]
+    },
+    {
+     "type": "AssertStatement",
+     "chars": 2993,
+     "n": 113,
+     "examples": [
+      "\"        assert not do_setlocale\\n        \" @ token not",
+      "\"        assert isinstance(ok, bool)\\n    \" @ token VariableName",
+      "\"        assert self.sockets is not None\\n\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "DeleteStatement",
+     "chars": 2945,
+     "n": 175,
+     "examples": [
+      "\"esourceWarning\\ndel _coro\\n## asynchronous\" @ token del",
+      "\"or = type(_ag)\\ndel _ag\\n\\n\\n### ONE-TRICK P\" @ token del",
+      "\"           del self[key]\\n            ret\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "IfStatement>elif",
+     "chars": 2808,
+     "n": 702,
+     "examples": [
+      "\"y]\\n            elif hasattr(other, \\\"keys\" @ token elif",
+      "\"  pass\\n        elif whence == io.SEEK_CU\" @ token elif",
+      "\"offset\\n        elif whence == io.SEEK_EN\" @ token elif"
+     ]
+    },
+    {
+     "type": "AssignStatement>VariableName",
+     "chars": 2718,
+     "n": 488,
+     "examples": [
+      "\"  key, value = item\\n        try:\\n       \" @ token VariableName",
+      "\" self, *args = args\\n        if len(args)\" @ token VariableName",
+      "\"our = minute = second = fraction = 0\\n   \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>None",
+     "chars": 1936,
+     "n": 484,
+     "examples": [
+      "\"  if tb is not None:\\n            val = v\" @ token None",
+      "\"  if tb is not None:\\n            val = v\" @ token None",
+      "\"  if tb is not None:\\n            val = v\" @ token None"
+     ]
+    },
+    {
+     "type": "ForStatement>in",
+     "chars": 1626,
+     "n": 813,
+     "examples": [
+      "\"    for method in methods:\\n        for B\" @ token in",
+      "\"\\n        for B in mro:\\n            if me\" @ token in",
+      "\"      for elem in self:\\n            if e\" @ token in"
+     ]
+    },
+    {
+     "type": "BinaryExpression>not",
+     "chars": 1551,
+     "n": 517,
+     "examples": [
+      "\"      if tb is not None:\\n            val\" @ token not",
+      "\"      if tb is not None:\\n            val\" @ token not",
+      "\"      if tb is not None:\\n            val\" @ token not"
+     ]
+    },
+    {
+     "type": "BinaryExpression>MemberExpression",
+     "chars": 1486,
+     "n": 112,
+     "examples": [
+      "\"             % type(arg).__name__)\\n     \" @ token VariableName",
+      "\"k._loop is not self._loop:\\n            r\" @ token VariableName",
+      "\"ername' not in self._extra:\\n            \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>MemberExpression",
+     "chars": 1397,
+     "n": 123,
+     "examples": [
+      "\" self[n-i-1] = self[n-i-1], self[i]\\n\\n   \" @ token VariableName",
+      "\"= self[n-i-1], self[i]\\n\\n    def extend(s\" @ token VariableName",
+      "\"name, gmtoff = tt[-2:]\\n    args = tt[:6]\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>VariableName",
+     "chars": 1388,
+     "n": 179,
+     "examples": [
+      "\"if elem not in other:\\n                re\" @ token VariableName",
+      "\"if elem not in self:\\n                ret\" @ token VariableName",
+      "\"f value not in other)\\n\\n    def __rsub__(\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>Body",
+     "chars": 1240,
+     "n": 33,
+     "examples": [
+      "\"e:\\n            return NotImplemented\\n   \" @ token return",
+      "\"e:\\n            return ''\\n        regex =\" @ token return",
+      "\"               sock.close()\\n            \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>CallExpression",
+     "chars": 1139,
+     "n": 75,
+     "examples": [
+      "\" key, value in kwds.items():\\n           \" @ token VariableName",
+      "\" index, arg in enumerate([data_string, f\" @ token VariableName",
+      "\", tz_values in enumerate(locale_time.tim\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>SetExpression",
+     "chars": 1126,
+     "n": 9,
+     "examples": [
+      "\"x0008\\n    0x1, 0x2, 0x3, 0x4, 0x5, 0x6, \" @ token Number",
+      "\" = {'secure', 'httponly'}\\n\\n    def __ini\" @ token String",
+      "\"S = {\\\"class\\\", \\\"def\\\", \\\"elif\\\", \\\"else\\\", \\\"ex\" @ token String"
+     ]
+    },
+    {
+     "type": "ReturnStatement>VariableName",
+     "chars": 1015,
+     "n": 197,
+     "examples": [
+      "\"   return key, value\\n\\n    def clear(self\" @ token VariableName",
+      "\"turn iso_year, ordinal\\n\\n\\ndef _strptime(d\" @ token VariableName",
+      "\"name, gmtoff), fraction\\n\\ndef _strptime_t\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>TupleExpression",
+     "chars": 965,
+     "n": 63,
+     "examples": [
+      "\"_zone not in (\\\"utc\\\", \\\"gmt\\\")):\\n          \" @ token String",
+      "\"mptype not in (b'NONE', b'ulaw', b'ULAW'\" @ token String",
+      "\"mptype not in (b'NONE', b'ulaw', b'ULAW'\" @ token String"
+     ]
+    },
+    {
+     "type": "BinaryExpression>ContinuedString",
+     "chars": 921,
+     "n": 54,
+     "examples": [
+      "\"              'to bind on address %r: %s\" @ token String",
+      "\"              \\\"a bytes or text string, n\" @ token String",
+      "\"              \\\"wrapper; another wrapper \" @ token String"
+     ]
+    },
+    {
+     "type": "TryStatement>finally",
+     "chars": 833,
+     "n": 119,
+     "examples": [
+      "\"ader()\\n        finally:\\n            # Pr\" @ token finally",
+      "\" break\\n        finally:\\n            self\" @ token finally",
+      "\" raise\\n        finally:\\n            futu\" @ token finally"
+     ]
+    },
+    {
+     "type": "ScopeStatement",
+     "chars": 774,
+     "n": 67,
+     "examples": [
+      "\"t\\\")\\n    global _main\\n    _main = False\\n \" @ token VariableName",
+      "\"rue\\n    global _interrupt\\n    if _interr\" @ token VariableName",
+      "\"        global _interrupt\\n        _inter\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Body>AssertStatement",
+     "chars": 678,
+     "n": 113,
+     "examples": [
+      "\"):\\n            assert not do_setlocale\\n \" @ token assert",
+      "\"d:\\n            assert isinstance(ok, boo\" @ token assert",
+      "\"self):\\n        assert self.sockets is no\" @ token assert"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "DictionaryExpression",
+     "chars": 54685,
+     "n": 383
+    },
+    {
+     "type": "TupleExpression",
+     "chars": 42487,
+     "n": 1459
+    },
+    {
+     "type": "ImportStatement",
+     "chars": 22404,
+     "n": 1091
+    },
+    {
+     "type": "ArrayComprehensionExpression",
+     "chars": 6802,
+     "n": 139
+    },
+    {
+     "type": "ConditionalExpression",
+     "chars": 2687,
+     "n": 73
+    },
+    {
+     "type": "YieldStatement",
+     "chars": 1976,
+     "n": 100
+    },
+    {
+     "type": "FormatString",
+     "chars": 199,
+     "n": 8
+    },
+    {
+     "type": "ExpressionStatement",
+     "chars": 31,
+     "n": 1
+    },
+    {
+     "type": "AwaitExpression",
+     "chars": 21,
+     "n": 1
+    }
+   ]
+  },
+  "py-turtledemo": {
+   "note": "the standard library's turtledemo programs: beginner-style, the best local match",
+   "language": "python",
+   "files": 21,
+   "lines": 2429,
+   "chars": 41598,
+   "coverage": {
+    "real": 91.9,
+    "opaque": 5.5,
+    "fallback": 2.6
+   },
+   "topStatements": {
+    "fully": 94,
+    "partly": 71,
+    "none": 39
+   },
+   "allStatements": {
+    "fully": 1326,
+    "partly": 275,
+    "none": 61
+   },
+   "errorNodes": 5,
+   "filesWithErrors": 3,
+   "parseBuildMsPer1000Lines": 11.7,
+   "tableLines": {
+    "file": 79,
+    "nodes": 37,
+    "rules": 8
+   },
+   "missingTop25": [
+    {
+     "type": "AssignStatement>CallExpression",
+     "chars": 325,
+     "n": 22,
+     "examples": [
+      "\"turtle._root = Tk()\\n        root.title('\" @ token VariableName",
+      "\"= text_frame = Frame(root)\\n        self.\" @ token VariableName",
+      "\".text = text = Text(text_frame, name='te\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>in",
+     "chars": 138,
+     "n": 69,
+     "examples": [
+      "\"     for entry in getExampleEntries():\\n \" @ token in",
+      "\"      for size in font_sizes:\\n          \" @ token in",
+      "\"bel, help_file in help_entries:\\n        \" @ token in"
+     ]
+    },
+    {
+     "type": "ScopeStatement",
+     "chars": 96,
+     "n": 9,
+     "examples": [
+      "\"():\\n    global second_hand, minute_hand,\" @ token VariableName",
+      "\"():\\n    global screen, red, green, blue\\n\" @ token VariableName",
+      "\"():\\n    global t1, t2, t3\\n    ht(); penu\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ClassDefinition>ArgList",
+     "chars": 89,
+     "n": 15,
+     "examples": [
+      "\"ass DemoWindow(object):\\n\\n    def __init_\" @ token VariableName",
+      "\"class Designer(Turtle):\\n\\n    def design(\" @ token VariableName",
+      "\"ss ColorTurtle(Turtle):\\n\\n    def __init_\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "StatementGroup",
+     "chars": 77,
+     "n": 4,
+     "examples": [
+      "\"cale):\\n        self.forward(s); self.lef\" @ token VariableName",
+      "\"pto(x, y):\\n    penup(); goto(x,y)\\n\\ndef l\" @ token VariableName",
+      "\"t1, t2, t3\\n    ht(); penup(); goto(0, -2\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Body>ScopeStatement",
+     "chars": 54,
+     "n": 9,
+     "examples": [
+      "\"f setup():\\n    global second_hand, minut\" @ token global",
+      "\"ef main():\\n    global screen, red, green\" @ token global",
+      "\"ef main():\\n    global t1, t2, t3\\n    ht(\" @ token global"
+     ]
+    },
+    {
+     "type": "ForStatement>VariableName",
+     "chars": 48,
+     "n": 10,
+     "examples": [
+      "\", help_file in help_entries:\\n           \" @ token VariableName",
+      "\"n second_hand, minute_hand, hour_hand:\\n \" @ token VariableName",
+      "\", minute_hand, hour_hand:\\n        hand.r\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>CallExpression",
+     "chars": 38,
+     "n": 2,
+     "examples": [
+      "\" branchlist in list(zip(tlist,branchlist\" @ token VariableName",
+      "\"   for i, t in enumerate(target):\\n      \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ContinuedString",
+     "chars": 36,
+     "n": 1,
+     "examples": [
+      "\"         '-e', 'set frontmost of the fir\" @ token String"
+     ]
+    },
+    {
+     "type": "TryStatement>except",
+     "chars": 36,
+     "n": 6,
+     "examples": [
+      "\"= DONE\\n        except turtle.Terminator:\" @ token except",
+      "\"tick, 100)\\n    except Terminator:\\n      \" @ token except",
+      "\"()\\n            except:\\n                d\" @ token except"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 28,
+     "n": 7,
+     "examples": [
+      "\"size()\\n        else:\\n            return \" @ token else",
+      "\"EN\\n            else:\\n                sel\" @ token else",
+      "\"us-25)\\n        else:\\n            dot(3)\\n\" @ token else"
+     ]
+    },
+    {
+     "type": "ReturnStatement>BinaryExpression",
+     "chars": 20,
+     "n": 1,
+     "examples": [
+      "\" + WUNIT // 2, SCREENHEIGHT // 2 - y - H\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>ArrayExpression",
+     "chars": 17,
+     "n": 1,
+     "examples": [
+      "\".state not in [Nim.CREATED, Nim.OVER]:\\n \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "MemberExpression>ContinuedString",
+     "chars": 14,
+     "n": 1,
+     "examples": [
+      "\"              'unix id is {} to true'.fo\" @ token String"
+     ]
+    },
+    {
+     "type": "AssignStatement>VariableName",
+     "chars": 12,
+     "n": 7,
+     "examples": [
+      "\"self._canvas = canvas = turtle.ScrolledC\" @ token VariableName",
+      "\"\\n        h, x, y = int(heading()), round\" @ token VariableName",
+      "\"\\n        h, x, y = int(heading()), round\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>MemberExpression",
+     "chars": 12,
+     "n": 2,
+     "examples": [
+      "\"d = state[0] ^ state[1] ^ state[2]\\n    i\" @ token VariableName",
+      "\"] ^ state[1] ^ state[2]\\n    if xored == \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>MemberExpression",
+     "chars": 11,
+     "n": 1,
+     "examples": [
+      "\".root = root = turtle._root = Tk()\\n     \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "IfStatement>elif",
+     "chars": 8,
+     "n": 2,
+     "examples": [
+      "\"esult)\\n        elif self.state == EVENTD\" @ token elif",
+      "\"over()\\n        elif self.player == 0:\\n  \" @ token elif"
+     ]
+    },
+    {
+     "type": "BinaryExpression>VariableName",
+     "chars": 5,
+     "n": 1,
+     "examples": [
+      "\"s = state[z] ^ xored\\n        if s <= sta\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ReturnStatement>VariableName",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"\\n    return z, rand\\n\\n\\nclass NimModel(obj\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>None",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"if msg2 is not None:\\n            self.wr\" @ token None"
+     ]
+    },
+    {
+     "type": "BinaryExpression>not",
+     "chars": 3,
+     "n": 1,
+     "examples": [
+      "\"    if msg2 is not None:\\n            sel\" @ token not"
+     ]
+    },
+    {
+     "type": "WithStatement>as",
+     "chars": 2,
+     "n": 1,
+     "examples": [
+      "\"__file__, 'r') as f:\\n            chars =\" @ token as"
+     ]
+    },
+    {
+     "type": "BinaryExpression>in",
+     "chars": 2,
+     "n": 1,
+     "examples": [
+      "\"game.state not in [Nim.CREATED, Nim.OVER\" @ token in"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ImportStatement",
+     "chars": 993,
+     "n": 43
+    },
+    {
+     "type": "TupleExpression",
+     "chars": 737,
+     "n": 45
+    },
+    {
+     "type": "ArrayComprehensionExpression",
+     "chars": 282,
+     "n": 5
+    },
+    {
+     "type": "ConditionalExpression",
+     "chars": 135,
+     "n": 5
+    },
+    {
+     "type": "DictionaryExpression",
+     "chars": 116,
+     "n": 6
+    },
+    {
+     "type": "YieldStatement",
+     "chars": 24,
+     "n": 3
+    }
+   ]
+  }
+ },
+ "py-P2": {
+  "py-stdlib-library": {
+   "note": "~200 .py sampled (seed 5) from 597 files of the standard library of /Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6 (Python 3.6): library code",
+   "language": "python",
+   "files": 200,
+   "lines": 90370,
+   "chars": 1736020,
+   "coverage": {
+    "real": 90.5,
+    "opaque": 7.6,
+    "fallback": 1.9
+   },
+   "topStatements": {
+    "fully": 2251,
+    "partly": 1133,
+    "none": 797
+   },
+   "allStatements": {
+    "fully": 32962,
+    "partly": 8500,
+    "none": 1216
+   },
+   "errorNodes": 29,
+   "filesWithErrors": 10,
+   "parseBuildMsPer1000Lines": 8.4,
+   "tableLines": {
+    "file": 85,
+    "nodes": 42,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "AssignStatement>CallExpression",
+     "chars": 8970,
+     "n": 421,
+     "examples": [
+      "\"year, julian = _calc_julian_from_V(iso_y\" @ token VariableName",
+      "\"tt, fraction = _strptime(data_string, fo\" @ token VariableName",
+      "\"fmant, expon = math.frexp(x)\\n        if \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>VariableName",
+     "chars": 2718,
+     "n": 488,
+     "examples": [
+      "\"  key, value = item\\n        try:\\n       \" @ token VariableName",
+      "\" self, *args = args\\n        if len(args)\" @ token VariableName",
+      "\"our = minute = second = fraction = 0\\n   \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>None",
+     "chars": 1968,
+     "n": 492,
+     "examples": [
+      "\"  if tb is not None:\\n            val = v\" @ token None",
+      "\"  if tb is not None:\\n            val = v\" @ token None",
+      "\"  if tb is not None:\\n            val = v\" @ token None"
+     ]
+    },
+    {
+     "type": "ForStatement>in",
+     "chars": 1626,
+     "n": 813,
+     "examples": [
+      "\"    for method in methods:\\n        for B\" @ token in",
+      "\"\\n        for B in mro:\\n            if me\" @ token in",
+      "\"      for elem in self:\\n            if e\" @ token in"
+     ]
+    },
+    {
+     "type": "BinaryExpression>not",
+     "chars": 1578,
+     "n": 526,
+     "examples": [
+      "\"      if tb is not None:\\n            val\" @ token not",
+      "\"      if tb is not None:\\n            val\" @ token not",
+      "\"      if tb is not None:\\n            val\" @ token not"
+     ]
+    },
+    {
+     "type": "BinaryExpression>MemberExpression",
+     "chars": 1400,
+     "n": 104,
+     "examples": [
+      "\"k._loop is not self._loop:\\n            r\" @ token VariableName",
+      "\"ername' not in self._extra:\\n            \" @ token VariableName",
+      "\"CCESS_DUPLEX | _winapi.FILE_FLAG_OVERLAP\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>MemberExpression",
+     "chars": 1397,
+     "n": 123,
+     "examples": [
+      "\" self[n-i-1] = self[n-i-1], self[i]\\n\\n   \" @ token VariableName",
+      "\"= self[n-i-1], self[i]\\n\\n    def extend(s\" @ token VariableName",
+      "\"name, gmtoff = tt[-2:]\\n    args = tt[:6]\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>VariableName",
+     "chars": 1252,
+     "n": 155,
+     "examples": [
+      "\"if elem not in other:\\n                re\" @ token VariableName",
+      "\"if elem not in self:\\n                ret\" @ token VariableName",
+      "\"f value not in other)\\n\\n    def __rsub__(\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>Body",
+     "chars": 1240,
+     "n": 33,
+     "examples": [
+      "\"e:\\n            return NotImplemented\\n   \" @ token return",
+      "\"e:\\n            return ''\\n        regex =\" @ token return",
+      "\"               sock.close()\\n            \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>CallExpression",
+     "chars": 1139,
+     "n": 75,
+     "examples": [
+      "\" key, value in kwds.items():\\n           \" @ token VariableName",
+      "\" index, arg in enumerate([data_string, f\" @ token VariableName",
+      "\", tz_values in enumerate(locale_time.tim\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>SetExpression",
+     "chars": 1126,
+     "n": 9,
+     "examples": [
+      "\"x0008\\n    0x1, 0x2, 0x3, 0x4, 0x5, 0x6, \" @ token Number",
+      "\" = {'secure', 'httponly'}\\n\\n    def __ini\" @ token String",
+      "\"S = {\\\"class\\\", \\\"def\\\", \\\"elif\\\", \\\"else\\\", \\\"ex\" @ token String"
+     ]
+    },
+    {
+     "type": "ReturnStatement>VariableName",
+     "chars": 1015,
+     "n": 197,
+     "examples": [
+      "\"   return key, value\\n\\n    def clear(self\" @ token VariableName",
+      "\"turn iso_year, ordinal\\n\\n\\ndef _strptime(d\" @ token VariableName",
+      "\"name, gmtoff), fraction\\n\\ndef _strptime_t\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>TupleExpression",
+     "chars": 687,
+     "n": 39,
+     "examples": [
+      "\"_zone not in (\\\"utc\\\", \\\"gmt\\\")):\\n          \" @ token String",
+      "\"mptype not in (b'NONE', b'ulaw', b'ULAW'\" @ token String",
+      "\"mptype not in (b'NONE', b'ulaw', b'ULAW'\" @ token String"
+     ]
+    },
+    {
+     "type": "AssignStatement>YieldExpression",
+     "chars": 599,
+     "n": 18,
+     "examples": [
+      "\"     results = yield from shutdown_coro\\n\" @ token yield",
+      "\"rt, protocol = yield from self._create_c\" @ token yield",
+      "\"       infos = yield from _ensure_resolv\" @ token yield"
+     ]
+    },
+    {
+     "type": "YieldExpression",
+     "chars": 585,
+     "n": 14,
+     "examples": [
+      "\"s = yield from shutdown_coro\\n        for\" @ token VariableName",
+      "\"s = yield from _ensure_resolved(\\n       \" @ token VariableName",
+      "\"s = yield from _ensure_resolved((host, p\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>VariableName",
+     "chars": 448,
+     "n": 70,
+     "examples": [
+      "\" key, value in other:\\n                  \" @ token VariableName",
+      "\"or old, new in replacement_pairs:\\n      \" @ token VariableName",
+      "\" family, type, proto, cname, address in \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>in",
+     "chars": 390,
+     "n": 195,
+     "examples": [
+      "\"   if elem not in other:\\n               \" @ token in",
+      "\"   if elem not in self:\\n                \" @ token in",
+      "\"  if value not in other)\\n\\n    def __rsub\" @ token in"
+     ]
+    },
+    {
+     "type": "MemberExpression>BinaryExpression",
+     "chars": 308,
+     "n": 48,
+     "examples": [
+      "\".append(data[i:i+sabs])\\n        else:\\n  \" @ token VariableName",
+      "\"rom_bytes(s[i: i + 5], 'big')\\n        en\" @ token VariableName",
+      "\" quanta = s[i: i + 8]\\n        acc = 0\\n  \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>DictionaryComprehensionExpression",
+     "chars": 301,
+     "n": 7,
+     "examples": [
+      "\" _b32rev = {v: k for k, v in enumerate(_\" @ token VariableName",
+      "\"  key.lower(): value\\n        for key, _,\" @ token VariableName",
+      "\"ator = {n: '\\\\\\\\%03o' % n\\n               f\" @ token String"
+     ]
+    },
+    {
+     "type": "SetExpression",
+     "chars": 296,
+     "n": 23,
+     "examples": [
+      "\"g = frozenset({\\\"utc\\\", \\\"gmt\\\", self.tzname\" @ token String",
+      "\"g = frozenset({self.tzname[1].lower()})\\n\" @ token VariableName",
+      "\"_(c) for c in {subclass, subtype})\\n\\n    \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>TupleExpression",
+     "chars": 296,
+     "n": 6,
+     "examples": [
+      "\"r, v, vminfo, (os_name, os_version, os_a\" @ token VariableName",
+      "\"       x, y = (self.cv.canvasx(event.x)/\" @ token VariableName",
+      "\"       x, y = (self.cv.canvasx(event.x)/\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>Number",
+     "chars": 261,
+     "n": 85,
+     "examples": [
+      "\"ter(range(1 << 1000)))\\nset_iterator = ty\" @ token Number",
+      "\"^ (hx << 16) ^ 89869747)  * 3644798167\\n \" @ token Number",
+      "\"   if length & 1 == 0:\\n        dummy = f\" @ token Number"
+     ]
+    },
+    {
+     "type": "ReturnStatement>CallExpression",
+     "chars": 249,
+     "n": 16,
+     "examples": [
+      "\"  return conn, conn.getpeername()\\n\\n     \" @ token VariableName",
+      "\"return '7bit', normal_body(lines).decode\" @ token VariableName",
+      "\"return '8bit', normal_body(lines).decode\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "CallExpression>ArgList",
+     "chars": 228,
+     "n": 42,
+     "examples": [
+      "\"iterable(value for value in other if val\" @ token for",
+      "\"iterable(value for value in self\\n       \" @ token for",
+      "\"iterable(value for value in other\\n      \" @ token for"
+     ]
+    },
+    {
+     "type": "ReturnStatement>TupleExpression",
+     "chars": 209,
+     "n": 13,
+     "examples": [
+      "\"e, proto, '', (host, port)\\n        excep\" @ token VariableName",
+      "\"n type(self), (self.partial, self.expect\" @ token VariableName",
+      "\"n type(self), (self.args[0], self.consum\" @ token VariableName"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "DictionaryExpression",
+     "chars": 54687,
+     "n": 384
+    },
+    {
+     "type": "TupleExpression",
+     "chars": 42931,
+     "n": 1488
+    },
+    {
+     "type": "ImportStatement",
+     "chars": 22404,
+     "n": 1091
+    },
+    {
+     "type": "ArrayComprehensionExpression",
+     "chars": 6802,
+     "n": 139
+    },
+    {
+     "type": "ConditionalExpression",
+     "chars": 2716,
+     "n": 74
+    },
+    {
+     "type": "YieldStatement",
+     "chars": 1976,
+     "n": 100
+    },
+    {
+     "type": "FormatString",
+     "chars": 199,
+     "n": 8
+    },
+    {
+     "type": "ExpressionStatement",
+     "chars": 31,
+     "n": 1
+    },
+    {
+     "type": "AwaitExpression",
+     "chars": 21,
+     "n": 1
+    }
+   ]
+  },
+  "py-turtledemo": {
+   "note": "the standard library's turtledemo programs: beginner-style, the best local match",
+   "language": "python",
+   "files": 21,
+   "lines": 2429,
+   "chars": 41598,
+   "coverage": {
+    "real": 92.8,
+    "opaque": 5.5,
+    "fallback": 1.7
+   },
+   "topStatements": {
+    "fully": 103,
+    "partly": 62,
+    "none": 39
+   },
+   "allStatements": {
+    "fully": 1360,
+    "partly": 247,
+    "none": 55
+   },
+   "errorNodes": 5,
+   "filesWithErrors": 3,
+   "parseBuildMsPer1000Lines": 9.6,
+   "tableLines": {
+    "file": 85,
+    "nodes": 42,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "AssignStatement>CallExpression",
+     "chars": 325,
+     "n": 22,
+     "examples": [
+      "\"turtle._root = Tk()\\n        root.title('\" @ token VariableName",
+      "\"= text_frame = Frame(root)\\n        self.\" @ token VariableName",
+      "\".text = text = Text(text_frame, name='te\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>in",
+     "chars": 138,
+     "n": 69,
+     "examples": [
+      "\"     for entry in getExampleEntries():\\n \" @ token in",
+      "\"      for size in font_sizes:\\n          \" @ token in",
+      "\"bel, help_file in help_entries:\\n        \" @ token in"
+     ]
+    },
+    {
+     "type": "StatementGroup",
+     "chars": 77,
+     "n": 4,
+     "examples": [
+      "\"cale):\\n        self.forward(s); self.lef\" @ token VariableName",
+      "\"pto(x, y):\\n    penup(); goto(x,y)\\n\\ndef l\" @ token VariableName",
+      "\"t1, t2, t3\\n    ht(); penup(); goto(0, -2\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>VariableName",
+     "chars": 48,
+     "n": 10,
+     "examples": [
+      "\", help_file in help_entries:\\n           \" @ token VariableName",
+      "\"n second_hand, minute_hand, hour_hand:\\n \" @ token VariableName",
+      "\", minute_hand, hour_hand:\\n        hand.r\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>CallExpression",
+     "chars": 38,
+     "n": 2,
+     "examples": [
+      "\" branchlist in list(zip(tlist,branchlist\" @ token VariableName",
+      "\"   for i, t in enumerate(target):\\n      \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ReturnStatement>BinaryExpression",
+     "chars": 20,
+     "n": 1,
+     "examples": [
+      "\" + WUNIT // 2, SCREENHEIGHT // 2 - y - H\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>ArrayExpression",
+     "chars": 17,
+     "n": 1,
+     "examples": [
+      "\".state not in [Nim.CREATED, Nim.OVER]:\\n \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>VariableName",
+     "chars": 12,
+     "n": 7,
+     "examples": [
+      "\"self._canvas = canvas = turtle.ScrolledC\" @ token VariableName",
+      "\"\\n        h, x, y = int(heading()), round\" @ token VariableName",
+      "\"\\n        h, x, y = int(heading()), round\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>MemberExpression",
+     "chars": 12,
+     "n": 2,
+     "examples": [
+      "\"d = state[0] ^ state[1] ^ state[2]\\n    i\" @ token VariableName",
+      "\"] ^ state[1] ^ state[2]\\n    if xored == \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignStatement>MemberExpression",
+     "chars": 11,
+     "n": 1,
+     "examples": [
+      "\".root = root = turtle._root = Tk()\\n     \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>VariableName",
+     "chars": 5,
+     "n": 1,
+     "examples": [
+      "\"s = state[z] ^ xored\\n        if s <= sta\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ReturnStatement>VariableName",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"\\n    return z, rand\\n\\n\\nclass NimModel(obj\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>None",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"if msg2 is not None:\\n            self.wr\" @ token None"
+     ]
+    },
+    {
+     "type": "BinaryExpression>not",
+     "chars": 3,
+     "n": 1,
+     "examples": [
+      "\"    if msg2 is not None:\\n            sel\" @ token not"
+     ]
+    },
+    {
+     "type": "BinaryExpression>in",
+     "chars": 2,
+     "n": 1,
+     "examples": [
+      "\"game.state not in [Nim.CREATED, Nim.OVER\" @ token in"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ImportStatement",
+     "chars": 993,
+     "n": 43
+    },
+    {
+     "type": "TupleExpression",
+     "chars": 737,
+     "n": 45
+    },
+    {
+     "type": "ArrayComprehensionExpression",
+     "chars": 282,
+     "n": 5
+    },
+    {
+     "type": "ConditionalExpression",
+     "chars": 135,
+     "n": 5
+    },
+    {
+     "type": "DictionaryExpression",
+     "chars": 116,
+     "n": 6
+    },
+    {
+     "type": "YieldStatement",
+     "chars": 24,
+     "n": 3
+    }
+   ]
+  }
+ },
+ "py-P3": {
+  "py-stdlib-library": {
+   "note": "~200 .py sampled (seed 5) from 597 files of the standard library of /Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6 (Python 3.6): library code",
+   "language": "python",
+   "files": 200,
+   "lines": 90370,
+   "chars": 1736020,
+   "coverage": {
+    "real": 98,
+    "opaque": 1.3,
+    "fallback": 0.7
+   },
+   "topStatements": {
+    "fully": 2691,
+    "partly": 693,
+    "none": 797
+   },
+   "allStatements": {
+    "fully": 37893,
+    "partly": 3669,
+    "none": 1116
+   },
+   "errorNodes": 29,
+   "filesWithErrors": 10,
+   "parseBuildMsPer1000Lines": 9.2,
+   "tableLines": {
+    "file": 90,
+    "nodes": 47,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "SetExpression",
+     "chars": 1705,
+     "n": 29,
+     "examples": [
+      "\"g = frozenset({\\\"utc\\\", \\\"gmt\\\", self.tzname\" @ token String",
+      "\"g = frozenset({self.tzname[1].lower()})\\n\" @ token VariableName",
+      "\"_(c) for c in {subclass, subtype})\\n\\n    \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>in",
+     "chars": 1626,
+     "n": 813,
+     "examples": [
+      "\"    for method in methods:\\n        for B\" @ token in",
+      "\"\\n        for B in mro:\\n            if me\" @ token in",
+      "\"      for elem in self:\\n            if e\" @ token in"
+     ]
+    },
+    {
+     "type": "ForStatement>Body",
+     "chars": 1240,
+     "n": 33,
+     "examples": [
+      "\"e:\\n            return NotImplemented\\n   \" @ token return",
+      "\"e:\\n            return ''\\n        regex =\" @ token return",
+      "\"               sock.close()\\n            \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "YieldExpression",
+     "chars": 1091,
+     "n": 21,
+     "examples": [
+      "\"s = yield from shutdown_coro\\n        for\" @ token VariableName",
+      "\"l = yield from self._create_connection_t\" @ token VariableName",
+      "\"s = yield from _ensure_resolved(\\n       \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ReturnStatement>VariableName",
+     "chars": 1015,
+     "n": 197,
+     "examples": [
+      "\"   return key, value\\n\\n    def clear(self\" @ token VariableName",
+      "\"turn iso_year, ordinal\\n\\n\\ndef _strptime(d\" @ token VariableName",
+      "\"name, gmtoff), fraction\\n\\ndef _strptime_t\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ArrayComprehensionExpression>for",
+     "chars": 456,
+     "n": 152,
+     "examples": [
+      "\"bbr[i].lower() for i in range(7)]\\n      \" @ token for",
+      "\"ame[i].lower() for i in range(7)]\\n      \" @ token for",
+      "\"bbr[i].lower() for i in range(13)]\\n     \" @ token for"
+     ]
+    },
+    {
+     "type": "DictionaryComprehensionExpression",
+     "chars": 426,
+     "n": 10,
+     "examples": [
+      "\"    _b32rev = {v: k for k, v in enumerat\" @ token VariableName",
+      "\" {\\n            key.lower(): value\\n      \" @ token VariableName",
+      "\"nv = {\\n        key.lower(): value\\n      \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ComprehensionExpression",
+     "chars": 409,
+     "n": 12,
+     "examples": [
+      "\"      chain = (e for s in (self, other) \" @ token VariableName",
+      "\"elf.__seqToRE((tz for tz_names in self.l\" @ token VariableName",
+      "\"ue in\\n        (line.partition('=') for l\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "MemberExpression>BinaryExpression",
+     "chars": 323,
+     "n": 51,
+     "examples": [
+      "\".append(data[i:i+sabs])\\n        else:\\n  \" @ token VariableName",
+      "\"rom_bytes(s[i: i + 5], 'big')\\n        en\" @ token VariableName",
+      "\" quanta = s[i: i + 8]\\n        acc = 0\\n  \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ArrayComprehensionExpression>in",
+     "chars": 304,
+     "n": 152,
+     "examples": [
+      "\".lower() for i in range(7)]\\n        f_we\" @ token in",
+      "\".lower() for i in range(7)]\\n        self\" @ token in",
+      "\".lower() for i in range(13)]\\n        f_m\" @ token in"
+     ]
+    },
+    {
+     "type": "ReturnStatement>CallExpression",
+     "chars": 249,
+     "n": 16,
+     "examples": [
+      "\"  return conn, conn.getpeername()\\n\\n     \" @ token VariableName",
+      "\"return '7bit', normal_body(lines).decode\" @ token VariableName",
+      "\"return '8bit', normal_body(lines).decode\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "CallExpression>ArgList",
+     "chars": 245,
+     "n": 44,
+     "examples": [
+      "\"iterable(value for value in other if val\" @ token for",
+      "\"iterable(value for value in self\\n       \" @ token for",
+      "\"iterable(value for value in other\\n      \" @ token for"
+     ]
+    },
+    {
+     "type": "ReturnStatement>TupleExpression",
+     "chars": 209,
+     "n": 13,
+     "examples": [
+      "\"e, proto, '', (host, port)\\n        excep\" @ token VariableName",
+      "\"n type(self), (self.partial, self.expect\" @ token VariableName",
+      "\"n type(self), (self.args[0], self.consum\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "StatementGroup",
+     "chars": 205,
+     "n": 6,
+     "examples": [
+      "\" if o == '-t': test(); return\\n    if arg\" @ token VariableName",
+      "\"r:\\n            self.stackviewer.close();\" @ token VariableName",
+      "\"g:\\n            self.push('503 Error: sen\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "SetComprehensionExpression",
+     "chars": 193,
+     "n": 3,
+     "examples": [
+      "\"  abstracts = {name\\n                    \" @ token VariableName",
+      "\"\\n\\n_builtins = {name for name in dir(buil\" @ token VariableName",
+      "\"magics = {\\n    '__%s__' % method for met\" @ token String"
+     ]
+    },
+    {
+     "type": "YieldStatement>from",
+     "chars": 164,
+     "n": 41,
+     "examples": [
+      "\"\\n        yield from self._mapping\\n\\nKeysV\" @ token from",
+      "\"\\n        yield from waiter\\n\\n\\nclass BaseE\" @ token from",
+      "\"         yield from tasks.wait(fs, loop=\" @ token from"
+     ]
+    },
+    {
+     "type": "AssignStatement>YieldExpression",
+     "chars": 162,
+     "n": 18,
+     "examples": [
+      "\"     results = yield from shutdown_coro\\n\" @ token yield",
+      "\"rt, protocol = yield from self._create_c\" @ token yield",
+      "\"       infos = yield from _ensure_resolv\" @ token yield"
+     ]
+    },
+    {
+     "type": "MemberExpression>VariableName",
+     "chars": 157,
+     "n": 47,
+     "examples": [
+      "\"list[filename, lineno][:]:\\n            b\" @ token VariableName",
+      "\"list[filename, line]\\n            for bp \" @ token VariableName",
+      "\"list[filename, lineno] or []\\n\\n    def ge\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ReturnStatement>MemberExpression",
+     "chars": 139,
+     "n": 14,
+     "examples": [
+      "\"n self.socket, self.server_address\\n\\n    \" @ token VariableName",
+      "\"rn p[:index2], p[index2:]\\n        if nor\" @ token VariableName",
+      "\" return p[:2], p[2:]\\n    return p[:0], p\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>else",
+     "chars": 132,
+     "n": 33,
+     "examples": [
+      "\" break\\n        else:\\n            return \" @ token else",
+      "\" break\\n        else:\\n            return \" @ token else",
+      "\"               else:\\n                   \" @ token else"
+     ]
+    },
+    {
+     "type": "RaiseStatement>from",
+     "chars": 112,
+     "n": 28,
+     "examples": [
+      "\"tive, format)) from None\\n            # I\" @ token from",
+      "\"%s'\\\" % format) from None\\n            _re\" @ token from",
+      "\"ss__.__name__) from None\\n\\n\\n# Base64 enco\" @ token from"
+     ]
+    },
+    {
+     "type": "ForStatement>String",
+     "chars": 89,
+     "n": 14,
+     "examples": [
+      "\"in \\\"version\\\", \\\"verifiability\\\", \\\"name\\\", \\\"\" @ token String",
+      "\"rifiability\\\", \\\"name\\\", \\\"path\\\", \\\"domain\\\", \" @ token String",
+      "\"ity\\\", \\\"name\\\", \\\"path\\\", \\\"domain\\\", \\\"port\\\":\\n\" @ token String"
+     ]
+    },
+    {
+     "type": "ArrayComprehensionExpression>if",
+     "chars": 84,
+     "n": 42,
+     "examples": [
+      "\"               if not ((local_addr and a\" @ token if",
+      "\"elf._callbacks if f != fn]\\n        remov\" @ token if",
+      "\"               if server.strip() != '']\\n\" @ token if"
+     ]
+    },
+    {
+     "type": "ReturnStatement>BinaryExpression",
+     "chars": 71,
+     "n": 8,
+     "examples": [
+      "\"return result, end + 1\\n            pairs\" @ token VariableName",
+      "\" return pairs, end + 1\\n        elif next\" @ token VariableName",
+      "\"return values, end + 1\\n    _append = val\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "MemberExpression>Number",
+     "chars": 69,
+     "n": 45,
+     "examples": [
+      "\"fset = int(z[1:3]) * 60 + int(z[3:5])\\n  \" @ token Number",
+      "\"* 60 + int(z[3:5])\\n            if z.star\" @ token Number",
+      "\" (h[:16], h[16:32])]\\n    print('%d%s %d%\" @ token Number"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ImportStatement",
+     "chars": 22404,
+     "n": 1091
+    },
+    {
+     "type": "FormatString",
+     "chars": 199,
+     "n": 8
+    },
+    {
+     "type": "ExpressionStatement",
+     "chars": 31,
+     "n": 1
+    },
+    {
+     "type": "AwaitExpression",
+     "chars": 21,
+     "n": 1
+    }
+   ]
+  },
+  "py-turtledemo": {
+   "note": "the standard library's turtledemo programs: beginner-style, the best local match",
+   "language": "python",
+   "files": 21,
+   "lines": 2429,
+   "chars": 41598,
+   "coverage": {
+    "real": 96.9,
+    "opaque": 2.4,
+    "fallback": 0.7
+   },
+   "topStatements": {
+    "fully": 121,
+    "partly": 44,
+    "none": 39
+   },
+   "allStatements": {
+    "fully": 1464,
+    "partly": 146,
+    "none": 52
+   },
+   "errorNodes": 5,
+   "filesWithErrors": 3,
+   "parseBuildMsPer1000Lines": 15.5,
+   "tableLines": {
+    "file": 90,
+    "nodes": 47,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "ForStatement>in",
+     "chars": 138,
+     "n": 69,
+     "examples": [
+      "\"     for entry in getExampleEntries():\\n \" @ token in",
+      "\"      for size in font_sizes:\\n          \" @ token in",
+      "\"bel, help_file in help_entries:\\n        \" @ token in"
+     ]
+    },
+    {
+     "type": "StatementGroup",
+     "chars": 77,
+     "n": 4,
+     "examples": [
+      "\"cale):\\n        self.forward(s); self.lef\" @ token VariableName",
+      "\"pto(x, y):\\n    penup(); goto(x,y)\\n\\ndef l\" @ token VariableName",
+      "\"t1, t2, t3\\n    ht(); penup(); goto(0, -2\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>VariableName",
+     "chars": 26,
+     "n": 8,
+     "examples": [
+      "\"n second_hand, minute_hand, hour_hand:\\n \" @ token VariableName",
+      "\", minute_hand, hour_hand:\\n        hand.r\" @ token VariableName",
+      "\"    for b in u,s,t:\\n            try:\\n   \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ReturnStatement>BinaryExpression",
+     "chars": 20,
+     "n": 1,
+     "examples": [
+      "\" + WUNIT // 2, SCREENHEIGHT // 2 - y - H\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ArrayComprehensionExpression>for",
+     "chars": 15,
+     "n": 5,
+     "examples": [
+      "\"rn [entry[:-3] for entry in os.listdir(d\" @ token for",
+      "\"               for angle, sizefactor in \" @ token for",
+      "\"   nk = len([x for x in tiledict if tile\" @ token for"
+     ]
+    },
+    {
+     "type": "ArrayComprehensionExpression>in",
+     "chars": 10,
+     "n": 5,
+     "examples": [
+      "\":-3] for entry in os.listdir(demo_dir) i\" @ token in",
+      "\"le, sizefactor in branchlist ]\\n\\ndef rand\" @ token in",
+      "\"= len([x for x in tiledict if tiledict[x\" @ token in"
+     ]
+    },
+    {
+     "type": "ArrayComprehensionExpression>if",
+     "chars": 6,
+     "n": 3,
+     "examples": [
+      "\"tdir(demo_dir) if\\n            entry.ends\" @ token if",
+      "\" x in tiledict if tiledict[x]])\\n    nd =\" @ token if",
+      "\" x in tiledict if not tiledict[x]])\\n    \" @ token if"
+     ]
+    },
+    {
+     "type": "ReturnStatement>VariableName",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"\\n    return z, rand\\n\\n\\nclass NimModel(obj\" @ token VariableName"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ImportStatement",
+     "chars": 993,
+     "n": 43
+    }
+   ]
+  }
+ },
+ "sc-S1": {
+  "scheme-repo-files": {
+   "note": "every .rkt/.scm/.ss tracked in this repository",
+   "language": "scheme",
+   "files": 11,
+   "lines": 1931,
+   "chars": 36546,
+   "coverage": {
+    "real": 100,
+    "opaque": 0,
+    "fallback": 0
+   },
+   "topStatements": {
+    "fully": 339,
+    "partly": 0,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 339,
+    "partly": 0,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 18.1,
+   "tableLines": {
+    "file": 66,
+    "nodes": 16,
+    "rules": 24
+   },
+   "missingTop25": [],
+   "opaqueTop10": []
+  },
+  "scheme-test-literals": {
+   "note": "string literals in the repo's own tests that look like programs (what students' programs look like)",
+   "language": "scheme",
+   "files": 582,
+   "lines": 1014,
+   "chars": 9064,
+   "coverage": {
+    "real": 99.8,
+    "opaque": 0,
+    "fallback": 0.2
+   },
+   "topStatements": {
+    "fully": 788,
+    "partly": 3,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 788,
+    "partly": 3,
+    "none": 0
+   },
+   "errorNodes": 27,
+   "filesWithErrors": 27,
+   "parseBuildMsPer1000Lines": 16.6,
+   "tableLines": {
+    "file": 66,
+    "nodes": 16,
+    "rules": 24
+   },
+   "missingTop25": [
+    {
+     "type": "BraceList",
+     "chars": 9,
+     "n": 3,
+     "examples": [
+      "\"[{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\" @ token String",
+      "\"[{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token String",
+      "\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token String"
+     ]
+    },
+    {
+     "type": "TaggedParenList>Keyword",
+     "chars": 3,
+     "n": 1,
+     "examples": [
+      "\"le=\\\"treeitem\\\"]:not([aria-expanded=\\\"false\" @ token Keyword"
+     ]
+    },
+    {
+     "type": "BracketList>ListContent",
+     "chars": 2,
+     "n": 2,
+     "examples": [
+      "\"[{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token Keyword",
+      "\"{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token Keyword"
+     ]
+    },
+    {
+     "type": "UnquoteForm>Datum",
+     "chars": 1,
+     "n": 1,
+     "examples": [
+      "\"\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token Keyword"
+     ]
+    }
+   ],
+   "opaqueTop10": []
+  }
  }
 }

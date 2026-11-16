@@ -16,6 +16,8 @@ export const schemeTable: BlockTable = {
     LineComment: { kind: "comment", label: "comment", leaf: true, topLevelOnly: true },
     BlockComment: { kind: "comment", label: "comment", leaf: true, topLevelOnly: true },
     ParenList: { kind: "call", label: "call", describe: "call to ${func} with ${args.length|argument|arguments}", brackets: true, slots: [{ name: "func", kind: "one", take: ["#0"] }, { name: "args", kind: "list", take: "*" }] },
+    TaggedParenList: { kind: "call", label: "call", describe: "call to ${func} with ${args.length|argument|arguments}", brackets: true, slots: [{ name: "func", kind: "one", take: ["#0"] }, { name: "args", kind: "list", take: "*" }] },
+    BracketList: { kind: "call", label: "call", describe: "call to ${func} with ${args.length|argument|arguments}", brackets: true, slots: [{ name: "func", kind: "one", take: ["#0"] }, { name: "args", kind: "list", take: "*" }] },
     DefineForm: { kind: "define", label: "definition", describe: "definition of ${name} as ${value}", keyword: "define", brackets: true, slots: [{ name: "name", kind: "one", take: ["#1"] }, { name: "value", kind: "one", take: ["#2"] }] },
     LambdaForm: { kind: "lambda", label: "function", describe: "function of ${params} returning ${body}", keyword: "lambda", brackets: true, slots: [{ name: "params", kind: "one", take: ["#1"] }, { name: "body", kind: "one", take: ["#2"] }] },
     IfForm: { kind: "if", label: "if", describe: "if ${test}, then ${then}, else ${else}", keyword: "if", brackets: true, slots: [{ name: "test", kind: "one", take: ["#1"] }, { name: "then", kind: "one", take: ["#2"] }, { name: "else", kind: "one", take: ["#3"] }] },
