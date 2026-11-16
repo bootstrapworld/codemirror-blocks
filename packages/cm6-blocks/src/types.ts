@@ -59,6 +59,12 @@ export interface Slot {
   nodes: BNode[];
   /** a word or sign drawn before the slot's content (`=`, `of`, `.`), from the table */
   glue?: string;
+  /**
+   * The owner's source text BETWEEN the children (and before the first, after the last) is drawn as text pieces, in the gaps
+   * (a template string `a ${x} b`: the blocks are the `x`, the pieces are `a ${`, `} b`). Nothing can be inserted into such a slot,
+   * and a child that is removed is replaced by the language's blank.
+   */
+  pieces?: boolean;
 }
 
 /**

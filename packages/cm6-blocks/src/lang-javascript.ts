@@ -82,11 +82,12 @@ export const javascriptTable: BlockTable = {
     CallExpression: { kind: "call", label: "call", describe: "call to ${func} with ${args.length|argument|arguments}", slots: [one("func", ["#0"]), list("args", ["ArgList"])] },
     MemberExpression: { kind: "member", label: "member", describe: "${property} of ${object}", slots: [one("object", ["#0"]), { ...one("property", ["PropertyName", "PrivatePropertyName"]), before: "." }] },
     Index: { kind: "index", label: "index", slots: [one("object", ["#0"]), one("index", ["#1"])] },
+    TemplateString: { kind: "template", label: "template string", describe: "template string with ${parts.length|part|parts}", slots: [{ name: "parts", kind: "list", take: "*", pieces: true }] },
     ArrayExpression: { kind: "array", label: "array", describe: "array of ${elements.length|item|items}", slots: [list("elements", "*")] },
     ObjectExpression: { kind: "object", label: "object", slots: [list("properties", "*")] },
     Property: { kind: "property", label: "property", slots: [one("key", ["#0"]), one("value", ["#1"])] },
   },
-  opaque: ["TemplateString", "Hashbang"],
+  opaque: ["Hashbang"],
   blank: "undefined",
   separators: { args: ", ", elements: ", ", properties: ", ", roots: "\n", parts: "; " },
   rules: [

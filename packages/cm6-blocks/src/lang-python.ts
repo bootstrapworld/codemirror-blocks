@@ -55,20 +55,26 @@ export const pythonTable: BlockTable = {
     ArrayComprehensionExpression: { kind: "comprehension", label: "list comprehension", slots: [list("parts", "*")] },
     ConditionalExpression: { kind: "conditional", label: "conditional", slots: [list("parts", "*")] },
     YieldStatement: { kind: "yield", label: "yield", keyword: "yield", slots: [list("value", "*")] },
+    ImportStatement: { kind: "import", label: "import", describe: "import ${names}", keyword: "import", chunks: { delims: ["import", "as", ",", "(", ")"], row: "ImportName" }, slots: [list("names", "*")], groups: { slot: "names", row: "Alias", sep: "," } },
+    FromImport: { kind: "import", label: "from-import", describe: "from ${module} import ${names.length|name|names}", keyword: "from", chunks: { delims: ["from", "import", "as", ",", "(", ")"], row: "ImportName" }, slots: [one("module", ["@prev:from"]), { ...list("names", "*"), before: " import " }], groups: { slot: "names", row: "Alias", sep: ",", own: ["from"] } },
+    Alias: { kind: "alias", label: "name", describe: "${name} ${alias}", slots: [one("name", ["#0"]), { ...list("alias", ["@prev:as"]), before: " as " }] },
+    ImportName: { ...leaf("literal", "name"), dataType: "symbol" },
     Body: { kind: "body", label: "body", slots: [list("body", "*")] },
     ExpressionStatement: { kind: "statement", label: "statement", slots: [one("expr", ["#0"])] },
     CallExpression: { kind: "call", label: "call", describe: "call to ${func} with ${args.length|argument|arguments}", slots: [one("func", ["#0"]), list("args", ["ArgList"])] },
+    FormatString: { kind: "template", label: "f-string", describe: "f-string with ${parts.length|part|parts}", slots: [{ name: "parts", kind: "list", take: "*", pieces: true }] },
     ArrayExpression: { kind: "array", label: "list", describe: "list of ${elements.length|item|items}", slots: [list("elements", "*")] },
   },
   blank: "...",
-  separators: { args: ", ", elements: ", ", items: ", ", roots: "\n" },
-  opaque: ["ImportStatement", "FormatString", "AwaitExpression"],
+  separators: { args: ", ", elements: ", ", items: ", ", names: ", ", roots: "\n" },
+  opaque: ["AwaitExpression"],
   rules: [
     {
       name: "kind",
       apply: (n: SyntaxNode) =>
         /^(and|or|in|is|not)$/.test(n.name) && /^(Binary|Unary)Expression$/.test(n.parent?.name ?? "") ? "KwOp"
         : /^(else|elif|except|finally|as)$/.test(n.name) || (n.name === "if" && n.parent?.name === "ConditionalExpression") ? "Kw"
+        : n.name === "ImportStatement" && n.firstChild?.name === "from" ? "FromImport"
         : n.name === "MemberExpression" && n.getChild("[") ? "Index"
         : undefined,
     },
@@ -89,6 +95,7 @@ export const pythonTable: BlockTable = {
     while: { text: "while ${test}:\n    ${body}", kind: "while", stmt: true },
     for: { text: "for ${item|x} in ${items}:\n    ${body}", kind: "for", stmt: true },
     return: { text: "return ${value}", kind: "return", stmt: true },
+    import: { text: "import ${name|os}", kind: "import", stmt: true },
     number: { text: "0", kind: "literal" },
     string: { text: '"text"', kind: "literal" },
     list: { text: "[${a}, ${b}]", kind: "array" },

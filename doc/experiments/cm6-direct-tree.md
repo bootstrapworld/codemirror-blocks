@@ -1263,7 +1263,9 @@ What was built here (`src/interact.ts`, `src/lezer-view.ts`, `src/render.ts`, `s
   is a key name) clear it; opening a box clears it; a click does not.
 - **Announcements**: a live region (`.blocks-announcer`, `aria-live="assertive"`, `aria-atomic`, visually hidden, next to the editor; written 50 ms after it is cleared
   as the old announcer does), also kept in `ed.said`. It says what the old editor says ("deleted X and Y", "cut ...", "copied ...", the ancestor refusal, "editing X.  Use Enter
-  to save, and Alt-Q to cancel", "inserting...") and, DIFFERENT from the old editor (which has a TODO there), "selected X" / "unselected X".
+  to save, and Alt-Q to cancel", "inserting...") and "deleted X" also for a single focused block. Selecting and unselecting say NOTHING, like the old editor (state through
+  `aria-selected` only): a first version said "selected X", and was taken out because a screen reader that announces the changed `aria-selected` of the focused block would then say it
+  twice (judgement; no screen reader was run).
 - **Uses**: Delete / Backspace remove the selected outermost blocks in ONE text change (`removeNodes`: the removal ranges are merged where they overlap, so removing all
   of a list's elements works) and one undo step; with nothing selected they remove the focused block (DIFFERENT: the old editor says "Nothing selected"). Copy and cut take the selection in
   document order, or the focused block when none; the clipboard text is the blocks joined by a newline, and the editor remembers the items, so pasting back into the editor puts
@@ -1388,5 +1390,87 @@ JavaScript 3.0 / 3.3 before, 3.0 / 2.8 now; Python 3.1 / 2.3 before, 3.0 / 1.9 n
 3 to 4 ms there is a cost per edit that grows with the NUMBER of roots (the map of old roots with two `mapPos` each, the error list merge, `fromTree` collecting every top-level
 node, the decoration filter), which this step did not touch. Judgement: next, make those proportional to the roots near the change (binary search instead of a pass over all of them).
 Focus: the "block elsewhere in the same root keeps focus" case still holds (0 restores, same element) in all modes that reconcile.
-The anchors rule is a heuristic like the root-level one (two siblings away is enough room for a context effect that makes no error node and no range change: none was found by 125,000
+The anchors rule is a heuristic like the root-level one (two siblings away is enough room for a context effect that makes no error node and no range change: none was found by 75,000
 fuzz steps, which is evidence about those generators, not a proof).
+
+### 3. Python imports as blocks (2026-11-16)
+
+`import a.b as c, d` and `from x import y as z, w` (also `from . import a`, `from .a.b import (c, d as e)`, `from x import *`) are blocks: the statement (keyword `import` or
+`from`), a list of names, each a block with its name and, when there is one, its `as` alias. Lezer gives these NO nodes for the parts (all tokens are flat children of
+`ImportStatement`, a dotted path is `VariableName "." VariableName`), so the adapter got one new generic mechanism and the table 4 rows:
+- Adapter (`lezer.ts`, about 40 lines): `BlockRow.chunks = { delims, row }`: the node's children are cut at the delimiter tokens (`from import as , ( )`) and what lies between two delimiters is ONE leaf block (so `a.b`
+  and `.a.b` are one name); a slot can take a chunk by the delimiter before it (`@prev:from`, `@prev:as`); `groups.own` keeps the chunks after a given token (`from`) out of the groups.
+- Table (`lang-python.ts`): `ImportStatement` and `FromImport` (a `kind` rule line picks it when the first token is `from`), `Alias`, `ImportName`; `separators.names`; one template (`import`); `ImportStatement` leaves the
+  `opaque` list. Spoken: "import a.b as c", "from x import 2 names".
+- Evidence: `spec/imports.test.ts` (4 tests: the shape of 7 import forms, the drawn words, remove / insert / edit of a name, the template, junk like `from import (`), the fuzzers (the 70-line Python sample has
+  `import os` and `from math import sqrt`), and the corpus run. The oracle found one real bug on the way (it fails only with this sample, seed 79): the error nodes list used for the anchors did not hold errors BEFORE the
+  first change, but text after a change can create an error before it (a body that ends in an error); the anchors now read the errors of the touched root from the new tree.
+- Corpus (`CMB_CORPUS=full CMB_STEP=round5`, `e2e/corpus-results.json`, row `round5` against `round4`): top-level statements drawn in full: Python standard-library sample **2,883 of 4,181 (69.0 percent) -> 3,789 of 4,181
+  (90.6 percent)**; imports were the 797 statements counted as "none": now 0 are. turtledemo (beginner-style) 149 -> 189 of 204 (73.0 -> 92.6 percent). Characters: real / opaque / not drawn 98.1 / 1.3 / 0.6 -> 99.4 / 0 / 0.6
+  (stdlib), 97.2 / 2.4 / 0.4 -> 99.6 / 0 / 0.4 (turtledemo). Oracle: 0 failures in 3,640 random edits on 182 files. What is left in "partly" (392 statements): `StatementGroup` (`a = 1; b = 2`), `SetExpression`, comprehension
+  parts, `yield` and `return` values taken as strays, as listed in the round-three tables.
+- Not done: an alias is a plain two-slot block, so `as` is the slot's glue word and not a block of its own; `import a, b` puts each name in its own block with the comma left to the text (separator `, `).
+
+### 4. Template strings (JavaScript) and f-strings (Python): done (2026-11-16)
+
+The renderer change was small, so it is made. A slot may say `pieces` (`Slot.pieces`, set from a one-field `pieces: true` in the table's slot): the OWNER's source text between its children (and before the first, after the last) is
+drawn as text in the GAPS the renderer already puts between the children (`blocks-gap blocks-piece`, no longer `aria-hidden`, text set by `paintPieces`). So nothing about the list/gap structure changed, which is what the
+patching (`apply`, `renumberGaps`) relies on. Cost: `render.ts` +35 lines (`paintPieces`, `repaintPieces`; called after a build, after an insert or remove, and from `refresh` and the ancestors loop of `apply`), 3 lines in
+`types.ts` and `lezer.ts`, one row per language (`TemplateString`, `FormatString`, 1 line each, taken out of `opaque`), and the guards below. The blocks inside are the expressions of the `${...}` / `{...}` parts (`Interpolation` and
+`FormatReplacement` are looked through), the pieces are `` `a ${ ``, `} b ${`, `} c` `` (JavaScript) and `f"a {`, `} b {`, `!r} c {`, `:>5}"` (Python, so `!r` and `:>5` stay text).
+- Guards (the text is not a list of blocks): `insertText` into such a slot throws ("nothing can be inserted into the parts of a template: it is text with blocks in it"); a click on its gaps opens no box; they are no drop
+  targets; paste, Ctrl-[ / Ctrl-] and templates go after the template instead of into it; removing a block inside replaces it with the language's blank (`${undefined}`, `{...!r}`); edit-as-text (Cmd/Ctrl-Enter) works on the whole
+  string and is how a piece is changed.
+- Evidence: `spec/templatestrings.test.ts` (8 tests: shape, pieces drawn, an edit inside, remove and undo, the refusals, edit as text) and the fuzzers (the samples have both; 800 seeds x 25 steps x 3 languages plus 400 seeds on the 70-line
+  samples, 90,000 steps, clean, now also with imports and anchors). The render oracle (live DOM equals a fresh drawing) is part of every step.
+- Corpus: the template strings were 413 characters of opaque text in the JavaScript examples; they are blocks now (opaque 3.3 percent -> 0). The corpus measure counted the pieces as "not drawn" until `corpus-lib.ts` was
+  told that a block with a pieces slot draws its own text (a change to the measure, not to the editor; flagged here). JavaScript top-level statements in full: library 1,551 -> 1,557 of 1,682, examples 189 -> 191 of 196.
+- Not done / limits: the text pieces are not blocks, so a screen reader meets them as plain text inside the group (judgement: that is how a person would read a template string), and moving a block out of a template or into one is
+  refused by the guards. `${...}` that holds a comment or a nested template string works (the nested one is its own block) but was only exercised by the fuzzers' samples.
+
+### 5. Accessibility check in Chromium (`e2e/a11y.e2e.ts`; 2026-11-16)
+
+What it is: for each language a small program (`f(1, g(2), 3)` / `h(4)`), Chromium's own accessibility tree (CDP `Accessibility.getFullAXTree`; Playwright 1.64's `ariaSnapshot` has no levels or set sizes) after:
+0 the program as loaded, 1 an insert through the editor while a block of the same call is focused, 2 a delete with the Delete key, 3 a selection with two Space presses, 4 an undo. Evidence below is about the accessibility TREE and about
+focus EVENTS; it is not evidence about what NVDA, JAWS or VoiceOver say. Results: `e2e/a11y-results.json`; the first outline per language in `e2e/a11y-outline-<lang>.txt`.
+- Tree (15 snapshots = 3 languages x 5): one `tree` named "program" with `multiselectable=true`; every block is a `treeitem` with a non-empty name (the spoken label, e.g. "call to f with 3 arguments", "number 1"), `level` equal
+  to its nesting depth among treeitems, `expanded=true` on blocks with children and nothing on leaves, `selected` where selected. No problem found in any of them (`treeProblems` empty).
+- Set sizes and positions (not in the CDP tree, checked on the DOM attributes Chromium computes them from): `aria-setsize` equals the number of sibling blocks and `aria-posinset` runs 1..n in every sibling group in all 15 snapshots
+  (including after the insert, the delete and the undo). Every block has `aria-selected` true or false and an `aria-label`.
+- Stale or doubled: after each of the five steps the tree of the live editor (outline with names, levels, expanded, selected) is EQUAL to the tree of a fresh editor made from the same text and the same selection (a second page): 15 of 15.
+  So no stale label (the ancestor's "with 3 arguments" follows the insert and the delete), no leftover state. One thing that could be read twice (judgement, not tested with a screen reader): each treeitem has both its name
+  (the label, "number 1") and its visible text ("1") as a child text box in the tree, so reading it by line in browse mode may say both; in tree navigation the name is said once. The old editor has the same pattern (a label on a
+  `span` with the content inside).
+- Focus events (in the page, `focusin` / `focusout` with `relatedTarget` and `activeElement` at the time) and `activeElement` sampled on 6 frames after each step:
+  - insert, with a block focused in the same call: no events, 0 restores, same block (the reuse of round four).
+  - delete of the focused block: BEFORE this round's fix 4 events and 2 restores (focus left the removed block for the body, went to the PARENT call at the mapped position, left again, and went to the sibling `g(2)`: so a
+    block that was not the target was focused for a moment, in the same task); the editor's generic restore ran before the removal's own rule. Fix: `removeNodes` holds the generic restore back when the focus is inside what it removes and
+    places the focus itself. AFTER: 2 events, `focusout number 3 -> null (active BODY)` then `focusin call to g (active call to g)`, 0 generic restores, one hop.
+  - selection with Space: no restore (the events there are from the clicks that move focus between the blocks).
+  - undo: no events (focus was on a block that the undo did not touch).
+  - In no frame after any step was `activeElement` the body (6 frames each; the first case has no focus yet by design).
+  What a screen reader would likely hear (judgement from the events, not measured): the only moment with focus on the body is inside the same JavaScript task as the focusin on the block that follows it, and browsers pass
+  focus changes to the accessibility layer after the task, so the intermediate body is probably not announced and the user hears the new block ("call to g with 1 argument"). That is an inference about Chromium's event timing; it is
+  not tested with a screen reader, and other browsers or screen readers may announce the blur.
+- Against the existing editor (read from `components/Node.tsx`, not run): same roles (`treeitem`), `tabIndex=-1`, `aria-selected` on every block, `aria-level`, `aria-setsize`, `aria-posinset` (the existing numbers come from the AST). Differences:
+  its `aria-label` ends with a comma ("call to f with 3 args,") to make the reader pause and it uses `aria-labelledby` on itself (and on the comment of a commented block); it sets `aria-disabled` on locked blocks and
+  `aria-expanded` from the real collapsed state of any block that can collapse (here `expanded=true` is constant: nothing collapses). Ours has no comment-through-labelledby and no `aria-disabled`, and `aria-multiselectable` on the
+  tree (the old editor sets none). Whether the missing trailing comma changes how a screen reader paces the label was not tested.
+- Also found while doing this: the live region now says "deleted X" for a single block (it did not), and selection states are NOT said in the region, so as not to say them twice.
+
+### 6. Touch (2026-11-16)
+
+- `touch-action`: blocks get `touch-action: manipulation` (`style.css`), not `none`: panning and pinch zoom stay the browser's and the double-tap zoom delay is gone; `none` was tried first and would make most of a document
+  unscrollable by finger, since blocks cover it (judgement). Blocks also get `user-select: none` and `-webkit-touch-callout: none`. Evidence: computed style in the Chromium test.
+- Drag: a finger starts a drag after a LONG PRESS (350 ms) without moving; a finger that moves more than 8 px before that is scrolling and is let go (the drag candidate is dropped). After the long press the
+  document's `touchmove` and `contextmenu` are cancelled for the duration of the drag, so the page does not scroll under the finger or open a context menu, and pointer events carry the move to the same drop code as the mouse
+  (gaps, blanks, edges of top-level blocks; the selection moves if the block is selected).
+- Tap to edit: a tap on a block focuses it (as a click); a SECOND tap on the block that already had focus when the press began edits it: a leaf in its box, any other block as text in the textarea (a finger has no Enter or
+  Cmd-Enter). The old editor edits a literal on a single click; here a single tap only focuses, because a tap is also how a person selects what to drag. Mouse clicks are unchanged.
+- Evidence: `spec/touch.test.ts` (9 jsdom tests, 3 per language: swipe scrolls and does not drag; long press then move drags and the touchmove is prevented during it and not after; second tap edits a leaf and a call) and
+  `e2e/touch.e2e.ts` in real Chromium with a touch context (`hasTouch`, mobile viewport, JavaScript only; 4 tests, all pass): computed `touch-action`; two real taps open the box of a leaf, typed text and Enter commit; a long press
+  of 500 ms then 8 touch moves with CDP `Input.dispatchTouchEvent` drags `3` of `f(1, g(2), 3)` onto the first gap (`f(3, 1, g(2))`, the drop target outlined, one undo restores, the oracle clean); a fast swipe
+  on a block of the 3000-line document scrolls it (`scrollTop` grows), starts no drag and changes no text.
+- Found, not fixed: a tap on a call block's own area (its border, away from any child) was taken by Chromium's touch adjustment as a tap on a neighbouring gap and opened an insertion box instead of the whole-block
+  box, so the second-tap-on-a-compound case is tested in jsdom only. A real finger is wide: small blocks and the 8-px gaps are hard targets (judgement; the gaps could be larger on touch screens).
+- Not tried: a real device, a pen, iOS Safari (Pointer Events and `touchmove` cancelling differ), two-finger gestures, the virtual keyboard moving the page when a box opens.

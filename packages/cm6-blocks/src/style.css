@@ -149,7 +149,15 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
-/* a finger on a block drags it; a finger on the page scrolls it */
+/* A quick swipe on a block scrolls the page, a long press then drag moves the block (interact.ts). `manipulation` leaves panning and
+   pinch zoom to the browser and removes the double-tap zoom delay, so a tap is a tap. (`none` would make most of the document unscrollable
+   by touch, as blocks cover it.) */
 .blocks-node {
-  touch-action: none;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.blocks-dragging .blocks-node {
+  user-select: none;
 }

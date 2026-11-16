@@ -21,7 +21,7 @@ export interface BlockRow {
    * position "#n" among the block children, by "Type#n" (the n-th child that
    * has that type on its way), or "*" (whatever no other slot took).
    */
-  slots?: { name: string; kind: "one" | "list"; take: string[] | "*"; /** text put before a node written into this slot when it was missing (`" = "`) */ before?: string }[];
+  slots?: { name: string; kind: "one" | "list"; take: string[] | "*"; /** the text between the children is drawn as pieces (see `Slot.pieces`) */ pieces?: boolean; /** text put before a node written into this slot when it was missing (`" = "`) */ before?: string }[];
   leaf?: boolean; // a value: its source text is its value
   /** only a block when it is a direct child of the tree's top (comments: not inside other blocks) */
   topLevelOnly?: boolean;
@@ -37,7 +37,13 @@ export interface BlockRow {
    *  - `sep`: groups of the blocks between bare `sep` tokens (the `,` of a dict: key and value).
    * Blocks before the first token go to the node's own slots as usual.
    */
-  groups?: { slot: string; row: string; tokens?: string[]; sep?: string };
+  groups?: { slot: string; row: string; tokens?: string[]; sep?: string; /** chunks that follow one of these tokens (`from`) stay with the node's own slots */ own?: string[] };
+  /**
+   * The node is a flat run of tokens whose parts Lezer gives no node (Python's `import a.b as c, d`): its children are cut at the
+   * `delims` tokens, and what lies between two delimiters (comments aside) is ONE leaf block of table row `row`, with its source text as
+   * its value. A slot can take a chunk by the delimiter that precedes it (`@prev:as`, `@prev:from`; the start of the node is no delimiter).
+   */
+  chunks?: { delims: string[]; row: string };
 }
 
 export interface BlockTable {
@@ -159,6 +165,37 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     }
   }
 
+  /** the candidates of a node that is a flat run of tokens: one leaf per chunk between delimiters (see `BlockRow.chunks`), and its comments and errors */
+  function chunkCands(n: SyntaxNode, ch: NonNullable<BlockRow["chunks"]>, out: Cand[], text: string): void {
+    let from = -1;
+    let to = -1;
+    let prev = "";
+    let startPrev = "";
+    const flush = (): void => {
+      if (from >= 0) out.push({ node: { from, to, name: "Chunk", prev: startPrev } as unknown as SyntaxNode, key: ch.row, path: ["Chunk", ch.row] });
+      from = -1;
+    };
+    for (let c = n.firstChild; c; c = c.nextSibling) {
+      if (c.type.isError) {
+        flush();
+        out.push({ node: c, key: "@error", path: [] });
+      } else if (ch.delims.includes(c.name)) {
+        flush();
+        prev = c.name;
+      } else if (table.nodes[keyOf(c, text)]?.kind === "comment") {
+        flush();
+        out.push({ node: c, key: keyOf(c, text), path: [c.name] });
+      } else {
+        if (from < 0) {
+          from = c.from;
+          startPrev = prev;
+        }
+        to = c.to;
+      }
+    }
+    flush();
+  }
+
   function leaf(kind: string, c: SyntaxNode, text: string, offset: number, extra: Partial<BNode> = {}): BNode {
     const src = text.slice(c.from, c.to);
     const b = makeNode(kind, [], { from: c.from + offset, to: c.to + offset, value: src.trim(), ...extra });
@@ -201,10 +238,12 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     const b = makeNode(row.kind, (row.slots ?? []).map((s) => [s.name, s.kind]), extra);
     (row.slots ?? []).forEach((sp, i) => {
       if (sp.before?.trim()) b.slots[i].glue = sp.before.trim();
+      if (sp.pieces) b.slots[i].pieces = true;
     });
     sources.set(b, text.slice(n.from, n.to));
     const all: Cand[] = [];
-    collect(n, [], all, text);
+    if (row.chunks) chunkCands(n, row.chunks, all, text);
+    else collect(n, [], all, text);
     if (innerKeep) all.forEach((cd, i) => (cd.win = [all[i - 1]?.node.from ?? n.from, all[i + 1]?.node.to ?? n.to]));
     const isComment = (cd: Cand): boolean => table.nodes[cd.key]?.kind === "comment";
     const cands = all.filter((cd) => !isComment(cd));
@@ -220,6 +259,10 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       else groups.push({ members: [] });
       for (const cd of cands) {
         if (g.tokens?.includes(cd.node.name)) continue; // the token itself (a keyword block by the table's kind rule)
+        if (g.own?.includes((cd.node as unknown as { prev?: string }).prev ?? "\0")) {
+          rest.push(cd);
+          continue;
+        }
         const before = toks.filter((t) => t.from <= cd.node.from).length;
         if (g.tokens) {
           if (before) groups[before - 1].members.push(cd);
@@ -323,6 +366,7 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     const occ: Record<string, number> = {};
     for (const p of new Set(cd.path)) occ[p] = seen[p] = (seen[p] ?? -1) + 1;
     const matches = (t: string): boolean => {
+      if (t.startsWith("@prev:")) return (cd.node as unknown as { prev?: string }).prev === t.slice(6);
       if (t.startsWith("@")) {
         const [kind, tok] = t.slice(1).split(":");
         const at = n.getChild(tok);

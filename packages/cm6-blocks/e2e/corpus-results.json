@@ -8997,5 +8997,964 @@
     "typedEditMedianMs": 2.98
    }
   }
+ },
+ "round5": {
+  "scheme-repo-files": {
+   "note": "every .rkt/.scm/.ss tracked in this repository",
+   "language": "scheme",
+   "files": 11,
+   "lines": 1931,
+   "chars": 36546,
+   "coverage": {
+    "real": 100,
+    "opaque": 0,
+    "fallback": 0
+   },
+   "topStatements": {
+    "fully": 339,
+    "partly": 0,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 339,
+    "partly": 0,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 19.5,
+   "tableLines": {
+    "file": 66,
+    "nodes": 16,
+    "rules": 24
+   },
+   "missingTop25": [],
+   "opaqueTop10": [],
+   "correctness": {
+    "files": 11,
+    "edits": 220,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "packages/codemirror-blocks/example/huge-code.rkt",
+    "lines": 776,
+    "typedEditMedianMs": 0.64
+   }
+  },
+  "scheme-test-literals": {
+   "note": "string literals in the repo's own tests that look like programs (what students' programs look like)",
+   "language": "scheme",
+   "files": 582,
+   "lines": 1014,
+   "chars": 9064,
+   "coverage": {
+    "real": 99.8,
+    "opaque": 0,
+    "fallback": 0.2
+   },
+   "topStatements": {
+    "fully": 788,
+    "partly": 3,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 788,
+    "partly": 3,
+    "none": 0
+   },
+   "errorNodes": 27,
+   "filesWithErrors": 27,
+   "parseBuildMsPer1000Lines": 17,
+   "tableLines": {
+    "file": 66,
+    "nodes": 16,
+    "rules": 24
+   },
+   "missingTop25": [
+    {
+     "type": "BraceList",
+     "chars": 9,
+     "n": 3,
+     "examples": [
+      "\"[{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\" @ token String",
+      "\"[{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token String",
+      "\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token String"
+     ]
+    },
+    {
+     "type": "TaggedParenList>Keyword",
+     "chars": 3,
+     "n": 1,
+     "examples": [
+      "\"le=\\\"treeitem\\\"]:not([aria-expanded=\\\"false\" @ token Keyword"
+     ]
+    },
+    {
+     "type": "BracketList>ListContent",
+     "chars": 2,
+     "n": 2,
+     "examples": [
+      "\"[{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token Keyword",
+      "\"{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token Keyword"
+     ]
+    },
+    {
+     "type": "UnquoteForm>Datum",
+     "chars": 1,
+     "n": 1,
+     "examples": [
+      "\"\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token Keyword"
+     ]
+    }
+   ],
+   "opaqueTop10": [],
+   "correctness": {
+    "files": 30,
+    "edits": 600,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "packages/codemirror-blocks/spec/random-sequences-test.ts:1157",
+    "lines": 11,
+    "typedEditMedianMs": 0.15
+   }
+  },
+  "js-repo-own": {
+   "note": "plain .js/.mjs tracked in this repository (not dist/lib, not the vendored WeScheme reader)",
+   "language": "javascript",
+   "files": 30,
+   "lines": 3314,
+   "chars": 70400,
+   "coverage": {
+    "real": 94,
+    "opaque": 0.1,
+    "fallback": 5.9
+   },
+   "topStatements": {
+    "fully": 262,
+    "partly": 76,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 1106,
+    "partly": 262,
+    "none": 2
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 19.9,
+   "tableLines": {
+    "file": 127,
+    "nodes": 76,
+    "rules": 15
+   },
+   "missingTop25": [
+    {
+     "type": "Interpolation",
+     "chars": 3634,
+     "n": 247,
+     "examples": [
+      "\" `; function ${i}: classify and combine`\" @ token VariableName",
+      "\"  `(define (f${i} x y)`,\\n    `  (cond`,\\n\" @ token VariableName",
+      "\"  `    [(< x ${n}) (let ([a (+ x ${i})] \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 357,
+     "n": 51,
+     "examples": [
+      "\" Map();\\n  for (const n of profile.nodes)\" @ token const",
+      "\"odes)\\n    for (const c of n.children ?? \" @ token const",
+      "\" + ms);\\n  for (const [id, ms] of self) {\" @ token const"
+     ]
+    },
+    {
+     "type": "ImportDeclaration>VariableDefinition",
+     "chars": 125,
+     "n": 14,
+     "examples": [
+      "\"odule\\\";\\nimport fs from \\\"fs\\\";\\n\\nconst gen \" @ token VariableDefinition",
+      "\"ize.mjs\\nimport fs from \\\"fs\\\";\\n\\nconst load\" @ token VariableDefinition",
+      "\"import js from \\\"@eslint/js\\\";\\nimp\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ArrowFunction>async",
+     "chars": 25,
+     "n": 5,
+     "examples": [
+      "\"k, n = 1) =>\\n  async () => {\\n    for (le\" @ token async",
+      "\"];\\n  const m = async (name, fn) => out.p\" @ token async",
+      "\"locks render\\\", async () => {\\n    await p\" @ token async"
+     ]
+    },
+    {
+     "type": "FunctionDeclaration>async",
+     "chars": 20,
+     "n": 4,
+     "examples": [
+      "\"--------------\\nasync function openPage(b\" @ token async",
+      "\"at it cost. */\\nasync function measure(en\" @ token async",
+      "\"ress(k);\\n  };\\n\\nasync function runOnce(br\" @ token async"
+     ]
+    },
+    {
+     "type": "MemberExpression>ImportMeta",
+     "chars": 6,
+     "n": 1,
+     "examples": [
+      "\" createRequire(import.meta.url)(\\\"./gen.j\" @ token import"
+     ]
+    },
+    {
+     "type": "ImportMeta",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"Require(import.meta.url)(\\\"./gen.js\\\");\\nco\" @ token PropertyName"
+     ]
+    },
+    {
+     "type": "MemberExpression>PropertyName",
+     "chars": 3,
+     "n": 1,
+     "examples": [
+      "\"re(import.meta.url)(\\\"./gen.js\\\");\\nconst a\" @ token PropertyName"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "Hashbang",
+     "chars": 72,
+     "n": 4
+    }
+   ],
+   "correctness": {
+    "files": 30,
+    "edits": 600,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "scripts/soak.js",
+    "lines": 713,
+    "typedEditMedianMs": 1.16
+   }
+  },
+  "js-node_modules-library": {
+   "note": "~200 non-minified .js/.mjs sampled (seed 7) from 12067 files under node_modules: library code",
+   "language": "javascript",
+   "files": 200,
+   "lines": 14733,
+   "chars": 331186,
+   "coverage": {
+    "real": 99.2,
+    "opaque": 0,
+    "fallback": 0.8
+   },
+   "topStatements": {
+    "fully": 1557,
+    "partly": 125,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 7625,
+    "partly": 551,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 17.7,
+   "tableLines": {
+    "file": 127,
+    "nodes": 76,
+    "rules": 15
+   },
+   "missingTop25": [
+    {
+     "type": "Interpolation",
+     "chars": 1360,
+     "n": 135,
+     "examples": [
+      "\"\\n    return `${escapes}\\\\\\\\u${separator.ch\" @ token VariableName",
+      "\"${escapes}\\\\\\\\u${separator.charCodeAt(0).t\" @ token VariableName",
+      "\".get(`params.${node.params.length - 1}.a\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 540,
+     "n": 78,
+     "examples": [
+      "\"ue) {\\n    for (const {\\n      value,\\n    \" @ token const",
+      "\") {\\n      for (const [key, fn] of pairs)\" @ token const",
+      "\"true;\\n    for (const bareSuper of bareSu\" @ token const"
+     ]
+    },
+    {
+     "type": "ForInSpec",
+     "chars": 117,
+     "n": 15,
+     "examples": [
+      "\"          for (key in value);\\n          \" @ token VariableName",
+      "\"      for (var k in o) if (Object.protot\" @ token VariableDefinition",
+      "\"{\\n    for (var p in m) if (p !== \\\"defaul\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "FunctionDeclaration>VariableDefinition",
+     "chars": 104,
+     "n": 7,
+     "examples": [
+      "\";\\n};\\nfunction* genTrue() {\\n  return true\" @ token VariableDefinition",
+      "\"};\\n}\\nfunction* getCachedValue(cache, arg\" @ token VariableDefinition",
+      "\"};\\n}\\nfunction* getCachedValueOrWait(asyn\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ImportDeclaration>VariableDefinition",
+     "chars": 93,
+     "n": 7,
+     "examples": [
+      "\"import esutils from \\\"esutils\\\";\\n\\n\" @ token VariableDefinition",
+      "\"import _typeof from \\\"./typeof.js\" @ token VariableDefinition",
+      "\"of.js\\\";\\nimport setFunctionName from \\\"./s\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ForStatement>ForInSpec",
+     "chars": 84,
+     "n": 15,
+     "examples": [
+      "\"      for (key in value);\\n              \" @ token in",
+      "\"          for (var k in o) if (Object.pr\" @ token var",
+      "\"ts) {\\n    for (var p in m) if (p !== \\\"de\" @ token var"
+     ]
+    },
+    {
+     "type": "CallExpression>super",
+     "chars": 70,
+     "n": 14,
+     "examples": [
+      "\"sLE) {\\n        super();\\n        this.fin\" @ token super",
+      "\"ems) {\\n        super(items);\\n        Obj\" @ token super",
+      "\"ems) {\\n        super(items);\\n        Obj\" @ token super"
+     ]
+    },
+    {
+     "type": "FunctionDeclaration>async",
+     "chars": 65,
+     "n": 13,
+     "examples": [
+      "\"   }\\n}\\n\\nexport async function parseChunk\" @ token async",
+      "\"rn results;\\n}\\n\\nasync function findPackag\" @ token async",
+      "\"fig: {}\\n\\t};\\n}\\n\\nasync function actualLoad\" @ token async"
+     ]
+    },
+    {
+     "type": "TaggedTemplateExpression",
+     "chars": 44,
+     "n": 1,
+     "examples": [
+      "\"body.body.push(_core.template.statement.\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>async",
+     "chars": 40,
+     "n": 8,
+     "examples": [
+      "\");\\n    }\\n  }\\n  async runAllTimersAsync()\" @ token async",
+      "\");\\n    }\\n  }\\n  async runOnlyPendingTimer\" @ token async",
+      "\" }\\n    }\\n  }\\n  async advanceTimersToNext\" @ token async"
+     ]
+    },
+    {
+     "type": "PropertyDeclaration>PrivatePropertyDefinition",
+     "chars": 20,
+     "n": 2,
+     "examples": [
+      "\"Visitor {\\n    #exportNode;\\n    #referenc\" @ token PrivatePropertyDefinition",
+      "\"portNode;\\n    #referencer;\\n    construct\" @ token PrivatePropertyDefinition"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>PrivatePropertyDefinition",
+     "chars": 18,
+     "n": 1,
+     "examples": [
+      "\";\\n    }\\n  }\\n  #createMockFunction(implem\" @ token PrivatePropertyDefinition"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>static",
+     "chars": 12,
+     "n": 2,
+     "examples": [
+      "\"ype;\\n    }\\n    static create(checker, ts\" @ token static",
+      "\"cer;\\n    }\\n    static visit(referencer, \" @ token static"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>set",
+     "chars": 9,
+     "n": 3,
+     "examples": [
+      "\"   }\\n    }\\n    set buffer(value) {\\n     \" @ token set",
+      "\"fer;\\n    }\\n    set view(value) {\\n       \" @ token set",
+      "\"gth;\\n    }\\n    set length(value) {\\n     \" @ token set"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>get",
+     "chars": 9,
+     "n": 3,
+     "examples": [
+      "\"er);\\n    }\\n    get buffer() {\\n        re\" @ token get",
+      "\"ue);\\n    }\\n    get view() {\\n        retu\" @ token get",
+      "\"iew;\\n    }\\n    get length() {\\n        re\" @ token get"
+     ]
+    },
+    {
+     "type": "ForStatement>await",
+     "chars": 5,
+     "n": 1,
+     "examples": [
+      "\"           for await (const chunk of ite\" @ token await"
+     ]
+    },
+    {
+     "type": "ArrowFunction>async",
+     "chars": 5,
+     "n": 1,
+     "examples": [
+      "\"ce, args).then(async (ret)=>{\\n          \" @ token async"
+     ]
+    },
+    {
+     "type": ";",
+     "chars": 2,
+     "n": 2,
+     "examples": [
+      "\"rable'\\n    );\\n};\\n\\nclass ChunkParser {\\n  \" @ token ;",
+      "\".value;\\n    }\\n};\\n\" @ token ;"
+     ]
+    },
+    {
+     "type": "UnaryExpression>VariableName",
+     "chars": 1,
+     "n": 1,
+     "examples": [
+      "\"rn (a & b) ^ (~a & c);\\n}\\n/** Majority fu\" @ token VariableName"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "Hashbang",
+     "chars": 18,
+     "n": 1
+    }
+   ],
+   "correctness": {
+    "files": 30,
+    "edits": 600,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "node_modules/ajv-formats/node_modules/ajv/dist/core.js",
+    "lines": 618,
+    "typedEditMedianMs": 1.57
+   }
+  },
+  "js-node_modules-examples": {
+   "note": "up to 40 example/demo .js sampled (seed 11) from 48 files: the nearest thing to beginner-style programs found locally",
+   "language": "javascript",
+   "files": 40,
+   "lines": 758,
+   "chars": 12529,
+   "coverage": {
+    "real": 99.2,
+    "opaque": 0,
+    "fallback": 0.8
+   },
+   "topStatements": {
+    "fully": 191,
+    "partly": 5,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 297,
+    "partly": 13,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 11.1,
+   "tableLines": {
+    "file": 127,
+    "nodes": 76,
+    "rules": 15
+   },
+   "missingTop25": [
+    {
+     "type": "Interpolation",
+     "chars": 100,
+     "n": 11,
+     "examples": [
+      "\"file option [${values.file}] the default\" @ token VariableName",
+      "\"fault value? ${isFileDefault}`);\\n\\n// Try\" @ token VariableName",
+      "\"n value for '${badToken.rawName}' must b\" @ token VariableName"
+     ]
+    }
+   ],
+   "opaqueTop10": [],
+   "correctness": {
+    "files": 30,
+    "edits": 600,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "node_modules/needle/examples/stream-multiple/stream-multiple.js",
+    "lines": 50,
+    "typedEditMedianMs": 0.47
+   }
+  },
+  "py-stdlib-library": {
+   "note": "~200 .py sampled (seed 5) from 597 files of the standard library of /Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6 (Python 3.6): library code",
+   "language": "python",
+   "files": 200,
+   "lines": 90370,
+   "chars": 1736020,
+   "coverage": {
+    "real": 99.4,
+    "opaque": 0,
+    "fallback": 0.6
+   },
+   "topStatements": {
+    "fully": 3789,
+    "partly": 392,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 40648,
+    "partly": 2005,
+    "none": 25
+   },
+   "errorNodes": 29,
+   "filesWithErrors": 10,
+   "parseBuildMsPer1000Lines": 12.3,
+   "tableLines": {
+    "file": 106,
+    "nodes": 54,
+    "rules": 16
+   },
+   "missingTop25": [
+    {
+     "type": "SetExpression",
+     "chars": 1705,
+     "n": 29,
+     "examples": [
+      "\"g = frozenset({\\\"utc\\\", \\\"gmt\\\", self.tzname\" @ token String",
+      "\"g = frozenset({self.tzname[1].lower()})\\n\" @ token VariableName",
+      "\"_(c) for c in {subclass, subtype})\\n\\n    \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>Body",
+     "chars": 1240,
+     "n": 33,
+     "examples": [
+      "\"e:\\n            return NotImplemented\\n   \" @ token return",
+      "\"e:\\n            return ''\\n        regex =\" @ token return",
+      "\"               sock.close()\\n            \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "YieldExpression",
+     "chars": 1091,
+     "n": 21,
+     "examples": [
+      "\"s = yield from shutdown_coro\\n        for\" @ token VariableName",
+      "\"l = yield from self._create_connection_t\" @ token VariableName",
+      "\"s = yield from _ensure_resolved(\\n       \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ReturnStatement>VariableName",
+     "chars": 1015,
+     "n": 197,
+     "examples": [
+      "\"   return key, value\\n\\n    def clear(self\" @ token VariableName",
+      "\"turn iso_year, ordinal\\n\\n\\ndef _strptime(d\" @ token VariableName",
+      "\"name, gmtoff), fraction\\n\\ndef _strptime_t\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ArrayComprehensionExpression>for",
+     "chars": 456,
+     "n": 152,
+     "examples": [
+      "\"bbr[i].lower() for i in range(7)]\\n      \" @ token for",
+      "\"ame[i].lower() for i in range(7)]\\n      \" @ token for",
+      "\"bbr[i].lower() for i in range(13)]\\n     \" @ token for"
+     ]
+    },
+    {
+     "type": "ComprehensionExpression",
+     "chars": 409,
+     "n": 12,
+     "examples": [
+      "\"      chain = (e for s in (self, other) \" @ token VariableName",
+      "\"elf.__seqToRE((tz for tz_names in self.l\" @ token VariableName",
+      "\"ue in\\n        (line.partition('=') for l\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "DictionaryComprehensionExpression",
+     "chars": 362,
+     "n": 10,
+     "examples": [
+      "\"    _b32rev = {v: k for k, v in enumerat\" @ token VariableName",
+      "\" {\\n            key.lower(): value\\n      \" @ token VariableName",
+      "\"nv = {\\n        key.lower(): value\\n      \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "MemberExpression>BinaryExpression",
+     "chars": 323,
+     "n": 51,
+     "examples": [
+      "\".append(data[i:i+sabs])\\n        else:\\n  \" @ token VariableName",
+      "\"rom_bytes(s[i: i + 5], 'big')\\n        en\" @ token VariableName",
+      "\" quanta = s[i: i + 8]\\n        acc = 0\\n  \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ArrayComprehensionExpression>in",
+     "chars": 304,
+     "n": 152,
+     "examples": [
+      "\".lower() for i in range(7)]\\n        f_we\" @ token in",
+      "\".lower() for i in range(7)]\\n        self\" @ token in",
+      "\".lower() for i in range(13)]\\n        f_m\" @ token in"
+     ]
+    },
+    {
+     "type": "ReturnStatement>CallExpression",
+     "chars": 249,
+     "n": 16,
+     "examples": [
+      "\"  return conn, conn.getpeername()\\n\\n     \" @ token VariableName",
+      "\"return '7bit', normal_body(lines).decode\" @ token VariableName",
+      "\"return '8bit', normal_body(lines).decode\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "CallExpression>ArgList",
+     "chars": 245,
+     "n": 44,
+     "examples": [
+      "\"iterable(value for value in other if val\" @ token for",
+      "\"iterable(value for value in self\\n       \" @ token for",
+      "\"iterable(value for value in other\\n      \" @ token for"
+     ]
+    },
+    {
+     "type": "ReturnStatement>TupleExpression",
+     "chars": 209,
+     "n": 13,
+     "examples": [
+      "\"e, proto, '', (host, port)\\n        excep\" @ token VariableName",
+      "\"n type(self), (self.partial, self.expect\" @ token VariableName",
+      "\"n type(self), (self.args[0], self.consum\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "StatementGroup",
+     "chars": 205,
+     "n": 6,
+     "examples": [
+      "\" if o == '-t': test(); return\\n    if arg\" @ token VariableName",
+      "\"r:\\n            self.stackviewer.close();\" @ token VariableName",
+      "\"g:\\n            self.push('503 Error: sen\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "SetComprehensionExpression",
+     "chars": 193,
+     "n": 3,
+     "examples": [
+      "\"  abstracts = {name\\n                    \" @ token VariableName",
+      "\"\\n\\n_builtins = {name for name in dir(buil\" @ token VariableName",
+      "\"magics = {\\n    '__%s__' % method for met\" @ token String"
+     ]
+    },
+    {
+     "type": "YieldStatement>from",
+     "chars": 164,
+     "n": 41,
+     "examples": [
+      "\"\\n        yield from self._mapping\\n\\nKeysV\" @ token from",
+      "\"\\n        yield from waiter\\n\\n\\nclass BaseE\" @ token from",
+      "\"         yield from tasks.wait(fs, loop=\" @ token from"
+     ]
+    },
+    {
+     "type": "AssignStatement>YieldExpression",
+     "chars": 162,
+     "n": 18,
+     "examples": [
+      "\"     results = yield from shutdown_coro\\n\" @ token yield",
+      "\"rt, protocol = yield from self._create_c\" @ token yield",
+      "\"       infos = yield from _ensure_resolv\" @ token yield"
+     ]
+    },
+    {
+     "type": "MemberExpression>VariableName",
+     "chars": 157,
+     "n": 47,
+     "examples": [
+      "\"list[filename, lineno][:]:\\n            b\" @ token VariableName",
+      "\"list[filename, line]\\n            for bp \" @ token VariableName",
+      "\"list[filename, lineno] or []\\n\\n    def ge\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ReturnStatement>MemberExpression",
+     "chars": 139,
+     "n": 14,
+     "examples": [
+      "\"n self.socket, self.server_address\\n\\n    \" @ token VariableName",
+      "\"rn p[:index2], p[index2:]\\n        if nor\" @ token VariableName",
+      "\" return p[:2], p[2:]\\n    return p[:0], p\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>else",
+     "chars": 132,
+     "n": 33,
+     "examples": [
+      "\" break\\n        else:\\n            return \" @ token else",
+      "\" break\\n        else:\\n            return \" @ token else",
+      "\"               else:\\n                   \" @ token else"
+     ]
+    },
+    {
+     "type": "ImportStatement>as",
+     "chars": 130,
+     "n": 65,
+     "examples": [
+      "\"import compile as re_compile\\nfrom re imp\" @ token as",
+      "\" import escape as re_escape\\nfrom datetim\" @ token as",
+      "\"e import (date as datetime_date,\\n       \" @ token as"
+     ]
+    },
+    {
+     "type": "RaiseStatement>from",
+     "chars": 112,
+     "n": 28,
+     "examples": [
+      "\"tive, format)) from None\\n            # I\" @ token from",
+      "\"%s'\\\" % format) from None\\n            _re\" @ token from",
+      "\"ss__.__name__) from None\\n\\n\\n# Base64 enco\" @ token from"
+     ]
+    },
+    {
+     "type": "ForStatement>String",
+     "chars": 89,
+     "n": 14,
+     "examples": [
+      "\"in \\\"version\\\", \\\"verifiability\\\", \\\"name\\\", \\\"\" @ token String",
+      "\"rifiability\\\", \\\"name\\\", \\\"path\\\", \\\"domain\\\", \" @ token String",
+      "\"ity\\\", \\\"name\\\", \\\"path\\\", \\\"domain\\\", \\\"port\\\":\\n\" @ token String"
+     ]
+    },
+    {
+     "type": "ArrayComprehensionExpression>if",
+     "chars": 84,
+     "n": 42,
+     "examples": [
+      "\"               if not ((local_addr and a\" @ token if",
+      "\"elf._callbacks if f != fn]\\n        remov\" @ token if",
+      "\"               if server.strip() != '']\\n\" @ token if"
+     ]
+    },
+    {
+     "type": "ReturnStatement>BinaryExpression",
+     "chars": 71,
+     "n": 8,
+     "examples": [
+      "\"return result, end + 1\\n            pairs\" @ token VariableName",
+      "\" return pairs, end + 1\\n        elif next\" @ token VariableName",
+      "\"return values, end + 1\\n    _append = val\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "DictionaryExpression>DictionaryComprehensionExpression",
+     "chars": 70,
+     "n": 2,
+     "examples": [
+      "\".obj_extension for ext in self.src_exten\" @ token for",
+      "\".res_extension for ext in self._rc_exten\" @ token for"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ExpressionStatement",
+     "chars": 31,
+     "n": 1
+    },
+    {
+     "type": "AwaitExpression",
+     "chars": 21,
+     "n": 1
+    }
+   ],
+   "correctness": {
+    "files": 30,
+    "edits": 600,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "stdlib/tkinter/__init__.py",
+    "lines": 4006,
+    "typedEditMedianMs": 1.82
+   }
+  },
+  "py-turtledemo": {
+   "note": "the standard library's turtledemo programs: beginner-style, the best local match",
+   "language": "python",
+   "files": 21,
+   "lines": 2429,
+   "chars": 41598,
+   "coverage": {
+    "real": 99.6,
+    "opaque": 0,
+    "fallback": 0.4
+   },
+   "topStatements": {
+    "fully": 189,
+    "partly": 15,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 1621,
+    "partly": 32,
+    "none": 9
+   },
+   "errorNodes": 5,
+   "filesWithErrors": 3,
+   "parseBuildMsPer1000Lines": 15.3,
+   "tableLines": {
+    "file": 106,
+    "nodes": 54,
+    "rules": 16
+   },
+   "missingTop25": [
+    {
+     "type": "StatementGroup",
+     "chars": 77,
+     "n": 4,
+     "examples": [
+      "\"cale):\\n        self.forward(s); self.lef\" @ token VariableName",
+      "\"pto(x, y):\\n    penup(); goto(x,y)\\n\\ndef l\" @ token VariableName",
+      "\"t1, t2, t3\\n    ht(); penup(); goto(0, -2\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>VariableName",
+     "chars": 26,
+     "n": 8,
+     "examples": [
+      "\"n second_hand, minute_hand, hour_hand:\\n \" @ token VariableName",
+      "\", minute_hand, hour_hand:\\n        hand.r\" @ token VariableName",
+      "\"    for b in u,s,t:\\n            try:\\n   \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ReturnStatement>BinaryExpression",
+     "chars": 20,
+     "n": 1,
+     "examples": [
+      "\" + WUNIT // 2, SCREENHEIGHT // 2 - y - H\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ArrayComprehensionExpression>for",
+     "chars": 15,
+     "n": 5,
+     "examples": [
+      "\"rn [entry[:-3] for entry in os.listdir(d\" @ token for",
+      "\"               for angle, sizefactor in \" @ token for",
+      "\"   nk = len([x for x in tiledict if tile\" @ token for"
+     ]
+    },
+    {
+     "type": "ArrayComprehensionExpression>in",
+     "chars": 10,
+     "n": 5,
+     "examples": [
+      "\":-3] for entry in os.listdir(demo_dir) i\" @ token in",
+      "\"le, sizefactor in branchlist ]\\n\\ndef rand\" @ token in",
+      "\"= len([x for x in tiledict if tiledict[x\" @ token in"
+     ]
+    },
+    {
+     "type": "ArrayComprehensionExpression>if",
+     "chars": 6,
+     "n": 3,
+     "examples": [
+      "\"tdir(demo_dir) if\\n            entry.ends\" @ token if",
+      "\" x in tiledict if tiledict[x]])\\n    nd =\" @ token if",
+      "\" x in tiledict if not tiledict[x]])\\n    \" @ token if"
+     ]
+    },
+    {
+     "type": "ImportStatement>as",
+     "chars": 4,
+     "n": 2,
+     "examples": [
+      "\"import __doc__ as about_turtledemo\\n\\nimpo\" @ token as",
+      "\"ainloop, Vec2D as Vec\\n\\nG = 8\\n\\nclass Grav\" @ token as"
+     ]
+    },
+    {
+     "type": "ReturnStatement>VariableName",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"\\n    return z, rand\\n\\n\\nclass NimModel(obj\" @ token VariableName"
+     ]
+    }
+   ],
+   "opaqueTop10": [],
+   "correctness": {
+    "files": 21,
+    "edits": 420,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "stdlib/turtledemo/__main__.py",
+    "lines": 387,
+    "typedEditMedianMs": 1.08
+   }
+  }
  }
 }

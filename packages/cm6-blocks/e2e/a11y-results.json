@@ -1,0 +1,281 @@
+{
+ "scheme": {
+  "0 loaded": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 16,
+   "focusEvents": [],
+   "activeElementPerFrame": [
+    "BODY",
+    "BODY",
+    "BODY",
+    "BODY",
+    "BODY",
+    "BODY"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 10
+  },
+  "1 insert (a block is focused in the same call)": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 18,
+   "focusEvents": [],
+   "activeElementPerFrame": [
+    "block(number 2)",
+    "block(number 2)",
+    "block(number 2)",
+    "block(number 2)",
+    "block(number 2)",
+    "block(number 2)"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 11
+  },
+  "2 delete (the focused block, with the Delete key)": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 16,
+   "focusEvents": [
+    "focusout block(number 3) -> null (active BODY)",
+    "focusin block(call to g with 1 argument) -> null (active block(call to g with 1 argument))"
+   ],
+   "activeElementPerFrame": [
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 10
+  },
+  "3 selection (Space on 1 and on 4)": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 16,
+   "focusEvents": [
+    "focusout block(number 1) -> block(number 4) (active BODY)",
+    "focusin block(number 4) -> block(number 1) (active block(number 4))"
+   ],
+   "activeElementPerFrame": [
+    "block(number 1)",
+    "block(number 1)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 10
+  },
+  "4 undo (Ctrl/Cmd-Z)": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 18,
+   "focusEvents": [],
+   "activeElementPerFrame": [
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 11
+  }
+ },
+ "javascript": {
+  "0 loaded": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 16,
+   "focusEvents": [],
+   "activeElementPerFrame": [
+    "BODY",
+    "BODY",
+    "BODY",
+    "BODY",
+    "BODY",
+    "BODY"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 12
+  },
+  "1 insert (a block is focused in the same call)": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 18,
+   "focusEvents": [],
+   "activeElementPerFrame": [
+    "block(number 2)",
+    "block(number 2)",
+    "block(number 2)",
+    "block(number 2)",
+    "block(number 2)",
+    "block(number 2)"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 13
+  },
+  "2 delete (the focused block, with the Delete key)": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 16,
+   "focusEvents": [
+    "focusout block(number 3) -> null (active BODY)",
+    "focusin block(call to g with 1 argument) -> null (active block(call to g with 1 argument))"
+   ],
+   "activeElementPerFrame": [
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 12
+  },
+  "3 selection (Space on 1 and on 4)": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 16,
+   "focusEvents": [
+    "focusout block(number 1) -> block(number 4) (active BODY)",
+    "focusin block(number 4) -> block(number 1) (active block(number 4))"
+   ],
+   "activeElementPerFrame": [
+    "block(number 1)",
+    "block(number 1)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 12
+  },
+  "4 undo (Ctrl/Cmd-Z)": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 18,
+   "focusEvents": [],
+   "activeElementPerFrame": [
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 13
+  }
+ },
+ "python": {
+  "0 loaded": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 16,
+   "focusEvents": [],
+   "activeElementPerFrame": [
+    "BODY",
+    "BODY",
+    "BODY",
+    "BODY",
+    "BODY",
+    "BODY"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 12
+  },
+  "1 insert (a block is focused in the same call)": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 18,
+   "focusEvents": [],
+   "activeElementPerFrame": [
+    "block(number 2)",
+    "block(number 2)",
+    "block(number 2)",
+    "block(number 2)",
+    "block(number 2)",
+    "block(number 2)"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 13
+  },
+  "2 delete (the focused block, with the Delete key)": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 16,
+   "focusEvents": [
+    "focusout block(number 3) -> null (active BODY)",
+    "focusin block(call to g with 1 argument) -> null (active block(call to g with 1 argument))"
+   ],
+   "activeElementPerFrame": [
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)",
+    "block(call to g with 1 argument)"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 12
+  },
+  "3 selection (Space on 1 and on 4)": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 16,
+   "focusEvents": [
+    "focusout block(number 1) -> block(number 4) (active BODY)",
+    "focusin block(number 4) -> block(number 1) (active block(number 4))"
+   ],
+   "activeElementPerFrame": [
+    "block(number 1)",
+    "block(number 1)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 12
+  },
+  "4 undo (Ctrl/Cmd-Z)": {
+   "treeProblems": [],
+   "domProblems": [],
+   "sameAsAFreshEditor": true,
+   "staticTextNodesInTree": 18,
+   "focusEvents": [],
+   "activeElementPerFrame": [
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)",
+    "block(number 4)"
+   ],
+   "focusRestoresDuringTheCase": 0,
+   "treeitems": 13
+  }
+ }
+}

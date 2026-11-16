@@ -215,9 +215,11 @@ export function measure(language: string, parser: Parser, table: BlockTable, tex
     if (b.kind === "unknown" && b.slots.length === 0) return fill(b, 2, byRange.get(b.from + ":" + b.to) ?? -1);
     if (b.slots.length === 0) return fill(b, 1, -1);
     const kwFrom = b.keyword && b.keywordTo !== undefined ? b.keywordTo - b.keyword.length : -1;
+    // a block with a text-pieces slot (a template string) draws all its own text between its children
+    const pieces = b.slots.some((q) => q.pieces);
     for (let i = b.from; i < b.to; i++) {
       if (cls[i] === 0) continue;
-      if (!/[\w$]/.test(text[i]) || (i >= kwFrom && i < (b.keywordTo ?? -1))) cls[i] = 1;
+      if (pieces || !/[\w$]/.test(text[i]) || (i >= kwFrom && i < (b.keywordTo ?? -1))) cls[i] = 1;
     }
     for (const s of b.slots) for (const c of s.nodes) mark(c);
   };

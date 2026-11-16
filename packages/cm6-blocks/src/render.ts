@@ -123,6 +123,7 @@ export class Renderer {
           container.insertBefore(el, before);
           this.renumber(slot, change.index);
           this.renumberGaps(container, change.index + 1);
+          if (slot.pieces) this.paintPieces(owner, slot, container);
         }
       }
     } else {
@@ -141,20 +142,61 @@ export class Renderer {
           el.remove();
           this.renumber(slot, change.index);
           this.renumberGaps(container, change.index);
+          if (slot.pieces) this.paintPieces(owner, slot, container);
         }
       }
     }
-    // labels of the ancestors may have changed
+    // labels of the ancestors may have changed (and the text pieces of those that have them)
     for (let n: BNode | null = owner; n && n.kind !== "program"; n = n.parent) {
       const el = this.els.get(n);
-      if (el) this.setAttr(el, "aria-label", this.language.describe(n));
+      if (el) {
+        this.setAttr(el, "aria-label", this.language.describe(n));
+        this.repaintPieces(n);
+      }
+    }
+  }
+
+  /** the text pieces of a node's slots (after its text or its children changed) */
+  private repaintPieces(node: BNode): void {
+    for (const slot of node.slots) {
+      if (!slot.pieces) continue;
+      const container = this.containerOf(node, slot);
+      if (container) this.paintPieces(node, slot, container);
+    }
+  }
+
+  /** the gaps of a `pieces` slot hold the owner's source text between its children */
+  private paintPieces(owner: BNode, slot: Slot, container: Element): void {
+    let src: string;
+    try {
+      src = this.language.print(owner);
+    } catch {
+      return;
+    }
+    const kids = slot.nodes;
+    for (let i = 0; i <= kids.length; i++) {
+      const gap = container.children[2 * i];
+      if (!gap) break;
+      const a = i === 0 ? owner.from : kids[i - 1].to;
+      const b = i < kids.length ? kids[i].from : owner.to;
+      const t = src.slice(Math.max(0, a - owner.from), Math.max(0, b - owner.from));
+      if (gap.textContent !== t) {
+        gap.textContent = t;
+        this.stats.attrWrites++;
+      }
+      gap.classList.add("blocks-piece");
+      if (t) gap.removeAttribute("aria-hidden");
+      else gap.setAttribute("aria-hidden", "true");
     }
   }
 
   /** the spoken label of a drawn node, after what is inside it changed */
   refresh(node: BNode): void {
     const el = this.els.get(node);
-    if (el) this.setAttr(el, "aria-label", this.language.describe(node));
+    if (el) {
+      this.setAttr(el, "aria-label", this.language.describe(node));
+      this.repaintPieces(node);
+    }
   }
 
   /** aria-setsize / aria-posinset of every drawn node of a slot (after nodes were added or removed around them) */
@@ -252,6 +294,7 @@ export class Renderer {
         });
         args.appendChild(this.makeGap(slot.name, slot.nodes.length));
         el.appendChild(args);
+        if (slot.pieces) this.paintPieces(node, slot, args);
       }
     }
     return el;

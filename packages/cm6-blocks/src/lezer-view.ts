@@ -295,17 +295,19 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       const anchored = new Set<BNode>();
       const useAnchors = options.reconcile !== false && options.anchors !== false && cr.length <= 8;
       const touches = (a: number, b: number): boolean => cr.some((c) => c.fromB <= b && c.toB >= a);
-      const errEnd: number[] = [];
-      errs.forEach((e, i) => (errEnd[i] = Math.max(e[1], errEnd[i - 1] ?? -1)));
+      // the Lezer error nodes in the root being built, read from the NEW tree (the editor's list of errors only has the new ones from the
+      // first change on: an error before it can be new, made by text after it)
+      let rootErrs: [number, number][] = [];
+      let errEnd: number[] = [];
       const errorIn = (a: number, b: number): boolean => {
         let lo = 0;
-        let hi = errs.length;
+        let hi = rootErrs.length;
         while (lo < hi) {
           const m = (lo + hi) >> 1;
-          if (errs[m][0] <= b) lo = m + 1;
+          if (rootErrs[m][0] <= b) lo = m + 1;
           else hi = m;
         }
-        for (let j = lo - 1; j >= 0 && errEnd[j] >= a; j--) if (errs[j][1] >= a) return true;
+        for (let j = lo - 1; j >= 0 && errEnd[j] >= a; j--) if (rootErrs[j][1] >= a) return true;
         return false;
       };
       let cur: { o: BNode; idx: Map<string, BNode | null> | null } | null = null;
@@ -329,7 +331,13 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         cur = null;
         if (!useAnchors) return;
         const o = old.get(from);
-        if (o && o.node.kind !== "error" && keyOfNode(o.node) === key) cur = { o: o.node, idx: null };
+        if (!o || o.node.kind === "error" || keyOfNode(o.node) !== key) return;
+        cur = { o: o.node, idx: null };
+        rootErrs = [];
+        tree.iterate({ from, to, enter: (n) => { if (n.type.isError) rootErrs.push([n.from, n.to]); } });
+        rootErrs.sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+        errEnd = [];
+        rootErrs.forEach((e, i) => (errEnd[i] = Math.max(e[1], errEnd[i - 1] ?? -1)));
       };
       const inner = (c: InnerCand): BNode | null => {
         if (!cur || touches(c.win[0], c.win[1]) || (lastError >= 0 && c.to >= firstChange && c.from <= lastError) || errorIn(c.from, c.to)) return null;
@@ -506,8 +514,10 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     }
   }
 
+  /** an edit that puts focus where it wants (a removal) holds the generic restore back, so that focus does not visit the parent on the way */
+  let holdFocus = false;
   function restoreFocus(s: Snap | null, trs: readonly Transaction[]): void {
-    if (!s || gone) return;
+    if (!s || gone || holdFocus) return;
     const active = view.dom.ownerDocument.activeElement;
     if (active && view.contentDOM.contains(active) && renderer.nodeOf(active)) return;
     let target: BNode | null;
@@ -533,6 +543,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   let lastNode: BNode | null = null;
   /** the text change that writes `snippet` as element `index` of a list slot (an empty list too) */
   function changeFor(slot: Slot, index: number, snippet: string): TextChange {
+    if (slot.pieces) throw new Error(`nothing can be inserted into the ${slot.name} of a ${slot.owner.kind}: it is text with blocks in it`);
     if (slot.nodes.length === 0) {
       if (slot.owner === program) return { from: 0, to: 0, insert: snippet + (view.state.doc.length ? "\n" : "") };
       return insertEmptyChange(currentText(), slot, snippet);
@@ -600,7 +611,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     let ref: BNode | null = rootsSlot.nodes[rootsSlot.nodes.length - 1] ?? null;
     let index = rootsSlot.nodes.length;
     for (let n: BNode | null = anchor; n; n = n.parent) {
-      if (n.slot && n.slot.kind === "list") {
+      if (n.slot && n.slot.kind === "list" && !n.slot.pieces) {
         slot = n.slot;
         ref = n;
         index = n.slot.nodes.indexOf(n) + (before ? 0 : 1);
@@ -648,7 +659,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       const t = table.templates?.[name];
       if (!t) throw new Error(`no template ${name}`);
       if (anchor) live(anchor);
-      const takes = (sl: Slot) => sl.kind === "list" && (!t.stmt || !table.statementSlots || table.statementSlots.includes(sl.name));
+      const takes = (sl: Slot) => sl.kind === "list" && !sl.pieces && (!t.stmt || !table.statementSlots || table.statementSlots.includes(sl.name));
       let slot = rootsSlot;
       let ref: BNode | null = rootsSlot.nodes[rootsSlot.nodes.length - 1] ?? null;
       let index = rootsSlot.nodes.length;
@@ -698,8 +709,13 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       const owner = node.parent as BNode;
       const where = { from: owner.from, kind: owner.kind, slot: node.slot!.name, index: node.slot!.nodes.indexOf(node) };
       const t = currentText();
-      const cs = sorted.map((n): TextChange => (n.slot!.kind === "one" ? { from: n.from, to: n.to, insert: table.blank ?? "..." } : removeChange(n, t)));
-      dispatchAll(mergeChanges(cs));
+      const cs = sorted.map((n): TextChange => (n.slot!.kind === "one" || n.slot!.pieces ? { from: n.from, to: n.to, insert: table.blank ?? "..." } : removeChange(n, t)));
+      holdFocus = inside;
+      try {
+        dispatchAll(mergeChanges(cs));
+      } finally {
+        holdFocus = false;
+      }
       if (!inside) return;
       let target: BNode | null = null;
       let o: BNode | null = null;
@@ -712,6 +728,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         }
       const sl = (o as BNode | null)?.slots.find((q) => q.name === where.slot);
       if (sl) target = sl.nodes[where.index] ?? sl.nodes[where.index - 1] ?? (o === program ? null : o);
+      if (!target) target = deepestAt(where.from);
       while (target && !isDrawn(target)) target = target.parent;
       if (target && target.kind !== "program") ed.focusNode(target);
     },
@@ -737,12 +754,10 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         walk(n, (m) => o.push(m));
         return o.filter((m) => m.kind !== "error");
       };
-      const what = language.describe(node);
       if (renderer.isSelected(node)) {
         // unselect it, what is inside it, and its ancestors
         for (const m of all(node)) renderer.setSelected(m, false);
         for (let p = node.parent; p; p = p.parent) renderer.setSelected(p, false);
-        say(`unselected ${what}`);
         return "unselected";
       }
       if (sel.some((m) => inside(node, m))) {
@@ -751,7 +766,6 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       }
       for (const m of sel) if (inside(m, node)) renderer.setSelected(m, false);
       for (const m of all(node)) renderer.setSelected(m, true);
-      say(`selected ${what}`);
       return "selected";
     },
     clearSelection() {
@@ -821,7 +835,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       }
       const t = currentText();
       const snippets = sorted.map((n) => dedent(t.slice(n.from, n.to), indentAt(n.from)).replace(/\s+$/, ""));
-      const gone = mergeChanges(sorted.map((n): TextChange => (n.slot!.kind === "one" ? { from: n.from, to: n.to, insert: table.blank ?? "..." } : removeChange(n, t))));
+      const gone = mergeChanges(sorted.map((n): TextChange => (n.slot!.kind === "one" || n.slot!.pieces ? { from: n.from, to: n.to, insert: table.blank ?? "..." } : removeChange(n, t))));
       let put: TextChange;
       if ("blank" in target) put = replaceChange(target.blank, snippets[0].replace(/\n/g, "\n" + indentAt(target.blank.from)));
       else {

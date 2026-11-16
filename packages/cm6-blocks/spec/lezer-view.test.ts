@@ -204,8 +204,8 @@ function fuzz(name: string, L: (typeof LANGS)[string], starts: string[], seeds: 
             const w = rnd() < 0.3 ? "" : pick(L.words);
             log.push(`text [${a},${b}) -> ${JSON.stringify(w)}`);
             ed.view.dispatch({ changes: { from: a, to: b, insert: w } });
-          } else if (r < 0.55 && lists.length) {
-            const s = pick(lists);
+          } else if (r < 0.55 && lists.some((q) => !q.pieces)) {
+            const s = pick(lists.filter((q) => !q.pieces)); // (nothing is inserted into the text of a template string)
             const ix = Math.floor(rnd() * (s.nodes.length + 1));
             const sn = pick(L.snippets);
             log.push(`insert ${s.owner.kind}.${s.name}[${ix}] ${JSON.stringify(sn)}`);

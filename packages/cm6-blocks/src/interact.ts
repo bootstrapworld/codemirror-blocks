@@ -217,7 +217,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
 
   function siblingBox(node: BNode, after: boolean): void {
     const slot = node.slot;
-    if (!slot || slot.kind !== "list") return;
+    if (!slot || slot.kind !== "list" || slot.pieces) return;
     const i = slot.nodes.indexOf(node);
     const el = renderer.element(node);
     insertBox(slot, after ? i + 1 : i, node, (input) => {
@@ -317,7 +317,10 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
         ed.say("deleted " + sel.map((n) => ed.language.describe(n)).join(" and "));
         ed.clearSelection();
         ed.removeNodes(sel);
-      } else ed.removeNode(node);
+      } else {
+        ed.say("deleted " + ed.language.describe(node));
+        ed.removeNode(node);
+      }
     } else if (k === "Enter") {
       handled();
       if (node.slots.length === 0) editLeaf(node);
@@ -401,7 +404,12 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     on: boolean;
     target: Target | null;
     mark: Element | null;
+    /** a finger: the drag starts after a long press (a quick swipe scrolls the page) */
+    touch: boolean;
+    timer: ReturnType<typeof setTimeout> | null;
   }
+  const LONG_PRESS_MS = 350;
+  let pressedFocused = false;
   let drag: Drag | null = null;
   let swallowClick = false;
   const doc = dom.ownerDocument;
@@ -416,6 +424,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     const el = doc.elementFromPoint(x, y);
     if (!el || !dom.contains(el)) return null;
     const gap = renderer.gapOf(el);
+    if (gap && gap.slot.pieces) return null;
     if (gap) return { target: gap, mark: el.closest(".blocks-gap") as Element };
     const hit = renderer.nodeOf(el);
     if (!hit) return null;
@@ -429,7 +438,23 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     }
     return null;
   }
+  /** a finger that is dragging must not scroll the page (this is only reached after a long press, before any movement) */
+  const noScroll = (e: Event): void => {
+    if (e.cancelable) e.preventDefault();
+  };
+  function begin(d: Drag): void {
+    d.on = true;
+    dom.classList.add("blocks-dragging");
+    for (const g of d.group) if (renderer.has(g)) renderer.element(g).classList.add("blocks-drag-source");
+    if (d.touch) {
+      doc.addEventListener("touchmove", noScroll, { passive: false, capture: true });
+      doc.addEventListener("contextmenu", noScroll, true);
+    }
+  }
   function clearDrag(): void {
+    if (drag?.timer) clearTimeout(drag.timer);
+    doc.removeEventListener("touchmove", noScroll, true);
+    doc.removeEventListener("contextmenu", noScroll, true);
     if (drag) {
       drag.mark?.classList.remove("blocks-drop-target");
       for (const g of drag.group) if (renderer.has(g)) renderer.element(g).classList.remove("blocks-drag-source");
@@ -443,19 +468,33 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   function onDown(e: PointerEvent): void {
     if (e.button !== 0 || (e.target as Element).closest?.(".blocks-edit")) return;
     const node = renderer.nodeOf(e.target as Element);
+    // (the press focuses the block before the click comes: remember whether it already had the focus)
+    pressedFocused = !!node && ed.focusedNode() === node;
     if (!node || !node.slot || renderer.gapOf(e.target as Element)) return;
-    drag = { node, group: renderer.isSelected(node) && ed.selectedBlocks().length ? ed.selectedBlocks() : [node], x: e.clientX, y: e.clientY, on: false, target: null, mark: null };
+    const touch = e.pointerType === "touch";
+    drag = { touch, timer: null, node, group: renderer.isSelected(node) && ed.selectedBlocks().length ? ed.selectedBlocks() : [node], x: e.clientX, y: e.clientY, on: false, target: null, mark: null };
     doc.addEventListener("pointermove", onMove, true);
     doc.addEventListener("pointerup", onUp, true);
     doc.addEventListener("pointercancel", onCancel, true);
+    if (touch) {
+      const d = drag;
+      d.timer = setTimeout(() => {
+        d.timer = null;
+        if (drag === d) begin(d);
+      }, LONG_PRESS_MS);
+    }
   }
   function onMove(e: PointerEvent): void {
     if (!drag) return;
     if (!drag.on) {
-      if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;
-      drag.on = true;
-      dom.classList.add("blocks-dragging");
-      for (const g of drag.group) if (renderer.has(g)) renderer.element(g).classList.add("blocks-drag-source");
+      const moved = Math.hypot(e.clientX - drag.x, e.clientY - drag.y);
+      if (drag.touch) {
+        // a finger that moves before the long press is over is scrolling the page: not a drag
+        if (moved > 8) clearDrag();
+        return;
+      }
+      if (moved < 5) return;
+      begin(drag);
     }
     e.preventDefault();
     const hit = targetAt(e.clientX, e.clientY, drag.node);
@@ -497,6 +536,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     const t = e.target as Element;
     if (t.closest?.(".blocks-edit")) return;
     const gap = renderer.gapOf(t);
+    if (gap && gap.slot.pieces) return; // (the gaps of a template string hold its text)
     if (gap) {
       const owner = gap.slot.owner;
       const gapEl = t.closest(".blocks-gap") as HTMLElement;
@@ -504,7 +544,15 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       return;
     }
     const node = renderer.nodeOf(t);
-    if (node) ed.focusNode(node);
+    if (!node) return;
+    // a tap on the block that already has the focus edits it (a finger has no Enter key): a leaf its text, any other block its whole text
+    const again = (e as PointerEvent).pointerType === "touch" && pressedFocused;
+    pressedFocused = false;
+    ed.focusNode(node);
+    if (again && node.kind !== "program") {
+      if (node.slots.length === 0) editLeaf(node);
+      else editAll(node);
+    }
   }
 
   dom.addEventListener("keydown", onKey, true);

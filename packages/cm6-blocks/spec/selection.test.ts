@@ -42,12 +42,11 @@ describe.each(LANGS)("selection: %s", (l) => {
     expect(sel(ed, two)).toBe("true");
     expect(ed.renderer.element(two).classList.contains("blocks-selected")).toBe(true);
     expect(ed.selectedBlocks()).toEqual([two]);
-    expect(ed.said[ed.said.length - 1]).toMatch(/^selected /);
+    expect(ed.said).toEqual([]); // (like the old editor: the state is announced through aria-selected, nothing is said)
     ok(ed);
     space(ed, two);
     expect(sel(ed, two)).toBe("false");
     expect(ed.renderer.element(two).classList.contains("blocks-selected")).toBe(false);
-    expect(ed.said[ed.said.length - 1]).toMatch(/^unselected /);
     ok(ed);
   });
 
