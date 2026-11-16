@@ -733,3 +733,80 @@ lines (JS +17, Python +17, Scheme +6) and 25 lines of adapter/renderer:
   content did not change.
 - Not done: the spoken text is English only; `${slot}` of a compound child is its raw source,
   not its own description (a long argument is cut at 28 characters).
+
+### E: comments
+- What each grammar does (evidence, from the raw trees): comments ARE nodes in all three Lezer
+  trees: Scheme `LineComment` / `BlockComment` (direct children of the program, also inside
+  lists), JavaScript `LineComment` / `BlockComment` (also inside blocks), Python `Comment`.
+  The first comparison lost them because the table did not name them.
+- Cheap version, done: a comment row marked `topLevelOnly`, so a comment BETWEEN top-level
+  statements is a block of its own (italic, grey) in all three languages. Cost: 1 table line
+  per language (2 for Scheme and JavaScript, which have two kinds), 1 row flag and 4 lines in
+  the adapter's `collect`. It can be edited (Enter), removed, and written around like any root
+  (`spec/comments.test.ts`, 9 tests; the fuzzers already throw `; c`, `//c`, `#c` at the text).
+- Why only top level: inside a block or list a comment would count as one of its children
+  (the `#n` positions and the slots shift: `(define x ; c\n 5)` would read the comment as the
+  value). Comments inside a root stay in the text, hidden by the root's widget: a comment in
+  the middle of a function body is not drawn. Showing those needs the adapter to look through
+  comments when it numbers children, and a place to draw them (a gap-like line): not done.
+
+## Summary of the second round
+
+| step | done? | what it showed | what did not work |
+|---|---|---|---|
+| A1 stale nodes | yes | edits throw `no longer in the tree`, nothing dispatched (test) | callers must look nodes up again |
+| A2 zero-width blank | yes | blank sits where the node would go; `before` connector (1 field) | every punctuated construct will want a connector |
+| A3 focus after Delete | yes | next/previous/parent, one generic rule (test, all 3 languages) | |
+| A4 Scheme cost | yes | OUR rule scanned all roots per root (9.2 ms of collect -> 1.4 ms; browser edit 9.5 -> 3 ms) | the grammar's deep wrapping costs about 1 ms per 1250 forms |
+| A5 JS focus cases | yes | valid now; found and fixed: undo scrolled to the top and dropped focus | |
+| B templates | yes | 99 tests insert every template at 3 places with no error node | blank is not a valid name; empty Python body; no loop in Scheme |
+| C table gaps | yes | one larger sample per language; glue words, opaque, class, member | a long tail (try/except, switch, dict as pairs, elif pairs, arrows) |
+| D describe | yes | 27 `describe` strings; ancestors' labels follow (test) | English only; long children cut |
+| E comments | yes | comments are Lezer nodes; top-level ones are blocks for 1 to 2 lines per language | comments inside blocks hidden |
+
+Package: 305 jest tests, `tsc` clean; Chromium (`e2e/`): 9 tests pass (smoke, measurements, keys).
+Chromium after this round (3000 lines): first blocks in the DOM 80 / 68 / 74 ms (Scheme / JS /
+Python); a block edit, synchronous with layout, 3.4 / 2.9, 3.3 / 3.5, 2.9 / 2.6 ms (top / middle);
+at most 37 / 22 / 21 roots in the DOM at once. Bundle not re-measured.
+
+### Lines per language (what a language costs now)
+
+| language | grammar | file lines | `nodes` rows | rules (lines) | templates | describe | what is still not expressible |
+|---|---|---|---|---|---|---|---|
+| Scheme | cm6-lezer-scheme-common-lang | 63 | 14 (plus quote/vector/comment rows) | 1 kind rule (about 18) | 11 | 6 | wrong-arity special forms as "unknown"; `let` pairs; comments inside forms; no statement/loop templates |
+| JavaScript | @lezer/javascript | 81 | 37 | 2 (kind rule 7, separator 1 shared) | 10 | 11 | arrow functions, template strings, `?:`, `try`, `switch`, destructuring (opaque or noise); `{}` formatting of an empty block |
+| Python | @lezer/python | 73 | 32 | 2 (kind rule 7, separator shared) | 10 | 10 | elif/else pairing, dict pairs, comprehensions, `try`, `with`, decorators; empty body; blank as a name |
+
+(The `nodes` figure counts the `describe` strings, which sit on the rows. The generic
+adapter, editor and keys are about 1,150 lines (`lezer.ts` 326, `lezer-view.ts` 580,
+`interact.ts` 247) and are shared.)
+
+### Does a language really reduce to a table and a handful of rules? (revised answer)
+
+Evidence (tests and measurements above):
+- READING: yes. Three languages, 63 to 81 lines each, produce blocks with exact ranges, correct
+  edits, the oracle clean in the fuzzers, and a larger sample per language drawn with only
+  keywords unaccounted for. Each language needed 1 or 2 small rules (a head-symbol rule in
+  Scheme; the indentation separator and a `kind` rule for `x[0]`, `for..of`, `+=`, keyword
+  operators in JS and Python).
+- WRITING: yes, with one more mechanism than reading needed. Templates (about 10 lines per
+  language) insert at the top level, in a function body and in an if body for every template
+  in every language with no error node; indentation was one generic rule, not per language.
+- SPEAKING: yes: one string per row (6 to 11 lines per language).
+- EDITING behaviours (delete, focus, undo) needed NO per-language code once written generically.
+- The things that were NOT a pure table: a connector between slots (`before`, a field), a
+  placeholder where the blank is invalid (`${name|func}`), 1 to 2 `kind` rules per language
+  (Lezer node names do not always say what the construct is: `x[0]` vs `x.y`, `for..of` vs
+  `for(;;)`, `+=`), and a tree-walking cost trap (the Scheme rule was quadratic).
+
+Judgement (mine, not measured):
+- "A table and a handful of rules" is a fair summary for what I tried; the table is the easy
+  70 to 80 percent, and the rest is a long tail of constructs (try/catch, switch, decorators,
+  destructuring, pairs in dicts and elif chains) where each costs one row, sometimes a rule, and
+  where the honest fallback is an opaque block of plain text. I did not measure how large that
+  tail is on real programs; a corpus run would settle it.
+- The language-specific effort that is NOT in the table is error recovery (Scheme loses everything
+  after an unclosed bracket) and what a person wants a block to look like (CSS, wording). Those
+  are per language, and not reducible to a table with the present design.
+- The risk I would watch: rules and templates that look at the tree or the text are code, and the
+  Scheme rule shows they can hide a quadratic cost that small tests do not show.
