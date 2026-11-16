@@ -1544,3 +1544,7 @@ Decision (cheapest faithful version, judgement): comments stay blocks of their o
 | (c) `demo/scheme-only.ts`, CM6 external | 102,787 / 35,585 | 132,724 / 45,962 | +29,937 / +10,377 |
 
 About 30 K minified (10 K gzipped) more in the Scheme-only build over round four: the fifth-round work (selection, edit as text, anchors, touch, Python imports, template strings) and this round (places, collapse, click, attached comments, about 2.5 K of CSS text). Grammars are not external in any of these rows.
+
+### Final checks of the sixth round (2026-11-16)
+jsdom 535 passed (6 skipped), tsc clean, model fuzzers at 800 seeds x 25 steps per language clean, the whole Chromium suite 49 passed (all e2e files, port 8177, server stopped).
+Not done: search; the old editor's cut taking the attached comment along; comments in blocks whose slots are all "one"; a screen reader was never run.
