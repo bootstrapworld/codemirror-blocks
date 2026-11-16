@@ -504,11 +504,11 @@ orders of magnitude, not benchmarks. All of this is measurement unless marked ju
   - edit inside the focused block's parent: block rebuilt, focus restored to the block at
     the same place, 1 restore (all three languages).
   - edit in a later root, in an earlier root, undo of either: focus untouched, 0
-    restores, same block (Scheme and Python). JavaScript: 0 restores, and focus on a
-    block with the same text but a different object, because the demo's JS roots
-    are statements next to each other, so the "later/earlier" root chosen was a
-    neighbour and was rebuilt, yet focus held (0 restores, i.e. it never left).
-  - removing the focused block: 1 restore (Scheme, Python); 0 in JavaScript.
+    restores, same block (Scheme and Python). JavaScript: this run is NOT a valid
+    test of those cases: only one root in view had a list (`inViewWithLists: 1`), so
+    earlier, middle and later were the same root and every case edited it; focus
+    held with 0 restores except for the first case (1). Not repeated.
+  - removing the focused block: 1 restore (Scheme, Python); 0 in JavaScript (same caveat).
   - Not measured: whether the restore flickers or is announced twice by a screenreader.
 - Keyboard in real Chromium (real key presses, all steps passed in all three languages):
   click focuses a block; ArrowDown/ArrowUp/ArrowLeft/ArrowRight move as specified; Enter on
@@ -523,3 +523,15 @@ orders of magnitude, not benchmarks. All of this is measurement unless marked ju
   ranges and a corrupt document. An API that takes node objects across edits has this
   trap; edits should probably take a (root index, path) or be refused when the node is
   no longer in the tree (not done: `removeNode` does not check `doc.byId`).
+
+### Step 5a: insert into an empty list
+
+- `insertEmptyChange` (lezer.ts, 12 lines, ONE generic rule, 0 lines per language):
+  insert before the closing bracket of the owner, padded with a space unless the
+  character before is whitespace or an open bracket. Tests (7 cases, jest): Scheme `(f)`
+  and `()`, JS `f()`, `{}`, `[]`, Python `f()`, `[]` give `(f 5)`, `(5)`, `f(5);`,
+  `{5}`, `[5];`, `f(5)`, `[5]` and pass the oracle. Impossible: a Python body (no closing
+  bracket; the insert throws "has no closing bracket"), as is any list whose owner ends
+  without a bracket. A real block would also want newlines and indentation inside `{}`;
+  not done (a per-language template, see 5b). The keyboard (box on a gap of an empty
+  list) now works for the same cases because it calls `insertText`.

@@ -214,3 +214,29 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
     expect(ed.focusedNode()).not.toBeNull();
   });
 });
+
+describe("insert into an empty list", () => {
+  const cases: [string, string, string, string][] = [
+    ["scheme", "(f)\n(g)", "(f 5)", "call"],
+    ["scheme", "()\n(g)", "(5)", "call"],
+    ["javascript", "f();\ng();", "f(5);", "call"],
+    ["javascript", "{}\ng();", "{5}", "block"],
+    ["javascript", "[];", "[5];", "array"],
+    ["python", "f()\ng()", "f(5)", "call"],
+    ["python", "[]", "[5]", "array"],
+  ];
+  test.each(cases)("%s %j", (l, text, expected, kind) => {
+    const ed = make(l, text);
+    const node = all(ed).find((n) => n.kind === kind && n.slots.some((s) => s.kind === "list" && s.nodes.length === 0))!;
+    expect(node).toBeDefined();
+    ed.insertText(node.slots.find((s) => s.kind === "list" && s.nodes.length === 0)!, 0, "5");
+    expect(textOf(ed).split("\n")[0]).toBe(expected);
+    ok(ed);
+  });
+  test("an empty Python body is impossible", () => {
+    const ed = make("python", "def f():\n    pass\n");
+    // `pass` is not in the table: the body is empty
+    const body = all(ed).find((n) => n.kind === "body");
+    if (body) expect(() => ed.insertText(body.slots[0], 0, "x = 1")).toThrow(/closing bracket/);
+  });
+});

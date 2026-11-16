@@ -27,7 +27,7 @@ import { defaultKeymap, history, historyKeymap, isolateHistory } from "@codemirr
 import { Tree, TreeFragment } from "@lezer/common";
 import type { Parser } from "@lezer/common";
 import { walk } from "./doc";
-import { BlockTable, insertChange, LezerLanguage, lezerLanguage, removeChange, keyOfNode, hasError } from "./lezer";
+import { BlockTable, insertChange, insertEmptyChange, LezerLanguage, lezerLanguage, removeChange, keyOfNode, hasError } from "./lezer";
 import { Renderer } from "./render";
 import { RootWidget } from "./view";
 import { attachInteraction } from "./interact";
@@ -314,7 +314,8 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
           dispatch({ from: 0, to: 0, insert: snippet + (view.state.doc.length ? "\n" : "") });
           return;
         }
-        throw new Error("insert into an empty list: where it goes needs a rule per language");
+        dispatch(insertEmptyChange(currentText(), slot, snippet));
+        return;
       }
       dispatch(insertChange(table, currentText(), slot, index, snippet));
     },

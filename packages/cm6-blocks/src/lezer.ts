@@ -225,3 +225,18 @@ export function removeChange(node: BNode): TextChange {
   if (i > 0) return { from: ns[i - 1].to, to: node.to, insert: "" };
   return { from: node.from, to: node.to, insert: "" };
 }
+
+/**
+ * The text change that inserts `snippet` into an EMPTY list slot: before the closing
+ * bracket of its owner (`f()`, `(f)`, `{}`, `[]`). One generic rule, no per-language
+ * lines. An owner with no closing bracket (a Python body) cannot be done.
+ */
+export function insertEmptyChange(text: string, slot: Slot, snippet: string): TextChange {
+  const o = slot.owner;
+  const close = text[o.to - 1];
+  if (!close || !")]}".includes(close)) throw new Error(`insert into an empty ${slot.name}: ${o.kind} has no closing bracket to go before`);
+  const prev = text[o.to - 2] ?? "";
+  const pad = prev === "" || /[\s([{]/.test(prev) ? "" : " ";
+  const at = o.to - 1;
+  return { from: at, to: at, insert: pad + snippet };
+}
