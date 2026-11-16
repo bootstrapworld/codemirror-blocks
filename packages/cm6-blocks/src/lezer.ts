@@ -13,6 +13,8 @@ import type { BNode, Language, Slot, TextChange } from "./types";
 export interface BlockRow {
   kind: string; // BNode.kind
   label: string; // what it is called aloud
+  /** what a screenreader says, with `${slot}` (its content), `${slot.length}`, `${slot.length|one|many}`, `${value}`; default: the label and counts */
+  describe?: string;
   /**
    * The children that are slots, in text order. `take` picks Lezer children by
    * type name (a block, or a type looked through on the way to it), by overall
@@ -210,8 +212,21 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     },
     blank: () => makeNode("blank", [], { value: "..." }),
     describe(node) {
-      const row = Object.values(table.nodes).find((r) => r.kind === node.kind);
-      const label = row?.label ?? node.kind;
+      const key = keys.get(node);
+      const row = key ? table.nodes[key] : undefined;
+      const label = row?.label ?? (node.kind === "error" ? "unparsed text" : node.kind);
+      const short = (c: BNode): string => {
+        const t = (c.value ?? sources.get(c) ?? c.kind).replace(/\s+/g, " ").trim();
+        return t.length > 28 ? t.slice(0, 27) + "..." : t;
+      };
+      if (row?.describe) {
+        return row.describe.replace(/\$\{(\w+)(\.length)?(?:\|([^|}]*)\|([^}]*))?\}/g, (_m, name: string, len?: string, one?: string, many?: string) => {
+          const sl = node.slots.find((q) => q.name === name);
+          if (!sl) return name === "value" ? node.value ?? "" : "";
+          if (len) return sl.nodes.length + (one !== undefined ? " " + (sl.nodes.length === 1 ? one : many) : "");
+          return sl.nodes.map(short).join(", ");
+        });
+      }
       if (node.slots.length === 0) return node.value ? `${label} ${node.value}` : label;
       return `${label} with ${node.slots.map((s) => `${s.nodes.length} ${s.name}`).join(", ")}`;
     },

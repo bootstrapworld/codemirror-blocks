@@ -714,3 +714,22 @@ lines (JS +17, Python +17, Scheme +6) and 25 lines of adapter/renderer:
 - Screenshots retaken from the constructs sample: `e2e/screens/*.png` (top of the document).
 - Evidence: package tests 290 pass (two inline snapshots updated because the renderer now
   draws `=` and ids shifted); the earlier fuzzers (60 seeds x 25 steps) still pass.
+
+### D: `describe` templates (spoken labels)
+- A row may carry `describe: "call to ${func} with ${args.length|argument|arguments}"`:
+  `${slot}` is the slot's content (a leaf's text, else a shortened source), `${slot.length}`
+  its count, `|one|many` picks singular or plural, `${value}` the node's own text. 20 lines
+  of adapter. Rows without one keep the old default ("call with 1 func, 2 args").
+  Cost in table lines (one `describe: "..."` added to an existing row): Scheme 6 rows,
+  JavaScript 11, Python 10.
+- Bug found on the way: the default label of a leaf was the label of the FIRST row of its
+  kind, so every JS/Python name was spoken as "number f". It now uses the row it was built
+  from (`keyOfNode`), tested ("a leaf is named by what it is"). The old snapshot showed it.
+- Ancestors' labels update: the editor rebuilds a changed root whole, so every label in it
+  is new; the test (`spec/describe.test.ts`, 6 tests) deletes an argument and sees the call
+  go from "call to g with 3 arguments" to "... 2 arguments" and the enclosing `return g(2,
+  3)` follow, in all three languages, with the oracle (DOM equals a fresh drawing) clean.
+  Labels of blocks OUTSIDE the changed roots do not change, which is right for a root whose
+  content did not change.
+- Not done: the spoken text is English only; `${slot}` of a compound child is its raw source,
+  not its own description (a long argument is cut at 28 characters).
