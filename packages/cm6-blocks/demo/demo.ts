@@ -98,6 +98,7 @@ function show(text: string, reconcile = true, anchors = true): void {
     b.textContent = t.name;
     b.dataset.template = t.name;
     b.addEventListener("mousedown", (e) => e.preventDefault()); // keep the focus on the block
+    b.addEventListener("pointerdown", (e) => ed!.beginTemplateDrag(e, t.name)); // dragging it into the program inserts it there; a plain click inserts it after the focused block
     b.addEventListener("click", () => ed!.insertTemplate(t.name, ed!.focusedNode() ?? ed!.lastFocused()));
     bar.appendChild(b);
   }

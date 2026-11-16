@@ -77,7 +77,7 @@ export function prevBlock(n: BNode, closed: (n: BNode) => boolean = () => false)
 
 type Field = HTMLInputElement | HTMLTextAreaElement;
 
-export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(node: BNode, typed?: string): void } {
+export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(node: BNode, typed?: string): void; beginTemplateDrag(e: PointerEvent, name: string): void } {
   const { view, renderer } = ed;
   const dom = view.dom;
   let open: { cancel(): void } | null = null;
@@ -478,7 +478,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   };
 
   /** what a drop at (x, y) would mean: a gap, a blank, or the top or bottom edge of a top-level block */
-  function targetAt(x: number, y: number, node: BNode): { target: Target; mark: Element } | null {
+  function targetAt(x: number, y: number, node: BNode | null): { target: Target; mark: Element } | null {
     const el = doc.elementFromPoint(x, y);
     if (!el || !dom.contains(el)) return null;
     const gap = renderer.gapOf(el);
@@ -496,6 +496,65 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     }
     return null;
   }
+  /* a template dragged out of the toolbar: the same targets (gaps, blanks, the edges of top-level blocks), the same marks; the block is made where it is let go */
+  interface TDrag { name: string; x: number; y: number; on: boolean; mark: Element | null; id: number }
+  let tdrag: TDrag | null = null;
+  function tdone(): void {
+    tdrag?.mark?.classList.remove("blocks-drop-target");
+    dom.classList.remove("blocks-dragging");
+    tdrag = null;
+    doc.removeEventListener("pointermove", tMove, true);
+    doc.removeEventListener("pointerup", tUp, true);
+    doc.removeEventListener("pointercancel", tdone, true);
+  }
+  function tMove(e: PointerEvent): void {
+    const d = tdrag;
+    if (!d || e.pointerId !== d.id) return;
+    if (!d.on) {
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 5) return;
+      d.on = true;
+      dom.classList.add("blocks-dragging");
+    }
+    e.preventDefault();
+    const hit = targetAt(e.clientX, e.clientY, null);
+    if (hit?.mark !== d.mark) {
+      d.mark?.classList.remove("blocks-drop-target");
+      hit?.mark.classList.add("blocks-drop-target");
+    }
+    d.mark = hit?.mark ?? null;
+  }
+  function tUp(e: PointerEvent): void {
+    const d = tdrag;
+    if (!d || e.pointerId !== d.id) return;
+    if (d.on) {
+      const hit = targetAt(e.clientX, e.clientY, null);
+      // (the click that ends the drag must not press the button)
+      const stop = (ev: Event): void => {
+        ev.preventDefault();
+        ev.stopPropagation();
+      };
+      doc.addEventListener("click", stop, { capture: true, once: true });
+      setTimeout(() => doc.removeEventListener("click", stop, true), 0);
+      tdone();
+      if (hit) {
+        try {
+          ed.insertTemplateAt(d.name, hit.target);
+        } catch (err) {
+          ed.lastError = (err as Error).message;
+          ed.say((err as Error).message);
+        }
+      }
+    } else tdone();
+  }
+  function beginTemplateDrag(e: PointerEvent, name: string): void {
+    if (e.button !== 0) return;
+    tdone();
+    tdrag = { name, x: e.clientX, y: e.clientY, on: false, mark: null, id: e.pointerId };
+    doc.addEventListener("pointermove", tMove, true);
+    doc.addEventListener("pointerup", tUp, true);
+    doc.addEventListener("pointercancel", tdone, true);
+  }
+
   /** a finger that is dragging must not scroll the page (this is only reached after a long press, before any movement) */
   const noScroll = (e: Event): void => {
     if (e.cancelable) e.preventDefault();
@@ -637,6 +696,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   dom.addEventListener("pointerdown", onDown as EventListener, true);
   return {
     edit: editLeaf,
+    beginTemplateDrag,
     detach() {
       open?.cancel();
       dom.removeEventListener("keydown", onKey, true);
@@ -647,6 +707,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       dom.removeEventListener("paste", onPasteEv, true);
       dom.removeEventListener("pointerdown", onDown as EventListener, true);
       clearDrag();
+      tdone();
     },
   };
 }

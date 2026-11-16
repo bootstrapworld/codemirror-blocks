@@ -1,0 +1,67 @@
+// Seventh round, step 3: drag a template out of the toolbar into the program (real mouse), in each language; Shift-Tab to the toolbar and Tab back.
+import { test, expect } from "@playwright/test";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const SMALL: Record<string, string> = {
+  scheme: "(f 1 (g 2) 3)\n(h 4)\n",
+  javascript: "f(1, g(2), 3);\nh(4);\n",
+  python: "f(1, g(2), 3)\nh(4)\n",
+};
+const TEMPLATE: Record<string, string> = { scheme: "number", javascript: "number", python: "number" };
+
+for (const lang of Object.keys(SMALL)) {
+  test.describe(`toolbar: ${lang}`, () => {
+    test.beforeEach(async ({ page }) => {
+      await page.goto(`/index.html?lang=${lang}`);
+      await page.waitForSelector(".cm-content .blocks-node");
+      await page.evaluate((t) => {
+        const d = (window as any).demo;
+        d.ed.view.dispatch({ changes: { from: 0, to: d.ed.view.state.doc.length, insert: t } });
+      }, SMALL[lang]);
+    });
+    const text = (page: any) => page.evaluate(() => (window as any).demo.ed.view.state.doc.toString());
+
+    test("a real mouse drag of a template button onto a gap writes the block there, with its first hole open for typing", async ({ page }) => {
+      const btn = page.locator(`#templates button[data-template="${TEMPLATE[lang]}"]`);
+      const b = (await btn.boundingBox())!;
+      await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(b.x + b.width / 2 + 10, b.y + b.height / 2 + 30, { steps: 3 });
+      expect(await page.locator(".blocks-dragging").count()).toBeGreaterThan(0);
+      const gap = page.locator(`.cm-content .blocks-args[data-slot="args"] > .blocks-gap[data-index="1"]`).first();
+      const g = (await gap.boundingBox())!;
+      await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2, { steps: 8 });
+      expect(await page.locator(".blocks-drop-target").count()).toBe(1);
+      await page.mouse.up();
+      expect((await text(page)).split("\n")[0]).toMatch(/1[, ]+0[, ]+[(]?g/);
+      expect(await page.locator(".blocks-dragging").count()).toBe(0);
+      expect(await page.locator("input.blocks-edit").count()).toBe(1); // (the number's box is open: type its value)
+      await page.keyboard.type("77");
+      await page.keyboard.press("Enter");
+      expect((await text(page)).split("\n")[0]).toMatch(/1[, ]+77[, ]+[(]?g/);
+      expect(await page.evaluate(() => (window as any).demo.ed.lastError)).toBeNull();
+      // one undo takes the block (and its edit) back
+      await page.keyboard.press("ControlOrMeta+z");
+      await page.keyboard.press("ControlOrMeta+z");
+      expect(await text(page)).toBe(SMALL[lang]);
+    });
+
+    test("a press on a template button that does not move still inserts after the focused block (the click)", async ({ page }) => {
+      await page.locator(".cm-content .blocks-literal", { hasText: /^4$/ }).first().click({ modifiers: ["Shift"] });
+      await page.locator(`#templates button[data-template="${TEMPLATE[lang]}"]`).click();
+      expect(await page.locator("input.blocks-edit").count()).toBe(1);
+      expect((await text(page)).split("\n").length).toBeGreaterThan(2);
+    });
+
+    test("a drop that is not on a gap or a hole writes nothing", async ({ page }) => {
+      const btn = page.locator(`#templates button[data-template="${TEMPLATE[lang]}"]`);
+      const b = (await btn.boundingBox())!;
+      await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(b.x + 200, b.y + 300, { steps: 6 });
+      await page.mouse.up();
+      expect(await text(page)).toBe(SMALL[lang]);
+      expect(await page.locator("input.blocks-edit").count()).toBe(0);
+    });
+  });
+}

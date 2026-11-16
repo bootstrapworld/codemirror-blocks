@@ -85,6 +85,13 @@ export interface LezerBlockEditor {
    * new block), also focused with its edit box open.
    */
   insertTemplate(name: string, anchor?: BNode | null): BNode | null;
+  /**
+   * Write template `name` at a gap (`slot`, `index`) or in place of a blank, as a drop from the toolbar does. Throws where it cannot go
+   * (a statement into an expression slot, text pieces). Returns the first hole (or the new block), as `insertTemplate` does.
+   */
+  insertTemplateAt(name: string, target: { slot: Slot; index: number } | { blank: BNode }): BNode | null;
+  /** start dragging template `name` from the toolbar: call from a `pointerdown` on a toolbar button; the block goes where the pointer is let go over a gap or a blank (a press that does not move is left to the button's own click) */
+  beginTemplateDrag(e: PointerEvent, name: string): void;
   /** edit a leaf in place (its box); `typed` starts the text with that key */
   edit(node: BNode, typed?: string): void;
   /** the block that had focus last (it may have lost it to a toolbar), if it is still in the tree */
@@ -736,6 +743,18 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     const right = next === "" || /[\s)\]};,]/.test(next) ? "" : " ";
     return { from: node.from, to: node.to, insert: left + snippet + right };
   }
+  /** after a template was written by `change`: the leaf at its first hole gets its edit box (and is returned) */
+  function openHole(change: TextChange, snippet: string, hole: number): BNode | null {
+    const pos = change.from + change.insert.indexOf(snippet) + Math.max(hole, 0);
+    let found: BNode | null = null;
+    for (const r of rootsSlot.nodes) {
+      walk(r, (n) => {
+        if (n.slots.length === 0 && n.from === pos && n.to > n.from && (!found || n.from >= found.from) && !found) found = n;
+      });
+    }
+    if (found) ed.edit(found);
+    return found;
+  }
   /** the drawn block that starts at `pos` and is longest (the one written there) */
   function blockAt(pos: number, len: number): BNode | null {
     let best: BNode | null = null;
@@ -840,17 +859,38 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       const snippet = f.text + (asStatement ? table.statementSuffix ?? "" : "");
       const change = changeFor(slot, index, snippet);
       dispatch(change);
-      const start = change.from + change.insert.indexOf(snippet);
-      const pos = start + Math.max(f.hole, 0);
-      let found: BNode | null = null;
-      for (const r of rootsSlot.nodes) {
-        walk(r, (n) => {
-          if (n.slots.length === 0 && n.from === pos && n.to > n.from && (!found || n.from >= found.from) && !found) found = n;
-        });
-      }
-      if (found) ed.edit(found);
-      return found;
+      return openHole(change, snippet, f.hole);
     },
+    insertTemplateAt(name, target) {
+      const t = table.templates?.[name];
+      if (!t) throw new Error(`no template ${name}`);
+      let change: TextChange;
+      let snippet: string;
+      let hole: number;
+      if ("blank" in target) {
+        live(target.blank);
+        if (!isBlank(target.blank)) throw new Error("a block goes onto a hole only");
+        const f = fillTemplate(table, name, indentAt(target.blank.from));
+        snippet = f.text;
+        hole = f.hole;
+        change = replaceChange(target.blank, snippet);
+      } else {
+        const { slot, index } = target;
+        live(slot.owner);
+        if (slot.pieces) throw new Error(`nothing can be inserted into the ${slot.name} of a ${slot.owner.kind}`);
+        if (slot.kind !== "list") throw new Error("a block goes into a list, or onto a hole");
+        if (t.stmt && table.statementSlots && !table.statementSlots.includes(slot.name)) throw new Error("a statement does not go there");
+        const ref = slot.nodes[Math.min(index, slot.nodes.length - 1)] ?? null;
+        const f = fillTemplate(table, name, ref ? indentAt(ref.from) : "");
+        const asStatement = !t.stmt && !!table.statementSlots?.includes(slot.name);
+        snippet = f.text + (asStatement ? table.statementSuffix ?? "" : "");
+        hole = f.hole;
+        change = changeFor(slot, index, snippet);
+      }
+      dispatch(change);
+      return openHole(change, snippet, hole);
+    },
+    beginTemplateDrag: (e, name) => interaction.beginTemplateDrag(e, name),
     edit: (node, typed) => interaction.edit(node, typed),
     lastFocused: () => (lastNode && doc.byId.get(lastNode.id) === lastNode ? lastNode : null),
     removeNode(node) {
