@@ -27,7 +27,7 @@ import { defaultKeymap, history, historyKeymap, isolateHistory } from "@codemirr
 import { Tree, TreeFragment } from "@lezer/common";
 import type { Parser } from "@lezer/common";
 import { walk } from "./doc";
-import { BlockTable, fillTemplate, insertChange, insertEmptyChange, LezerLanguage, lezerLanguage, removeChange, keyOfNode, hasError } from "./lezer";
+import { BlockTable, fillTemplate, insertChange, insertEmptyChange, LezerLanguage, lezerLanguage, removeChange, separatorFor, keyOfNode, hasError } from "./lezer";
 import { Renderer } from "./render";
 import { RootWidget } from "./view";
 import { attachInteraction } from "./interact";
@@ -87,6 +87,29 @@ export interface LezerBlockEditor {
   insertText(slot: Slot, index: number, snippet: string): void;
   /** remove a node: out of a list with one separator, or (a "one" slot) put the table's blank there */
   removeNode(node: BNode): void;
+  /** remove several nodes (none inside another) in ONE text change, one undo step */
+  removeNodes(nodes: BNode[]): void;
+  /** the selected blocks (Space), in document order, each with the blocks inside it (like the old editor's selection set) */
+  selection(): BNode[];
+  /** the selected blocks that have no selected ancestor, in document order: what Delete, cut, copy and drag use */
+  selectedBlocks(): BNode[];
+  /**
+   * Space: select the block (and everything inside it) or, if it is selected, unselect it, what is inside it and its
+   * ancestors. Selecting a block inside a selected one is refused ("refused"; the old editor beeps and says so);
+   * selecting a block that holds selected ones takes them over.
+   */
+  toggleSelect(node: BNode): "selected" | "unselected" | "refused";
+  clearSelection(): void;
+  /** announce `text` to a screen reader (a live region next to the editor); also kept in `said` */
+  say(text: string): void;
+  /** what was announced, newest last (the last 50) */
+  said: string[];
+  /** Move several blocks (none inside another) to a gap, in document order: ONE text change, one undo step. */
+  moveNodes(nodes: BNode[], target: { slot: Slot; index: number } | { blank: BNode }): void;
+  /** the source text of each block (see copyText), in the order given */
+  copyTexts(nodes: BNode[]): string[];
+  /** paste several blocks one after another (as separate elements of one list); one text change */
+  pasteTexts(anchor: BNode | null, texts: string[], before?: boolean): BNode | null;
   /** replace the text of a node */
   replaceText(node: BNode, snippet: string): void;
   /** the source text of a block, its later lines moved left by the indentation of its first line (what the clipboard holds) */
@@ -95,7 +118,7 @@ export interface LezerBlockEditor {
    * Write source text `text` after `anchor` (in the nearest list that holds it; replacing `anchor` if it is a blank; at
    * the end of the program when there is no anchor). The new block is focused. Returns it, if found.
    */
-  pasteText(anchor: BNode | null, text: string): BNode | null;
+  pasteText(anchor: BNode | null, text: string, before?: boolean): BNode | null;
   /** Move a block to a gap (`slot`, `index`) or onto a blank: ONE text change (cut and paste), one undo step. Throws if the target is inside the block. */
   moveNode(node: BNode, target: { slot: Slot; index: number } | { blank: BNode }): void;
   /** is this block a hole (a blank): what a drop or a paste replaces */
@@ -325,7 +348,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   const blockExtension: Extension = [
     EditorView.decorations.from(field, (v) => v.decos),
     EditorView.atomicRanges.of((v) => v.state.field(field).decos),
-    EditorView.contentAttributes.of({ role: "tree", "aria-label": "program" }),
+    EditorView.contentAttributes.of({ role: "tree", "aria-label": "program", "aria-multiselectable": "true" }),
   ];
   let blockMode = true;
   let gone = false;
@@ -431,6 +454,60 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     return best;
   }
 
+
+  function dispatchAll(cs: TextChange[]): void {
+    stats.edits++;
+    view.dispatch({ changes: cs, annotations: [isolateHistory.of("full")], userEvent: "input.block" });
+  }
+  /** changes sorted, and those that overlap made one (every one must only delete: two blanks cannot be merged) */
+  function mergeChanges(cs: TextChange[]): TextChange[] {
+    const sorted = [...cs].sort((a, b) => a.from - b.from || a.to - b.to);
+    const out: TextChange[] = [];
+    for (const c of sorted) {
+      const last = out[out.length - 1];
+      if (last && c.from < last.to) {
+        if (last.insert || c.insert) throw new Error("two of the blocks overlap: they cannot be changed together");
+        last.to = Math.max(last.to, c.to);
+      } else out.push({ ...c });
+    }
+    return out;
+  }
+  const sortedNodes = (ns: BNode[]): BNode[] => ns.sort((a, b) => a.from - b.from || a.to - b.to);
+  /** where text pasted after `anchor` goes: the nearest list slot that holds it (the roots at the end), and the indentation to give its later lines */
+  function pasteSpot(anchor: BNode | null, before = false): { slot: Slot; index: number; indent: string } {
+    let slot = rootsSlot;
+    let ref: BNode | null = rootsSlot.nodes[rootsSlot.nodes.length - 1] ?? null;
+    let index = rootsSlot.nodes.length;
+    for (let n: BNode | null = anchor; n; n = n.parent) {
+      if (n.slot && n.slot.kind === "list") {
+        slot = n.slot;
+        ref = n;
+        index = n.slot.nodes.indexOf(n) + (before ? 0 : 1);
+        break;
+      }
+    }
+    return { slot, index, indent: ref ? indentAt(ref.from) : "" };
+  }
+
+  /* ---- announcements: a live region beside the editor (the old editor's announcer: assertive, atomic) */
+  const said: string[] = [];
+  const region = parent.ownerDocument.createElement("div");
+  region.className = "blocks-announcer";
+  region.setAttribute("aria-live", "assertive");
+  region.setAttribute("aria-atomic", "true");
+  parent.appendChild(region);
+  let sayTimer: ReturnType<typeof setTimeout> | undefined;
+  function say(text: string): void {
+    said.push(text);
+    if (said.length > 50) said.shift();
+    region.textContent = "";
+    if (sayTimer) clearTimeout(sayTimer);
+    // (written a moment after it was cleared, as the old editor does, so that the same words twice are announced twice)
+    sayTimer = setTimeout(() => {
+      region.textContent = text;
+    }, 50);
+  }
+
   const ed: LezerBlockEditor = {
     get view() {
       return view;
@@ -483,16 +560,25 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     edit: (node, typed) => interaction.edit(node, typed),
     lastFocused: () => (lastNode && doc.byId.get(lastNode.id) === lastNode ? lastNode : null),
     removeNode(node) {
-      live(node);
-      if (!node.slot) throw new Error("not removable");
-      // where focus should go afterwards, if it is on the node (or inside it): the node now at its place
+      ed.removeNodes([node]);
+    },
+    removeNodes(nodes) {
+      if (!nodes.length) return;
+      for (const n of nodes) {
+        live(n);
+        if (!n.slot) throw new Error("not removable");
+      }
+      const sorted = [...nodes].sort((x, y) => x.from - y.from || x.to - y.to);
+      const node = sorted[0];
+      // where focus should go afterwards, if it is on a node (or inside one): the node now at the place of the first
       const f = ed.focusedNode();
       let inside = false;
-      for (let c: BNode | null = f; c; c = c.parent) if (c === node) inside = true;
+      for (let c: BNode | null = f; c; c = c.parent) if (sorted.includes(c)) inside = true;
       const owner = node.parent as BNode;
-      const where = { from: owner.from, kind: owner.kind, slot: node.slot.name, index: node.slot.nodes.indexOf(node) };
-      if (node.slot.kind === "one") dispatch({ from: node.from, to: node.to, insert: table.blank ?? "..." });
-      else dispatch(removeChange(node, currentText()));
+      const where = { from: owner.from, kind: owner.kind, slot: node.slot!.name, index: node.slot!.nodes.indexOf(node) };
+      const t = currentText();
+      const cs = sorted.map((n): TextChange => (n.slot!.kind === "one" ? { from: n.from, to: n.to, insert: table.blank ?? "..." } : removeChange(n, t)));
+      dispatchAll(mergeChanges(cs));
       if (!inside) return;
       let target: BNode | null = null;
       let o: BNode | null = null;
@@ -508,6 +594,61 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       while (target && !isDrawn(target)) target = target.parent;
       if (target && target.kind !== "program") ed.focusNode(target);
     },
+    said,
+    say,
+    selection: () => sortedNodes(renderer.selected()),
+    selectedBlocks() {
+      const sel = new Set(renderer.selected());
+      return sortedNodes([...sel].filter((n) => {
+        for (let p = n.parent; p; p = p.parent) if (sel.has(p)) return false;
+        return true;
+      }));
+    },
+    toggleSelect(node) {
+      live(node);
+      const sel = renderer.selected();
+      const inside = (n: BNode, anc: BNode): boolean => {
+        for (let p: BNode | null = n; p; p = p.parent) if (p === anc) return true;
+        return false;
+      };
+      const all = (n: BNode): BNode[] => {
+        const o: BNode[] = [];
+        walk(n, (m) => o.push(m));
+        return o.filter((m) => m.kind !== "error");
+      };
+      const what = language.describe(node);
+      if (renderer.isSelected(node)) {
+        // unselect it, what is inside it, and its ancestors
+        for (const m of all(node)) renderer.setSelected(m, false);
+        for (let p = node.parent; p; p = p.parent) renderer.setSelected(p, false);
+        say(`unselected ${what}`);
+        return "unselected";
+      }
+      if (sel.some((m) => inside(node, m))) {
+        say("This node already has a selected ancestor");
+        return "refused";
+      }
+      for (const m of sel) if (inside(m, node)) renderer.setSelected(m, false);
+      for (const m of all(node)) renderer.setSelected(m, true);
+      say(`selected ${what}`);
+      return "selected";
+    },
+    clearSelection() {
+      for (const m of renderer.selected()) renderer.setSelected(m, false);
+    },
+    copyTexts: (nodes) => nodes.map((n) => ed.copyText(n)),
+    pasteTexts(anchor, texts, before) {
+      if (texts.length === 1) return ed.pasteText(anchor, texts[0], before);
+      if (anchor) live(anchor);
+      if (anchor && isBlank(anchor)) throw new Error("a hole takes one block");
+      const where = pasteSpot(anchor, before);
+      const joined = texts.map((x) => x.replace(/\n/g, "\n" + where.indent)).join(separatorFor(table, currentText(), where.slot));
+      const change = changeFor(where.slot, where.index, joined);
+      dispatch(change);
+      const found = blockAt(change.from + change.insert.indexOf(texts[0].split("\n")[0]), texts[0].length);
+      if (found) ed.focusNode(found);
+      return found;
+    },
     replaceText(node, snippet) {
       live(node);
       dispatch(replaceChange(node, snippet));
@@ -517,7 +658,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       live(node);
       return dedent(view.state.doc.sliceString(node.from, node.to), indentAt(node.from)).replace(/\s+$/, "");
     },
-    pasteText(anchor, text) {
+    pasteText(anchor, text, before) {
       if (anchor) live(anchor);
       if (anchor && isBlank(anchor)) {
         const c = replaceChange(anchor, text.replace(/\n/g, "\n" + indentAt(anchor.from)));
@@ -527,19 +668,10 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         if (found) ed.focusNode(found);
         return found;
       }
-      let slot = rootsSlot;
-      let ref: BNode | null = rootsSlot.nodes[rootsSlot.nodes.length - 1] ?? null;
-      let index = rootsSlot.nodes.length;
-      for (let n: BNode | null = anchor; n; n = n.parent) {
-        if (n.slot && n.slot.kind === "list") {
-          slot = n.slot;
-          ref = n;
-          index = n.slot.nodes.indexOf(n) + 1;
-          break;
-        }
-      }
-      const indent = ref ? indentAt(ref.from) : "";
-      const snippet = text.replace(/\n/g, "\n" + indent);
+      const where = pasteSpot(anchor, before);
+      const slot = where.slot;
+      const index = where.index;
+      const snippet = text.replace(/\n/g, "\n" + where.indent);
       const change = changeFor(slot, index, snippet);
       dispatch(change);
       const found = blockAt(change.from + change.insert.indexOf(snippet), snippet.length);
@@ -547,32 +679,46 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       return found;
     },
     moveNode(node, target) {
-      live(node);
-      if (!node.slot) throw new Error("not movable");
+      ed.moveNodes([node], target);
+    },
+    moveNodes(nodes, target) {
+      for (const n of nodes) {
+        live(n);
+        if (!n.slot) throw new Error("not movable");
+      }
+      if (!nodes.length) return;
+      const sorted = [...nodes].sort((x, y) => x.from - y.from || x.to - y.to);
+      const node = sorted[0];
       const dest = "blank" in target ? target.blank : target.slot.owner;
       live(dest);
-      for (let n: BNode | null = dest; n; n = n.parent) if (n === node) throw new Error("a block cannot go inside itself");
-      const i = node.slot.nodes.indexOf(node);
-      if ("slot" in target && target.slot === node.slot && (target.index === i || target.index === i + 1)) return; // where it is
-      if ("blank" in target && target.blank === node) return;
+      for (const n of sorted) for (let c: BNode | null = dest; c; c = c.parent) if (c === n) throw new Error("a block cannot go inside itself");
+      if (sorted.length > 1 && "blank" in target) throw new Error("a hole takes one block");
+      if (sorted.length === 1) {
+        const i = node.slot!.nodes.indexOf(node);
+        if ("slot" in target && target.slot === node.slot && (target.index === i || target.index === i + 1)) return; // where it is
+        if ("blank" in target && target.blank === node) return;
+      }
       const t = currentText();
-      const snippet = dedent(t.slice(node.from, node.to), indentAt(node.from)).replace(/\s+$/, "");
-      const gone: TextChange = node.slot.kind === "one" ? { from: node.from, to: node.to, insert: table.blank ?? "..." } : removeChange(node, t);
+      const snippets = sorted.map((n) => dedent(t.slice(n.from, n.to), indentAt(n.from)).replace(/\s+$/, ""));
+      const gone = mergeChanges(sorted.map((n): TextChange => (n.slot!.kind === "one" ? { from: n.from, to: n.to, insert: table.blank ?? "..." } : removeChange(n, t))));
       let put: TextChange;
-      if ("blank" in target) put = replaceChange(target.blank, snippet.replace(/\n/g, "\n" + indentAt(target.blank.from)));
+      if ("blank" in target) put = replaceChange(target.blank, snippets[0].replace(/\n/g, "\n" + indentAt(target.blank.from)));
       else {
         const sl = target.slot;
         const ref = sl.nodes[Math.min(target.index, sl.nodes.length - 1)] ?? null;
-        put = changeFor(sl, target.index, snippet.replace(/\n/g, "\n" + (ref ? indentAt(ref.from) : "")));
+        const ind = ref ? indentAt(ref.from) : "";
+        put = changeFor(sl, target.index, snippets.map((x) => x.replace(/\n/g, "\n" + ind)).join(separatorFor(table, t, sl)));
       }
-      const both = [gone, put].sort((a, b) => a.from - b.from || a.to - b.to);
-      if (both[0].to > both[1].from) throw new Error("cannot move a block there");
+      for (const g of gone) if (put.from > g.from && put.from < g.to) throw new Error("cannot move a block there");
+      const both = [...gone, put].sort((a, b) => a.from - b.from || a.to - b.to);
+      for (let i = 1; i < both.length; i++) if (both[i - 1].to > both[i].from) throw new Error("cannot move a block there");
       stats.edits++;
       view.dispatch({ changes: both, annotations: [isolateHistory.of("full")], userEvent: "input.block" });
-      // where the block is now: its text starts where the inserted text does, shifted by what was cut before it
-      const shift = gone.from < put.from ? gone.insert.length - (gone.to - gone.from) : 0;
-      const at = put.from + shift + put.insert.indexOf(snippet.split("\n")[0]);
-      const found = blockAt(at, snippet.length);
+      // where the first block is now: its text starts where the inserted text does, shifted by what was cut before it
+      let shift = 0;
+      for (const g of gone) if (g.from < put.from) shift += g.insert.length - (g.to - g.from);
+      const at = put.from + shift + put.insert.indexOf(snippets[0].split("\n")[0]);
+      const found = blockAt(at, snippets[0].length);
       if (found) ed.focusNode(found);
     },
     change: dispatch,
@@ -595,6 +741,8 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     stats: () => ({ ...stats }),
     destroy() {
       gone = true;
+      if (sayTimer) clearTimeout(sayTimer);
+      region.remove();
       interaction.detach();
       view.destroy();
     },
@@ -609,6 +757,8 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     dispatchTransactions(trs, v) {
       const snap = trs.some((t) => t.docChanged) ? takeSnapshot() : null;
       v.update(trs);
+      // blocks that are new inside a selected block are selected with it
+      if (trs.some((t) => t.docChanged)) for (const m of renderer.selected()) walk(m, (n) => renderer.setSelected(n, true));
       restoreFocus(snap, trs);
       // undo and redo scroll to the old selection (the top, for block edits): show what changed instead
       const last = trs.find((t) => t.docChanged && (t.isUserEvent("undo") || t.isUserEvent("redo")));
@@ -722,6 +872,7 @@ export function checkLezerEditor(ed: LezerBlockEditor): string[] {
     }
   };
   links(prog, "program");
+  for (const n of ed.renderer.selected()) if (ed.doc.byId.get(n.id) !== n) say(`node ${n.id} is selected but no longer in the tree`);
   if (ed.doc.byId.size !== seen.size) say(`byId holds ${ed.doc.byId.size} nodes, the tree has ${seen.size}`);
 
   const decos: { from: number; to: number; node: BNode }[] = [];
@@ -749,7 +900,10 @@ export function checkLezerEditor(ed: LezerBlockEditor): string[] {
     }
     const el = ed.renderer.element(r);
     if (on && r.from >= vp.from && r.to <= vp.to && !el.isConnected) say(`root ${r.id} is in the viewport and its element is not in the document`);
-    if (!freshR) freshR = new Renderer(ed.language);
+    if (!freshR) {
+      freshR = new Renderer(ed.language);
+      freshR.adoptSelection(ed.renderer);
+    }
     if (!freshR.element(r).isEqualNode(el)) say(`root ${r.id}: its DOM is not what a fresh drawing gives (${domDiff(el, freshR.element(r))})`);
   }
   return problems;

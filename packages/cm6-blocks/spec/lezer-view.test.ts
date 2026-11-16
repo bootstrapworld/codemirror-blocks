@@ -213,7 +213,24 @@ function fuzz(name: string, L: (typeof LANGS)[string], starts: string[], seeds: 
             const n = pick(s.nodes);
             log.push(`remove ${n.kind} [${n.from},${n.to})`);
             ed.removeNode(n);
-          } else if (r < 0.88) {
+          } else if (r < 0.81) {
+            const every = ed.roots().flatMap((root) => { const o: BNode[] = []; walk(root, (n) => o.push(n)); return o; }).filter((n) => n.kind !== "error");
+            if (every.length) {
+              const n = pick(every);
+              log.push(`select ${n.kind} [${n.from},${n.to})`);
+              ed.toggleSelect(n);
+            }
+          } else if (r < 0.86) {
+            const sel = ed.selectedBlocks().filter((n) => n.slot);
+            log.push(`remove the selection (${sel.map((n) => `${n.kind} [${n.from},${n.to})`).join(", ")})`);
+            if (sel.length) {
+              try {
+                ed.removeNodes(sel);
+              } catch (e) {
+                if (!/overlap/.test((e as Error).message)) throw e; // two removals that cannot be one change
+              }
+            }
+          } else if (r < 0.92) {
             log.push("undo");
             undo(ed.view);
           } else {

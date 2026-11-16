@@ -1,7 +1,7 @@
 // EXPERIMENT: a page that runs the Lezer block editor in a browser.
 import css from "../src/style.css";
 import { redo, undo } from "@codemirror/commands";
-import { createLezerBlockEditor, LezerBlockEditor } from "../src/lezer-view";
+import { checkLezerEditor, createLezerBlockEditor, LezerBlockEditor } from "../src/lezer-view";
 import { BIG } from "./samples";
 import { schemeParser, schemeTable } from "../src/lang-scheme";
 import { javascriptParser, javascriptTable } from "../src/lang-javascript";
@@ -82,7 +82,7 @@ function show(text: string, reconcile = true): void {
   ed = createLezerBlockEditor($("editor"), text, { ...LANGS[lang].opts, reconcile });
   ed.setBlockMode($<HTMLInputElement>("blocks").checked);
   const ms = performance.now() - t0;
-  const demo = { ed, lang, createMs: ms, firstDrawMs: -1, paintedMs: -1, setLanguage, show, loadBig, loadSample, undo: () => undo(ed!.view), redo: () => redo(ed!.view) };
+  const demo = { ed, lang, createMs: ms, firstDrawMs: -1, paintedMs: -1, setLanguage, show, loadBig, loadSample, undo: () => undo(ed!.view), redo: () => redo(ed!.view), check: () => checkLezerEditor(ed!) };
   (window as unknown as { demo: unknown }).demo = demo;
   const poll = () => {
     if (document.querySelector(".cm-content .blocks-node") || !$<HTMLInputElement>("blocks").checked) {

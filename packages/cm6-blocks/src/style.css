@@ -122,3 +122,34 @@
 .blocks-dragging .blocks-body > .blocks-args > .blocks-gap { width: auto; height: 8px; }
 .blocks-drag-source { opacity: 0.5; }
 .blocks-drop-target { background: rgba(26, 115, 232, 0.35) !important; outline: 2px dashed #1a73e8; }
+
+/* selection (Space): the block and what is inside it */
+.blocks-selected {
+  outline: 3px solid #d9822b;
+  outline-offset: 1px;
+  background-image: linear-gradient(rgba(217, 130, 43, 0.18), rgba(217, 130, 43, 0.18));
+}
+/* the whole block edited as text (Cmd-Enter / Ctrl-Enter): the box takes the place of what is inside */
+.blocks-editing > :not(.blocks-edit) {
+  display: none;
+}
+.blocks-edit-all {
+  font-family: monospace;
+  white-space: pre;
+  overflow: hidden;
+  resize: none;
+  vertical-align: middle;
+}
+/* the live region: there for screen readers only */
+.blocks-announcer {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+/* a finger on a block drags it; a finger on the page scrolls it */
+.blocks-node {
+  touch-action: none;
+}

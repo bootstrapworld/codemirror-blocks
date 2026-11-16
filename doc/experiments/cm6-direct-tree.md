@@ -1219,3 +1219,120 @@ branches, entries) and `e2e/screens/toolbar-template.png` (the toolbar after the
 - Touch: no `touch-action`, no long-press to start a drag; multi-selection; a drop between top-level blocks only works on the 30%
   edges; the keyboard has no cut/paste of a block without the browser's clipboard events (a page that blocks them has no fallback).
 - Preact and screen-reader checks (is the focus restore or a drag announced?) are still not made.
+
+## Fifth round (2026-11-16)
+
+Order of work: (1) Space-select and Cmd/Ctrl-Enter, with a parity table against the existing editor; (2) build the new tree only
+where the text changed; (3) Python imports; (4) template strings and f-strings; (5) an accessibility check in Chromium; (6) touch.
+Evidence = a test or a measurement; "judgement" = mine. Dated bullets are appended as each step lands.
+
+### 1. Selection (Space) and edit-as-text (Cmd-Enter / Ctrl-Enter)
+
+How the existing (CodeMirror 5) editor does them, read from `packages/codemirror-blocks/src/keymap.tsx`, `components/Node.tsx`,
+`components/NodeEditable.tsx`, `state/reducers.ts`, `state/actions.ts`, `copypaste.ts`:
+
+- **Space** is "Toggle Selection". The selection is a LIST OF NODE IDS in the store (`state.selections`), any number of blocks. Selecting a block
+  puts the block AND ALL ITS DESCENDANTS in the list. If the block is already selected, Space removes it, its descendants and its
+  ANCESTORS (so unselecting a child unselects the parents, not the siblings). If the block has a selected ancestor, nothing changes: a beep and
+  "This node is already has a selected ancestor". If the block holds selected blocks, those are dropped and it takes over (it and its descendants).
+  Every block is drawn `aria-selected="true|false"` (Node.tsx; no `aria-multiselectable` is set). Nothing is announced when a block is
+  selected or unselected (the source has `TODO(Emmanuel): announce addition / removal`).
+- What clears it: Escape, Ctrl-Escape and Alt-Q ("Clear Selection"); opening an edit box (NodeEditable's mount effect sets it to `[]`); a
+  delete, cut or paste (`setSelectedNodeIds([])` after the edit); and the AST reducer drops ids of nodes the new tree no longer has. A click does NOT clear it
+  (mousedown only activates the block).
+- What it is used for: Delete / Backspace ("Delete Nodes") delete the OUTERMOST selected nodes ("deleted X and Y" is announced); with nothing
+  selected they only say "Nothing selected" (they do NOT delete the focused block). Cut takes the outermost selected nodes ("Nothing selected"
+  when none; announces "cut ..."); Copy takes them, or the focused block when none is selected (announces "copied ..."); the clipboard text is the nodes
+  in document order joined by spaces (a newline after a commented node). Paste on a selected node replaces it. **Drag does NOT use the selection**:
+  the drag item is `{ id: props.node.id }`, one block (so "drag moves the selection", as the owner asked, is NOT what the old editor does).
+- **Cmd-Enter on a Mac, Ctrl-Enter elsewhere** is "Edit Anything" (`macKeyMap` / `pcKeyMap`, chosen by `mac = ios || /Mac/.test(platform)`, in `utils.ts`;
+  Ctrl-Enter does nothing on a Mac and Cmd-Enter nothing elsewhere). It calls `handleMakeEditable`: any block (not only literals; plain Enter edits only
+  literals and comment blocks, otherwise it collapses or expands) becomes an editable box holding its source text (`ReplaceNodeTarget.getText`: the range
+  of the node in the document), only when the block has no error. The box is a one-line `contentEditable`: Enter (no Shift) is prevented and, through NodeEditable's keydown
+  handler, saves by blurring (the value is committed in `handleBlur`, so BLUR ALSO COMMITS); Escape and Alt-Q cancel. There is no multi-line box: a
+  multi-line block is shown in a one-line contentEditable, and Shift-Enter (not prevented) adds a line break in it. The committed text goes through
+  `edit_replace` and the parse of the whole document; text that does not parse makes the edit fail (`setErrorId`, the box stays open and selected).
+
+What was built here (`src/interact.ts`, `src/lezer-view.ts`, `src/render.ts`, `src/style.css`):
+
+- **Selection** lives in the `Renderer` (a set of `BNode`s), so a node that is removed (`forget`) leaves it, and a kept node (node-level reuse) stays in it. Blocks are
+  drawn `aria-selected="true|false"` and `blocks-selected` (orange outline and tint); the tree has `aria-multiselectable="true"`. Rules as in the
+  old editor: the block and everything inside it; Space again removes it, what is inside it and its ancestors; a block under a selected one is refused ("This node
+  already has a selected ancestor", spoken, no beep: there is no sound here); a block holding selected ones takes them over. Blocks that are NEW inside a selected block
+  (an edit made one) are selected with it (a pass after each update; a few lines). Escape, Ctrl-Escape, Alt-Q (`code === "KeyQ"`, the old editor's `Alt-Q`
+  is a key name) clear it; opening a box clears it; a click does not.
+- **Announcements**: a live region (`.blocks-announcer`, `aria-live="assertive"`, `aria-atomic`, visually hidden, next to the editor; written 50 ms after it is cleared
+  as the old announcer does), also kept in `ed.said`. It says what the old editor says ("deleted X and Y", "cut ...", "copied ...", the ancestor refusal, "editing X.  Use Enter
+  to save, and Alt-Q to cancel", "inserting...") and, DIFFERENT from the old editor (which has a TODO there), "selected X" / "unselected X".
+- **Uses**: Delete / Backspace remove the selected outermost blocks in ONE text change (`removeNodes`: the removal ranges are merged where they overlap, so removing all
+  of a list's elements works) and one undo step; with nothing selected they remove the focused block (DIFFERENT: the old editor says "Nothing selected"). Copy and cut take the selection in
+  document order, or the focused block when none; the clipboard text is the blocks joined by a newline, and the editor remembers the items, so pasting back into the editor puts
+  each in as its own element of the list (`pasteTexts`: joined by the language's separator, one change); Shift-Cmd/Ctrl-V pastes before (cheap, added). **Drag** of a selected block
+  moves all the selected blocks to the target (`moveNodes`: one change holding the removals and the insertion; DIFFERENT: the old editor drags one block); dragging an unselected
+  block moves only it.
+- **Edit as text**: Cmd-Enter on a Mac (`navigator.platform` matches `/Mac|iPhone|iPad/`), Ctrl-Enter elsewhere, exactly the old editor's pairing. It opens a `<textarea class="blocks-edit blocks-edit-all">`
+  INSIDE the block's own element (the block's children are hidden by a class, removed before anything is dispatched), holding the block's source text (its later lines moved left by the
+  indentation of its first line, trailing whitespace dropped). `rows` is the number of lines and `cols` the longest line, and it follows what is typed. **Enter commits, Shift-Enter is a newline** (what the old
+  editor's contentEditable does too), Escape or Alt-Q cancels, and BLUR CANCELS (DIFFERENT: the old editor commits on blur; the existing cm6 boxes already cancelled). Commit: the later lines are indented
+  again, whatever the old range ended with (a Python statement's newline) is kept, and ONE text change replaces the node's range; the text is parsed again as part of the document. Text that does not
+  parse is accepted: it becomes what Lezer's recovery makes of it (an error node inside a block, or an error root shown as text); `lastError` stays null; the oracle stays clean; undo takes it back.
+  Empty text and unchanged text change nothing (the old editor: empty text cancels). On a literal it does what Enter does. A block that is not drawn (outside the viewport) is not edited.
+- Evidence: `spec/selection.test.ts` (39 tests: 13 per language) and `spec/editall.test.ts` (24 tests: 8 per language) in jsdom, all three languages; the model fuzzers now also select blocks and remove
+  the selection (300 seeds x 25 steps per language, clean; 800 seeds at the end of step 2); `e2e/select.e2e.ts`, 15 tests in real Chromium with real key presses (`Space`, `Delete`,
+  `Escape`, `ControlOrMeta+c`, a real mouse drag of a selected block, and `Meta+Enter` on darwin / `Control+Enter` elsewhere), all pass.
+  The renderer snapshot changed (every block now says `aria-selected="false"`).
+- Judgement: the selection set is by node object, so a block that is rebuilt by an edit (not reconciled) silently leaves the selection; that is what the old editor does too (ids that no longer
+  exist are dropped), but here a rebuilt root can be more than the user expects (a Python indentation change rebuilds a whole body). A selected block is also "selected" for a screen reader through
+  `aria-selected` only; whether the live-region words are said twice with the role=tree announcement was not tested with a screen reader.
+
+### 1c. Parity table: every key and mouse gesture of the existing editor (read from `keymap.tsx`, `components/Node.tsx`, `ui/BlockEditor.tsx`)
+
+"here" = this experiment after step 1. "added" = added in this step because it was a few lines.
+
+| key or gesture | what it does in the existing editor | here |
+|---|---|---|
+| Down / Up | next / previous block, skipping the insides of collapsed blocks | yes (no collapsing here) |
+| Home | first block | yes (added) |
+| End | last visible block | yes (added; the last block in document order) |
+| Left | collapse the block, or focus its parent | different: focus the parent (nothing collapses) |
+| Right | expand, or focus the first child | different: focus the first child |
+| Shift-Left / Shift-Right | collapse all / expand all | no |
+| Shift-Alt-Left / Shift-Alt-Right | collapse / expand the current root | no |
+| Shift-, | jump to the root | yes (added) |
+| \ | read the ancestors ("X, at level n, inside Y") | yes (added; spoken through the live region) |
+| Shift-\ | read the children (a description of the subtree) | different (added): says the one-line descriptions of the children |
+| Shift-Tab | move focus to the toolbar | no (the toolbar is plain buttons; Tab order is the browser's) |
+| Enter | edit a literal or comment block in place; on other blocks collapse / expand | different: edits a leaf; nothing on other blocks |
+| Cmd-Enter (Mac) / Ctrl-Enter | "Edit Anything": the block's text in a one-line editable box | yes (step 1), different: a textarea, Enter commits, Shift-Enter newline, blur cancels |
+| Ctrl-[ / Ctrl-] | insert a new block before / after (opens a box at the drop target) | yes |
+| Shift-Ctrl-] | edit the block's comment (a comment attached to a block) | no (comments are blocks of their own here; no attached comment) |
+| Space | toggle selection | yes (step 1) |
+| Esc, Ctrl-Esc, Alt-Q | clear the selection | yes (step 1) |
+| Delete, Backspace | delete the selected blocks; "Nothing selected" when none | different: the selected blocks, else the focused block |
+| PageUp / PageDown | search previous / next | no |
+| F3, Ctrl-F, Cmd-F | open the search dialog | no |
+| Ctrl-F3 / Shift-Ctrl-F3 | next / previous search type | no |
+| Cmd/Ctrl-Z | undo | yes |
+| Cmd/Ctrl-Y, Shift-Cmd/Ctrl-Z | redo | yes |
+| Cmd/Ctrl-C | copy the selected blocks, else the focused one | yes (step 1; the text joined by newlines, not spaces) |
+| Cmd/Ctrl-X | cut the selected blocks | yes (step 1; also the focused block when nothing is selected) |
+| Cmd/Ctrl-V | paste after the focused block (or over the selection / into the drop target) | yes (after the focused block, in the nearest list; replaces a blank); over a selection: no, the selection is cleared |
+| Shift-Cmd/Ctrl-V | paste before | yes (added) |
+| Shift-Ctrl-/ | help dialog listing the keys | no |
+| any printable key on a focused blank | (not in keymap.tsx; BlockEditor.tsx line 294 starts an edit) | yes: typing replaces a hole |
+| mouse: press on a block | activates (focuses) it, records the event | yes (click focuses) |
+| mouse: click on a literal | opens its edit box (`normallyEditable`) | no: a click only focuses; Enter edits |
+| mouse: double click | collapse / expand | no |
+| mouse: click a drop target / insertion point | opens an insertion box there | yes (a click on a gap) |
+| mouse: drag a block (react-dnd) | moves ONE block onto a drop target or onto another block (replaces it) | different: pointer events, moves the selection if the block is selected; drops on gaps, blanks, and the edges of top-level blocks; not onto an arbitrary block |
+| mouse: drag from the toolbar | inserts a new block | no (toolbar buttons insert after the focused block) |
+| toolbar | blocks to drag, a focus target | different (buttons that insert templates) |
+| collapse / expand state, `aria-expanded` toggled | collapsed blocks hide their insides | no (blocks are always expanded; `aria-expanded="true"` is a constant) |
+| comments attached to a block (`with comment:` read aloud, speech-balloon badge) | yes | no |
+| search (with a rotor of search types) | yes | no |
+| sounds (BEEP) on a refused move | yes | no (words only) |
+| activity log (`recordEvent`) | records keys, mouse, edits, clipboard | no |
+
+The "no" rows, in order of how much they would cost (judgement): the sound (trivial); a help dialog (small); Shift-Tab to a toolbar (small); click-to-edit a literal (a few lines but a
+decision, since a click also starts a drag); collapse and expand (needs a state per block and a renderer change, medium); drag from the toolbar (medium); search (large);
+comments attached to blocks (large: the whole design treats comments as blocks); the activity log.

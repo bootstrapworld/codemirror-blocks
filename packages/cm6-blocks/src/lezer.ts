@@ -357,7 +357,7 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
 
 /* ---------------------------------------------------------------- writing */
 
-function separatorFor(table: BlockTable, text: string, slot: Slot): string {
+export function separatorFor(table: BlockTable, text: string, slot: Slot): string {
   for (const r of table.rules ?? []) {
     if (r.name !== "separator") continue;
     const s = r.apply(slot, text);

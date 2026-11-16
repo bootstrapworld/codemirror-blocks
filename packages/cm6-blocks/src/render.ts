@@ -21,6 +21,8 @@ export class Renderer {
   private els = new Map<BNode, HTMLElement>();
   private byId = new Map<number, BNode>();
   private stats: RenderStats = { created: 0, removed: 0, attrWrites: 0 };
+  /** the blocks that are selected (Space): drawn with aria-selected="true" and the class `blocks-selected` */
+  private selection = new Set<BNode>();
 
   constructor(private language: Language) {}
 
@@ -35,7 +37,37 @@ export class Renderer {
     return this.els.has(node);
   }
 
+  /** is the block selected? */
+  isSelected(node: BNode): boolean {
+    return this.selection.has(node);
+  }
+
+  /** the selected blocks (a copy) */
+  selected(): BNode[] {
+    return [...this.selection];
+  }
+
+  /** make `node` selected or not (a drawn block's element is patched at once; one that is not drawn yet is drawn selected) */
+  setSelected(node: BNode, on: boolean): void {
+    if (on === this.selection.has(node)) return;
+    if (on) this.selection.add(node);
+    else this.selection.delete(node);
+    const el = this.els.get(node);
+    if (el) this.paintSelected(el, on);
+  }
+
+  /** take the selection of another renderer (the checker's fresh drawing must show the same selection) */
+  adoptSelection(other: Renderer): void {
+    this.selection = new Set(other.selection);
+  }
+
+  private paintSelected(el: HTMLElement, on: boolean): void {
+    this.setAttr(el, "aria-selected", on ? "true" : "false");
+    el.classList.toggle("blocks-selected", on);
+  }
+
   forget(node: BNode): void {
+    this.selection.delete(node);
     const el = this.els.get(node);
     if (el) {
       this.els.delete(node);
@@ -167,6 +199,8 @@ export class Renderer {
     el.setAttribute("contenteditable", "false");
     el.setAttribute("data-id", String(node.id));
     el.setAttribute("aria-label", this.language.describe(node));
+    el.setAttribute("aria-selected", this.selection.has(node) ? "true" : "false");
+    if (this.selection.has(node)) el.classList.add("blocks-selected");
     el.setAttribute("aria-level", String(this.level(node)));
     const siblings = node.slot ? node.slot.nodes : [node];
     el.setAttribute("aria-setsize", String(siblings.length));
