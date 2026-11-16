@@ -37,7 +37,7 @@ const made: LezerBlockEditor[] = [];
 function make(opts: LezerOptions, text: string): LezerBlockEditor {
   const parent = document.createElement("div");
   document.body.appendChild(parent);
-  const ed = createLezerBlockEditor(parent, text, opts);
+  const ed = createLezerBlockEditor(parent, text, process.env.CMB_NORECONCILE ? { ...opts, reconcile: false } : opts);
   made.push(ed);
   return ed;
 }

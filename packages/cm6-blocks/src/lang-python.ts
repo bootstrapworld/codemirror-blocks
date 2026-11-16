@@ -1,6 +1,7 @@
 // EXPERIMENT: Python blocks from @lezer/python. Raw trees: spec/lezer.test.ts "raw trees".
 import { parser } from "@lezer/python";
 import type { SyntaxNode } from "@lezer/common";
+import type { Slot } from "./types";
 import { lezerLanguage, BlockRow, BlockTable, lineSeparator } from "./lezer";
 
 const leaf = (kind: string, label: string): BlockRow => ({ kind, label, leaf: true });
@@ -33,13 +34,15 @@ export const pythonTable: BlockTable = {
     MemberExpression: { kind: "member", label: "member", describe: "${property} of ${object}", slots: [one("object", ["#0"]), { ...one("property", ["PropertyName"]), before: "." }] },
     Index: { kind: "index", label: "index", slots: [one("object", ["#0"]), one("index", ["#1"])] },
     ReturnStatement: { kind: "return", label: "return", describe: "return ${value}", keyword: "return", slots: [one("value", ["#0"])] },
-    FunctionDefinition: { kind: "function", label: "function", describe: "function ${name} with ${params.length|parameter|parameters}", keyword: "def", slots: [one("name", ["#0"]), list("params", ["ParamList"]), one("body", ["Body"])] },
-    IfStatement: { kind: "if", label: "if", describe: "if ${test}", keyword: "if", slots: [one("test", ["#0"]), one("then", ["Body#0"]), list("rest", "*")] },
+    FunctionDefinition: { kind: "function", label: "function", describe: "function ${name} with ${params.length|parameter|parameters}", keyword: "def", modifiers: ["async"], slots: [one("name", ["#0"]), list("params", ["ParamList"]), one("body", ["Body"])] },
+    IfStatement: { kind: "if", label: "if", describe: "if ${test}", keyword: "if", slots: [one("test", ["#0"]), one("then", ["Body#0"]), list("rest", "*")], groups: { slot: "rest", row: "Branch", tokens: ["elif", "else"] } },
+    Branch: { kind: "branch", label: "branch", describe: "${keyword} ${head}", slots: [list("head", "*"), one("body", ["Body"])] },
+    Entry: { kind: "entry", label: "entry", describe: "${key} to ${value}", slots: [one("key", ["#0"]), { ...one("value", ["#1"]), before: ": " }] },
     WhileStatement: { kind: "while", label: "while", describe: "while ${test}", keyword: "while", slots: [one("test", ["#0"]), one("body", ["Body"])] },
-    ForStatement: { kind: "for", label: "for-in loop", keyword: "for", slots: [list("var", ["@before:in"]), { ...one("iterable", ["@after:in"]), before: " in " }, one("body", ["Body"])] },
-    TryStatement: { kind: "try", label: "try", keyword: "try", slots: [one("body", ["Body#0"]), list("rest", "*")] },
+    ForStatement: { kind: "for", label: "for-in loop", keyword: "for", modifiers: ["async"], slots: [list("var", ["@before:in"]), { ...one("iterable", ["@after:in"]), before: " in " }, one("body", ["Body"])] },
+    TryStatement: { kind: "try", label: "try", keyword: "try", slots: [one("body", ["Body#0"]), list("rest", "*")], groups: { slot: "rest", row: "Branch", tokens: ["except", "finally", "else"] } },
     RaiseStatement: { kind: "raise", label: "raise", keyword: "raise", slots: [list("value", "*")] },
-    WithStatement: { kind: "with", label: "with", keyword: "with", slots: [list("items", "*"), one("body", ["Body"])] },
+    WithStatement: { kind: "with", label: "with", keyword: "with", modifiers: ["async"], slots: [list("items", "*"), one("body", ["Body"])] },
     DecoratedStatement: { kind: "decorated", label: "decorated definition", slots: [list("decorators", ["Decorator"]), { name: "definition", kind: "one", take: "*" }] },
     Decorator: { kind: "decorator", label: "decorator", keyword: "@", slots: [list("value", "*")] },
     Kw: leaf("keyword", "keyword"),
@@ -47,7 +50,7 @@ export const pythonTable: BlockTable = {
     DeleteStatement: { kind: "delete", label: "delete", keyword: "del", slots: [list("targets", "*")] },
     ScopeStatement: { kind: "scope", label: "scope declaration", keyword: "$first", slots: [list("names", "*")] },
     ContinuedString: { ...leaf("literal", "string"), dataType: "string" },
-    DictionaryExpression: { kind: "dict", label: "dictionary", slots: [list("items", "*")] },
+    DictionaryExpression: { kind: "dict", label: "dictionary", slots: [list("items", "*")], groups: { slot: "items", row: "Entry", sep: "," } },
     TupleExpression: { kind: "tuple", label: "tuple", slots: [list("items", "*")] },
     ArrayComprehensionExpression: { kind: "comprehension", label: "list comprehension", slots: [list("parts", "*")] },
     ConditionalExpression: { kind: "conditional", label: "conditional", slots: [list("parts", "*")] },
@@ -58,7 +61,7 @@ export const pythonTable: BlockTable = {
     ArrayExpression: { kind: "array", label: "list", describe: "list of ${elements.length|item|items}", slots: [list("elements", "*")] },
   },
   blank: "...",
-  separators: { args: ", ", elements: ", ", roots: "\n" },
+  separators: { args: ", ", elements: ", ", items: ", ", roots: "\n" },
   opaque: ["ImportStatement", "FormatString", "AwaitExpression"],
   rules: [
     {
@@ -70,6 +73,12 @@ export const pythonTable: BlockTable = {
         : undefined,
     },
     lineSeparator(),
+    {
+      // the branches of an if / try each start a line, at the indentation of the first
+      name: "separator",
+      apply: (slot: Slot, text: string) =>
+        slot.name === "rest" && slot.nodes.length ? "\n" + text.slice(text.lastIndexOf("\n", slot.nodes[0].from - 1) + 1, slot.nodes[0].from).replace(/\S.*$/, "") : undefined,
+    },
   ],
   statementSlots: ["body", "roots"],
   templates: {

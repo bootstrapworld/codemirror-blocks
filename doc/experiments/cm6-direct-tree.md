@@ -1087,3 +1087,13 @@ measurement; the sum is a judgement, not a build.
 - Oracle: the fuzzers (3 languages x 60 seeds x 25 steps) pass; the fuzzer now has a second test on the constructs sample
   (about 30 lines per language, classes, nested bodies). Stale-node tests changed: a node whose owner is edited in place is
   NOT stale any more, so the tests now make the owner into another thing first.
+- 2026-11-16 (later): the larger-program fuzzer (800 seeds x 25 steps, 3 languages, on the constructs sample) found a hole in
+  the OLD keep rule that the small programs never reached, and it fails the same with `reconcile: false` (so it was already
+  there): an edit that opens a context (Python `f(` with no `)`: newlines stop meaning anything) changes how UNCHANGED, untouched
+  roots further down are read (here: 3 elements of a flat list where a fresh parse has 4), with the same range and the same
+  text. New guard (lezer-view.ts, 8 lines): when the new Lezer tree has an error node at or after the first change, no root
+  between the first change and the LAST error node is kept without comparing: it goes through reconcile (exact by construction).
+  Cost: in a document with an error late in it, an edit above the error compares every root down to it (a walk of the new tree
+  of those roots; no DOM work), not just 3. 800 seeds x 25 steps x 2 fuzzers x 3 languages: clean after the guard.
+- Steps 3 started: modifier words, function-expression names, imports (JS), comments inside blocks, paired clauses and dict
+  entries (Python) are in; see the third-round list below for what each cost.

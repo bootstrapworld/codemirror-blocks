@@ -183,6 +183,11 @@ export class Renderer {
       return el;
     }
     el.setAttribute("aria-expanded", "true");
+    if (node.modifier) {
+      const md = this.create("span", "blocks-operator blocks-modifier");
+      md.textContent = node.modifier;
+      el.appendChild(md);
+    }
     if (node.keyword) {
       const kw = this.create("span", "blocks-operator");
       kw.textContent = node.keyword;

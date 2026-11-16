@@ -89,6 +89,15 @@ export interface LezerBlockEditor {
   removeNode(node: BNode): void;
   /** replace the text of a node */
   replaceText(node: BNode, snippet: string): void;
+  /** the source text of a block, its later lines moved left by the indentation of its first line (what the clipboard holds) */
+  copyText(node: BNode): string;
+  /**
+   * Write source text `text` after `anchor` (in the nearest list that holds it; replacing `anchor` if it is a blank; at
+   * the end of the program when there is no anchor). The new block is focused. Returns it, if found.
+   */
+  pasteText(anchor: BNode | null, text: string): BNode | null;
+  /** Move a block to a gap (`slot`, `index`) or onto a blank: ONE text change (cut and paste), one undo step. Throws if the target is inside the block. */
+  moveNode(node: BNode, target: { slot: Slot; index: number } | { blank: BNode }): void;
   /** apply one text change as one undo step */
   change(c: TextChange): void;
   focusNode(node: BNode): void;
@@ -199,10 +208,18 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         const to = tr.changes.mapPos(r.to, -1);
         if (to > from) old.set(from, { node: r, to, touched: affected.has(k), from0: r.from, to0: r.to });
       });
+      // Context: a change can alter how UNCHANGED text after it reads without touching it (an unclosed
+      // bracket makes the newlines after it mean nothing; a dedent moves a line out of a body). That always
+      // leaves an error node somewhere after the change, so no root between the first change and the last
+      // error node is kept without being compared (found by the fuzzer on a larger program).
+      let firstChange = s.length;
+      for (const c of cr) firstChange = Math.min(firstChange, c.fromB);
+      let lastError = -1;
+      tree.iterate({ from: firstChange, enter: (n) => { if (n.type.isError) lastError = Math.max(lastError, n.to); } });
       const kept = new Set<BNode>();
       const roots = language.fromTree(tree, s, (from, to, key) => {
         const o = old.get(from);
-        if (!o || o.touched || o.to !== to || keyOfNode(o.node) !== key || hasError(o.node)) return null;
+        if (!o || o.touched || (lastError >= 0 && to >= firstChange && from <= lastError) || o.to !== to || keyOfNode(o.node) !== key || hasError(o.node)) return null;
         kept.add(o.node);
         return o.node;
       });
@@ -358,6 +375,35 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     if (doc.byId.get(n.id) !== n) throw new Error(`node ${n.id} (${n.kind}) is no longer in the tree: look it up again after an edit`);
   };
 
+  const indentAt = (pos: number): string => {
+    const t = currentText();
+    return (t.slice(t.lastIndexOf("\n", pos - 1) + 1, pos).match(/^[ \t]*/) as RegExpMatchArray)[0];
+  };
+  const dedent = (s: string, indent: string): string => (indent ? s.split("\n").map((l, i) => (i > 0 && l.startsWith(indent) ? l.slice(indent.length) : l)).join("\n") : s);
+  /** the change that writes `snippet` in place of a node (a missing one, zero-width, also gets its connector and spaces) */
+  function replaceChange(node: BNode, snippet: string): TextChange {
+    if (node.from !== node.to) return { from: node.from, to: node.to, insert: snippet };
+    const t = currentText();
+    const row = node.parent && table.nodes[keyOfNode(node.parent) ?? ""];
+    const before = row?.slots?.find((q) => q.name === node.slot?.name)?.before;
+    const prev = t[node.from - 1] ?? "";
+    const next = t[node.to] ?? "";
+    const left = before ?? (prev === "" || /[\s([{]/.test(prev) ? "" : " ");
+    const right = next === "" || /[\s)\]};,]/.test(next) ? "" : " ";
+    return { from: node.from, to: node.to, insert: left + snippet + right };
+  }
+  /** the drawn block that starts at `pos` and is longest (the one written there) */
+  function blockAt(pos: number, len: number): BNode | null {
+    let best: BNode | null = null;
+    for (const r of rootsSlot.nodes) {
+      if (r.to < pos || r.from > pos + len) continue;
+      walk(r, (n) => {
+        if (n.from === pos && drawn(n) && n.to > n.from && (!best || n.to > best.to)) best = n;
+      });
+    }
+    return best;
+  }
+
   const ed: LezerBlockEditor = {
     get view() {
       return view;
@@ -437,16 +483,69 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     },
     replaceText(node, snippet) {
       live(node);
-      if (node.from !== node.to) return dispatch({ from: node.from, to: node.to, insert: snippet });
-      // a missing node (zero-width blank): put the slot's connector before it, and a space where the text would stick together
+      dispatch(replaceChange(node, snippet));
+    },
+    copyText(node) {
+      live(node);
+      return dedent(view.state.doc.sliceString(node.from, node.to), indentAt(node.from));
+    },
+    pasteText(anchor, text) {
+      if (anchor) live(anchor);
+      if (anchor && anchor.kind === "blank") {
+        const c = replaceChange(anchor, text.replace(/\n/g, "\n" + indentAt(anchor.from)));
+        dispatch(c);
+        const at = c.from + c.insert.indexOf(text.split("\n")[0]);
+        const found = blockAt(at, c.insert.length);
+        if (found) ed.focusNode(found);
+        return found;
+      }
+      let slot = rootsSlot;
+      let ref: BNode | null = rootsSlot.nodes[rootsSlot.nodes.length - 1] ?? null;
+      let index = rootsSlot.nodes.length;
+      for (let n: BNode | null = anchor; n; n = n.parent) {
+        if (n.slot && n.slot.kind === "list") {
+          slot = n.slot;
+          ref = n;
+          index = n.slot.nodes.indexOf(n) + 1;
+          break;
+        }
+      }
+      const indent = ref ? indentAt(ref.from) : "";
+      const snippet = text.replace(/\n/g, "\n" + indent);
+      const change = changeFor(slot, index, snippet);
+      dispatch(change);
+      const found = blockAt(change.from + change.insert.indexOf(snippet), snippet.length);
+      if (found) ed.focusNode(found);
+      return found;
+    },
+    moveNode(node, target) {
+      live(node);
+      if (!node.slot) throw new Error("not movable");
+      const dest = "blank" in target ? target.blank : target.slot.owner;
+      live(dest);
+      for (let n: BNode | null = dest; n; n = n.parent) if (n === node) throw new Error("a block cannot go inside itself");
+      const i = node.slot.nodes.indexOf(node);
+      if ("slot" in target && target.slot === node.slot && (target.index === i || target.index === i + 1)) return; // where it is
+      if ("blank" in target && target.blank === node) return;
       const t = currentText();
-      const row = node.parent && table.nodes[keyOfNode(node.parent) ?? ""];
-      const before = row?.slots?.find((q) => q.name === node.slot?.name)?.before;
-      const prev = t[node.from - 1] ?? "";
-      const next = t[node.to] ?? "";
-      const left = before ?? (prev === "" || /[\s([{]/.test(prev) ? "" : " ");
-      const right = next === "" || /[\s)\]};,]/.test(next) ? "" : " ";
-      dispatch({ from: node.from, to: node.to, insert: left + snippet + right });
+      const snippet = dedent(t.slice(node.from, node.to), indentAt(node.from));
+      const gone: TextChange = node.slot.kind === "one" ? { from: node.from, to: node.to, insert: table.blank ?? "..." } : removeChange(node, t);
+      let put: TextChange;
+      if ("blank" in target) put = replaceChange(target.blank, snippet.replace(/\n/g, "\n" + indentAt(target.blank.from)));
+      else {
+        const sl = target.slot;
+        const ref = sl.nodes[Math.min(target.index, sl.nodes.length - 1)] ?? null;
+        put = changeFor(sl, target.index, snippet.replace(/\n/g, "\n" + (ref ? indentAt(ref.from) : "")));
+      }
+      const both = [gone, put].sort((a, b) => a.from - b.from || a.to - b.to);
+      if (both[0].to > both[1].from) throw new Error("cannot move a block there");
+      stats.edits++;
+      view.dispatch({ changes: both, annotations: [isolateHistory.of("full")], userEvent: "input.block" });
+      // where the block is now: its text starts where the inserted text does, shifted by what was cut before it
+      const shift = gone.from < put.from ? gone.insert.length - (gone.to - gone.from) : 0;
+      const at = put.from + shift + put.insert.indexOf(snippet.split("\n")[0]);
+      const found = blockAt(at, snippet.length);
+      if (found) ed.focusNode(found);
     },
     change: dispatch,
     focusNode(node) {
@@ -518,7 +617,7 @@ export const divergences = { count: 0 };
 
 /* ------------------------------------------------------------- the checker */
 
-const FIELDS = ["kind", "from", "to", "value", "dataType", "keyword", "keywordTo", "brackets"] as const;
+const FIELDS = ["kind", "from", "to", "value", "dataType", "modifier", "keyword", "keywordTo", "brackets"] as const;
 
 /** where two DOM trees first differ, as a short description (for the checker's message) */
 function domDiff(live: Element, fresh: Element, path = ""): string {

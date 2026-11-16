@@ -27,7 +27,17 @@ export interface BlockRow {
   topLevelOnly?: boolean;
   dataType?: string;
   keyword?: string; // text drawn at its head
+  /** bare tokens of the Lezer node that are drawn as modifier words before the keyword (`async`, `static`, `get`) */
+  modifiers?: string[];
   brackets?: boolean; // read "()" or "[]" from its first character
+  /**
+   * Some of the node's blocks make groups, that go into list slot `slot` as nodes of table row `row`:
+   *  - `tokens`: each bare token (`elif`, `else`, `except`) starts a group (its keyword is the token) of the
+   *    blocks after it, up to the next token;
+   *  - `sep`: groups of the blocks between bare `sep` tokens (the `,` of a dict: key and value).
+   * Blocks before the first token go to the node's own slots as usual.
+   */
+  groups?: { slot: string; row: string; tokens?: string[]; sep?: string };
 }
 
 export interface BlockTable {
@@ -111,7 +121,11 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       const key = keyOf(c, text);
       const row = table.nodes[key];
       if (row && (!row.topLevelOnly || top)) out.push({ node: c, key, path: [...path, c.name, key] });
-      else if (row) continue;
+      else if (row) {
+        // a comment inside a block: a candidate that no slot numbers or takes; build1 files it into a list
+        if (row.kind === "comment") out.push({ node: c, key, path: [...path, c.name, key] });
+        continue;
+      }
       else if (table.opaque?.includes(c.name)) out.push({ node: c, key: "@opaque", path });
       else if (c.firstChild) collect(c, [...path, c.name], out, text);
     }
@@ -144,14 +158,94 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       const at = text.indexOf(kw, n.from);
       extra.keywordTo = (at >= 0 ? at + kw.length : n.from) + offset;
     }
+    if (row.modifiers) {
+      const ms: string[] = [];
+      for (let c = n.firstChild; c; c = c.nextSibling) if (row.modifiers.includes(c.name)) ms.push(text.slice(c.from, c.to));
+      if (ms.length) extra.modifier = ms.join(" ");
+    }
     if (row.brackets) extra.brackets = text[n.from] === "[" ? "[]" : "()";
     const b = makeNode(row.kind, (row.slots ?? []).map((s) => [s.name, s.kind]), extra);
     (row.slots ?? []).forEach((sp, i) => {
       if (sp.before?.trim()) b.slots[i].glue = sp.before.trim();
     });
     sources.set(b, text.slice(n.from, n.to));
-    const cands: Cand[] = [];
-    collect(n, [], cands, text);
+    const all: Cand[] = [];
+    collect(n, [], all, text);
+    const isComment = (cd: Cand): boolean => table.nodes[cd.key]?.kind === "comment";
+    const cands = all.filter((cd) => !isComment(cd));
+    // groups (clauses, entries): the blocks that belong to one are taken out of the node's own slots
+    let rest = cands;
+    const groups: { tok?: SyntaxNode; members: Cand[] }[] = [];
+    const g = row.groups;
+    if (g) {
+      rest = [];
+      const toks: SyntaxNode[] = [];
+      for (let c = n.firstChild; c; c = c.nextSibling) if (g.tokens ? g.tokens.includes(c.name) : c.name === g.sep) toks.push(c);
+      if (g.tokens) for (const t of toks) groups.push({ tok: t, members: [] });
+      else groups.push({ members: [] });
+      for (const cd of cands) {
+        if (g.tokens?.includes(cd.node.name)) continue; // the token itself (a keyword block by the table's kind rule)
+        const before = toks.filter((t) => t.from <= cd.node.from).length;
+        if (g.tokens) {
+          if (before) groups[before - 1].members.push(cd);
+          else rest.push(cd);
+        } else {
+          while (groups.length <= before) groups.push({ members: [] });
+          groups[before].members.push(cd);
+        }
+      }
+    }
+    fill(b, row, rest, n, text, offset);
+    if (g) {
+      const gs = b.slots.find((q) => q.name === g.slot) as Slot;
+      const grow = table.nodes[g.row];
+      for (const gr of groups) {
+        if (!g.tokens && !gr.members.length) continue;
+        const first = gr.tok ? gr.tok.from : gr.members[0].node.from;
+        const last = gr.members.length ? gr.members[gr.members.length - 1].node.to : (gr.tok as SyntaxNode).to;
+        const gb = makeNode(grow.kind, (grow.slots ?? []).map((q) => [q.name, q.kind] as [string, "one" | "list"]), { from: first + offset, to: last + offset });
+        if (gr.tok) {
+          gb.keyword = text.slice(gr.tok.from, gr.tok.to);
+          gb.keywordTo = gr.tok.to + offset;
+        }
+        (grow.slots ?? []).forEach((sp, i) => {
+          if (sp.before?.trim()) gb.slots[i].glue = sp.before.trim();
+        });
+        sources.set(gb, text.slice(first, last));
+        keys.set(gb, g.row);
+        fill(gb, grow, gr.members, n, text, offset);
+        blanks(gb, grow);
+        if (gb.slots.some((q) => q.nodes.some((k) => dirty.has(k)))) dirty.add(gb);
+        gb.parent = b;
+        gb.slot = gs;
+        gs.nodes.push(gb);
+      }
+    }
+    // comments inside the block: into the list slot they are in or next to (not one with a glue word)
+    for (const cd of all.filter(isComment)) {
+      let target: Slot | null = null;
+      let best = Infinity;
+      for (const s of b.slots) {
+        if (s.kind !== "list" || s.glue) continue;
+        const d = s.nodes.length ? Math.max(s.nodes[0].from - (cd.node.to + offset), cd.node.from + offset - s.nodes[s.nodes.length - 1].to, 0) : table.statementSlots?.includes(s.name) ? 1e9 : Infinity;
+        if (d < best) {
+          best = d;
+          target = s;
+        }
+      }
+      if (!target) continue;
+      const child = build(cd, text, offset);
+      child.parent = b;
+      child.slot = target;
+      const at = target.nodes.findIndex((k) => k.from > child.from);
+      target.nodes.splice(at < 0 ? target.nodes.length : at, 0, child);
+    }
+    blanks(b, row);
+    return b;
+  }
+
+  /** the candidates go into the slots of `b` (a block of `row`) that take them */
+  function fill(b: BNode, row: BlockRow, cands: Cand[], n: SyntaxNode, text: string, offset: number): void {
     const seen: Record<string, number> = {};
     const taken: [Cand, number][] = cands.map((cd, i) => {
       const slotIx = pick(row, cd, i, seen, n);
@@ -166,6 +260,10 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       child.slot = slot;
       slot.nodes.push(child);
     });
+  }
+
+  /** a "one" slot that nothing filled gets a zero-width blank where the missing node would go */
+  function blanks(b: BNode, row: BlockRow): void {
     b.slots.forEach((s, si) => {
       if (s.kind === "one" && !s.nodes.length) {
         // where the missing node would go: after what the earlier slots hold, else after the keyword or the opening bracket
@@ -177,7 +275,6 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
         s.nodes.push(blank);
       }
     });
-    return b;
   }
 
   /**
@@ -245,9 +342,10 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       if (row?.describe) {
         return row.describe.replace(/\$\{(\w+)(\.length)?(?:\|([^|}]*)\|([^}]*))?\}/g, (_m, name: string, len?: string, one?: string, many?: string) => {
           const sl = node.slots.find((q) => q.name === name);
-          if (!sl) return name === "value" ? node.value ?? "" : "";
-          if (len) return sl.nodes.length + (one !== undefined ? " " + (sl.nodes.length === 1 ? one : many) : "");
-          return sl.nodes.map(short).join(", ");
+          if (!sl) return name === "value" ? node.value ?? "" : name === "keyword" ? node.keyword ?? "" : "";
+          const nodes = sl.nodes.filter((q) => q.kind !== "comment");
+          if (len) return nodes.length + (one !== undefined ? " " + (nodes.length === 1 ? one : many) : "");
+          return nodes.map(short).join(", ");
         });
       }
       if (node.slots.length === 0) return node.value ? `${label} ${node.value}` : label;
@@ -273,7 +371,13 @@ export function insertChange(table: BlockTable, text: string, slot: Slot, index:
   const sep = separatorFor(table, text, slot);
   const ns = slot.nodes;
   if (!ns.length) throw new Error("insert into an empty list: where it goes needs a rule per language");
-  if (index >= ns.length) return { from: ns[ns.length - 1].to, to: ns[ns.length - 1].to, insert: sep + snippet };
+  if (index >= ns.length) {
+    // after the last block that is not a comment (text after a line comment would be part of it)
+    let last = ns.length - 1;
+    while (last > 0 && ns[last].kind === "comment") last--;
+    if (ns[last].kind === "comment") return { from: ns[last].to, to: ns[last].to, insert: "\n" + snippet };
+    return { from: ns[last].to, to: ns[last].to, insert: sep + snippet };
+  }
   return { from: ns[index].from, to: ns[index].from, insert: snippet + sep };
 }
 

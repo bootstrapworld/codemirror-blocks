@@ -39,6 +39,8 @@ export interface BNode {
    * space or comment the source has between the bracket and the keyword).
    */
   keywordTo?: number;
+  /** modifier words written before the keyword (`async`, `static`, `get`), drawn as a word of their own */
+  modifier?: string;
   /** the word drawn at the head of a compound node (`define`, `cond`, `if`, `lambda`); none for a call */
   keyword?: string;
   /** the brackets it is written in: "()" or "[]" (compound nodes only) */

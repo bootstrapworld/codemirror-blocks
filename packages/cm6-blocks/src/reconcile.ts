@@ -27,7 +27,7 @@ export interface ReconcileEnv {
 
 /** can `old` stand for `nw`, whatever is under them? (the same row, shape and own text) */
 export function compatible(old: BNode, nw: BNode): boolean {
-  if (old.kind !== nw.kind || keyOfNode(old) !== keyOfNode(nw) || old.keyword !== nw.keyword) return false;
+  if (old.kind !== nw.kind || keyOfNode(old) !== keyOfNode(nw) || old.keyword !== nw.keyword || old.modifier !== nw.modifier) return false;
   if (old.slots.length !== nw.slots.length) {
     return false;
   }

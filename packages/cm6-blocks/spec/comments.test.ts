@@ -26,13 +26,27 @@ describe.each(Object.keys(CASES))("comments: %s", (l) => {
     expect(ed.roots()[0].kind).not.toBe("comment");
     expect(checkLezerEditor(ed)).toEqual([]);
   });
-  test("a comment inside a block is not a block (and the text keeps it)", () => {
+  test("a comment inside a block is a block of its own, in the list it sits in (fourth round)", () => {
     const ed = make(l, CASES[l].inside);
     let found = 0;
     const walk = (n: any) => { if (n.kind === "comment") found++; n.slots.forEach((s: any) => s.nodes.forEach(walk)); };
     ed.roots().forEach(walk);
-    expect(found).toBe(0);
+    expect(found).toBe(1);
     expect(ed.view.state.doc.toString()).toContain("inside");
     expect(checkLezerEditor(ed)).toEqual([]);
+  });
+  test("writing at the end of a list that ends in a line comment does not put text inside the comment", () => {
+    const ed = make(l, CASES[l].inside);
+    let slot: any = null;
+    const find = (n: any) => { n.slots.forEach((q: any) => { if (q.kind === "list" && q.nodes.some((k: any) => k.kind === "comment") && !slot) slot = q; q.nodes.forEach(find); }); };
+    ed.roots().forEach(find);
+    expect(slot).not.toBeNull();
+    ed.insertText(slot, slot.nodes.length, "x");
+    expect(checkLezerEditor(ed)).toEqual([]);
+    let comments = 0;
+    const count = (n: any) => { if (n.kind === "comment") comments++; n.slots.forEach((q: any) => q.nodes.forEach(count)); };
+    ed.roots().forEach(count);
+    expect(comments).toBe(1);
+    expect(ed.view.state.doc.toString()).toMatch(/x/);
   });
 });
