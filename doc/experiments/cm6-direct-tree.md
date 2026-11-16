@@ -1336,3 +1336,57 @@ What was built here (`src/interact.ts`, `src/lezer-view.ts`, `src/render.ts`, `s
 The "no" rows, in order of how much they would cost (judgement): the sound (trivial); a help dialog (small); Shift-Tab to a toolbar (small); click-to-edit a literal (a few lines but a
 decision, since a click also starts a drag); collapse and expand (needs a state per block and a renderer change, medium); drag from the toolbar (medium); search (large);
 comments attached to blocks (large: the whole design treats comments as blocks); the activity log.
+
+### 2. Build the new tree only where the text changed (anchors; 2026-11-16)
+
+Code: `reconcile.ts` (+Bail, anchors split a list into stretches; `reconcileRange` is the old list algorithm over a stretch), `lezer.ts` (the adapter
+asks an optional `inner` keeper before building a child block: 20 lines, `InnerCand` with the block's window and level), `lezer-view.ts` (the keeper, about 90 lines:
+an index of the old root, the checks, shifting, and the fallback). Option `anchors: false` restores the round-four path (the whole touched root built, then compared),
+so before and after run the same code.
+
+The rule (judgement about why it is safe; evidence is the oracle runs below). Inside a touched root, a block is NOT built: the OLD node is taken as it is (an "anchor"),
+moved by the change (its subtree shifted by the difference of positions), when ALL of: no change lies in its window (from the start of the block before it to the end of
+the block after it, or the owner's ends), the new Lezer tree has no error node in its range and, if the document has errors that the change moved, it is not between the first
+change and the last error (the round-four guard); an old node with the same mapped range and the same table row exists, is unambiguous (one such node), has no error inside, and
+is exactly as deep as the new tree puts it (otherwise its drawn `aria-level` would be wrong). Neighbour roots of a touched root get anchors too (without it a 590-node
+function next to the edited class was still built and compared). Anchors are old objects, so their elements, ids and focus survive.
+What is compared is then only what was built: the nodes in the windows around the change and their ancestors. In `reconcileSlot` an anchor splits the old and new lists, and
+the stretches between anchors are laid over each other with the old algorithm; an anchor is re-parented to the surviving old owner.
+
+Safety net: an anchor that cannot be where the new tree puts it (it is not in the paired list, it sits inside a node that is new or one that leaves, in a different order)
+makes `reconcile` throw `Bail`; the editor then drops the old root and uses the new one as it is (links repaired by `relink`, byId and selection pruned), which is correct
+because the new root is complete (anchors included). A bail costs a full redraw of that root; nothing else is lost.
+
+Evidence. Oracle: model fuzzers at 800 seeds x 25 steps per language (20,000 steps each, now also selecting blocks and removing the selection) and 200 seeds x 25 on the
+70-line constructs sample: all clean, 0 divergences. Counts in that run (20,000 steps): anchors taken 65,343 / 59,445 / 50,407 (Scheme / JS / Python), bails 256 / 210 / 327
+(about 1 percent of reconciled roots; they happen where a block moves or is wrapped: the bail path is tested by `spec/move.test.ts`, which hit it before the fixes). Four bugs
+found and fixed on the way by the oracle: anchors keeping the new parent as their `parent`; `aria-level` of an anchor under a deeper or shallower parent (the level check);
+byId and selection leaking for nodes in a failed reconcile; positions of a dropped root read after its reconcile had overwritten them.
+Measurement, jsdom (`spec/reuse.test.ts`, median of 9, `CMB_REUSE=1`; "built-and-compared" is nodes new in the touched root's tree, which used to be every node of the root):
+
+| document, edit | rebuild whole (round 3), ms | reconcile (round 4), ms / nodes compared | anchors (now), ms / nodes compared / anchored |
+|---|---|---|---|
+| JS 618-line class (2,028 nodes), char typed in a name | 100.9 | 5.2 / 2,624 | 2.3 / 17 / 44 |
+| same, a space typed in the biggest root | 99.7 | 4.8 / 2,624 | 2.0 / 17 / 47 |
+| Python 4,006-line file (4,898-node class), char in a name | 8.8 | 10.2 / 4,968 | 3.3 / 84 / 193 |
+| same, a space (an indentation change: 1,326 nodes are really new) | 8.1 | 7.1 / 2,613 | 3.8 / 233 / 111 |
+| Scheme 3000 lines (15-node roots), char in a name | 8.1 | 6.3 / 39 | 6.1 / 34 / 5 |
+| JS 3000 lines (27-node roots) | 4.5 | 2.7 / 58 | 2.5 / 38 / 5 |
+| Python 3000 lines | 4.4 | 2.3 / 68 | 2.1 / 48 / 5 |
+
+Real Chromium with layout (`e2e/reuse.e2e.ts`, sync = until a forced layout, median of 9; `e2e/reuse-chromium.json`, the round-five-before run is `reuse-chromium-round5-before.json`):
+
+| | rebuild whole | reconcile (round 4) | anchors (now) |
+|---|---|---|---|
+| JS 618-line class, space inside it | 30.1 | 4.6 | 1.5 |
+| same, char at the end of a name | 28.6 | 4.7 | 2.4 |
+| Python 4,898-node class, space in it | 52.1 | 7.7 | 2.6 |
+| same, char at the end of a name | 52.9 | 7.3 | 3.3 |
+
+On the 3000-line documents (`e2e/results.json`, round four in `results-round4.json`; one edit near the top / in the middle, sync with layout): Scheme 4.3 / 3.6 ms before, 4.6 / 3.5 now;
+JavaScript 3.0 / 3.3 before, 3.0 / 2.8 now; Python 3.1 / 2.3 before, 3.0 / 1.9 now. Unchanged within noise: those roots are 15 to 27 nodes, so nothing was being rebuilt that mattered; the
+3 to 4 ms there is a cost per edit that grows with the NUMBER of roots (the map of old roots with two `mapPos` each, the error list merge, `fromTree` collecting every top-level
+node, the decoration filter), which this step did not touch. Judgement: next, make those proportional to the roots near the change (binary search instead of a pass over all of them).
+Focus: the "block elsewhere in the same root keeps focus" case still holds (0 restores, same element) in all modes that reconcile.
+The anchors rule is a heuristic like the root-level one (two siblings away is enough room for a context effect that makes no error node and no range change: none was found by 125,000
+fuzz steps, which is evidence about those generators, not a proof).

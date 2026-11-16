@@ -205,5 +205,604 @@
     "oracle": true
    }
   }
+ },
+ "round5-before": {
+  "js 618-line class (core.js)": {
+   "lines": 618,
+   "before": {
+    "typedCharInLeaf": {
+     "medianMs": 100.87,
+     "nodesRebuiltPerEdit": 2624,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 99.7,
+     "nodesRebuiltPerEdit": 2624,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 97.05,
+     "nodesRebuiltPerEdit": 2624,
+     "nodesComparedPerEdit": 0
+    },
+    "biggestRootNodes": 2028,
+    "oracle": true
+   },
+   "after": {
+    "typedCharInLeaf": {
+     "medianMs": 6.22,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 2624
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 5.3,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 2624
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 4.39,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 2624
+    },
+    "biggestRootNodes": 2028,
+    "oracle": true
+   }
+  },
+  "py 4006-line file (__init__.py)": {
+   "lines": 4006,
+   "before": {
+    "typedCharInLeaf": {
+     "medianMs": 8.8,
+     "nodesRebuiltPerEdit": 4968,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 8.06,
+     "nodesRebuiltPerEdit": 4968,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 3.19,
+     "nodesRebuiltPerEdit": 1476,
+     "nodesComparedPerEdit": 0
+    },
+    "biggestRootNodes": 4898,
+    "oracle": true
+   },
+   "after": {
+    "typedCharInLeaf": {
+     "medianMs": 9.55,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 4968
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 7.15,
+     "nodesRebuiltPerEdit": 1326.2,
+     "nodesComparedPerEdit": 2613
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 6.5,
+     "nodesRebuiltPerEdit": 267.1,
+     "nodesComparedPerEdit": 2631
+    },
+    "biggestRootNodes": 2400,
+    "oracle": true
+   }
+  },
+  "scheme 3000 lines (constructs sample repeated)": {
+   "lines": 2801,
+   "before": {
+    "typedCharInLeaf": {
+     "medianMs": 8.08,
+     "nodesRebuiltPerEdit": 39,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 7.23,
+     "nodesRebuiltPerEdit": 39,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 4.73,
+     "nodesRebuiltPerEdit": 12,
+     "nodesComparedPerEdit": 0
+    },
+    "biggestRootNodes": 14,
+    "oracle": true
+   },
+   "after": {
+    "typedCharInLeaf": {
+     "medianMs": 6.01,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 39
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 5.81,
+     "nodesRebuiltPerEdit": 0.2,
+     "nodesComparedPerEdit": 40
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 4.8,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 11
+    },
+    "biggestRootNodes": 15,
+    "oracle": true
+   }
+  },
+  "js 3000 lines (constructs sample repeated)": {
+   "lines": 2925,
+   "before": {
+    "typedCharInLeaf": {
+     "medianMs": 4.53,
+     "nodesRebuiltPerEdit": 58,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 4.4,
+     "nodesRebuiltPerEdit": 58,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 2.12,
+     "nodesRebuiltPerEdit": 10,
+     "nodesComparedPerEdit": 0
+    },
+    "biggestRootNodes": 27,
+    "oracle": true
+   },
+   "after": {
+    "typedCharInLeaf": {
+     "medianMs": 2.58,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 58
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 2.51,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 58
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 2.05,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 9
+    },
+    "biggestRootNodes": 27,
+    "oracle": true
+   }
+  },
+  "py 3000 lines (constructs sample repeated)": {
+   "lines": 2913,
+   "before": {
+    "typedCharInLeaf": {
+     "medianMs": 4.38,
+     "nodesRebuiltPerEdit": 68,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 4.62,
+     "nodesRebuiltPerEdit": 71,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 3.07,
+     "nodesRebuiltPerEdit": 97,
+     "nodesComparedPerEdit": 0
+    },
+    "biggestRootNodes": 27,
+    "oracle": true
+   },
+   "after": {
+    "typedCharInLeaf": {
+     "medianMs": 2.31,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 68
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 5.48,
+     "nodesRebuiltPerEdit": 666.4,
+     "nodesComparedPerEdit": 2513
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 5.43,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 1873
+    },
+    "biggestRootNodes": 15,
+    "oracle": true
+   }
+  }
+ },
+ "round5": {
+  "js 618-line class (core.js)": {
+   "lines": 618,
+   "rebuild": {
+    "typedCharInLeaf": {
+     "medianMs": 106.83,
+     "nodesRebuiltPerEdit": 2624,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 104.19,
+     "nodesRebuiltPerEdit": 2624,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 100.88,
+     "nodesRebuiltPerEdit": 2624,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 2028,
+    "oracle": true
+   },
+   "reconcile": {
+    "typedCharInLeaf": {
+     "medianMs": 5.24,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 2624,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 4.84,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 2624,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 4.62,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 2624,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 2028,
+    "oracle": true
+   },
+   "anchors": {
+    "typedCharInLeaf": {
+     "medianMs": 2.26,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 611,
+     "nodesAnchoredPerEdit": 40,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 2.02,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 610,
+     "nodesAnchoredPerEdit": 47,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 1.97,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 610,
+     "nodesAnchoredPerEdit": 47,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 2028,
+    "oracle": true
+   }
+  },
+  "py 4006-line file (__init__.py)": {
+   "lines": 4006,
+   "rebuild": {
+    "typedCharInLeaf": {
+     "medianMs": 11.64,
+     "nodesRebuiltPerEdit": 4968,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 8.94,
+     "nodesRebuiltPerEdit": 4968,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 3.4,
+     "nodesRebuiltPerEdit": 1476,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 4898,
+    "oracle": true
+   },
+   "reconcile": {
+    "typedCharInLeaf": {
+     "medianMs": 10.17,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 4968,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 7.14,
+     "nodesRebuiltPerEdit": 1326.2,
+     "nodesComparedPerEdit": 2613,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 6.48,
+     "nodesRebuiltPerEdit": 267.1,
+     "nodesComparedPerEdit": 2631,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 2400,
+    "oracle": true
+   },
+   "anchors": {
+    "typedCharInLeaf": {
+     "medianMs": 3.27,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 84,
+     "nodesAnchoredPerEdit": 193,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 3.81,
+     "nodesRebuiltPerEdit": 1326.2,
+     "nodesComparedPerEdit": 233,
+     "nodesAnchoredPerEdit": 111,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 6.3,
+     "nodesRebuiltPerEdit": 267.1,
+     "nodesComparedPerEdit": 2629,
+     "nodesAnchoredPerEdit": 2,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 2400,
+    "oracle": true
+   }
+  },
+  "scheme 3000 lines (constructs sample repeated)": {
+   "lines": 2801,
+   "rebuild": {
+    "typedCharInLeaf": {
+     "medianMs": 8.55,
+     "nodesRebuiltPerEdit": 39,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 8.75,
+     "nodesRebuiltPerEdit": 39,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 5.37,
+     "nodesRebuiltPerEdit": 12,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 14,
+    "oracle": true
+   },
+   "reconcile": {
+    "typedCharInLeaf": {
+     "medianMs": 6.34,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 39,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 5.95,
+     "nodesRebuiltPerEdit": 0.2,
+     "nodesComparedPerEdit": 40,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 4.73,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 11,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 15,
+    "oracle": true
+   },
+   "anchors": {
+    "typedCharInLeaf": {
+     "medianMs": 6.06,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 34,
+     "nodesAnchoredPerEdit": 5,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 5.82,
+     "nodesRebuiltPerEdit": 0.2,
+     "nodesComparedPerEdit": 34,
+     "nodesAnchoredPerEdit": 6,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 4.74,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 11,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 15,
+    "oracle": true
+   }
+  },
+  "js 3000 lines (constructs sample repeated)": {
+   "lines": 2925,
+   "rebuild": {
+    "typedCharInLeaf": {
+     "medianMs": 4.71,
+     "nodesRebuiltPerEdit": 58,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 4.46,
+     "nodesRebuiltPerEdit": 58,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 2.26,
+     "nodesRebuiltPerEdit": 10,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 27,
+    "oracle": true
+   },
+   "reconcile": {
+    "typedCharInLeaf": {
+     "medianMs": 2.66,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 58,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 2.41,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 58,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 2.03,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 9,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 27,
+    "oracle": true
+   },
+   "anchors": {
+    "typedCharInLeaf": {
+     "medianMs": 2.52,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 38,
+     "nodesAnchoredPerEdit": 5,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 2.6,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 39,
+     "nodesAnchoredPerEdit": 4,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 2.07,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 9,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 27,
+    "oracle": true
+   }
+  },
+  "py 3000 lines (constructs sample repeated)": {
+   "lines": 2913,
+   "rebuild": {
+    "typedCharInLeaf": {
+     "medianMs": 4.64,
+     "nodesRebuiltPerEdit": 68,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 5.11,
+     "nodesRebuiltPerEdit": 71,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 3.13,
+     "nodesRebuiltPerEdit": 97,
+     "nodesComparedPerEdit": 0,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 27,
+    "oracle": true
+   },
+   "reconcile": {
+    "typedCharInLeaf": {
+     "medianMs": 2.25,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 68,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 5.56,
+     "nodesRebuiltPerEdit": 666.4,
+     "nodesComparedPerEdit": 2513,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 5.62,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 1873,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 15,
+    "oracle": true
+   },
+   "anchors": {
+    "typedCharInLeaf": {
+     "medianMs": 2.13,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 48,
+     "nodesAnchoredPerEdit": 5,
+     "anchorBails": 0
+    },
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 5.32,
+     "nodesRebuiltPerEdit": 666.4,
+     "nodesComparedPerEdit": 2505,
+     "nodesAnchoredPerEdit": 3,
+     "anchorBails": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 5.62,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 1873,
+     "nodesAnchoredPerEdit": 0,
+     "anchorBails": 0
+    },
+    "biggestRootNodes": 15,
+    "oracle": true
+   }
+  }
  }
 }

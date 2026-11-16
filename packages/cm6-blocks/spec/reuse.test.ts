@@ -36,10 +36,10 @@ const ONE_ROOT: Record<string, string> = {
 };
 
 const made: LezerBlockEditor[] = [];
-function make(name: string, text: string, reconcile = true): LezerBlockEditor {
+function make(name: string, text: string, reconcile = true, anchors = true): LezerBlockEditor {
   const parent = document.createElement("div");
   document.body.appendChild(parent);
-  const ed = createLezerBlockEditor(parent, text, { ...OPTS[name], reconcile });
+  const ed = createLezerBlockEditor(parent, text, { ...OPTS[name], reconcile, anchors });
   made.push(ed);
   return ed;
 }
@@ -137,8 +137,8 @@ describe.each(Object.keys(OPTS))("node-level reuse: %s", (name) => {
   ];
   test.each(cases)("%s: %s", (lang, label, text) => {
     const out: Record<string, unknown> = { lines: text.split("\n").length };
-    for (const reconcile of [false, true]) {
-      const ed = make(lang, text, reconcile);
+    for (const mode of ["rebuild", "reconcile", "anchors"] as const) {
+      const ed = make(lang, text, mode !== "rebuild", mode === "anchors");
       const roots = ed.roots().filter((r) => r.kind !== "error");
       // the root that holds the middle of the document (for the class: the biggest root)
       const mid = ed.view.state.doc.length >> 1;
@@ -165,17 +165,19 @@ describe.each(Object.keys(OPTS))("node-level reuse: %s", (name) => {
         const t: number[] = [];
         const n0 = ed.stats().nodesRebuilt;
         const c0 = ed.stats().nodesCompared;
+        const a0 = ed.stats().nodesAnchored;
+        const b0 = ed.stats().anchorBails;
         for (let i = 0; i < 9; i++) {
           const a = performance.now();
           f();
           t.push(performance.now() - a);
         }
         const st = ed.stats();
-        row[k] = { medianMs: +median(t).toFixed(2), nodesRebuiltPerEdit: +((st.nodesRebuilt - n0) / 9).toFixed(1), nodesComparedPerEdit: Math.round((st.nodesCompared - c0) / 9) };
+        row[k] = { medianMs: +median(t).toFixed(2), nodesRebuiltPerEdit: +((st.nodesRebuilt - n0) / 9).toFixed(1), nodesComparedPerEdit: Math.round((st.nodesCompared - c0) / 9), nodesAnchoredPerEdit: Math.round((st.nodesAnchored - a0) / 9), anchorBails: st.anchorBails - b0 };
       }
       row.biggestRootNodes = (() => { let c = 0; walk(bigRoot, () => c++); return c; })();
       row.oracle = checkLezerEditor(ed).length === 0;
-      out[reconcile ? "after" : "before"] = row;
+      out[mode] = row;
     }
     (results[step] ??= {}) as Record<string, unknown>;
     (results[step] as Record<string, unknown>)[label] = out;

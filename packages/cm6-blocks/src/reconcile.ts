@@ -15,7 +15,16 @@
 import { adoptMeta, keyOfNode, sourceOf } from "./lezer";
 import type { BNode, Slot, TreeChange } from "./types";
 
+/**
+ * Thrown when the new tree holds an ANCHOR (an old node taken over as is, see lezer-view.ts) that cannot be where the new tree
+ * puts it (it is not in the paired slot, or it sits in a node that is new or removed). Nothing can be trusted then: the editor
+ * drops the old root and uses the new one.
+ */
+export class Bail extends Error {}
+
 export interface ReconcileEnv {
+  /** is this node of the new tree an old node taken over as is (an anchor)? Its subtree is not compared. */
+  anchored?(node: BNode): boolean;
   /** patch the page for a change that is already made in the tree */
   apply(change: TreeChange): void;
   /** a drawn node's spoken label may have changed */
@@ -66,21 +75,26 @@ export function reconcile(old: BNode, nw: BNode, env: ReconcileEnv): boolean {
 function reconcileSlot(os: Slot, ns: Slot, env: ReconcileEnv): boolean {
   const o0 = os.nodes.slice();
   const n0 = ns.nodes.slice();
-  let changed = false;
-  const replaceAt = (index: number, node: BNode): void => {
-    const old = os.nodes[index];
-    adopt(os, node);
-    os.nodes[index] = node;
-    env.removed(old);
-    env.added(node);
-    env.apply({ type: "replace", old, node, slot: os, index });
-    changed = true;
-  };
+  const anchored = env.anchored ?? (() => false);
   if (os.kind === "one") {
+    if (o0.length === 1 && n0.length === 1 && anchored(n0[0])) {
+      if (o0[0] !== n0[0]) throw new Bail();
+      adopt(os, n0[0]); // (the new parent it was built under is not the one that stays)
+      return false;
+    }
+    let changed = false;
     if (o0.length === 1 && n0.length === 1 && compatible(o0[0], n0[0])) return reconcile(o0[0], n0[0], env);
     // a "one" slot always holds exactly one node: swap them (the shapes are the same)
-    if (o0.length === 1 && n0.length === 1) replaceAt(0, n0[0]);
-    else {
+    if (o0.length === 1 && n0.length === 1) {
+      const old = o0[0];
+      const node = n0[0];
+      adopt(os, node);
+      os.nodes[0] = node;
+      env.removed(old);
+      env.added(node);
+      env.apply({ type: "replace", old, node, slot: os, index: 0 });
+      changed = true;
+    } else {
       os.nodes = n0;
       for (const c of n0) {
         adopt(os, c);
@@ -91,6 +105,43 @@ function reconcileSlot(os: Slot, ns: Slot, env: ReconcileEnv): boolean {
     }
     return changed;
   }
+  if (!n0.some(anchored)) return reconcileRange(os, 0, o0, n0, env);
+  // Anchors are old nodes of this very slot, in the same order: they split the list into stretches, and each stretch is
+  // laid over the new nodes between the same two anchors
+  let changed = false;
+  let oi = 0;
+  let ni = 0;
+  for (let j = 0; j <= n0.length; j++) {
+    const isAnchor = j < n0.length && anchored(n0[j]);
+    if (j < n0.length && !isAnchor) continue;
+    let oj = o0.length;
+    if (isAnchor) {
+      oj = o0.indexOf(n0[j], oi);
+      if (oj < 0) throw new Bail();
+      adopt(os, n0[j]);
+    }
+    const oldSeg = o0.slice(oi, oj);
+    const newSeg = n0.slice(ni, j);
+    // (the live list already holds the new nodes of the earlier stretches and the anchors: the stretch starts at index `ni`)
+    if (oldSeg.length || newSeg.length) if (reconcileRange(os, ni, oldSeg, newSeg, env)) changed = true;
+    oi = oj + 1;
+    ni = j + 1;
+  }
+  return changed;
+}
+
+/** the stretch `o0` of the live list `os.nodes` (starting at `base`) laid over the new nodes `n0` */
+function reconcileRange(os: Slot, base: number, o0: BNode[], n0: BNode[], env: ReconcileEnv): boolean {
+  let changed = false;
+  const replaceAt = (index: number, node: BNode): void => {
+    const old = os.nodes[base + index];
+    adopt(os, node);
+    os.nodes[base + index] = node;
+    env.removed(old);
+    env.added(node);
+    env.apply({ type: "replace", old, node, slot: os, index: base + index });
+    changed = true;
+  };
   let p = 0;
   while (p < o0.length && p < n0.length && compatible(o0[p], n0[p]) && sameText(o0[p], n0[p])) p++;
   let eo = o0.length;
@@ -110,16 +161,16 @@ function reconcileSlot(os: Slot, ns: Slot, env: ReconcileEnv): boolean {
   for (let j = both; j < m; j++) {
     const node = n0[p + j];
     adopt(os, node);
-    os.nodes.splice(p + j, 0, node);
+    os.nodes.splice(base + p + j, 0, node);
     env.added(node);
-    env.apply({ type: "insert", node, slot: os, index: p + j });
+    env.apply({ type: "insert", node, slot: os, index: base + p + j });
     changed = true;
   }
   for (let j = both; j < k; j++) {
-    const node = os.nodes[p + both];
-    os.nodes.splice(p + both, 1);
+    const node = os.nodes[base + p + both];
+    os.nodes.splice(base + p + both, 1);
     env.removed(node);
-    env.apply({ type: "remove", node, slot: os, index: p + both });
+    env.apply({ type: "remove", node, slot: os, index: base + p + both });
     changed = true;
   }
   for (let j = 0; j < p; j++) if (reconcile(o0[j], n0[j], env)) changed = true;

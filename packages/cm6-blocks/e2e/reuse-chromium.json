@@ -1,19 +1,25 @@
 {
  "js 618-line class": {
   "lines": 618,
-  "before": {
+  "rebuild": {
    "rootNodes": 2028,
    "rootsInDom": 10,
    "rootInView": true,
    "typedSpace": {
-    "syncWithLayoutMs": 25.8,
-    "toPaintMs": 29.5,
-    "nodesRebuiltPerEdit": 2624
+    "syncWithLayoutMs": 30.1,
+    "toPaintMs": 33.8,
+    "nodesRebuiltPerEdit": 2624,
+    "nodesComparedPerEdit": 0,
+    "nodesAnchoredPerEdit": 0,
+    "anchorBails": 0
    },
    "typedCharInLeaf": {
-    "syncWithLayoutMs": 26.7,
-    "toPaintMs": 30.8,
-    "nodesRebuiltPerEdit": 2624
+    "syncWithLayoutMs": 28.6,
+    "toPaintMs": 32.4,
+    "nodesRebuiltPerEdit": 2624,
+    "nodesComparedPerEdit": 0,
+    "nodesAnchoredPerEdit": 0,
+    "anchorBails": 0
    },
    "focusElsewhereInTheSameRoot": {
     "focusRestores": 1,
@@ -21,19 +27,51 @@
     "activeIsBody": false
    }
   },
-  "after": {
+  "reconcile": {
    "rootNodes": 2028,
    "rootsInDom": 10,
    "rootInView": true,
    "typedSpace": {
-    "syncWithLayoutMs": 4.4,
-    "toPaintMs": 16.6,
-    "nodesRebuiltPerEdit": 0
+    "syncWithLayoutMs": 4.6,
+    "toPaintMs": 16.7,
+    "nodesRebuiltPerEdit": 0,
+    "nodesComparedPerEdit": 2624,
+    "nodesAnchoredPerEdit": 0,
+    "anchorBails": 0
    },
    "typedCharInLeaf": {
-    "syncWithLayoutMs": 3.8,
+    "syncWithLayoutMs": 4.7,
     "toPaintMs": 16.6,
-    "nodesRebuiltPerEdit": 1
+    "nodesRebuiltPerEdit": 1,
+    "nodesComparedPerEdit": 2624,
+    "nodesAnchoredPerEdit": 0,
+    "anchorBails": 0
+   },
+   "focusElsewhereInTheSameRoot": {
+    "focusRestores": 0,
+    "sameElement": true,
+    "activeIsBody": false
+   }
+  },
+  "anchors": {
+   "rootNodes": 2028,
+   "rootsInDom": 10,
+   "rootInView": true,
+   "typedSpace": {
+    "syncWithLayoutMs": 1.5,
+    "toPaintMs": 16.7,
+    "nodesRebuiltPerEdit": 0,
+    "nodesComparedPerEdit": 16,
+    "nodesAnchoredPerEdit": 51,
+    "anchorBails": 0
+   },
+   "typedCharInLeaf": {
+    "syncWithLayoutMs": 2.4,
+    "toPaintMs": 16.6,
+    "nodesRebuiltPerEdit": 1,
+    "nodesComparedPerEdit": 17,
+    "nodesAnchoredPerEdit": 44,
+    "anchorBails": 0
    },
    "focusElsewhereInTheSameRoot": {
     "focusRestores": 0,
@@ -44,19 +82,25 @@
  },
  "py 4006-line file": {
   "lines": 4006,
-  "before": {
+  "rebuild": {
    "rootNodes": 4898,
    "rootsInDom": 7,
    "rootInView": true,
    "typedSpace": {
-    "syncWithLayoutMs": 50.1,
-    "toPaintMs": 54.9,
-    "nodesRebuiltPerEdit": 4968
+    "syncWithLayoutMs": 52.1,
+    "toPaintMs": 59.8,
+    "nodesRebuiltPerEdit": 4968,
+    "nodesComparedPerEdit": 0,
+    "nodesAnchoredPerEdit": 0,
+    "anchorBails": 0
    },
    "typedCharInLeaf": {
-    "syncWithLayoutMs": 47.5,
-    "toPaintMs": 52.3,
-    "nodesRebuiltPerEdit": 4968
+    "syncWithLayoutMs": 52.9,
+    "toPaintMs": 62,
+    "nodesRebuiltPerEdit": 4968,
+    "nodesComparedPerEdit": 0,
+    "nodesAnchoredPerEdit": 0,
+    "anchorBails": 0
    },
    "focusElsewhereInTheSameRoot": {
     "focusRestores": 1,
@@ -64,19 +108,51 @@
     "activeIsBody": false
    }
   },
-  "after": {
+  "reconcile": {
    "rootNodes": 4898,
    "rootsInDom": 7,
    "rootInView": true,
    "typedSpace": {
-    "syncWithLayoutMs": 6.5,
-    "toPaintMs": 16.6,
-    "nodesRebuiltPerEdit": 0
+    "syncWithLayoutMs": 7.7,
+    "toPaintMs": 16.8,
+    "nodesRebuiltPerEdit": 0,
+    "nodesComparedPerEdit": 4968,
+    "nodesAnchoredPerEdit": 0,
+    "anchorBails": 0
    },
    "typedCharInLeaf": {
-    "syncWithLayoutMs": 6.6,
+    "syncWithLayoutMs": 7.3,
+    "toPaintMs": 16.8,
+    "nodesRebuiltPerEdit": 1,
+    "nodesComparedPerEdit": 4968,
+    "nodesAnchoredPerEdit": 0,
+    "anchorBails": 0
+   },
+   "focusElsewhereInTheSameRoot": {
+    "focusRestores": 0,
+    "sameElement": true,
+    "activeIsBody": false
+   }
+  },
+  "anchors": {
+   "rootNodes": 4898,
+   "rootsInDom": 7,
+   "rootInView": true,
+   "typedSpace": {
+    "syncWithLayoutMs": 2.6,
     "toPaintMs": 16.6,
-    "nodesRebuiltPerEdit": 1
+    "nodesRebuiltPerEdit": 0,
+    "nodesComparedPerEdit": 9,
+    "nodesAnchoredPerEdit": 189,
+    "anchorBails": 0
+   },
+   "typedCharInLeaf": {
+    "syncWithLayoutMs": 3.3,
+    "toPaintMs": 16.4,
+    "nodesRebuiltPerEdit": 1,
+    "nodesComparedPerEdit": 16,
+    "nodesAnchoredPerEdit": 195,
+    "anchorBails": 0
    },
    "focusElsewhereInTheSameRoot": {
     "focusRestores": 0,

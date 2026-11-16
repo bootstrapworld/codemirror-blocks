@@ -22,11 +22,11 @@ for (const [lang, label, text] of cases) {
     await page.waitForSelector(".cm-content .blocks-node");
     const src = text();
     const out: any = { lines: src.split("\n").length };
-    for (const reconcile of [false, true]) {
+    for (const mode of ['rebuild', 'reconcile', 'anchors'] as const) {
       const r = await page.evaluate(
-        async ({ src, reconcile }) => {
+        async ({ src, mode }) => {
           const demo = (window as any).demo;
-          demo.show(src, reconcile);
+          demo.show(src, mode !== 'rebuild', mode === 'anchors');
           const ed = (window as any).demo.ed;
           const raf = () => new Promise<void>((res) => requestAnimationFrame(() => setTimeout(() => res(), 0)));
           await raf();
@@ -58,7 +58,7 @@ for (const [lang, label, text] of cases) {
               paint.push(performance.now() - a);
             }
             const s1 = ed.stats();
-            o[k] = { syncWithLayoutMs: +median(sync).toFixed(2), toPaintMs: +median(paint).toFixed(1), nodesRebuiltPerEdit: +((s1.nodesRebuilt - s0.nodesRebuilt) / 9).toFixed(1) };
+            o[k] = { syncWithLayoutMs: +median(sync).toFixed(2), toPaintMs: +median(paint).toFixed(1), nodesRebuiltPerEdit: +((s1.nodesRebuilt - s0.nodesRebuilt) / 9).toFixed(1), nodesComparedPerEdit: +((s1.nodesCompared - s0.nodesCompared) / 9).toFixed(1), nodesAnchoredPerEdit: +((s1.nodesAnchored - s0.nodesAnchored) / 9).toFixed(1), anchorBails: s1.anchorBails - s0.anchorBails };
           }
           // focus: a block elsewhere in the same root keeps focus when something else in it is typed
           const leaves: any[] = []; const w = (n: any) => { if (!n.slots.length && n.kind === "literal") leaves.push(n); n.slots.forEach((s: any) => s.nodes.forEach(w)); };
@@ -74,9 +74,9 @@ for (const [lang, label, text] of cases) {
           o.focusElsewhereInTheSameRoot = { focusRestores: ed.stats().focusRestores - before, sameElement: ed.renderer.has(ed.focusedNode()) && ed.focusedNode() === keep && ed.renderer.element(keep) === el, activeIsBody: document.activeElement === document.body };
           return o;
         },
-        { src, reconcile }
+        { src, mode }
       );
-      out[reconcile ? "after" : "before"] = r;
+      out[mode] = r;
     }
     results[label] = out;
     fs.writeFileSync(path.join(__dirname, "reuse-chromium.json"), JSON.stringify(results, null, 1));

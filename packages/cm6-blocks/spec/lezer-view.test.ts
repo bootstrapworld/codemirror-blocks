@@ -186,6 +186,8 @@ function fuzz(name: string, L: (typeof LANGS)[string], starts: string[], seeds: 
     let nodes = 0;
     let maxRoot = 0;
     let total = 0;
+    let anchors = 0;
+    let bails = 0;
     for (let seed = Number(process.env.CMB_SEED) || 1; seed <= (Number(process.env.CMB_SEED) || seeds); seed++) {
       const rnd = mulberry32(seed * 7919 + name.length);
       const pick = <T,>(a: T[]): T => a[Math.floor(rnd() * a.length)];
@@ -254,8 +256,10 @@ function fuzz(name: string, L: (typeof LANGS)[string], starts: string[], seeds: 
       nodes += st.nodesRebuilt;
       maxRoot = Math.max(maxRoot, st.maxRootNodes);
       total += ed.roots().length;
+      anchors += st.nodesAnchored;
+      bails += st.anchorBails;
     }
     // eslint-disable-next-line no-console
-    console.log(`${name}: ${steps} steps; roots rebuilt ${rebuilt} (mean ${(nodes / rebuilt).toFixed(1)} nodes, max ${maxRoot}), reconciled ${recon}, kept ${kept}; divergences from a fresh parse so far ${divergences.count}`);
+    console.log(`${name}: ${steps} steps; roots rebuilt ${rebuilt} (mean ${(nodes / rebuilt).toFixed(1)} nodes, max ${maxRoot}), reconciled ${recon}, kept ${kept}, anchors taken ${anchors}, anchor bails ${bails}; divergences from a fresh parse so far ${divergences.count}`);
   }
 }

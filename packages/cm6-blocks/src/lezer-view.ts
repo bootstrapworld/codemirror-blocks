@@ -27,12 +27,12 @@ import { defaultKeymap, history, historyKeymap, isolateHistory } from "@codemirr
 import { Tree, TreeFragment } from "@lezer/common";
 import type { Parser } from "@lezer/common";
 import { walk } from "./doc";
-import { BlockTable, fillTemplate, insertChange, insertEmptyChange, LezerLanguage, lezerLanguage, removeChange, separatorFor, keyOfNode, hasError } from "./lezer";
+import { InnerCand, BlockTable, fillTemplate, insertChange, insertEmptyChange, LezerLanguage, lezerLanguage, removeChange, separatorFor, keyOfNode, hasError } from "./lezer";
 import { Renderer } from "./render";
 import { RootWidget } from "./view";
 import { attachInteraction } from "./interact";
 import { makeNode } from "./node";
-import { compatible, reconcile, ReconcileEnv } from "./reconcile";
+import { Bail, compatible, reconcile, ReconcileEnv } from "./reconcile";
 import type { BNode, Doc, Slot, TextChange } from "./types";
 
 export interface LezerOptions {
@@ -40,6 +40,8 @@ export interface LezerOptions {
   table: BlockTable;
   /** lay a touched root over its old nodes (reconcile.ts); false rebuilds it whole, as before the fourth round (for measuring) */
   reconcile?: boolean;
+  /** inside a touched root, take old nodes over without building them where the change is not near (the fifth round); false builds the whole root and compares it (for measuring) */
+  anchors?: boolean;
 }
 
 export interface LezerStats {
@@ -53,8 +55,12 @@ export interface LezerStats {
   rootsReconciled: number;
   /** nodes that are new in the tree: built for a rebuilt root, or inserted / replaced inside a reconciled one */
   nodesRebuilt: number;
-  /** nodes of reconciled roots compared with their old counterparts */
+  /** nodes of reconciled roots compared with their old counterparts (those built new in this update) */
   nodesCompared: number;
+  /** old nodes taken over as they are into a new tree, inside a touched root, without building or comparing them (anchors) */
+  nodesAnchored: number;
+  /** touched roots whose anchors could not all be placed: the old root was dropped and the new one used */
+  anchorBails: number;
   /** nodes in the largest root rebuilt so far */
   maxRootNodes: number;
   /** time spent in the field update, in ms: reparse; and the rest (matching, building, positions, decorations) */
@@ -153,6 +159,24 @@ const count = (n: BNode): number => {
   walk(n, () => c++);
   return c;
 };
+/** every node of `n` that is not inside an anchor (a node of `skip`), and the anchors met */
+function walkFresh(n: BNode, skip: Set<BNode>, f: (m: BNode) => void, met?: (a: BNode) => void): void {
+  f(n);
+  for (const sl of n.slots)
+    for (const c of sl.nodes) {
+      if (skip.has(c)) met?.(c);
+      else walkFresh(c, skip, f, met);
+    }
+}
+/** set every node's parent and slot link right again (after a failed reconcile moved some of them into the old tree) */
+function relink(n: BNode): void {
+  for (const sl of n.slots)
+    for (const c of sl.nodes) {
+      c.parent = n;
+      c.slot = sl;
+      relink(c);
+    }
+}
 function shiftTree(n: BNode, d: number): void {
   walk(n, (m) => {
     m.from += d;
@@ -167,7 +191,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   const renderer = new Renderer(language);
   const stats: LezerStats = {
     edits: 0, reparses: 0, widgetsBuilt: 0, focusRestores: 0,
-    rootsKept: 0, rootsRebuilt: 0, rootsReconciled: 0, nodesRebuilt: 0, nodesCompared: 0, maxRootNodes: 0, parseMs: 0, restMs: 0,
+    rootsKept: 0, rootsRebuilt: 0, rootsReconciled: 0, nodesRebuilt: 0, nodesCompared: 0, nodesAnchored: 0, anchorBails: 0, maxRootNodes: 0, parseMs: 0, restMs: 0,
   };
   const counters = stats as unknown as { ops: number; reparses: number; widgetsBuilt: number; focusRestores: number };
   const program = makeNode("program", [["roots", "list"]], { from: 0, to: text.length });
@@ -265,27 +289,123 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       const sameErrors = oldBeyond.length === newBeyond.length && oldBeyond.every((e, i) => e[0] === newBeyond[i][0] && e[1] === newBeyond[i][1]);
       const lastError = sameErrors ? -1 : errs.reduce((m, e) => Math.max(m, e[1]), -1);
       const kept = new Set<BNode>();
-      const roots = language.fromTree(tree, s, (from, to, key) => {
+      // Anchors: inside a touched root that holds a change, a block that no change is near (nor its neighbours), with no Lezer error in it, and
+      // that is in the old tree at the same place (mapped through the change) with the same table row, is NOT built again: the old node is
+      // taken as it is (its subtree moved by the change). Only the rest of the root is built and laid over the old root.
+      const anchored = new Set<BNode>();
+      const useAnchors = options.reconcile !== false && options.anchors !== false && cr.length <= 8;
+      const touches = (a: number, b: number): boolean => cr.some((c) => c.fromB <= b && c.toB >= a);
+      const errEnd: number[] = [];
+      errs.forEach((e, i) => (errEnd[i] = Math.max(e[1], errEnd[i - 1] ?? -1)));
+      const errorIn = (a: number, b: number): boolean => {
+        let lo = 0;
+        let hi = errs.length;
+        while (lo < hi) {
+          const m = (lo + hi) >> 1;
+          if (errs[m][0] <= b) lo = m + 1;
+          else hi = m;
+        }
+        for (let j = lo - 1; j >= 0 && errEnd[j] >= a; j--) if (errs[j][1] >= a) return true;
+        return false;
+      };
+      let cur: { o: BNode; idx: Map<string, BNode | null> | null } | null = null;
+      const indexOf = (o: BNode): Map<string, BNode | null> => {
+        const idx = new Map<string, BNode | null>();
+        const visit = (n: BNode): void => {
+          for (const sl of n.slots)
+            for (const c of sl.nodes) {
+              const k = keyOfNode(c);
+              if (k !== undefined && c.kind !== "error") {
+                const id = `${tr.changes.mapPos(c.from, 1)}:${tr.changes.mapPos(c.to, -1)}:${k}`;
+                idx.set(id, idx.has(id) ? null : c);
+              }
+              visit(c);
+            }
+        };
+        visit(o);
+        return idx;
+      };
+      const enter = (from: number, to: number, key: string): void => {
+        cur = null;
+        if (!useAnchors) return;
         const o = old.get(from);
-        if (!o || o.touched || (lastError >= 0 && to >= firstChange && from <= lastError) || o.to !== to || keyOfNode(o.node) !== key || hasError(o.node)) return null;
-        kept.add(o.node);
-        return o.node;
-      });
+        if (o && o.node.kind !== "error" && keyOfNode(o.node) === key) cur = { o: o.node, idx: null };
+      };
+      const inner = (c: InnerCand): BNode | null => {
+        if (!cur || touches(c.win[0], c.win[1]) || (lastError >= 0 && c.to >= firstChange && c.from <= lastError) || errorIn(c.from, c.to)) return null;
+        const k = (cur.idx ??= indexOf(cur.o)).get(`${c.from}:${c.to}:${c.key}`);
+        if (!k || hasError(k) || anchored.has(k)) return null;
+        let lv = 0; // (the old level: the new tree puts it as deep as `c.level`)
+        for (let p: BNode | null = k; p && p.kind !== "program"; p = p.parent) lv++;
+        if (lv !== c.level) return null;
+        const d = c.from - k.from;
+        if (d !== 0) shiftTree(k, d);
+        anchored.add(k);
+        stats.nodesAnchored++;
+        return k;
+      };
+      const roots = language.fromTree(
+        tree,
+        s,
+        (from, to, key) => {
+          const o = old.get(from);
+          if (!o || o.touched || (lastError >= 0 && to >= firstChange && from <= lastError) || o.to !== to || keyOfNode(o.node) !== key || hasError(o.node)) return null;
+          kept.add(o.node);
+          return o.node;
+        },
+        enter,
+        inner
+      );
       // touched roots: the old nodes are kept as far as they are the same (reconcile.ts)
       const env: ReconcileEnv = {
+        anchored: (n) => anchored.has(n),
         apply: (c) => renderer.apply(c),
         refresh: (n) => renderer.refresh(n),
-        added: (n) => walk(n, (m) => { doc.byId.set(m.id, m); stats.nodesRebuilt++; }),
-        removed: (n) => walk(n, (m) => doc.byId.delete(m.id)),
+        added: (n) =>
+          walkFresh(
+            n,
+            anchored,
+            (m) => {
+              doc.byId.set(m.id, m);
+              stats.nodesRebuilt++;
+            },
+            () => {
+              throw new Bail(); // an anchor inside a node that is new here: it cannot also be where it was
+            }
+          ),
+        removed: (n) => {
+          let hit = false;
+          walk(n, (m) => {
+            if (anchored.has(m)) hit = true;
+            doc.byId.delete(m.id);
+          });
+          if (hit) {
+            renderer.forget(n);
+            throw new Bail(); // an anchor inside a node that leaves (all of it is out of byId now; the new root puts its nodes back)
+          }
+        },
       };
       const reconciled = new Map<BNode, { from0: number; to0: number }>();
+      /** old roots dropped after a failed reconcile: their own positions were overwritten, these are where they were */
+      const bailed = new Map<BNode, { from0: number; to0: number }>();
       for (let i = 0; i < roots.length; i++) {
         const r = roots[i];
         if (kept.has(r)) continue;
         const o = old.get(r.from);
         if (options.reconcile === false || !o || reconciled.has(o.node) || o.node.kind === "error" || r.kind === "error" || !compatible(o.node, r)) continue;
-        stats.nodesCompared += count(r);
-        reconcile(o.node, r, env);
+        let fresh = 0;
+        walkFresh(r, anchored, () => fresh++);
+        stats.nodesCompared += fresh;
+        try {
+          reconcile(o.node, r, env);
+        } catch (e) {
+          if (!(e instanceof Bail)) throw e;
+          // an anchor could not be placed: the old root is dropped, the new one (anchors and all) is used as it is
+          stats.anchorBails++;
+          relink(r);
+          bailed.set(o.node, { from0: o.from0, to0: o.to0 });
+          continue;
+        }
         reconciled.set(o.node, { from0: o.from0, to0: o.to0 });
         roots[i] = o.node;
         stats.rootsReconciled++;
@@ -319,8 +439,9 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       let lo = Infinity;
       let hi = -Infinity;
       for (const r of drop) {
-        lo = Math.min(lo, tr.changes.mapPos(r.from, -1));
-        hi = Math.max(hi, tr.changes.mapPos(r.to, 1));
+        const b = bailed.get(r);
+        lo = Math.min(lo, tr.changes.mapPos(b ? b.from0 : r.from, -1));
+        hi = Math.max(hi, tr.changes.mapPos(b ? b.to0 : r.to, 1));
       }
       // a reconciled root keeps its widget, unless its range is no longer what the mapped decoration has
       for (const [r, p] of reconciled) {
@@ -757,6 +878,8 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     dispatchTransactions(trs, v) {
       const snap = trs.some((t) => t.docChanged) ? takeSnapshot() : null;
       v.update(trs);
+      // a selected block that left the tree leaves the selection (the renderer forgets most of them; this is the net under it)
+      if (trs.some((t) => t.docChanged)) for (const n of renderer.selected()) if (doc.byId.get(n.id) !== n) renderer.setSelected(n, false);
       // blocks that are new inside a selected block are selected with it
       if (trs.some((t) => t.docChanged)) for (const m of renderer.selected()) walk(m, (n) => renderer.setSelected(n, true));
       restoreFocus(snap, trs);

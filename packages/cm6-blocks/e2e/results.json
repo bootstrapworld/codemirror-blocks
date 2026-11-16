@@ -1,12 +1,12 @@
 {
   "scheme": {
-    "waitForSelectorMs": 98,
+    "waitForSelectorMs": 106,
     "lines": 2751,
     "roots": 1250,
     "nodes": 13750,
-    "firstDrawMs": 80.5,
-    "paintedMs": 86.10000002384186,
-    "createMs": 57.79999998211861,
+    "firstDrawMs": 82.5,
+    "paintedMs": 88.5,
+    "createMs": 58.79999998211861,
     "widgetsAtLoad": 36,
     "rootsInDomAtLoad": 14,
     "viewport": {
@@ -15,31 +15,31 @@
       "docLength": 55750
     },
     "edit_near_top": {
-      "syncWithLayoutMs": 4.299999982118607,
-      "toPaintMs": 16.5,
+      "syncWithLayoutMs": 4.5999999940395355,
+      "toPaintMs": 16.30000001192093,
       "undoToPaintMs": 16.69999998807907,
       "all": [
-        9,
-        16.4,
-        16.6,
-        16.6,
-        16.2,
+        9.7,
+        16.1,
         16.5,
-        18.1
+        16.6,
+        16.1,
+        16.3,
+        16.9
       ]
     },
     "edit_near_middle": {
-      "syncWithLayoutMs": 3.5999999940395355,
+      "syncWithLayoutMs": 3.5,
       "toPaintMs": 16,
-      "undoToPaintMs": 17.400000005960464,
+      "undoToPaintMs": 17.200000017881393,
       "all": [
-        18.2,
-        16,
-        14.4,
-        16,
+        17.5,
         15.9,
-        17.6,
-        13.9
+        15.9,
+        16,
+        16,
+        16.9,
+        16.4
       ]
     },
     "middleRootIndex": 537,
@@ -133,21 +133,23 @@
       "rootsRebuilt": 0,
       "rootsReconciled": 102,
       "nodesRebuilt": 41,
-      "nodesCompared": 1244,
+      "nodesCompared": 301,
+      "nodesAnchored": 267,
+      "anchorBails": 0,
       "maxRootNodes": 0,
-      "parseMs": 22.80000004172325,
-      "restMs": 110.60000002384186
+      "parseMs": 24.999999970197678,
+      "restMs": 108.49999997019768
     },
     "errors": []
   },
   "javascript": {
-    "waitForSelectorMs": 87,
+    "waitForSelectorMs": 93,
     "lines": 2821,
     "roots": 940,
     "nodes": 11656,
-    "firstDrawMs": 70.90000000596046,
-    "paintedMs": 76.10000002384186,
-    "createMs": 48.5,
+    "firstDrawMs": 73.7999999821186,
+    "paintedMs": 79.2999999821186,
+    "createMs": 50.29999998211861,
     "widgetsAtLoad": 36,
     "rootsInDomAtLoad": 8,
     "viewport": {
@@ -157,30 +159,30 @@
     },
     "edit_near_top": {
       "syncWithLayoutMs": 3,
-      "toPaintMs": 16.100000023841858,
-      "undoToPaintMs": 17.19999998807907,
+      "toPaintMs": 16,
+      "undoToPaintMs": 17.099999994039536,
       "all": [
-        11.3,
-        16.1,
+        8.9,
+        16,
+        17.4,
+        15.3,
+        17.1,
         16.4,
-        16.1,
-        16.1,
-        16.6,
-        16.1
+        15.7
       ]
     },
     "edit_near_middle": {
-      "syncWithLayoutMs": 3.2999999821186066,
-      "toPaintMs": 16.100000023841858,
-      "undoToPaintMs": 17.299999982118607,
+      "syncWithLayoutMs": 2.800000011920929,
+      "toPaintMs": 16.599999994039536,
+      "undoToPaintMs": 17.099999994039536,
       "all": [
-        18.5,
-        16.3,
-        16,
+        17.6,
+        17.1,
         16.4,
-        16.1,
-        16.1,
-        15.9
+        15.8,
+        16.6,
+        16.3,
+        16.8
       ]
     },
     "middleRootIndex": 324,
@@ -274,21 +276,23 @@
       "rootsRebuilt": 0,
       "rootsReconciled": 106,
       "nodesRebuilt": 38,
-      "nodesCompared": 1268,
+      "nodesCompared": 303,
+      "nodesAnchored": 216,
+      "anchorBails": 0,
       "maxRootNodes": 0,
-      "parseMs": 40.400000005960464,
-      "restMs": 51.299999952316284
+      "parseMs": 39.80000001192093,
+      "restMs": 50.700000047683716
     },
     "errors": []
   },
   "python": {
-    "waitForSelectorMs": 93,
+    "waitForSelectorMs": 97,
     "lines": 2773,
     "roots": 1155,
     "nodes": 13629,
-    "firstDrawMs": 75.80000001192093,
-    "paintedMs": 81.2000000178814,
-    "createMs": 54,
+    "firstDrawMs": 78.90000000596046,
+    "paintedMs": 84.40000000596046,
+    "createMs": 56.20000001788139,
     "widgetsAtLoad": 60,
     "rootsInDomAtLoad": 10,
     "viewport": {
@@ -297,31 +301,31 @@
       "docLength": 47817
     },
     "edit_near_top": {
-      "syncWithLayoutMs": 3.100000023841858,
-      "toPaintMs": 16.200000017881393,
-      "undoToPaintMs": 17.099999994039536,
+      "syncWithLayoutMs": 3,
+      "toPaintMs": 16.400000005960464,
+      "undoToPaintMs": 16.700000017881393,
       "all": [
-        8.9,
-        16.1,
-        16.6,
-        16.4,
+        9.3,
+        16.8,
         16.5,
-        14.6,
-        16.2
+        16.4,
+        16.2,
+        16.4,
+        16.3
       ]
     },
     "edit_near_middle": {
-      "syncWithLayoutMs": 2.300000011920929,
-      "toPaintMs": 16.099999994039536,
-      "undoToPaintMs": 17.299999982118607,
+      "syncWithLayoutMs": 1.899999976158142,
+      "toPaintMs": 16.399999976158142,
+      "undoToPaintMs": 17,
       "all": [
-        10.6,
-        16.2,
+        14.2,
+        17,
         15.8,
-        16.2,
-        16.2,
-        15.6,
-        16.1
+        16.4,
+        15.8,
+        16.4,
+        16.5
       ]
     },
     "middleRootIndex": 226,
@@ -415,10 +419,12 @@
       "rootsRebuilt": 0,
       "rootsReconciled": 106,
       "nodesRebuilt": 36,
-      "nodesCompared": 1143,
+      "nodesCompared": 307,
+      "nodesAnchored": 186,
+      "anchorBails": 0,
       "maxRootNodes": 0,
-      "parseMs": 37.19999983906746,
-      "restMs": 54.200000166893005
+      "parseMs": 33.199999898672104,
+      "restMs": 46.30000001192093
     },
     "errors": []
   }

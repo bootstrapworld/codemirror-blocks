@@ -1,0 +1,88 @@
+{
+ "js 618-line class": {
+  "lines": 618,
+  "before": {
+   "rootNodes": 2028,
+   "rootsInDom": 10,
+   "rootInView": true,
+   "typedSpace": {
+    "syncWithLayoutMs": 25.8,
+    "toPaintMs": 29.5,
+    "nodesRebuiltPerEdit": 2624
+   },
+   "typedCharInLeaf": {
+    "syncWithLayoutMs": 26.7,
+    "toPaintMs": 30.8,
+    "nodesRebuiltPerEdit": 2624
+   },
+   "focusElsewhereInTheSameRoot": {
+    "focusRestores": 1,
+    "sameElement": false,
+    "activeIsBody": false
+   }
+  },
+  "after": {
+   "rootNodes": 2028,
+   "rootsInDom": 10,
+   "rootInView": true,
+   "typedSpace": {
+    "syncWithLayoutMs": 4.4,
+    "toPaintMs": 16.6,
+    "nodesRebuiltPerEdit": 0
+   },
+   "typedCharInLeaf": {
+    "syncWithLayoutMs": 3.8,
+    "toPaintMs": 16.6,
+    "nodesRebuiltPerEdit": 1
+   },
+   "focusElsewhereInTheSameRoot": {
+    "focusRestores": 0,
+    "sameElement": true,
+    "activeIsBody": false
+   }
+  }
+ },
+ "py 4006-line file": {
+  "lines": 4006,
+  "before": {
+   "rootNodes": 4898,
+   "rootsInDom": 7,
+   "rootInView": true,
+   "typedSpace": {
+    "syncWithLayoutMs": 50.1,
+    "toPaintMs": 54.9,
+    "nodesRebuiltPerEdit": 4968
+   },
+   "typedCharInLeaf": {
+    "syncWithLayoutMs": 47.5,
+    "toPaintMs": 52.3,
+    "nodesRebuiltPerEdit": 4968
+   },
+   "focusElsewhereInTheSameRoot": {
+    "focusRestores": 1,
+    "sameElement": false,
+    "activeIsBody": false
+   }
+  },
+  "after": {
+   "rootNodes": 4898,
+   "rootsInDom": 7,
+   "rootInView": true,
+   "typedSpace": {
+    "syncWithLayoutMs": 6.5,
+    "toPaintMs": 16.6,
+    "nodesRebuiltPerEdit": 0
+   },
+   "typedCharInLeaf": {
+    "syncWithLayoutMs": 6.6,
+    "toPaintMs": 16.6,
+    "nodesRebuiltPerEdit": 1
+   },
+   "focusElsewhereInTheSameRoot": {
+    "focusRestores": 0,
+    "sameElement": true,
+    "activeIsBody": false
+   }
+  }
+ }
+}

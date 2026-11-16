@@ -75,11 +75,11 @@ function bigDoc(l: LangName): string {
   return s.repeat(Math.ceil(3000 / per));
 }
 
-function show(text: string, reconcile = true): void {
+function show(text: string, reconcile = true, anchors = true): void {
   ed?.destroy();
   $("editor").textContent = "";
   const t0 = performance.now();
-  ed = createLezerBlockEditor($("editor"), text, { ...LANGS[lang].opts, reconcile });
+  ed = createLezerBlockEditor($("editor"), text, { ...LANGS[lang].opts, reconcile, anchors });
   ed.setBlockMode($<HTMLInputElement>("blocks").checked);
   const ms = performance.now() - t0;
   const demo = { ed, lang, createMs: ms, firstDrawMs: -1, paintedMs: -1, setLanguage, show, loadBig, loadSample, undo: () => undo(ed!.view), redo: () => redo(ed!.view), check: () => checkLezerEditor(ed!) };

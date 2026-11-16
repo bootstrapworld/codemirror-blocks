@@ -73,13 +73,35 @@ export type LezerLanguage = Language & {
    * `keep(from, to)` may hand back an existing node for a top-level Lezer node
    * with that range; it is used as is (and not read again).
    */
-  fromTree(tree: Tree, text: string, keep?: (from: number, to: number, key: string) => BNode | null): BNode[];
+  fromTree(
+    tree: Tree,
+    text: string,
+    keep?: (from: number, to: number, key: string) => BNode | null,
+    /**
+     * Called for a top-level node that `keep` did not take, before it is built; with `inner` also given, `inner` may then
+     * hand back an old node for a block INSIDE it (an "anchor": not built again, used as is), see lezer-view.ts.
+     */
+    enter?: (from: number, to: number, key: string) => void,
+    inner?: (c: InnerCand) => BNode | null
+  ): BNode[];
 };
+
+/** a block about to be built inside another one: where it is, its table row, and the window (from the start of the block before it to the end of the one after it) */
+export interface InnerCand {
+  from: number;
+  to: number;
+  key: string;
+  win: [number, number];
+  /** how deep it will be (a top-level block is level 1) */
+  level: number;
+}
 
 interface Cand {
   node: SyntaxNode;
   key: string;
   path: string[];
+  /** set while an `inner` keeper is given: the block before's start to the block after's end (or the owner's own ends) */
+  win?: [number, number];
 }
 
 /** the exact source of every node this adapter built (to print it again) */
@@ -103,6 +125,12 @@ export function adoptMeta(old: BNode, nw: BNode): void {
 }
 
 export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage {
+  let innerKeep: ((c: InnerCand) => BNode | null) | null = null;
+  /** the level of the block being built (a top-level block is 1); only kept while an `inner` keeper is given */
+  let level = 0;
+  /** a child block: an anchor the editor takes from the old tree, else built */
+  const childOf = (cd: Cand, text: string, offset: number): BNode =>
+    (cd.win && innerKeep?.({ from: cd.node.from, to: cd.node.to, key: cd.key, win: cd.win, level: level + 1 })) || build(cd, text, offset);
   const rule = (name: string) => table.rules?.filter((r) => r.name === name) ?? [];
   const keyOf = (n: SyntaxNode, text: string): string => {
     for (const r of rule("kind")) {
@@ -139,7 +167,13 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
   }
 
   function build(c: Cand, text: string, offset: number): BNode {
-    const b = build1(c, text, offset);
+    level++;
+    let b: BNode;
+    try {
+      b = build1(c, text, offset);
+    } finally {
+      level--;
+    }
     keys.set(b, c.key);
     if (b.kind === "error" || b.slots.some((s) => s.nodes.some((k) => dirty.has(k)))) dirty.add(b);
     return b;
@@ -171,6 +205,7 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     sources.set(b, text.slice(n.from, n.to));
     const all: Cand[] = [];
     collect(n, [], all, text);
+    if (innerKeep) all.forEach((cd, i) => (cd.win = [all[i - 1]?.node.from ?? n.from, all[i + 1]?.node.to ?? n.to]));
     const isComment = (cd: Cand): boolean => table.nodes[cd.key]?.kind === "comment";
     const cands = all.filter((cd) => !isComment(cd));
     // groups (clauses, entries): the blocks that belong to one are taken out of the node's own slots
@@ -213,7 +248,9 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
         });
         sources.set(gb, text.slice(first, last));
         keys.set(gb, g.row);
+        level++; // (a group is a block of its own between the node and its members)
         fill(gb, grow, gr.members, n, text, offset);
+        level--;
         blanks(gb, grow);
         if (gb.slots.some((q) => q.nodes.some((k) => dirty.has(k)))) dirty.add(gb);
         gb.parent = b;
@@ -234,7 +271,7 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
         }
       }
       if (!target) continue;
-      const child = build(cd, text, offset);
+      const child = childOf(cd, text, offset);
       child.parent = b;
       child.slot = target;
       const at = target.nodes.findIndex((k) => k.from > child.from);
@@ -255,7 +292,7 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       if (si < 0) return;
       const slot = b.slots[si];
       if (slot.kind === "one" && slot.nodes.length) return; // a second one: left out
-      const child = build(cd, text, offset);
+      const child = childOf(cd, text, offset);
       child.parent = b;
       child.slot = slot;
       slot.nodes.push(child);
@@ -319,10 +356,21 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       collect(top, [], out, text, true);
       return out.map((c) => build(c, text, offset));
     },
-    fromTree(tree, text, keep) {
+    fromTree(tree, text, keep, enter, inner) {
       const out: Cand[] = [];
       collect(tree.topNode, [], out, text, true);
-      return out.map((c) => keep?.(c.node.from, c.node.to, c.key) ?? build(c, text, 0));
+      try {
+        level = 0;
+        return out.map((c) => {
+          const kept = keep?.(c.node.from, c.node.to, c.key);
+          if (kept) return kept;
+          enter?.(c.node.from, c.node.to, c.key);
+          innerKeep = inner ?? null;
+          return build(c, text, 0);
+        });
+      } finally {
+        innerKeep = null;
+      }
     },
     print(node) {
       const s = sources.get(node);
