@@ -184,8 +184,13 @@ export function measure(language: string, parser: Parser, table: BlockTable, tex
   });
   // ranges of the blocks with slots: a Lezer ancestor with such a range is a block that encloses
   const compound = new Set<string>();
+  const glue = new Map<string, Set<string>>(); // words a block draws between its slots (`else`, `of`, `extends`...)
   const collectC = (b: BNode): void => {
-    if (b.slots.length) compound.add(b.from + ":" + b.to);
+    if (b.slots.length) {
+      compound.add(b.from + ":" + b.to);
+      const g = b.slots.map((q) => q.glue?.trim()).filter(Boolean) as string[];
+      if (g.length) glue.set(b.from + ":" + b.to, new Set(g));
+    }
     for (const s of b.slots) for (const c of s.nodes) collectC(c);
   };
   roots.forEach(collectC);
@@ -235,6 +240,11 @@ export function measure(language: string, parser: Parser, table: BlockTable, tex
         const par = parent[child];
         blame = child;
         nm = par >= 0 && compound.has(range[par]) ? names[par] + ">" + names[child] : names[child];
+        if (!process.env.CMB_NOGLUE && par >= 0 && glue.get(range[par])?.has(text.slice(...(range[child].split(":").map(Number) as [number, number])).trim())) {
+          cls[i] = 1; // a word the block draws as glue
+          real++;
+          continue;
+        }
       }
       const into2 = c === 2 ? into.opaqueTypes : into.missing;
       const e = (into2[nm] ??= { chars: 0, n: 0 });

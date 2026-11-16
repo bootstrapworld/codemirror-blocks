@@ -1595,5 +1595,3732 @@
     "typedEditMedianMs": 2.45
    }
   }
+ },
+ "js-J1": {
+  "js-repo-own": {
+   "note": "plain .js/.mjs tracked in this repository (not dist/lib, not the vendored WeScheme reader)",
+   "language": "javascript",
+   "files": 30,
+   "lines": 3314,
+   "chars": 70400,
+   "coverage": {
+    "real": 32.4,
+    "opaque": 61.8,
+    "fallback": 5.8
+   },
+   "topStatements": {
+    "fully": 131,
+    "partly": 162,
+    "none": 45
+   },
+   "allStatements": {
+    "fully": 258,
+    "partly": 510,
+    "none": 602
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 13.3,
+   "tableLines": {
+    "file": 87,
+    "nodes": 42,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "IfStatement>IfStatement",
+     "chars": 596,
+     "n": 4,
+     "examples": [
+      "\"dle\\\";\\n    else if (name === \\\"(program)\\\")\" @ token if",
+      "\"se;\\n      else if (c === \\\"\\\\\\\\\\\") escaped =\" @ token if",
+      "\"se;\\n    } else if (c === '\\\"') {\\n      in\" @ token if"
+     ]
+    },
+    {
+     "type": "IfStatement>ExpressionStatement",
+     "chars": 527,
+     "n": 17,
+     "examples": [
+      "\" === \\\"(idle)\\\") b = \\\"idle\\\";\\n    else if (\" @ token VariableName",
+      "\" )\\n    )\\n      incl[k] = +v.toFixed(1);\\n\" @ token VariableName",
+      "\" )\\n    )\\n      sums[e.name] = (sums[e.na\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "MemberExpression>RegExp",
+     "chars": 466,
+     "n": 14,
+     "examples": [
+      "\"s(k) ||\\n      /patchAst|replaceMarkerWid\" @ token RegExp",
+      "\" if (\\n      /^(UpdateLayoutTree|Layout|P\" @ token RegExp",
+      "\"onst where = /\\\\bat (\\\\S+)/.exec(String(re\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 368,
+     "n": 34,
+     "examples": [
+      "\" Map();\\n  for (const n of profile.nodes)\" @ token const",
+      "\" + ms);\\n  for (const [id, ms] of self) {\" @ token const",
+      "\"et();\\n    for (const f of stack) {\\n     \" @ token const"
+     ]
+    },
+    {
+     "type": "ObjectPattern",
+     "chars": 232,
+     "n": 16,
+     "examples": [
+      "\"n) {\\n  const { page, cdp } = env;\\n  cons\" @ token VariableDefinition",
+      "\" {\\n    const { profile } = await cdp.sen\" @ token VariableDefinition",
+      "\"er);\\n  const { page, errors } = env;\\n  c\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 220,
+     "n": 21,
+     "examples": [
+      "\"st types = { \\\".html\\\": \\\"text/html\\\", \\\".js\\\"\" @ token String",
+      "\"\\\"text/html\\\", \\\".js\\\": \\\"text/javascript\\\", \\\"\" @ token String",
+      "\"javascript\\\", \\\".map\\\": \\\"application/json\\\" \" @ token String"
+     ]
+    },
+    {
+     "type": "IfStatement>ReturnStatement",
+     "chars": 215,
+     "n": 7,
+     "examples": [
+      "\"\\n  if (!m)\\n    return { skip: \\\"no cmb-re\" @ token return",
+      "\"\\n  if (!first) return `field :: reported\" @ token return",
+      "\"stsSync(file)) return [];\\n  return fs\\n  \" @ token return"
+     ]
+    },
+    {
+     "type": "ForStatement>ExpressionStatement",
+     "chars": 212,
+     "n": 9,
+     "examples": [
+      "\".get(p))\\n      stack.push(nodes.get(p).c\" @ token VariableName",
+      "\"L_TOP)))\\n      incl[k] = +v.toFixed(1);\\n\" @ token VariableName",
+      "\"keys(buckets)) buckets[k] = +buckets[k].\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 194,
+     "n": 6,
+     "examples": [
+      "\"t [from, to] = args.filter(\\n  (a, i) => \" @ token VariableName",
+      "\"aseConfig,\\n} = require(\\\"@bootstrapworld/\" @ token VariableName",
+      "\"n, skipped } = ingest(\\n    issues,\\n    r\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "CallExpression>ArgList",
+     "chars": 180,
+     "n": 8,
+     "examples": [
+      "\"        /[\\\\\\\\/](node_modules[\\\\\\\\/](react|r\" @ token RegExp",
+      "\"         /[\\\\\\\\/]node_modules[\\\\\\\\/](redux|r\" @ token RegExp",
+      "\"mirror\\\", /[\\\\\\\\/]node_modules[\\\\\\\\/]codemirr\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>RegExp",
+     "chars": 134,
+     "n": 3,
+     "examples": [
+      "\"const PARSE = /parse|patchAst|speculate|\" @ token RegExp",
+      "\"t REDUXFN =\\n  /useSelector|useSyncExtern\" @ token RegExp",
+      "\"st FENCE = /```json cmb-report[^\\\\n]*\\\\n([\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "Property>MemberExpression",
+     "chars": 92,
+     "n": 6,
+     "examples": [
+      "\"evServer: { ...base.devServer, client: {\" @ token VariableName",
+      "\"alias = {\\n  ...config.resolve.alias,\\n  \\\"\" @ token VariableName",
+      "\"ias = {\\n    ...config.resolve.alias,\\n   \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Hashbang",
+     "chars": 72,
+     "n": 4,
+     "examples": [
+      "\"#!/usr/bin/env node\\n/**\\n \" @ token Hashbang",
+      "\"#!/usr/bin/env node\\n/**\\n \" @ token Hashbang",
+      "\"#!/usr/bin/env node\\n// Do\" @ token Hashbang"
+     ]
+    },
+    {
+     "type": "CatchClause",
+     "chars": 65,
+     "n": 1,
+     "examples": [
+      "\"]);\\n  } catch (e) {\\n    return { skip: `\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ObjectPattern",
+     "chars": 64,
+     "n": 6,
+     "examples": [
+      "\" const { page, cdp } = env;\\n  const prof\" @ token VariableDefinition",
+      "\" const { page, errors } = env;\\n  const t\" @ token VariableDefinition",
+      "\"erverConfig,\\n  getBaseConfig,\\n} = requir\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "Property>RegExp",
+     "chars": 62,
+     "n": 7,
+     "examples": [
+      "\", {\\n    name: /switch to blocks mode/i,\\n\" @ token RegExp",
+      "\"ton\\\", { name: /switch to text mode/i });\" @ token RegExp",
+      "\"m\\\", { name: /^\\\\d+,?$/ }).nth(2);\\n  await\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "IfStatement>ContinueStatement",
+     "chars": 48,
+     "n": 6,
+     "examples": [
+      "\"seen.has(key)) continue;\\n      seen.add(\" @ token continue",
+      "\"=== undefined) continue;\\n    if (\\n      \" @ token continue",
+      "\");\\n    if (!r) continue;\\n    const top =\" @ token continue"
+     ]
+    },
+    {
+     "type": "PatternProperty",
+     "chars": 36,
+     "n": 4,
+     "examples": [
+      "\"(batchIndex, { steps = 30, ramp = false \" @ token VariableDefinition",
+      "\" { steps = 30, ramp = false } = {}) {\\n  \" @ token VariableDefinition",
+      "\" min,\\n  max,\\n  quietSamples = 0,\\n  load \" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ForStatement>ForStatement",
+     "chars": 33,
+     "n": 1,
+     "examples": [
+      "\"ile.nodes)\\n    for (const c of n.childre\" @ token for"
+     ]
+    },
+    {
+     "type": "ArrayPattern",
+     "chars": 27,
+     "n": 8,
+     "examples": [
+      "\"\\n  for (const [id, ms] of self) {\\n    co\" @ token VariableDefinition",
+      "\"   for (const [k, v] of Object.entries(i\" @ token VariableDefinition",
+      "\"\\n  for (const [k, v] of Object.entries(i\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "Property>VariableName",
+     "chars": 26,
+     "n": 4,
+     "examples": [
+      "\"t = {\\n      ...result,\\n      ...bucketPr\" @ token VariableName",
+      "\"ports = {\\n  ...base,\\n  mode: \\\"production\" @ token VariableName",
+      "\"onfig = {\\n  ...baseConfig,\\n  name: \\\"bund\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "TryStatement",
+     "chars": 26,
+     "n": 1,
+     "examples": [
+      "\" report;\\n  try {\\n    report = JSON.parse\" @ token {"
+     ]
+    },
+    {
+     "type": "UnaryExpression>MemberExpression",
+     "chars": 24,
+     "n": 2,
+     "examples": [
+      "\"}\\n  if (typeof report.language !== \\\"stri\" @ token VariableName",
+      "\"ing\\\" || typeof report.code !== \\\"string\\\")\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 20,
+     "n": 5,
+     "examples": [
+      "\" = \\\"idle\\\";\\n    else if (name === \\\"(progr\" @ token else",
+      "\"= false;\\n      else if (c === \\\"\\\\\\\\\\\") esca\" @ token else",
+      "\"= false;\\n    } else if (c === '\\\"') {\\n   \" @ token else"
+     ]
+    },
+    {
+     "type": "FunctionDeclaration>async",
+     "chars": 20,
+     "n": 4,
+     "examples": [
+      "\"--------------\\nasync function openPage(b\" @ token async",
+      "\"at it cost. */\\nasync function measure(en\" @ token async",
+      "\"ress(k);\\n  };\\n\\nasync function runOnce(br\" @ token async"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ArrowFunction",
+     "chars": 30553,
+     "n": 135
+    },
+    {
+     "type": "TemplateString",
+     "chars": 4407,
+     "n": 86
+    },
+    {
+     "type": "AwaitExpression",
+     "chars": 3190,
+     "n": 62
+    },
+    {
+     "type": "ImportDeclaration",
+     "chars": 1769,
+     "n": 41
+    },
+    {
+     "type": "ExportDeclaration",
+     "chars": 1611,
+     "n": 4
+    },
+    {
+     "type": "ConditionalExpression",
+     "chars": 1076,
+     "n": 24
+    },
+    {
+     "type": "NewExpression",
+     "chars": 822,
+     "n": 16
+    },
+    {
+     "type": "FunctionExpression",
+     "chars": 106,
+     "n": 1
+    },
+    {
+     "type": "PostfixExpression",
+     "chars": 6,
+     "n": 2
+    }
+   ]
+  },
+  "js-node_modules-library": {
+   "note": "~200 non-minified .js/.mjs sampled (seed 7) from 12067 files under node_modules: library code",
+   "language": "javascript",
+   "files": 200,
+   "lines": 14733,
+   "chars": 331186,
+   "coverage": {
+    "real": 53.3,
+    "opaque": 34.2,
+    "fallback": 12.5
+   },
+   "topStatements": {
+    "fully": 874,
+    "partly": 596,
+    "none": 212
+   },
+   "allStatements": {
+    "fully": 2877,
+    "partly": 2935,
+    "none": 2364
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 10.7,
+   "tableLines": {
+    "file": 87,
+    "nodes": 42,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "Property>Block",
+     "chars": 9493,
+     "n": 12,
+     "examples": [
+      "\"er(path) {\\n    const {\\n      node,\\n     \" @ token const",
+      "\"n\\\"(path) {\\n    path.skip();\\n  },\\n  Refer\" @ token VariableName",
+      "\"ope\\n  }) {\\n    if (scope.hasOwnBinding(p\" @ token if"
+     ]
+    },
+    {
+     "type": "IfStatement>IfStatement",
+     "chars": 3871,
+     "n": 23,
+     "examples": [
+      "\"set);\\n  } else if (offset === 0) {\\n    i\" @ token if",
+      "\"lar);\\n  } else if (rest.name === \\\"argume\" @ token if",
+      "\"er\\\");\\n  } else if (\\\"function\\\" !== a) thr\" @ token if"
+     ]
+    },
+    {
+     "type": "CallExpression>ParenthesizedExpression",
+     "chars": 2428,
+     "n": 127,
+     "examples": [
+      "\"const fn = (0, _async.maybeAsync)(handle\" @ token VariableName",
+      "\");\\n    if ((0, _async.isThenable)(key)) \" @ token VariableName",
+      "\"e) {\\n  if ((0, _async.isThenable)(value)\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "SequenceExpression",
+     "chars": 2155,
+     "n": 159,
+     "examples": [
+      "\"   const fn = (0, _async.maybeAsync)(han\" @ token Number",
+      "\"ly`);\\n    if ((0, _async.isThenable)(key\" @ token Number",
+      "\"alue) {\\n  if ((0, _async.isThenable)(val\" @ token Number"
+     ]
+    },
+    {
+     "type": "IfStatement>ReturnStatement",
+     "chars": 1905,
+     "n": 127,
+     "examples": [
+      "\"* valid(data)) return {\\n        valid: t\" @ token return",
+      "\" (this._never) return \\\"never\\\";\\n    if (t\" @ token return",
+      "\"this._forever) return \\\"forever\\\";\\n    if \" @ token return"
+     ]
+    },
+    {
+     "type": "IfStatement>ThrowStatement",
+     "chars": 1304,
+     "n": 28,
+     "examples": [
+      "\") {\\n  if (e.v) throw Error(\\\"attempted to\" @ token throw",
+      "\"!= _typeof(e)) throw new TypeError(\\\"Meta\" @ token throw",
+      "\"\\\" != typeof e) throw new TypeError(t + \\\"\" @ token throw"
+     ]
+    },
+    {
+     "type": "IfStatement>ExpressionStatement",
+     "chars": 1225,
+     "n": 48,
+     "examples": [
+      "\".configured()) config.forever();\\n  let c\" @ token VariableName",
+      "\"      if (val) cache.forever();else cach\" @ token VariableName",
+      "\"forever();else cache.never();\\n      retu\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ObjectPattern",
+     "chars": 1058,
+     "n": 37,
+     "examples": [
+      "\"    scope,\\n    parentPath\\n  } = path;\\n  \" @ token VariableDefinition",
+      "\"\\n    node,\\n    scope\\n  } = path;\\n  if (!\" @ token VariableDefinition",
+      "\"isBlockScoped: nodeIsBlockScoped,\\n  isEx\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "DoStatement",
+     "chars": 1053,
+     "n": 5,
+     "examples": [
+      "\"te;\\n        do {\\n            byte = this\" @ token {",
+      "\"te;\\n        do {\\n            byte = this\" @ token {",
+      "\" };\\n        do {\\n            const posit\" @ token {"
+     ]
+    },
+    {
+     "type": "TryStatement",
+     "chars": 1025,
+     "n": 14,
+     "examples": [
+      "\" a, c) {\\n  try {\\n    var i = n[a](c),\\n  \" @ token {",
+      "\", u = t;\\n  try {\\n    return e(s, Object.\" @ token {",
+      "\"  };\\n      try {\\n        var c = Object.\" @ token {"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 864,
+     "n": 27,
+     "examples": [
+      "\"[o],\\n      a = Object.getOwnPropertyDesc\" @ token VariableName",
+      "\"ta\\\")],\\n    r = Object.getOwnPropertySymb\" @ token VariableName",
+      "\", globParts] = mms.reduce((set, m) => {\\n\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "LabeledStatement",
+     "chars": 810,
+     "n": 1,
+     "examples": [
+      "\"\\n        scan: for (let i = 0; i < chunk\" @ token for"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 795,
+     "n": 310,
+     "examples": [
+      "\"Visitor = {\\n  \\\"TSTypeAnnotation|TypeAnno\" @ token String",
+      "\"leClassTDZ,\\n  \\\"TSTypeAnnotation|TypeAnno\" @ token String",
+      "\"ses = {\\n    '[:alnum:]': ['\\\\\\\\p{L}\\\\\\\\p{Nl}\" @ token String"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ClassExpression",
+     "chars": 788,
+     "n": 9,
+     "examples": [
+      "\"onInfoChoice = class RevocationInfoChoic\" @ token class",
+      "\"hmIdentifier = class DigestAlgorithmIden\" @ token class",
+      "\"hmIdentifier = class SignatureAlgorithmI\" @ token class"
+     ]
+    },
+    {
+     "type": "CatchClause",
+     "chars": 779,
+     "n": 9,
+     "examples": [
+      "\"ue;\\n  } catch (n) {\\n    return void e(n)\" @ token VariableDefinition",
+      "\"\\n        catch {\\n            return fals\" @ token {",
+      "\"\\n        catch {\\n            return fals\" @ token {"
+     ]
+    },
+    {
+     "type": "ExpressionStatement>SequenceExpression",
+     "chars": 703,
+     "n": 17,
+     "examples": [
+      "\"tedDescriptor, module.exports.__esModule\" @ token VariableName",
+      "\"ncToGenerator, module.exports.__esModule\" @ token VariableName",
+      "\"eStaticAccess, module.exports.__esModule\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "PropertyDeclaration",
+     "chars": 693,
+     "n": 44,
+     "examples": [
+      "\"ass Glob {\\n    absolute;\\n    cwd;\\n    ro\" @ token PropertyDefinition",
+      "\" absolute;\\n    cwd;\\n    root;\\n    dot;\\n \" @ token PropertyDefinition",
+      "\";\\n    cwd;\\n    root;\\n    dot;\\n    dotRel\" @ token PropertyDefinition"
+     ]
+    },
+    {
+     "type": "UnaryExpression>typeof",
+     "chars": 648,
+     "n": 108,
+     "examples": [
+      "\"val) {\\n    if (typeof val === \\\"boolean\\\")\" @ token typeof",
+      "\"lue != null && typeof value !== \\\"string\\\"\" @ token typeof",
+      "\"== \\\"string\\\" && typeof value !== \\\"boolean\" @ token typeof"
+     ]
+    },
+    {
+     "type": "UnaryExpression>VariableName",
+     "chars": 530,
+     "n": 90,
+     "examples": [
+      "\"    if (typeof val === \\\"boolean\\\") {\\n    \" @ token VariableName",
+      "\"null && typeof value !== \\\"string\\\" && typ\" @ token VariableName",
+      "\"ing\\\" && typeof value !== \\\"boolean\\\" && ty\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "UnaryExpression>MemberExpression",
+     "chars": 500,
+     "n": 29,
+     "examples": [
+      "\"\\n\\t\\t}\\n\\n\\t\\tdelete config.extends;\\n\\t\\tconst f\" @ token VariableName",
+      "\"lues || typeof schema.values !== 'object\" @ token VariableName",
+      "\" return typeof schema.size === 'number' \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForStatement>IfStatement",
+     "chars": 485,
+     "n": 6,
+     "examples": [
+      "\"opts))\\n        if (v != null)\\n          \" @ token if",
+      "\"tries)\\n        if (knownKey in knownProp\" @ token if",
+      "\"nKeys)\\n        if (!knownKeys.includes(k\" @ token if"
+     ]
+    },
+    {
+     "type": "ObjectPattern",
+     "chars": 454,
+     "n": 71,
+     "examples": [
+      "\"(const {\\n      value,\\n      valid\\n    } \" @ token VariableDefinition",
+      "\"\\n  const {\\n    scope\\n  } = path;\\n  const\" @ token VariableDefinition",
+      "\"\\n  const {\\n    node\\n  } = path;\\n  const \" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ForStatement>ExpressionStatement",
+     "chars": 431,
+     "n": 15,
+     "examples": [
+      "\"+)\\n            arr.push(this.readAny());\" @ token VariableName",
+      "\"; i++)\\n        A2_BUF[i] = x[xPos + i] ^\" @ token VariableName",
+      "\"alue))\\n        Acc[K] = (0, index_10.Rea\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ReturnStatement>SequenceExpression",
+     "chars": 430,
+     "n": 7,
+     "examples": [
+      "\" = n[i];\\n  }), a.enumerable = !!a.enumer\" @ token VariableName",
+      "\"ssBrand(a, s), t;\\n}\\nmodule.exports = _cl\" @ token VariableName",
+      "\" March 2022\\\"), t;\\n}\\nfunction old_applyMe\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 428,
+     "n": 107,
+     "examples": [
+      "\"   });\\n      } else {\\n        cachedValu\" @ token else",
+      "\"ache.forever();else cache.never();\\n     \" @ token else",
+      "\"false;\\n      } else {\\n        nodes = no\" @ token else"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ArrowFunction",
+     "chars": 50344,
+     "n": 125
+    },
+    {
+     "type": "ExportDeclaration",
+     "chars": 16572,
+     "n": 110
+    },
+    {
+     "type": "FunctionExpression",
+     "chars": 15279,
+     "n": 82
+    },
+    {
+     "type": "ConditionalExpression",
+     "chars": 13276,
+     "n": 136
+    },
+    {
+     "type": "NewExpression",
+     "chars": 10457,
+     "n": 216
+    },
+    {
+     "type": "ImportDeclaration",
+     "chars": 5043,
+     "n": 101
+    },
+    {
+     "type": "AwaitExpression",
+     "chars": 1149,
+     "n": 19
+    },
+    {
+     "type": "TemplateString",
+     "chars": 843,
+     "n": 24
+    },
+    {
+     "type": "PostfixExpression",
+     "chars": 376,
+     "n": 69
+    }
+   ]
+  },
+  "js-node_modules-examples": {
+   "note": "up to 40 example/demo .js sampled (seed 11) from 48 files: the nearest thing to beginner-style programs found locally",
+   "language": "javascript",
+   "files": 40,
+   "lines": 758,
+   "chars": 12529,
+   "coverage": {
+    "real": 61.5,
+    "opaque": 33.4,
+    "fallback": 5.1
+   },
+   "topStatements": {
+    "fully": 118,
+    "partly": 78,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 128,
+    "partly": 88,
+    "none": 94
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 9.6,
+   "tableLines": {
+    "file": 87,
+    "nodes": 42,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 363,
+     "n": 26,
+     "examples": [
+      "\"es, tokens } = parseArgs({ options, toke\" @ token VariableName",
+      "\"es, tokens } = parseArgs({ options, toke\" @ token VariableName",
+      "\"es, tokens } = parseArgs({ options, toke\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>VariableDefinition",
+     "chars": 120,
+     "n": 21,
+     "examples": [
+      "\"ire('fs'),\\n    stream = require('stream'\" @ token VariableDefinition",
+      "\"'stream'),\\n    needle = require('./../')\" @ token VariableDefinition",
+      "\"ire('fs'),\\n    needle = require('./..'),\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ObjectPattern",
+     "chars": 92,
+     "n": 12,
+     "examples": [
+      "\"ackage\\nconst { parseArgs } = require('..\" @ token VariableDefinition",
+      "\"},\\n};\\n\\nconst { values, tokens } = parseA\" @ token VariableDefinition",
+      "\"ackage\\nconst { parseArgs } = require('..\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ObjectPattern",
+     "chars": 35,
+     "n": 5,
+     "examples": [
+      "\"onst { values, tokens } = parseArgs({ op\" @ token VariableDefinition",
+      "\"onst { values, tokens } = parseArgs({ op\" @ token VariableDefinition",
+      "\"onst { values, tokens } = parseArgs({ op\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 28,
+     "n": 4,
+     "examples": [
+      "\"options = {\\n  'color': { type: 'boolean'\" @ token String",
+      "\"boolean' },\\n  'no-color': { type: 'boole\" @ token String",
+      "\"boolean' },\\n  'logfile': { type: 'string\" @ token String"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\" index);\\n    } else {\\n\\n        writeStre\" @ token else"
+     ]
+    },
+    {
+     "type": "Property>RegExp",
+     "chars": 2,
+     "n": 1,
+     "examples": [
+      "\"      regex: /^x/i,\\n        buf: Buffer.\" @ token RegExp"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "FunctionExpression",
+     "chars": 2871,
+     "n": 39
+    },
+    {
+     "type": "ArrowFunction",
+     "chars": 943,
+     "n": 11
+    },
+    {
+     "type": "NewExpression",
+     "chars": 244,
+     "n": 7
+    },
+    {
+     "type": "TemplateString",
+     "chars": 124,
+     "n": 5
+    }
+   ]
+  }
+ },
+ "js-J2": {
+  "js-repo-own": {
+   "note": "plain .js/.mjs tracked in this repository (not dist/lib, not the vendored WeScheme reader)",
+   "language": "javascript",
+   "files": 30,
+   "lines": 3314,
+   "chars": 70400,
+   "coverage": {
+    "real": 77.3,
+    "opaque": 15.6,
+    "fallback": 7.1
+   },
+   "topStatements": {
+    "fully": 181,
+    "partly": 112,
+    "none": 45
+   },
+   "allStatements": {
+    "fully": 798,
+    "partly": 499,
+    "none": 73
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 16.6,
+   "tableLines": {
+    "file": 92,
+    "nodes": 47,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "ForStatement>Block",
+     "chars": 1407,
+     "n": 4,
+     "examples": [
+      "\"of self) {\\n    const n = nodes.get(id);\\n\" @ token const",
+      "\"lusive)) {\\n    if (\\n      keep.includes(\" @ token if",
+      "\"targets) {\\n    const file = path.join(ro\" @ token const"
+     ]
+    },
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 365,
+     "n": 50,
+     "examples": [
+      "\" Map();\\n  for (const n of profile.nodes)\" @ token const",
+      "\"odes)\\n    for (const c of n.children ?? \" @ token const",
+      "\" + ms);\\n  for (const [id, ms] of self) {\" @ token const"
+     ]
+    },
+    {
+     "type": "MemberExpression>RegExp",
+     "chars": 341,
+     "n": 16,
+     "examples": [
+      "\" if (\\n      /^(UpdateLayoutTree|Layout|P\" @ token RegExp",
+      "\"onst where = /\\\\bat (\\\\S+)/.exec(String(re\" @ token RegExp",
+      "\" const seed = /seed (\\\\d+)/.exec(title)?.\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "TryStatement",
+     "chars": 320,
+     "n": 6,
+     "examples": [
+      "\") => {\\n    try {\\n      window.cmb.getAst\" @ token {",
+      "\" f);\\n      try {\\n        cm.scrollTo(nul\" @ token {",
+      "\" report;\\n  try {\\n    report = JSON.parse\" @ token {"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 316,
+     "n": 29,
+     "examples": [
+      "\"r ?? 0,\\n      \\\"parse+patchAst\\\": b[\\\"parse\" @ token String",
+      "\"] ?? 0,\\n      \\\"layout/style/paint\\\": brow\" @ token String",
+      "\"st types = { \\\".html\\\": \\\"text/html\\\", \\\".js\\\"\" @ token String"
+     ]
+    },
+    {
+     "type": "ObjectPattern",
+     "chars": 293,
+     "n": 25,
+     "examples": [
+      "\"aluate(\\n    ({ quiet, max }) =>\\n      ne\" @ token VariableDefinition",
+      "\"n) {\\n  const { page, cdp } = env;\\n  cons\" @ token VariableDefinition",
+      "\" {\\n    const { profile } = await cdp.sen\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 271,
+     "n": 10,
+     "examples": [
+      "\"t [from, to] = args.filter(\\n  (a, i) => \" @ token VariableName",
+      "\"aseConfig,\\n} = require(\\\"@bootstrapworld/\" @ token VariableName",
+      "\"n, skipped } = ingest(\\n    issues,\\n    r\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "CallExpression>ArgList",
+     "chars": 243,
+     "n": 15,
+     "examples": [
+      "\"        /[\\\\\\\\/](node_modules[\\\\\\\\/](react|r\" @ token RegExp",
+      "\"         /[\\\\\\\\/]node_modules[\\\\\\\\/](redux|r\" @ token RegExp",
+      "\"mirror\\\", /[\\\\\\\\/]node_modules[\\\\\\\\/]codemirr\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>RegExp",
+     "chars": 134,
+     "n": 3,
+     "examples": [
+      "\"const PARSE = /parse|patchAst|speculate|\" @ token RegExp",
+      "\"t REDUXFN =\\n  /useSelector|useSyncExtern\" @ token RegExp",
+      "\"st FENCE = /```json cmb-report[^\\\\n]*\\\\n([\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "Property>Block",
+     "chars": 125,
+     "n": 2,
+     "examples": [
+      "\"ect(r) {\\n      this.renderers.set(1, r);\" @ token this",
+      "\" root) {\\n      counts.commits++;\\n      c\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Property>MemberExpression",
+     "chars": 123,
+     "n": 9,
+     "examples": [
+      "\"evServer: { ...base.devServer, client: {\" @ token VariableName",
+      "\"alias = {\\n  ...config.resolve.alias,\\n  \\\"\" @ token VariableName",
+      "\"ias = {\\n    ...config.resolve.alias,\\n   \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Property>VariableName",
+     "chars": 110,
+     "n": 23,
+     "examples": [
+      "\"t = {\\n      ...result,\\n      ...bucketPr\" @ token VariableName",
+      "\"ports = {\\n  ...base,\\n  mode: \\\"production\" @ token VariableName",
+      "\"onfig = {\\n  ...baseConfig,\\n  name: \\\"bund\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "CatchClause",
+     "chars": 110,
+     "n": 6,
+     "examples": [
+      "\"e;\\n    } catch {\\n      return false;\\n   \" @ token {",
+      "\"\\n      } catch {\\n        // CodeMirror's\" @ token {",
+      "\"]);\\n  } catch (e) {\\n    return { skip: `\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ObjectPattern",
+     "chars": 100,
+     "n": 11,
+     "examples": [
+      "\" const { page, cdp } = env;\\n  const prof\" @ token VariableDefinition",
+      "\" const { page, errors } = env;\\n  const t\" @ token VariableDefinition",
+      "\"erverConfig,\\n  getBaseConfig,\\n} = requir\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "UnaryExpression>MemberExpression",
+     "chars": 82,
+     "n": 12,
+     "examples": [
+      "\" =>\\n    typeof a.key === \\\"string\\\" &&\\n   \" @ token VariableName",
+      "\"ined || typeof a.mods === \\\"string\\\"),\\n  M\" @ token VariableName",
+      "\"nid) || typeof a.from.tool === \\\"string\\\")\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Hashbang",
+     "chars": 72,
+     "n": 4,
+     "examples": [
+      "\"#!/usr/bin/env node\\n/**\\n \" @ token Hashbang",
+      "\"#!/usr/bin/env node\\n/**\\n \" @ token Hashbang",
+      "\"#!/usr/bin/env node\\n// Do\" @ token Hashbang"
+     ]
+    },
+    {
+     "type": "UnaryExpression>typeof",
+     "chars": 72,
+     "n": 12,
+     "examples": [
+      "\"EY: (a) =>\\n    typeof a.key === \\\"string\\\"\" @ token typeof",
+      "\"= undefined || typeof a.mods === \\\"string\" @ token typeof",
+      "\"a.from.nid) || typeof a.from.tool === \\\"s\" @ token typeof"
+     ]
+    },
+    {
+     "type": "Property>RegExp",
+     "chars": 62,
+     "n": 7,
+     "examples": [
+      "\", {\\n    name: /switch to blocks mode/i,\\n\" @ token RegExp",
+      "\"ton\\\", { name: /switch to text mode/i });\" @ token RegExp",
+      "\"m\\\", { name: /^\\\\d+,?$/ }).nth(2);\\n  await\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "Property>CallExpression",
+     "chars": 49,
+     "n": 3,
+     "examples": [
+      "\"sult,\\n      ...bucketProfile(profile),\\n \" @ token VariableName",
+      "\"\\\"),\\n      { ...issue(4, body(report)), p\" @ token VariableName",
+      "\"   },\\n      { [lib.signature(f)]: { coun\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "IfStatement>ContinueStatement",
+     "chars": 48,
+     "n": 6,
+     "examples": [
+      "\"=== undefined) continue;\\n    if (\\n      \" @ token continue",
+      "\");\\n    if (!r) continue;\\n    const top =\" @ token continue",
+      "\".pull_request) continue;\\n    const p = p\" @ token continue"
+     ]
+    },
+    {
+     "type": "Block>TryStatement",
+     "chars": 48,
+     "n": 6,
+     "examples": [
+      "\"on(() => {\\n    try {\\n      window.cmb.ge\" @ token try",
+      "\"() * f);\\n      try {\\n        cm.scrollTo\" @ token try",
+      "\" let report;\\n  try {\\n    report = JSON.p\" @ token try"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 44,
+     "n": 11,
+     "examples": [
+      "\"ernate);\\n      else {\\n        count(c, t\" @ token else",
+      "\"= false;\\n      else if (c === \\\"\\\\\\\\\\\") esca\" @ token else",
+      "\" = true;\\n      else if (c === '\\\"') inStr\" @ token else"
+     ]
+    },
+    {
+     "type": "PatternProperty",
+     "chars": 37,
+     "n": 5,
+     "examples": [
+      "\"onst { report: r } = lib.parseIssueBody(\" @ token VariableDefinition",
+      "\"(batchIndex, { steps = 30, ramp = false \" @ token VariableDefinition",
+      "\" { steps = 30, ramp = false } = {}) {\\n  \" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ForStatement>ExpressionStatement",
+     "chars": 35,
+     "n": 2,
+     "examples": [
+      "\"L_TOP)))\\n      incl[k] = +v.toFixed(1);\\n\" @ token VariableName",
+      "\"f split.known) lines.push(`- ${d.count}x\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ArrayPattern",
+     "chars": 31,
+     "n": 10,
+     "examples": [
+      "\"\\n  for (const [id, ms] of self) {\\n    co\" @ token VariableDefinition",
+      "\"   for (const [k, v] of Object.entries(i\" @ token VariableDefinition",
+      "\"\\n  for (const [k, v] of Object.entries(i\" @ token VariableDefinition"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "TemplateString",
+     "chars": 7428,
+     "n": 155
+    },
+    {
+     "type": "ImportDeclaration",
+     "chars": 1769,
+     "n": 41
+    },
+    {
+     "type": "ExportDeclaration",
+     "chars": 1611,
+     "n": 4
+    },
+    {
+     "type": "PostfixExpression",
+     "chars": 158,
+     "n": 16
+    }
+   ]
+  },
+  "js-node_modules-library": {
+   "note": "~200 non-minified .js/.mjs sampled (seed 7) from 12067 files under node_modules: library code",
+   "language": "javascript",
+   "files": 200,
+   "lines": 14733,
+   "chars": 331186,
+   "coverage": {
+    "real": 73.8,
+    "opaque": 7.6,
+    "fallback": 18.6
+   },
+   "topStatements": {
+    "fully": 992,
+    "partly": 478,
+    "none": 212
+   },
+   "allStatements": {
+    "fully": 4528,
+    "partly": 2759,
+    "none": 889
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 11.9,
+   "tableLines": {
+    "file": 92,
+    "nodes": 47,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "Property>Block",
+     "chars": 22891,
+     "n": 20,
+     "examples": [
+      "\"er(path) {\\n    const {\\n      node,\\n     \" @ token const",
+      "\"n\\\"(path) {\\n    path.skip();\\n  },\\n  Refer\" @ token VariableName",
+      "\"ope\\n  }) {\\n    if (scope.hasOwnBinding(p\" @ token if"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 8450,
+     "n": 547,
+     "examples": [
+      "\"Visitor = {\\n  \\\"TSTypeAnnotation|TypeAnno\" @ token String",
+      "\"leClassTDZ,\\n  \\\"TSTypeAnnotation|TypeAnno\" @ token String",
+      "\"itor: {\\n      \\\"DirectiveLiteral|StringLi\" @ token String"
+     ]
+    },
+    {
+     "type": "CallExpression>ParenthesizedExpression",
+     "chars": 4628,
+     "n": 244,
+     "examples": [
+      "\"e;\\n    if ((0, _util.isIterableIterator)\" @ token VariableName",
+      "\"const fn = (0, _async.maybeAsync)(handle\" @ token VariableName",
+      "\");\\n    if ((0, _async.isThenable)(key)) \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "SequenceExpression",
+     "chars": 2460,
+     "n": 282,
+     "examples": [
+      "\"alue;\\n    if ((0, _util.isIterableIterat\" @ token Number",
+      "\"   const fn = (0, _async.maybeAsync)(han\" @ token Number",
+      "\"ly`);\\n    if ((0, _async.isThenable)(key\" @ token Number"
+     ]
+    },
+    {
+     "type": "LabeledStatement",
+     "chars": 1641,
+     "n": 2,
+     "examples": [
+      "\"\\n        scan: for (let i = 0; i < chunk\" @ token for",
+      "\"'';\\n    WHILE: while (i < glob.length) {\" @ token while"
+     ]
+    },
+    {
+     "type": "ForStatement>Block",
+     "chars": 1294,
+     "n": 14,
+     "examples": [
+      "\"Value) {\\n      if (yield* valid(data)) r\" @ token if",
+      "\"irs) {\\n        if (key !== (yield* fn(da\" @ token if",
+      "\"dates) {\\n      const clonedArgsId = _cor\" @ token const"
+     ]
+    },
+    {
+     "type": "ClassExpression",
+     "chars": 1127,
+     "n": 10,
+     "examples": [
+      "\"ices_1 = class RevocationInfoChoices ext\" @ token VariableDefinition",
+      "\"utes_1 = class Attributes extends AsnArr\" @ token VariableDefinition",
+      "\"sage_1 = class ExtendedKeyUsage extends \" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ObjectPattern",
+     "chars": 1075,
+     "n": 40,
+     "examples": [
+      "\"    scope,\\n    parentPath\\n  } = path;\\n  \" @ token VariableDefinition",
+      "\"\\n    node,\\n    scope\\n  } = path;\\n  if (!\" @ token VariableDefinition",
+      "\"isBlockScoped: nodeIsBlockScoped,\\n  isEx\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "TryStatement",
+     "chars": 1070,
+     "n": 16,
+     "examples": [
+      "\" a, c) {\\n  try {\\n    var i = n[a](c),\\n  \" @ token {",
+      "\", u = t;\\n  try {\\n    return e(s, Object.\" @ token {",
+      "\"  };\\n      try {\\n        var c = Object.\" @ token {"
+     ]
+    },
+    {
+     "type": "DoStatement",
+     "chars": 1053,
+     "n": 5,
+     "examples": [
+      "\"te;\\n        do {\\n            byte = this\" @ token {",
+      "\"te;\\n        do {\\n            byte = this\" @ token {",
+      "\" };\\n        do {\\n            const posit\" @ token {"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 875,
+     "n": 28,
+     "examples": [
+      "\"[o],\\n      a = Object.getOwnPropertyDesc\" @ token VariableName",
+      "\"ta\\\")],\\n    r = Object.getOwnPropertySymb\" @ token VariableName",
+      "\", globParts] = mms.reduce((set, m) => {\\n\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "UnaryExpression>typeof",
+     "chars": 852,
+     "n": 142,
+     "examples": [
+      "\"val) {\\n    if (typeof val === \\\"boolean\\\")\" @ token typeof",
+      "\"lue != null && typeof value !== \\\"string\\\"\" @ token typeof",
+      "\"== \\\"string\\\" && typeof value !== \\\"boolean\" @ token typeof"
+     ]
+    },
+    {
+     "type": "CatchClause",
+     "chars": 842,
+     "n": 11,
+     "examples": [
+      "\"ue;\\n  } catch (n) {\\n    return void e(n)\" @ token VariableDefinition",
+      "\"\\n        catch {\\n            return fals\" @ token {",
+      "\"\\n        catch {\\n            return fals\" @ token {"
+     ]
+    },
+    {
+     "type": "ExpressionStatement>SequenceExpression",
+     "chars": 788,
+     "n": 21,
+     "examples": [
+      "\"tedDescriptor, module.exports.__esModule\" @ token VariableName",
+      "\"ncToGenerator, module.exports.__esModule\" @ token VariableName",
+      "\"eStaticAccess, module.exports.__esModule\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ClassExpression",
+     "chars": 788,
+     "n": 9,
+     "examples": [
+      "\"onInfoChoice = class RevocationInfoChoic\" @ token class",
+      "\"hmIdentifier = class DigestAlgorithmIden\" @ token class",
+      "\"hmIdentifier = class SignatureAlgorithmI\" @ token class"
+     ]
+    },
+    {
+     "type": "UnaryExpression>void",
+     "chars": 748,
+     "n": 187,
+     "examples": [
+      "\"  this._data = void 0;\\n    this._data = \" @ token void",
+      "\"this.promise = void 0;\\n    this._resolve\" @ token void",
+      "\"his._resolve = void 0;\\n    this.promise \" @ token void"
+     ]
+    },
+    {
+     "type": "UnaryExpression>VariableName",
+     "chars": 694,
+     "n": 116,
+     "examples": [
+      "\"    if (typeof val === \\\"boolean\\\") {\\n    \" @ token VariableName",
+      "\"null && typeof value !== \\\"string\\\" && typ\" @ token VariableName",
+      "\"ing\\\" && typeof value !== \\\"boolean\\\" && ty\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "PropertyDeclaration",
+     "chars": 693,
+     "n": 44,
+     "examples": [
+      "\"ass Glob {\\n    absolute;\\n    cwd;\\n    ro\" @ token PropertyDefinition",
+      "\" absolute;\\n    cwd;\\n    root;\\n    dot;\\n \" @ token PropertyDefinition",
+      "\";\\n    cwd;\\n    root;\\n    dot;\\n    dotRel\" @ token PropertyDefinition"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 648,
+     "n": 162,
+     "examples": [
+      "\"     });\\n    } else {\\n      value = hand\" @ token else",
+      "\"   });\\n      } else {\\n        cachedValu\" @ token else",
+      "\"ache.forever();else cache.never();\\n     \" @ token else"
+     ]
+    },
+    {
+     "type": "UnaryExpression>MemberExpression",
+     "chars": 570,
+     "n": 36,
+     "examples": [
+      "\"\\n\\t\\t}\\n\\n\\t\\tdelete config.extends;\\n\\t\\tconst f\" @ token VariableName",
+      "\" &&\\n    typeof process.platform === 'str\" @ token VariableName",
+      "\"        typeof opts.maxDepth === 'number\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ObjectPattern",
+     "chars": 513,
+     "n": 79,
+     "examples": [
+      "\"(const {\\n      value,\\n      valid\\n    } \" @ token VariableDefinition",
+      "\"\\n  const {\\n    scope\\n  } = path;\\n  const\" @ token VariableDefinition",
+      "\"\\n  const {\\n    node\\n  } = path;\\n  const \" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ForStatement>IfStatement",
+     "chars": 470,
+     "n": 8,
+     "examples": [
+      "\"opts))\\n        if (v != null)\\n          \" @ token if",
+      "\"r (var k in o) if (Object.prototype.hasO\" @ token if",
+      "\"r (var p in m) if (p !== \\\"default\\\" && !O\" @ token if"
+     ]
+    },
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 454,
+     "n": 59,
+     "examples": [
+      "\"ue) {\\n    for (const {\\n      value,\\n    \" @ token const",
+      "\") {\\n      for (const [key, fn] of pairs)\" @ token const",
+      "\"true;\\n    for (const bareSuper of bareSu\" @ token const"
+     ]
+    },
+    {
+     "type": "ReturnStatement>SequenceExpression",
+     "chars": 430,
+     "n": 7,
+     "examples": [
+      "\" = n[i];\\n  }), a.enumerable = !!a.enumer\" @ token VariableName",
+      "\"ssBrand(a, s), t;\\n}\\nmodule.exports = _cl\" @ token VariableName",
+      "\" March 2022\\\"), t;\\n}\\nfunction old_applyMe\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "AssignmentExpression>ClassExpression",
+     "chars": 410,
+     "n": 4,
+     "examples": [
+      "\"nfoChoices_1 = class RevocationInfoChoic\" @ token class",
+      "\"Attributes_1 = class Attributes extends \" @ token class",
+      "\"edKeyUsage_1 = class ExtendedKeyUsage ex\" @ token class"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ExportDeclaration",
+     "chars": 16572,
+     "n": 110
+    },
+    {
+     "type": "ImportDeclaration",
+     "chars": 5043,
+     "n": 101
+    },
+    {
+     "type": "TemplateString",
+     "chars": 2990,
+     "n": 85
+    },
+    {
+     "type": "PostfixExpression",
+     "chars": 570,
+     "n": 104
+    }
+   ]
+  },
+  "js-node_modules-examples": {
+   "note": "up to 40 example/demo .js sampled (seed 11) from 48 files: the nearest thing to beginner-style programs found locally",
+   "language": "javascript",
+   "files": 40,
+   "lines": 758,
+   "chars": 12529,
+   "coverage": {
+    "real": 91.2,
+    "opaque": 3.3,
+    "fallback": 5.5
+   },
+   "topStatements": {
+    "fully": 156,
+    "partly": 40,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 252,
+    "partly": 58,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 10.6,
+   "tableLines": {
+    "file": 92,
+    "nodes": 47,
+    "rules": 9
+   },
+   "missingTop25": [
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 363,
+     "n": 26,
+     "examples": [
+      "\"es, tokens } = parseArgs({ options, toke\" @ token VariableName",
+      "\"es, tokens } = parseArgs({ options, toke\" @ token VariableName",
+      "\"es, tokens } = parseArgs({ options, toke\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>VariableDefinition",
+     "chars": 120,
+     "n": 21,
+     "examples": [
+      "\"ire('fs'),\\n    stream = require('stream'\" @ token VariableDefinition",
+      "\"'stream'),\\n    needle = require('./../')\" @ token VariableDefinition",
+      "\"ire('fs'),\\n    needle = require('./..'),\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ObjectPattern",
+     "chars": 92,
+     "n": 12,
+     "examples": [
+      "\"ackage\\nconst { parseArgs } = require('..\" @ token VariableDefinition",
+      "\"},\\n};\\n\\nconst { values, tokens } = parseA\" @ token VariableDefinition",
+      "\"ackage\\nconst { parseArgs } = require('..\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ObjectPattern",
+     "chars": 35,
+     "n": 5,
+     "examples": [
+      "\"onst { values, tokens } = parseArgs({ op\" @ token VariableDefinition",
+      "\"onst { values, tokens } = parseArgs({ op\" @ token VariableDefinition",
+      "\"onst { values, tokens } = parseArgs({ op\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 32,
+     "n": 8,
+     "examples": [
+      "\"n.name];\\n    } else {\\n      // Resave va\" @ token else",
+      "\"It failed.')\\n  else\\n    console.log('\\\\nI\" @ token else",
+      "\" to file.');\\n  else\\n    throw new Error(\" @ token else"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 28,
+     "n": 4,
+     "examples": [
+      "\"options = {\\n  'color': { type: 'boolean'\" @ token String",
+      "\"boolean' },\\n  'no-color': { type: 'boole\" @ token String",
+      "\"boolean' },\\n  'logfile': { type: 'string\" @ token String"
+     ]
+    },
+    {
+     "type": "UnaryExpression>MemberExpression",
+     "chars": 15,
+     "n": 1,
+     "examples": [
+      "\";\\n      delete values[token.name];\\n    }\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "UnaryExpression>delete",
+     "chars": 6,
+     "n": 1,
+     "examples": [
+      "\"= false;\\n      delete values[token.name]\" @ token delete"
+     ]
+    },
+    {
+     "type": "Property>RegExp",
+     "chars": 2,
+     "n": 1,
+     "examples": [
+      "\"      regex: /^x/i,\\n        buf: Buffer.\" @ token RegExp"
+     ]
+    },
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 1,
+     "n": 1,
+     "examples": [
+      "\"1, 2, function f(n) { return n + 5; }, 4\" @ token VariableDefinition"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "TemplateString",
+     "chars": 413,
+     "n": 11
+    }
+   ]
+  }
+ },
+ "js-J3a": {
+  "js-repo-own": {
+   "note": "plain .js/.mjs tracked in this repository (not dist/lib, not the vendored WeScheme reader)",
+   "language": "javascript",
+   "files": 30,
+   "lines": 3314,
+   "chars": 70400,
+   "coverage": {
+    "real": 80.2,
+    "opaque": 15.6,
+    "fallback": 4.1
+   },
+   "topStatements": {
+    "fully": 205,
+    "partly": 88,
+    "none": 45
+   },
+   "allStatements": {
+    "fully": 890,
+    "partly": 424,
+    "none": 56
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 14.7,
+   "tableLines": {
+    "file": 103,
+    "nodes": 57,
+    "rules": 10
+   },
+   "missingTop25": [
+    {
+     "type": "ForStatement>Block",
+     "chars": 1407,
+     "n": 4,
+     "examples": [
+      "\"of self) {\\n    const n = nodes.get(id);\\n\" @ token const",
+      "\"lusive)) {\\n    if (\\n      keep.includes(\" @ token if",
+      "\"targets) {\\n    const file = path.join(ro\" @ token const"
+     ]
+    },
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 350,
+     "n": 50,
+     "examples": [
+      "\" Map();\\n  for (const n of profile.nodes)\" @ token const",
+      "\"odes)\\n    for (const c of n.children ?? \" @ token const",
+      "\" + ms);\\n  for (const [id, ms] of self) {\" @ token const"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 316,
+     "n": 29,
+     "examples": [
+      "\"r ?? 0,\\n      \\\"parse+patchAst\\\": b[\\\"parse\" @ token String",
+      "\"] ?? 0,\\n      \\\"layout/style/paint\\\": brow\" @ token String",
+      "\"st types = { \\\".html\\\": \\\"text/html\\\", \\\".js\\\"\" @ token String"
+     ]
+    },
+    {
+     "type": "Property>Block",
+     "chars": 125,
+     "n": 2,
+     "examples": [
+      "\"ect(r) {\\n      this.renderers.set(1, r);\" @ token this",
+      "\" root) {\\n      counts.commits++;\\n      c\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Property>MemberExpression",
+     "chars": 123,
+     "n": 9,
+     "examples": [
+      "\"evServer: { ...base.devServer, client: {\" @ token VariableName",
+      "\"alias = {\\n  ...config.resolve.alias,\\n  \\\"\" @ token VariableName",
+      "\"ias = {\\n    ...config.resolve.alias,\\n   \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Property>VariableName",
+     "chars": 110,
+     "n": 23,
+     "examples": [
+      "\"t = {\\n      ...result,\\n      ...bucketPr\" @ token VariableName",
+      "\"ports = {\\n  ...base,\\n  mode: \\\"production\" @ token VariableName",
+      "\"onfig = {\\n  ...baseConfig,\\n  name: \\\"bund\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "UnaryExpression>MemberExpression",
+     "chars": 82,
+     "n": 12,
+     "examples": [
+      "\" =>\\n    typeof a.key === \\\"string\\\" &&\\n   \" @ token VariableName",
+      "\"ined || typeof a.mods === \\\"string\\\"),\\n  M\" @ token VariableName",
+      "\"nid) || typeof a.from.tool === \\\"string\\\")\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Hashbang",
+     "chars": 72,
+     "n": 4,
+     "examples": [
+      "\"#!/usr/bin/env node\\n/**\\n \" @ token Hashbang",
+      "\"#!/usr/bin/env node\\n/**\\n \" @ token Hashbang",
+      "\"#!/usr/bin/env node\\n// Do\" @ token Hashbang"
+     ]
+    },
+    {
+     "type": "UnaryExpression>typeof",
+     "chars": 72,
+     "n": 12,
+     "examples": [
+      "\"EY: (a) =>\\n    typeof a.key === \\\"string\\\"\" @ token typeof",
+      "\"= undefined || typeof a.mods === \\\"string\" @ token typeof",
+      "\"a.from.nid) || typeof a.from.tool === \\\"s\" @ token typeof"
+     ]
+    },
+    {
+     "type": "Property>CallExpression",
+     "chars": 49,
+     "n": 3,
+     "examples": [
+      "\"sult,\\n      ...bucketProfile(profile),\\n \" @ token VariableName",
+      "\"\\\"),\\n      { ...issue(4, body(report)), p\" @ token VariableName",
+      "\"   },\\n      { [lib.signature(f)]: { coun\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "IfStatement>ContinueStatement",
+     "chars": 48,
+     "n": 6,
+     "examples": [
+      "\"=== undefined) continue;\\n    if (\\n      \" @ token continue",
+      "\");\\n    if (!r) continue;\\n    const top =\" @ token continue",
+      "\".pull_request) continue;\\n    const p = p\" @ token continue"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 44,
+     "n": 11,
+     "examples": [
+      "\"ernate);\\n      else {\\n        count(c, t\" @ token else",
+      "\"= false;\\n      else if (c === \\\"\\\\\\\\\\\") esca\" @ token else",
+      "\" = true;\\n      else if (c === '\\\"') inStr\" @ token else"
+     ]
+    },
+    {
+     "type": "ForStatement>ExpressionStatement",
+     "chars": 35,
+     "n": 2,
+     "examples": [
+      "\"L_TOP)))\\n      incl[k] = +v.toFixed(1);\\n\" @ token VariableName",
+      "\"f split.known) lines.push(`- ${d.count}x\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ArrowFunction>async",
+     "chars": 25,
+     "n": 5,
+     "examples": [
+      "\"k, n = 1) =>\\n  async () => {\\n    for (le\" @ token async",
+      "\"];\\n  const m = async (name, fn) => out.p\" @ token async",
+      "\"locks render\\\", async () => {\\n    await p\" @ token async"
+     ]
+    },
+    {
+     "type": "FunctionDeclaration>async",
+     "chars": 20,
+     "n": 4,
+     "examples": [
+      "\"--------------\\nasync function openPage(b\" @ token async",
+      "\"at it cost. */\\nasync function measure(en\" @ token async",
+      "\"ress(k);\\n  };\\n\\nasync function runOnce(br\" @ token async"
+     ]
+    },
+    {
+     "type": "IfStatement>BreakStatement",
+     "chars": 10,
+     "n": 2,
+     "examples": [
+      "\"ng >= limit()) break;\\n    if (job.paused\" @ token break",
+      "\"e\\\" && e2eBusy) break; // one browser bat\" @ token break"
+     ]
+    },
+    {
+     "type": "Block>ContinueStatement",
+     "chars": 8,
+     "n": 1,
+     "examples": [
+      "\"skip });\\n      continue;\\n    }\\n    found\" @ token continue"
+     ]
+    },
+    {
+     "type": "MemberExpression>ImportMeta",
+     "chars": 6,
+     "n": 1,
+     "examples": [
+      "\" createRequire(import.meta.url)(\\\"./gen.j\" @ token import"
+     ]
+    },
+    {
+     "type": "BinaryExpression>Number",
+     "chars": 5,
+     "n": 3,
+     "examples": [
+      "\" || (f.flags & 1) === 1)) {\\n      counts\" @ token Number",
+      "\"axBuffer: 1 << 28 }\\n    );\\n    for (cons\" @ token Number",
+      "\"p = e2e ? 1 << 28 : 400000;\\n    child.st\" @ token Number"
+     ]
+    },
+    {
+     "type": "ImportMeta",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"Require(import.meta.url)(\\\"./gen.js\\\");\\nco\" @ token PropertyName"
+     ]
+    },
+    {
+     "type": "Property>ParamList",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"FiberRoot(_id, root) {\\n      counts.comm\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 3,
+     "n": 1,
+     "examples": [
+      "\"rts = function gen(lines) {\\n  const out \" @ token VariableDefinition"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "TemplateString",
+     "chars": 7476,
+     "n": 156
+    },
+    {
+     "type": "ImportDeclaration",
+     "chars": 1769,
+     "n": 41
+    },
+    {
+     "type": "ExportDeclaration",
+     "chars": 1611,
+     "n": 4
+    },
+    {
+     "type": "PostfixExpression",
+     "chars": 158,
+     "n": 16
+    }
+   ]
+  },
+  "js-node_modules-library": {
+   "note": "~200 non-minified .js/.mjs sampled (seed 7) from 12067 files under node_modules: library code",
+   "language": "javascript",
+   "files": 200,
+   "lines": 14733,
+   "chars": 331186,
+   "coverage": {
+    "real": 78.7,
+    "opaque": 7.6,
+    "fallback": 13.7
+   },
+   "topStatements": {
+    "fully": 1089,
+    "partly": 382,
+    "none": 211
+   },
+   "allStatements": {
+    "fully": 4993,
+    "partly": 2391,
+    "none": 792
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 10.2,
+   "tableLines": {
+    "file": 103,
+    "nodes": 57,
+    "rules": 10
+   },
+   "missingTop25": [
+    {
+     "type": "Property>Block",
+     "chars": 22891,
+     "n": 20,
+     "examples": [
+      "\"er(path) {\\n    const {\\n      node,\\n     \" @ token const",
+      "\"n\\\"(path) {\\n    path.skip();\\n  },\\n  Refer\" @ token VariableName",
+      "\"ope\\n  }) {\\n    if (scope.hasOwnBinding(p\" @ token if"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 8450,
+     "n": 547,
+     "examples": [
+      "\"Visitor = {\\n  \\\"TSTypeAnnotation|TypeAnno\" @ token String",
+      "\"leClassTDZ,\\n  \\\"TSTypeAnnotation|TypeAnno\" @ token String",
+      "\"itor: {\\n      \\\"DirectiveLiteral|StringLi\" @ token String"
+     ]
+    },
+    {
+     "type": "LabeledStatement",
+     "chars": 1641,
+     "n": 2,
+     "examples": [
+      "\"\\n        scan: for (let i = 0; i < chunk\" @ token for",
+      "\"'';\\n    WHILE: while (i < glob.length) {\" @ token while"
+     ]
+    },
+    {
+     "type": "ClassExpression",
+     "chars": 1359,
+     "n": 19,
+     "examples": [
+      "\"Choice = class RevocationInfoChoice {\\n  \" @ token VariableDefinition",
+      "\"ices_1 = class RevocationInfoChoices ext\" @ token VariableDefinition",
+      "\"tifier = class DigestAlgorithmIdentifier\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "UnaryExpression>typeof",
+     "chars": 894,
+     "n": 149,
+     "examples": [
+      "\"val) {\\n    if (typeof val === \\\"boolean\\\")\" @ token typeof",
+      "\"lue != null && typeof value !== \\\"string\\\"\" @ token typeof",
+      "\"== \\\"string\\\" && typeof value !== \\\"boolean\" @ token typeof"
+     ]
+    },
+    {
+     "type": "UnaryExpression>void",
+     "chars": 820,
+     "n": 205,
+     "examples": [
+      "\"  this._data = void 0;\\n    this._data = \" @ token void",
+      "\"this.promise = void 0;\\n    this._resolve\" @ token void",
+      "\"his._resolve = void 0;\\n    this.promise \" @ token void"
+     ]
+    },
+    {
+     "type": "UnaryExpression>VariableName",
+     "chars": 712,
+     "n": 123,
+     "examples": [
+      "\"    if (typeof val === \\\"boolean\\\") {\\n    \" @ token VariableName",
+      "\"null && typeof value !== \\\"string\\\" && typ\" @ token VariableName",
+      "\"ing\\\" && typeof value !== \\\"boolean\\\" && ty\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "PropertyDeclaration",
+     "chars": 693,
+     "n": 44,
+     "examples": [
+      "\"ass Glob {\\n    absolute;\\n    cwd;\\n    ro\" @ token PropertyDefinition",
+      "\" absolute;\\n    cwd;\\n    root;\\n    dot;\\n \" @ token PropertyDefinition",
+      "\";\\n    cwd;\\n    root;\\n    dot;\\n    dotRel\" @ token PropertyDefinition"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 668,
+     "n": 167,
+     "examples": [
+      "\"     });\\n    } else {\\n      value = hand\" @ token else",
+      "\"   });\\n      } else {\\n        cachedValu\" @ token else",
+      "\"ache.forever();else cache.never();\\n     \" @ token else"
+     ]
+    },
+    {
+     "type": "ForStatement>Block",
+     "chars": 627,
+     "n": 7,
+     "examples": [
+      "\"Value) {\\n      if (yield* valid(data)) r\" @ token if",
+      "\"irs) {\\n        if (key !== (yield* fn(da\" @ token if",
+      "\"dates) {\\n      const clonedArgsId = _cor\" @ token const"
+     ]
+    },
+    {
+     "type": "UnaryExpression>MemberExpression",
+     "chars": 611,
+     "n": 39,
+     "examples": [
+      "\"\\n\\t\\t}\\n\\n\\t\\tdelete config.extends;\\n\\t\\tconst f\" @ token VariableName",
+      "\" &&\\n    typeof process.platform === 'str\" @ token VariableName",
+      "\"        typeof opts.maxDepth === 'number\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>ClassExpression",
+     "chars": 556,
+     "n": 9,
+     "examples": [
+      "\"onInfoChoice = class RevocationInfoChoic\" @ token class",
+      "\"hmIdentifier = class DigestAlgorithmIden\" @ token class",
+      "\"hmIdentifier = class SignatureAlgorithmI\" @ token class"
+     ]
+    },
+    {
+     "type": "AssignmentExpression>ClassExpression",
+     "chars": 410,
+     "n": 4,
+     "examples": [
+      "\"nfoChoices_1 = class RevocationInfoChoic\" @ token class",
+      "\"Attributes_1 = class Attributes extends \" @ token class",
+      "\"edKeyUsage_1 = class ExtendedKeyUsage ex\" @ token class"
+     ]
+    },
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 407,
+     "n": 59,
+     "examples": [
+      "\"ue) {\\n    for (const {\\n      value,\\n    \" @ token const",
+      "\") {\\n      for (const [key, fn] of pairs)\" @ token const",
+      "\"true;\\n    for (const bareSuper of bareSu\" @ token const"
+     ]
+    },
+    {
+     "type": "YieldExpression",
+     "chars": 368,
+     "n": 9,
+     "examples": [
+      "\"ntext = yield* (0, _async.isAsync)();\\n  \" @ token (",
+      "\"ached = yield* getCachedValueOrWait(asyn\" @ token VariableName",
+      "\"value = yield* (0, _async.onFirstPause)(\" @ token ("
+     ]
+    },
+    {
+     "type": "BinaryExpression>VariableName",
+     "chars": 366,
+     "n": 60,
+     "examples": [
+      "\"e, (\\\"value\\\" in a || a.initializer) && (a\" @ token VariableName",
+      "\"\\t\\tif ('cwd' in pkgConfig) {\\n\\t\\t\\tpkgConfig\" @ token VariableName",
+      "\" ('extends' in config) {\\n\\t\\tconst extConf\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>Number",
+     "chars": 291,
+     "n": 107,
+     "examples": [
+      "\"   if (byte >> 6 === 3) {\\n              \" @ token Number",
+      "\"= 4 && byte >> 3 === 0b11110) ||\\n       \" @ token Number",
+      "\"= 3 && byte >> 4 === 0b1110) ||\\n        \" @ token Number"
+     ]
+    },
+    {
+     "type": "UnaryExpression>Number",
+     "chars": 204,
+     "n": 204,
+     "examples": [
+      "\"s._data = void 0;\\n    this._data = data;\" @ token Number",
+      "\"promise = void 0;\\n    this._resolve = vo\" @ token Number",
+      "\"resolve = void 0;\\n    this.promise = new\" @ token Number"
+     ]
+    },
+    {
+     "type": "BinaryExpression>instanceof",
+     "chars": 200,
+     "n": 20,
+     "examples": [
+      "\"e if (opts.cwd instanceof URL || opts.cw\" @ token instanceof",
+      "\"  return value instanceof Uint8Array && \" @ token instanceof",
+      "\"  return value instanceof Uint8Array && \" @ token instanceof"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>VariableDefinition",
+     "chars": 198,
+     "n": 80,
+     "examples": [
+      "\"n[a](c),\\n      u = i.value;\\n  } catch (n\" @ token VariableDefinition",
+      "\" = this,\\n      e = arguments;\\n    return\" @ token VariableDefinition",
+      "\"pertyNames(r), o = 0; o < t.length; o++)\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 196,
+     "n": 18,
+     "examples": [
+      "\"turn function* cachedFunction(arg, data)\" @ token VariableDefinition",
+      "\"nc()(function* transform(code, opts) {\\n \" @ token VariableDefinition",
+      "\"orm = function transform(code, optsOrCal\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "Property>VariableName",
+     "chars": 186,
+     "n": 20,
+     "examples": [
+      "\"is.opts = { ...opts, platform: this.plat\" @ token VariableName",
+      "\"            ...opts,\\n            dot: th\" @ token VariableName",
+      "\"pertyKeys), ...options }));\\n}\\n\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 181,
+     "n": 9,
+     "examples": [
+      "\"[o],\\n      a = Object.getOwnPropertyDesc\" @ token VariableName",
+      "\"ta\\\")],\\n    r = Object.getOwnPropertySymb\" @ token VariableName",
+      "\"\\n          d = r[l](i, c);\\n      } final\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "SwitchBody>BreakStatement",
+     "chars": 175,
+     "n": 35,
+     "examples": [
+      "\"dValue);\\n      break;\\n    case \\\"invalida\" @ token break",
+      "\"dValue);\\n      break;\\n    case \\\"valid\\\":\\n\" @ token break",
+      "\"cessor\\\";\\n      break;\\n    case 2:\\n      \" @ token break"
+     ]
+    },
+    {
+     "type": "BinaryExpression>MemberExpression",
+     "chars": 152,
+     "n": 11,
+     "examples": [
+      "\"g' && value in enumSchema.values;\\n      \" @ token VariableName",
+      "\"lue instanceof JsonPackValue_1.JsonPackV\" @ token VariableName",
+      "\"lue instanceof JsonPackExtension_1.JsonP\" @ token VariableName"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ExportDeclaration",
+     "chars": 16572,
+     "n": 110
+    },
+    {
+     "type": "ImportDeclaration",
+     "chars": 5043,
+     "n": 101
+    },
+    {
+     "type": "TemplateString",
+     "chars": 3029,
+     "n": 86
+    },
+    {
+     "type": "PostfixExpression",
+     "chars": 622,
+     "n": 112
+    }
+   ]
+  },
+  "js-node_modules-examples": {
+   "note": "up to 40 example/demo .js sampled (seed 11) from 48 files: the nearest thing to beginner-style programs found locally",
+   "language": "javascript",
+   "files": 40,
+   "lines": 758,
+   "chars": 12529,
+   "coverage": {
+    "real": 93.2,
+    "opaque": 3.3,
+    "fallback": 3.5
+   },
+   "topStatements": {
+    "fully": 169,
+    "partly": 27,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 265,
+    "partly": 45,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 13.7,
+   "tableLines": {
+    "file": 103,
+    "nodes": 57,
+    "rules": 10
+   },
+   "missingTop25": [
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 239,
+     "n": 21,
+     "examples": [
+      "\",\\n    stream = require('stream'),\\n    ne\" @ token VariableName",
+      "\",\\n    needle = require('./../');\\n\\nvar ur\" @ token VariableName",
+      "\",\\n    needle = require('./..'),\\n    path\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>VariableDefinition",
+     "chars": 120,
+     "n": 21,
+     "examples": [
+      "\"ire('fs'),\\n    stream = require('stream'\" @ token VariableDefinition",
+      "\"'stream'),\\n    needle = require('./../')\" @ token VariableDefinition",
+      "\"ire('fs'),\\n    needle = require('./..'),\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 32,
+     "n": 8,
+     "examples": [
+      "\"n.name];\\n    } else {\\n      // Resave va\" @ token else",
+      "\"It failed.')\\n  else\\n    console.log('\\\\nI\" @ token else",
+      "\" to file.');\\n  else\\n    throw new Error(\" @ token else"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 28,
+     "n": 4,
+     "examples": [
+      "\"options = {\\n  'color': { type: 'boolean'\" @ token String",
+      "\"boolean' },\\n  'no-color': { type: 'boole\" @ token String",
+      "\"boolean' },\\n  'logfile': { type: 'string\" @ token String"
+     ]
+    },
+    {
+     "type": "UnaryExpression>MemberExpression",
+     "chars": 15,
+     "n": 1,
+     "examples": [
+      "\";\\n      delete values[token.name];\\n    }\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "UnaryExpression>delete",
+     "chars": 6,
+     "n": 1,
+     "examples": [
+      "\"= false;\\n      delete values[token.name]\" @ token delete"
+     ]
+    },
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 1,
+     "n": 1,
+     "examples": [
+      "\"1, 2, function f(n) { return n + 5; }, 4\" @ token VariableDefinition"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "TemplateString",
+     "chars": 413,
+     "n": 11
+    }
+   ]
+  }
+ },
+ "js-J3b": {
+  "js-repo-own": {
+   "note": "plain .js/.mjs tracked in this repository (not dist/lib, not the vendored WeScheme reader)",
+   "language": "javascript",
+   "files": 30,
+   "lines": 3314,
+   "chars": 70400,
+   "coverage": {
+    "real": 79.2,
+    "opaque": 15.8,
+    "fallback": 5.1
+   },
+   "topStatements": {
+    "fully": 193,
+    "partly": 100,
+    "none": 45
+   },
+   "allStatements": {
+    "fully": 866,
+    "partly": 448,
+    "none": 56
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 16.3,
+   "tableLines": {
+    "file": 112,
+    "nodes": 64,
+    "rules": 12
+   },
+   "missingTop25": [
+    {
+     "type": "ForStatement>Block",
+     "chars": 1407,
+     "n": 4,
+     "examples": [
+      "\"of self) {\\n    const n = nodes.get(id);\\n\" @ token const",
+      "\"lusive)) {\\n    if (\\n      keep.includes(\" @ token if",
+      "\"targets) {\\n    const file = path.join(ro\" @ token const"
+     ]
+    },
+    {
+     "type": "Property>String",
+     "chars": 1374,
+     "n": 147,
+     "examples": [
+      "\"serve({ type: \\\"longtask\\\" });\\n  });\\n  con\" @ token String",
+      "\"  categories: \\\"devtools.timeline\\\",\\n     \" @ token String",
+      "\"transferMode: \\\"ReportEvents\\\",\\n    });\\n  \" @ token String"
+     ]
+    },
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 350,
+     "n": 50,
+     "examples": [
+      "\" Map();\\n  for (const n of profile.nodes)\" @ token const",
+      "\"odes)\\n    for (const c of n.children ?? \" @ token const",
+      "\" + ms);\\n  for (const [id, ms] of self) {\" @ token const"
+     ]
+    },
+    {
+     "type": "Property>MemberExpression",
+     "chars": 123,
+     "n": 9,
+     "examples": [
+      "\"evServer: { ...base.devServer, client: {\" @ token VariableName",
+      "\"alias = {\\n  ...config.resolve.alias,\\n  \\\"\" @ token VariableName",
+      "\"ias = {\\n    ...config.resolve.alias,\\n   \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Property>VariableName",
+     "chars": 110,
+     "n": 23,
+     "examples": [
+      "\"t = {\\n      ...result,\\n      ...bucketPr\" @ token VariableName",
+      "\"ports = {\\n  ...base,\\n  mode: \\\"production\" @ token VariableName",
+      "\"onfig = {\\n  ...baseConfig,\\n  name: \\\"bund\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Property>CallExpression",
+     "chars": 49,
+     "n": 3,
+     "examples": [
+      "\"sult,\\n      ...bucketProfile(profile),\\n \" @ token VariableName",
+      "\"\\\"),\\n      { ...issue(4, body(report)), p\" @ token VariableName",
+      "\"   },\\n      { [lib.signature(f)]: { coun\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 48,
+     "n": 12,
+     "examples": [
+      "\"ernate);\\n      else {\\n        count(c, t\" @ token else",
+      "\"ernate);\\n      else {\\n        count(cur,\" @ token else",
+      "\"= false;\\n      else if (c === \\\"\\\\\\\\\\\") esca\" @ token else"
+     ]
+    },
+    {
+     "type": "ForStatement>ExpressionStatement",
+     "chars": 35,
+     "n": 2,
+     "examples": [
+      "\"L_TOP)))\\n      incl[k] = +v.toFixed(1);\\n\" @ token VariableName",
+      "\"f split.known) lines.push(`- ${d.count}x\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ArrowFunction>async",
+     "chars": 25,
+     "n": 5,
+     "examples": [
+      "\"k, n = 1) =>\\n  async () => {\\n    for (le\" @ token async",
+      "\"];\\n  const m = async (name, fn) => out.p\" @ token async",
+      "\"locks render\\\", async () => {\\n    await p\" @ token async"
+     ]
+    },
+    {
+     "type": "FunctionDeclaration>async",
+     "chars": 20,
+     "n": 4,
+     "examples": [
+      "\"--------------\\nasync function openPage(b\" @ token async",
+      "\"at it cost. */\\nasync function measure(en\" @ token async",
+      "\"ress(k);\\n  };\\n\\nasync function runOnce(br\" @ token async"
+     ]
+    },
+    {
+     "type": "MemberExpression>ImportMeta",
+     "chars": 6,
+     "n": 1,
+     "examples": [
+      "\" createRequire(import.meta.url)(\\\"./gen.j\" @ token import"
+     ]
+    },
+    {
+     "type": "BinaryExpression>Number",
+     "chars": 5,
+     "n": 3,
+     "examples": [
+      "\" || (f.flags & 1) === 1)) {\\n      counts\" @ token Number",
+      "\"axBuffer: 1 << 28 }\\n    );\\n    for (cons\" @ token Number",
+      "\"p = e2e ? 1 << 28 : 400000;\\n    child.st\" @ token Number"
+     ]
+    },
+    {
+     "type": "ImportMeta",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"Require(import.meta.url)(\\\"./gen.js\\\");\\nco\" @ token PropertyName"
+     ]
+    },
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 3,
+     "n": 1,
+     "examples": [
+      "\"rts = function gen(lines) {\\n  const out \" @ token VariableDefinition"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "TemplateString",
+     "chars": 7476,
+     "n": 156
+    },
+    {
+     "type": "ImportDeclaration",
+     "chars": 1769,
+     "n": 41
+    },
+    {
+     "type": "ExportDeclaration",
+     "chars": 1611,
+     "n": 4
+    },
+    {
+     "type": "PostfixExpression",
+     "chars": 174,
+     "n": 17
+    },
+    {
+     "type": "Hashbang",
+     "chars": 72,
+     "n": 4
+    }
+   ]
+  },
+  "js-node_modules-library": {
+   "note": "~200 non-minified .js/.mjs sampled (seed 7) from 12067 files under node_modules: library code",
+   "language": "javascript",
+   "files": 200,
+   "lines": 14733,
+   "chars": 331186,
+   "coverage": {
+    "real": 88.6,
+    "opaque": 7.9,
+    "fallback": 3.5
+   },
+   "topStatements": {
+    "fully": 1218,
+    "partly": 253,
+    "none": 211
+   },
+   "allStatements": {
+    "fully": 6040,
+    "partly": 1454,
+    "none": 682
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 11.1,
+   "tableLines": {
+    "file": 112,
+    "nodes": 64,
+    "rules": 12
+   },
+   "missingTop25": [
+    {
+     "type": "Property>String",
+     "chars": 4057,
+     "n": 604,
+     "examples": [
+      "\",\\n      kind: \\\"let\\\"\\n    });\\n    return _\" @ token String",
+      "\"n {\\n    name: \\\"plugin-bugfix-safari-id-d\" @ token String",
+      "\"n {\\n    name: \\\"syntax-class-static-block\" @ token String"
+     ]
+    },
+    {
+     "type": "ForStatement>Block",
+     "chars": 1712,
+     "n": 13,
+     "examples": [
+      "\"Value) {\\n      if (yield* valid(data)) r\" @ token if",
+      "\"irs) {\\n        if (key !== (yield* fn(da\" @ token if",
+      "\"dates) {\\n      const clonedArgsId = _cor\" @ token const"
+     ]
+    },
+    {
+     "type": "YieldExpression",
+     "chars": 783,
+     "n": 18,
+     "examples": [
+      "\"ntext = yield* (0, _async.isAsync)();\\n  \" @ token (",
+      "\"ached = yield* getCachedValueOrWait(asyn\" @ token VariableName",
+      "\"value = yield* (0, _async.onFirstPause)(\" @ token ("
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 692,
+     "n": 173,
+     "examples": [
+      "\"     });\\n    } else {\\n      value = hand\" @ token else",
+      "\"   });\\n      } else {\\n        cachedValu\" @ token else",
+      "\"ache.forever();else cache.never();\\n     \" @ token else"
+     ]
+    },
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 491,
+     "n": 71,
+     "examples": [
+      "\"ue) {\\n    for (const {\\n      value,\\n    \" @ token const",
+      "\") {\\n      for (const [key, fn] of pairs)\" @ token const",
+      "\"true;\\n    for (const bareSuper of bareSu\" @ token const"
+     ]
+    },
+    {
+     "type": "BinaryExpression>VariableName",
+     "chars": 366,
+     "n": 60,
+     "examples": [
+      "\"e, (\\\"value\\\" in a || a.initializer) && (a\" @ token VariableName",
+      "\"\\t\\tif ('cwd' in pkgConfig) {\\n\\t\\t\\tpkgConfig\" @ token VariableName",
+      "\" ('extends' in config) {\\n\\t\\tconst extConf\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>Number",
+     "chars": 292,
+     "n": 108,
+     "examples": [
+      "\"   if (byte >> 6 === 3) {\\n              \" @ token Number",
+      "\"= 4 && byte >> 3 === 0b11110) ||\\n       \" @ token Number",
+      "\"= 3 && byte >> 4 === 0b1110) ||\\n        \" @ token Number"
+     ]
+    },
+    {
+     "type": "BinaryExpression>MemberExpression",
+     "chars": 265,
+     "n": 18,
+     "examples": [
+      "\"g' && value in enumSchema.values;\\n      \" @ token VariableName",
+      "\"lue instanceof JsonPackValue_1.JsonPackV\" @ token VariableName",
+      "\"lue instanceof JsonPackExtension_1.JsonP\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "MemberExpression>PrivatePropertyName",
+     "chars": 222,
+     "n": 15,
+     "examples": [
+      "\"imeout = this.#createMockFunction(this._\" @ token PrivatePropertyName",
+      "\"onFrame: this.#createMockFunction(this._\" @ token PrivatePropertyName",
+      "\"mediate: this.#createMockFunction(this._\" @ token PrivatePropertyName"
+     ]
+    },
+    {
+     "type": "Property>VariableName",
+     "chars": 206,
+     "n": 22,
+     "examples": [
+      "\"mers,\\n      ...fakeTimersConfig\\n    };\\n \" @ token VariableName",
+      "\"is.opts = { ...opts, platform: this.plat\" @ token VariableName",
+      "\"            ...opts,\\n            dot: th\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>instanceof",
+     "chars": 200,
+     "n": 20,
+     "examples": [
+      "\"e if (opts.cwd instanceof URL || opts.cw\" @ token instanceof",
+      "\"  return value instanceof Uint8Array && \" @ token instanceof",
+      "\"  return value instanceof Uint8Array && \" @ token instanceof"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>VariableDefinition",
+     "chars": 199,
+     "n": 81,
+     "examples": [
+      "\"n[a](c),\\n      u = i.value;\\n  } catch (n\" @ token VariableDefinition",
+      "\" = this,\\n      e = arguments;\\n    return\" @ token VariableDefinition",
+      "\"pertyNames(r), o = 0; o < t.length; o++)\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 196,
+     "n": 18,
+     "examples": [
+      "\"turn function* cachedFunction(arg, data)\" @ token VariableDefinition",
+      "\"nc()(function* transform(code, opts) {\\n \" @ token VariableDefinition",
+      "\"orm = function transform(code, optsOrCal\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 181,
+     "n": 9,
+     "examples": [
+      "\"[o],\\n      a = Object.getOwnPropertyDesc\" @ token VariableName",
+      "\"ta\\\")],\\n    r = Object.getOwnPropertySymb\" @ token VariableName",
+      "\"\\n          d = r[l](i, c);\\n      } final\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "BinaryExpression>ParenthesizedExpression",
+     "chars": 171,
+     "n": 16,
+     "examples": [
+      "\"xtet0 << 2) | (sextet1 >> 4);\\n          \" @ token VariableName",
+      "\"xtet1 << 4) | (sextet2 >> 2);\\n          \" @ token VariableName",
+      "\"xtet0 << 2) | (sextet1 >> 4);\\n          \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "Property>MemberExpression",
+     "chars": 142,
+     "n": 14,
+     "examples": [
+      "\"g = {\\n      ...this._config.fakeTimers,\\n\" @ token this",
+      "\"            ...this.opts,\\n              \" @ token this",
+      "\"            ...this.opts,\\n              \" @ token this"
+     ]
+    },
+    {
+     "type": "ForStatement>IfStatement",
+     "chars": 128,
+     "n": 2,
+     "examples": [
+      "\"opts))\\n        if (v != null)\\n          \" @ token if",
+      "\"tries)\\n        if (knownKey in knownProp\" @ token if"
+     ]
+    },
+    {
+     "type": "Property>CallExpression",
+     "chars": 128,
+     "n": 3,
+     "examples": [
+      "\"eateType)({ ...OmitResolve(type, propert\" @ token VariableName",
+      "\"            ...Object.fromEntries(Object\" @ token VariableName",
+      "\" { ...opts, ...requiredOptions(opts) };\\n\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "ForInSpec",
+     "chars": 117,
+     "n": 15,
+     "examples": [
+      "\"          for (key in value);\\n          \" @ token VariableName",
+      "\"      for (var k in o) if (Object.protot\" @ token VariableDefinition",
+      "\"{\\n    for (var p in m) if (p !== \\\"defaul\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "Property>ParenthesizedExpression",
+     "chars": 98,
+     "n": 2,
+     "examples": [
+      "\"{\\n\\t\\tcwd,\\n\\t\\t...(await applyExtends(pkgCon\" @ token await",
+      "\"son'))),\\n\\t\\t...(await applyExtends(await \" @ token await"
+     ]
+    },
+    {
+     "type": "ClassExpression>extends",
+     "chars": 98,
+     "n": 14,
+     "examples": [
+      "\"ionInfoChoices extends asn1_schema_1.Asn\" @ token extends",
+      "\"ithmIdentifier extends asn1_x509_1.Algor\" @ token extends",
+      "\"ithmIdentifier extends asn1_x509_1.Algor\" @ token extends"
+     ]
+    },
+    {
+     "type": "ForStatement>ForInSpec",
+     "chars": 84,
+     "n": 15,
+     "examples": [
+      "\"      for (key in value);\\n              \" @ token in",
+      "\"          for (var k in o) if (Object.pr\" @ token var",
+      "\"ts) {\\n    for (var p in m) if (p !== \\\"de\" @ token var"
+     ]
+    },
+    {
+     "type": "BinaryExpression>in",
+     "chars": 70,
+     "n": 35,
+     "examples": [
+      "\"able, (\\\"value\\\" in a || a.initializer) &&\" @ token in",
+      "\"};\\n\\t\\tif ('cwd' in pkgConfig) {\\n\\t\\t\\tpkgCon\" @ token in",
+      "\"\\tif ('extends' in config) {\\n\\t\\tconst extC\" @ token in"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>MemberExpression",
+     "chars": 62,
+     "n": 11,
+     "examples": [
+      "\"(c),\\n      u = i.value;\\n  } catch (n) {\\n\" @ token VariableName",
+      "\"],\\n        n = t[i],\\n        l = a ? a[i\" @ token VariableName",
+      "\"l,\\n        s = n[\\\"public\\\"],\\n        c = \" @ token VariableName"
+     ]
+    },
+    {
+     "type": "FunctionDeclaration>async",
+     "chars": 60,
+     "n": 12,
+     "examples": [
+      "\"rn results;\\n}\\n\\nasync function findPackag\" @ token async",
+      "\"fig: {}\\n\\t};\\n}\\n\\nasync function actualLoad\" @ token async",
+      "\"utf8'));\\n\\t}\\n}\\n\\nasync function loadFile(c\" @ token async"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "ExportDeclaration",
+     "chars": 16572,
+     "n": 110
+    },
+    {
+     "type": "ImportDeclaration",
+     "chars": 5043,
+     "n": 101
+    },
+    {
+     "type": "TemplateString",
+     "chars": 3722,
+     "n": 102
+    },
+    {
+     "type": "PostfixExpression",
+     "chars": 826,
+     "n": 134
+    },
+    {
+     "type": "Hashbang",
+     "chars": 18,
+     "n": 1
+    }
+   ]
+  },
+  "js-node_modules-examples": {
+   "note": "up to 40 example/demo .js sampled (seed 11) from 48 files: the nearest thing to beginner-style programs found locally",
+   "language": "javascript",
+   "files": 40,
+   "lines": 758,
+   "chars": 12529,
+   "coverage": {
+    "real": 91.4,
+    "opaque": 3.3,
+    "fallback": 5.3
+   },
+   "topStatements": {
+    "fully": 160,
+    "partly": 36,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 256,
+    "partly": 54,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 8.7,
+   "tableLines": {
+    "file": 112,
+    "nodes": 64,
+    "rules": 12
+   },
+   "missingTop25": [
+    {
+     "type": "Property>String",
+     "chars": 277,
+     "n": 29,
+     "examples": [
+      "\"ile: { short: 'f', type: 'string', defau\" @ token String",
+      "\"t: 'f', type: 'string', default: 'FOO' }\" @ token String",
+      "\"ng', default: 'FOO' },\\n};\\n\\nconst { value\" @ token String"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>CallExpression",
+     "chars": 239,
+     "n": 21,
+     "examples": [
+      "\",\\n    stream = require('stream'),\\n    ne\" @ token VariableName",
+      "\",\\n    needle = require('./../');\\n\\nvar ur\" @ token VariableName",
+      "\",\\n    needle = require('./..'),\\n    path\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "VariableDeclaration>VariableDefinition",
+     "chars": 120,
+     "n": 21,
+     "examples": [
+      "\"ire('fs'),\\n    stream = require('stream'\" @ token VariableDefinition",
+      "\"'stream'),\\n    needle = require('./../')\" @ token VariableDefinition",
+      "\"ire('fs'),\\n    needle = require('./..'),\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 32,
+     "n": 8,
+     "examples": [
+      "\"n.name];\\n    } else {\\n      // Resave va\" @ token else",
+      "\"It failed.')\\n  else\\n    console.log('\\\\nI\" @ token else",
+      "\" to file.');\\n  else\\n    throw new Error(\" @ token else"
+     ]
+    },
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 1,
+     "n": 1,
+     "examples": [
+      "\"1, 2, function f(n) { return n + 5; }, 4\" @ token VariableDefinition"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "TemplateString",
+     "chars": 413,
+     "n": 11
+    }
+   ]
+  }
+ },
+ "js-J4": {
+  "js-repo-own": {
+   "note": "plain .js/.mjs tracked in this repository (not dist/lib, not the vendored WeScheme reader)",
+   "language": "javascript",
+   "files": 30,
+   "lines": 3314,
+   "chars": 70400,
+   "coverage": {
+    "real": 87.7,
+    "opaque": 11.3,
+    "fallback": 1
+   },
+   "topStatements": {
+    "fully": 244,
+    "partly": 94,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 1059,
+    "partly": 309,
+    "none": 2
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 15.4,
+   "tableLines": {
+    "file": 117,
+    "nodes": 69,
+    "rules": 12
+   },
+   "missingTop25": [
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 357,
+     "n": 51,
+     "examples": [
+      "\" Map();\\n  for (const n of profile.nodes)\" @ token const",
+      "\"odes)\\n    for (const c of n.children ?? \" @ token const",
+      "\" + ms);\\n  for (const [id, ms] of self) {\" @ token const"
+     ]
+    },
+    {
+     "type": "ImportGroup",
+     "chars": 105,
+     "n": 6,
+     "examples": [
+      "\"ation\\nimport { chromium } from \\\"@playwri\" @ token VariableDefinition",
+      "\"est\\\";\\nimport { createRequire } from \\\"mod\" @ token VariableDefinition",
+      "\"ple\\\";\\nimport { getLanguages, getLanguage\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ImportDeclaration>from",
+     "chars": 88,
+     "n": 22,
+     "examples": [
+      "\"t { chromium } from \\\"@playwright/test\\\";\\n\" @ token from",
+      "\"reateRequire } from \\\"module\\\";\\nimport fs \" @ token from",
+      "\"le\\\";\\nimport fs from \\\"fs\\\";\\n\\nconst gen = c\" @ token from"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 88,
+     "n": 22,
+     "examples": [
+      "\"ernate);\\n      else {\\n        count(c, t\" @ token else",
+      "\"ernate);\\n      else {\\n        count(cur,\" @ token else",
+      "\" = \\\"idle\\\";\\n    else if (name === \\\"(progr\" @ token else"
+     ]
+    },
+    {
+     "type": "ArrowFunction>async",
+     "chars": 25,
+     "n": 5,
+     "examples": [
+      "\"k, n = 1) =>\\n  async () => {\\n    for (le\" @ token async",
+      "\"];\\n  const m = async (name, fn) => out.p\" @ token async",
+      "\"locks render\\\", async () => {\\n    await p\" @ token async"
+     ]
+    },
+    {
+     "type": "ExportDeclaration>default",
+     "chars": 21,
+     "n": 3,
+     "examples": [
+      "\"bals\\\";\\n\\nexport default tseslint.config(\\n\" @ token default",
+      "\"ompat\\\";\\nexport default compat.default ??\" @ token default",
+      "\"orm>`;\\n\\nexport default function Wescheme\" @ token default"
+     ]
+    },
+    {
+     "type": "FunctionDeclaration>async",
+     "chars": 20,
+     "n": 4,
+     "examples": [
+      "\"--------------\\nasync function openPage(b\" @ token async",
+      "\"at it cost. */\\nasync function measure(en\" @ token async",
+      "\"ress(k);\\n  };\\n\\nasync function runOnce(br\" @ token async"
+     ]
+    },
+    {
+     "type": "MemberExpression>ImportMeta",
+     "chars": 6,
+     "n": 1,
+     "examples": [
+      "\" createRequire(import.meta.url)(\\\"./gen.j\" @ token import"
+     ]
+    },
+    {
+     "type": "ImportMeta",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"Require(import.meta.url)(\\\"./gen.js\\\");\\nco\" @ token PropertyName"
+     ]
+    },
+    {
+     "type": "ImportDeclaration>as",
+     "chars": 4,
+     "n": 2,
+     "examples": [
+      "\"nsole\\nimport * as t from \\\"../lib/toolkit\" @ token as",
+      "\"act\\\";\\nimport * as compat from \\\"preact/co\" @ token as"
+     ]
+    },
+    {
+     "type": "ExportDeclaration>from",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"ck);\\n\\nexport * from \\\"preact/compat\\\";\\nexp\" @ token from"
+     ]
+    },
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 3,
+     "n": 1,
+     "examples": [
+      "\"rts = function gen(lines) {\\n  const out \" @ token VariableDefinition"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "TemplateString",
+     "chars": 7854,
+     "n": 165
+    },
+    {
+     "type": "Hashbang",
+     "chars": 72,
+     "n": 4
+    }
+   ]
+  },
+  "js-node_modules-library": {
+   "note": "~200 non-minified .js/.mjs sampled (seed 7) from 12067 files under node_modules: library code",
+   "language": "javascript",
+   "files": 200,
+   "lines": 14733,
+   "chars": 331186,
+   "coverage": {
+    "real": 97.4,
+    "opaque": 1.2,
+    "fallback": 1.4
+   },
+   "topStatements": {
+    "fully": 1368,
+    "partly": 314,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 7144,
+    "partly": 1032,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 11.8,
+   "tableLines": {
+    "file": 117,
+    "nodes": 69,
+    "rules": 12
+   },
+   "missingTop25": [
+    {
+     "type": "ImportGroup",
+     "chars": 1580,
+     "n": 91,
+     "examples": [
+      "\"import { isIterable } from './util\" @ token VariableDefinition",
+      "\" mode\\nimport { Minimatch } from 'minimat\" @ token VariableDefinition",
+      "\"tch';\\nimport { Pattern } from './pattern\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "IfStatement>else",
+     "chars": 744,
+     "n": 186,
+     "examples": [
+      "\"     });\\n    } else {\\n      value = hand\" @ token else",
+      "\"   });\\n      } else {\\n        cachedValu\" @ token else",
+      "\"ache.forever();else cache.never();\\n     \" @ token else"
+     ]
+    },
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 540,
+     "n": 78,
+     "examples": [
+      "\"ue) {\\n    for (const {\\n      value,\\n    \" @ token const",
+      "\") {\\n      for (const [key, fn] of pairs)\" @ token const",
+      "\"true;\\n    for (const bareSuper of bareSu\" @ token const"
+     ]
+    },
+    {
+     "type": "ImportDeclaration>from",
+     "chars": 392,
+     "n": 98,
+     "examples": [
+      "\"import esutils from \\\"esutils\\\";\\n\\n/**\\n * C\" @ token from",
+      "\"import _typeof from \\\"./typeof.js\\\";\\nimpor\" @ token from",
+      "\"etFunctionName from \\\"./setFunctionName.j\" @ token from"
+     ]
+    },
+    {
+     "type": "ExportGroup",
+     "chars": 378,
+     "n": 17,
+     "examples": [
+      "\" r;\\n}\\nexport { applyDecs as default };\" @ token VariableName",
+      "\"  }\\n}\\nexport { _classApplyDescriptorSet \" @ token VariableName",
+      "\" r;\\n}\\nexport { _classPrivateFieldSet2 as\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 196,
+     "n": 18,
+     "examples": [
+      "\"turn function* cachedFunction(arg, data)\" @ token VariableDefinition",
+      "\"nc()(function* transform(code, opts) {\\n \" @ token VariableDefinition",
+      "\"orm = function transform(code, optsOrCal\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ForInSpec",
+     "chars": 117,
+     "n": 15,
+     "examples": [
+      "\"          for (key in value);\\n          \" @ token VariableName",
+      "\"      for (var k in o) if (Object.protot\" @ token VariableDefinition",
+      "\"{\\n    for (var p in m) if (p !== \\\"defaul\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ClassExpression>extends",
+     "chars": 98,
+     "n": 14,
+     "examples": [
+      "\"ionInfoChoices extends asn1_schema_1.Asn\" @ token extends",
+      "\"ithmIdentifier extends asn1_x509_1.Algor\" @ token extends",
+      "\"ithmIdentifier extends asn1_x509_1.Algor\" @ token extends"
+     ]
+    },
+    {
+     "type": "ForStatement>ForInSpec",
+     "chars": 84,
+     "n": 15,
+     "examples": [
+      "\"      for (key in value);\\n              \" @ token in",
+      "\"          for (var k in o) if (Object.pr\" @ token var",
+      "\"ts) {\\n    for (var p in m) if (p !== \\\"de\" @ token var"
+     ]
+    },
+    {
+     "type": "ClassDeclaration>extends",
+     "chars": 70,
+     "n": 10,
+     "examples": [
+      "\"MsgPackEncoder extends MsgPackEncoderFas\" @ token extends",
+      "\"t class HashMD extends Hash {\\n    constr\" @ token extends",
+      "\"ass PrivateKey extends OctetString {\\n}\\nl\" @ token extends"
+     ]
+    },
+    {
+     "type": "CallExpression>super",
+     "chars": 70,
+     "n": 14,
+     "examples": [
+      "\"sLE) {\\n        super();\\n        this.fin\" @ token super",
+      "\"ems) {\\n        super(items);\\n        Obj\" @ token super",
+      "\"ems) {\\n        super(items);\\n        Obj\" @ token super"
+     ]
+    },
+    {
+     "type": "FunctionDeclaration>async",
+     "chars": 65,
+     "n": 13,
+     "examples": [
+      "\"   }\\n}\\n\\nexport async function parseChunk\" @ token async",
+      "\"rn results;\\n}\\n\\nasync function findPackag\" @ token async",
+      "\"fig: {}\\n\\t};\\n}\\n\\nasync function actualLoad\" @ token async"
+     ]
+    },
+    {
+     "type": "ExportDeclaration>from",
+     "chars": 48,
+     "n": 12,
+     "examples": [
+      "\"export { Hfs } from \\\"./hfs.js\\\";\\nexport {\" @ token from",
+      "\"xport { Path } from \\\"./path.js\\\";\\nexport \" @ token from",
+      "\".js\\\";\\nexport * from \\\"./errors.js\\\";\\n\" @ token from"
+     ]
+    },
+    {
+     "type": "TaggedTemplateExpression",
+     "chars": 44,
+     "n": 1,
+     "examples": [
+      "\"body.body.push(_core.template.statement.\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>async",
+     "chars": 40,
+     "n": 8,
+     "examples": [
+      "\");\\n    }\\n  }\\n  async runAllTimersAsync()\" @ token async",
+      "\");\\n    }\\n  }\\n  async runOnlyPendingTimer\" @ token async",
+      "\" }\\n    }\\n  }\\n  async advanceTimersToNext\" @ token async"
+     ]
+    },
+    {
+     "type": "DoStatement>while",
+     "chars": 30,
+     "n": 6,
+     "examples": [
+      "\"7f);\\n        } while ((byte & 0x80) === \" @ token while",
+      "\"7f);\\n        } while ((byte & 0x80) === \" @ token while",
+      "\"en);\\n        } while (token.type !== aco\" @ token while"
+     ]
+    },
+    {
+     "type": "PropertyDeclaration>PrivatePropertyDefinition",
+     "chars": 20,
+     "n": 2,
+     "examples": [
+      "\"Visitor {\\n    #exportNode;\\n    #referenc\" @ token PrivatePropertyDefinition",
+      "\"portNode;\\n    #referencer;\\n    construct\" @ token PrivatePropertyDefinition"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>PrivatePropertyDefinition",
+     "chars": 18,
+     "n": 1,
+     "examples": [
+      "\";\\n    }\\n  }\\n  #createMockFunction(implem\" @ token PrivatePropertyDefinition"
+     ]
+    },
+    {
+     "type": "ExportDeclaration>ExportGroup",
+     "chars": 14,
+     "n": 7,
+     "examples": [
+      "\"rt { applyDecs as default };\" @ token as",
+      "\"yDescriptorSet as default };\" @ token as",
+      "\"ivateFieldSet2 as default };\" @ token as"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>static",
+     "chars": 12,
+     "n": 2,
+     "examples": [
+      "\"ype;\\n    }\\n    static create(checker, ts\" @ token static",
+      "\"cer;\\n    }\\n    static visit(referencer, \" @ token static"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>set",
+     "chars": 9,
+     "n": 3,
+     "examples": [
+      "\"   }\\n    }\\n    set buffer(value) {\\n     \" @ token set",
+      "\"fer;\\n    }\\n    set view(value) {\\n       \" @ token set",
+      "\"gth;\\n    }\\n    set length(value) {\\n     \" @ token set"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>get",
+     "chars": 9,
+     "n": 3,
+     "examples": [
+      "\"er);\\n    }\\n    get buffer() {\\n        re\" @ token get",
+      "\"ue);\\n    }\\n    get view() {\\n        retu\" @ token get",
+      "\"iew;\\n    }\\n    get length() {\\n        re\" @ token get"
+     ]
+    },
+    {
+     "type": "ExportDeclaration>default",
+     "chars": 7,
+     "n": 1,
+     "examples": [
+      "\" })\\n */\\nexport default ({ types: t }) =>\" @ token default"
+     ]
+    },
+    {
+     "type": "ImportDeclaration>ImportGroup",
+     "chars": 6,
+     "n": 3,
+     "examples": [
+      "\"mport { Object as _Object_ } from '../ob\" @ token as",
+      "\"e, IsUndefined as IsUndefinedValue } fro\" @ token as",
+      "\" defaultKeyMap as defaultKeyMap$1 } from\" @ token as"
+     ]
+    },
+    {
+     "type": "ForStatement>await",
+     "chars": 5,
+     "n": 1,
+     "examples": [
+      "\"           for await (const chunk of ite\" @ token await"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "TemplateString",
+     "chars": 4076,
+     "n": 122
+    },
+    {
+     "type": "Hashbang",
+     "chars": 18,
+     "n": 1
+    }
+   ]
+  },
+  "js-node_modules-examples": {
+   "note": "up to 40 example/demo .js sampled (seed 11) from 48 files: the nearest thing to beginner-style programs found locally",
+   "language": "javascript",
+   "files": 40,
+   "lines": 758,
+   "chars": 12529,
+   "coverage": {
+    "real": 96.4,
+    "opaque": 3.3,
+    "fallback": 0.3
+   },
+   "topStatements": {
+    "fully": 183,
+    "partly": 13,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 280,
+    "partly": 30,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 9.2,
+   "tableLines": {
+    "file": 117,
+    "nodes": 69,
+    "rules": 12
+   },
+   "missingTop25": [
+    {
+     "type": "IfStatement>else",
+     "chars": 32,
+     "n": 8,
+     "examples": [
+      "\"n.name];\\n    } else {\\n      // Resave va\" @ token else",
+      "\"It failed.')\\n  else\\n    console.log('\\\\nI\" @ token else",
+      "\" to file.');\\n  else\\n    throw new Error(\" @ token else"
+     ]
+    },
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 1,
+     "n": 1,
+     "examples": [
+      "\"1, 2, function f(n) { return n + 5; }, 4\" @ token VariableDefinition"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "TemplateString",
+     "chars": 413,
+     "n": 11
+    }
+   ]
+  }
+ },
+ "js-J4-glue": {
+  "js-repo-own": {
+   "note": "plain .js/.mjs tracked in this repository (not dist/lib, not the vendored WeScheme reader)",
+   "language": "javascript",
+   "files": 30,
+   "lines": 3314,
+   "chars": 70400,
+   "coverage": {
+    "real": 87.8,
+    "opaque": 11.3,
+    "fallback": 0.9
+   },
+   "topStatements": {
+    "fully": 245,
+    "partly": 93,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 1084,
+    "partly": 284,
+    "none": 2
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 16.5,
+   "tableLines": {
+    "file": 117,
+    "nodes": 69,
+    "rules": 12
+   },
+   "missingTop25": [
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 357,
+     "n": 51,
+     "examples": [
+      "\" Map();\\n  for (const n of profile.nodes)\" @ token const",
+      "\"odes)\\n    for (const c of n.children ?? \" @ token const",
+      "\" + ms);\\n  for (const [id, ms] of self) {\" @ token const"
+     ]
+    },
+    {
+     "type": "ImportGroup",
+     "chars": 105,
+     "n": 6,
+     "examples": [
+      "\"ation\\nimport { chromium } from \\\"@playwri\" @ token VariableDefinition",
+      "\"est\\\";\\nimport { createRequire } from \\\"mod\" @ token VariableDefinition",
+      "\"ple\\\";\\nimport { getLanguages, getLanguage\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ImportDeclaration>from",
+     "chars": 88,
+     "n": 22,
+     "examples": [
+      "\"t { chromium } from \\\"@playwright/test\\\";\\n\" @ token from",
+      "\"reateRequire } from \\\"module\\\";\\nimport fs \" @ token from",
+      "\"le\\\";\\nimport fs from \\\"fs\\\";\\n\\nconst gen = c\" @ token from"
+     ]
+    },
+    {
+     "type": "ArrowFunction>async",
+     "chars": 25,
+     "n": 5,
+     "examples": [
+      "\"k, n = 1) =>\\n  async () => {\\n    for (le\" @ token async",
+      "\"];\\n  const m = async (name, fn) => out.p\" @ token async",
+      "\"locks render\\\", async () => {\\n    await p\" @ token async"
+     ]
+    },
+    {
+     "type": "ExportDeclaration>default",
+     "chars": 21,
+     "n": 3,
+     "examples": [
+      "\"bals\\\";\\n\\nexport default tseslint.config(\\n\" @ token default",
+      "\"ompat\\\";\\nexport default compat.default ??\" @ token default",
+      "\"orm>`;\\n\\nexport default function Wescheme\" @ token default"
+     ]
+    },
+    {
+     "type": "FunctionDeclaration>async",
+     "chars": 20,
+     "n": 4,
+     "examples": [
+      "\"--------------\\nasync function openPage(b\" @ token async",
+      "\"at it cost. */\\nasync function measure(en\" @ token async",
+      "\"ress(k);\\n  };\\n\\nasync function runOnce(br\" @ token async"
+     ]
+    },
+    {
+     "type": "MemberExpression>ImportMeta",
+     "chars": 6,
+     "n": 1,
+     "examples": [
+      "\" createRequire(import.meta.url)(\\\"./gen.j\" @ token import"
+     ]
+    },
+    {
+     "type": "ImportMeta",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"Require(import.meta.url)(\\\"./gen.js\\\");\\nco\" @ token PropertyName"
+     ]
+    },
+    {
+     "type": "ImportDeclaration>as",
+     "chars": 4,
+     "n": 2,
+     "examples": [
+      "\"nsole\\nimport * as t from \\\"../lib/toolkit\" @ token as",
+      "\"act\\\";\\nimport * as compat from \\\"preact/co\" @ token as"
+     ]
+    },
+    {
+     "type": "ExportDeclaration>from",
+     "chars": 4,
+     "n": 1,
+     "examples": [
+      "\"ck);\\n\\nexport * from \\\"preact/compat\\\";\\nexp\" @ token from"
+     ]
+    },
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 3,
+     "n": 1,
+     "examples": [
+      "\"rts = function gen(lines) {\\n  const out \" @ token VariableDefinition"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "TemplateString",
+     "chars": 7854,
+     "n": 165
+    },
+    {
+     "type": "Hashbang",
+     "chars": 72,
+     "n": 4
+    }
+   ]
+  },
+  "js-node_modules-library": {
+   "note": "~200 non-minified .js/.mjs sampled (seed 7) from 12067 files under node_modules: library code",
+   "language": "javascript",
+   "files": 200,
+   "lines": 14733,
+   "chars": 331186,
+   "coverage": {
+    "real": 97.7,
+    "opaque": 1.2,
+    "fallback": 1.1
+   },
+   "topStatements": {
+    "fully": 1425,
+    "partly": 257,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 7467,
+    "partly": 709,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 12.8,
+   "tableLines": {
+    "file": 117,
+    "nodes": 69,
+    "rules": 12
+   },
+   "missingTop25": [
+    {
+     "type": "ImportGroup",
+     "chars": 1580,
+     "n": 91,
+     "examples": [
+      "\"import { isIterable } from './util\" @ token VariableDefinition",
+      "\" mode\\nimport { Minimatch } from 'minimat\" @ token VariableDefinition",
+      "\"tch';\\nimport { Pattern } from './pattern\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ForStatement>ForOfSpec",
+     "chars": 540,
+     "n": 78,
+     "examples": [
+      "\"ue) {\\n    for (const {\\n      value,\\n    \" @ token const",
+      "\") {\\n      for (const [key, fn] of pairs)\" @ token const",
+      "\"true;\\n    for (const bareSuper of bareSu\" @ token const"
+     ]
+    },
+    {
+     "type": "ImportDeclaration>from",
+     "chars": 392,
+     "n": 98,
+     "examples": [
+      "\"import esutils from \\\"esutils\\\";\\n\\n/**\\n * C\" @ token from",
+      "\"import _typeof from \\\"./typeof.js\\\";\\nimpor\" @ token from",
+      "\"etFunctionName from \\\"./setFunctionName.j\" @ token from"
+     ]
+    },
+    {
+     "type": "ExportGroup",
+     "chars": 378,
+     "n": 17,
+     "examples": [
+      "\" r;\\n}\\nexport { applyDecs as default };\" @ token VariableName",
+      "\"  }\\n}\\nexport { _classApplyDescriptorSet \" @ token VariableName",
+      "\" r;\\n}\\nexport { _classPrivateFieldSet2 as\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 196,
+     "n": 18,
+     "examples": [
+      "\"turn function* cachedFunction(arg, data)\" @ token VariableDefinition",
+      "\"nc()(function* transform(code, opts) {\\n \" @ token VariableDefinition",
+      "\"orm = function transform(code, optsOrCal\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ForInSpec",
+     "chars": 117,
+     "n": 15,
+     "examples": [
+      "\"          for (key in value);\\n          \" @ token VariableName",
+      "\"      for (var k in o) if (Object.protot\" @ token VariableDefinition",
+      "\"{\\n    for (var p in m) if (p !== \\\"defaul\" @ token VariableDefinition"
+     ]
+    },
+    {
+     "type": "ForStatement>ForInSpec",
+     "chars": 84,
+     "n": 15,
+     "examples": [
+      "\"      for (key in value);\\n              \" @ token in",
+      "\"          for (var k in o) if (Object.pr\" @ token var",
+      "\"ts) {\\n    for (var p in m) if (p !== \\\"de\" @ token var"
+     ]
+    },
+    {
+     "type": "CallExpression>super",
+     "chars": 70,
+     "n": 14,
+     "examples": [
+      "\"sLE) {\\n        super();\\n        this.fin\" @ token super",
+      "\"ems) {\\n        super(items);\\n        Obj\" @ token super",
+      "\"ems) {\\n        super(items);\\n        Obj\" @ token super"
+     ]
+    },
+    {
+     "type": "FunctionDeclaration>async",
+     "chars": 65,
+     "n": 13,
+     "examples": [
+      "\"   }\\n}\\n\\nexport async function parseChunk\" @ token async",
+      "\"rn results;\\n}\\n\\nasync function findPackag\" @ token async",
+      "\"fig: {}\\n\\t};\\n}\\n\\nasync function actualLoad\" @ token async"
+     ]
+    },
+    {
+     "type": "ExportDeclaration>from",
+     "chars": 48,
+     "n": 12,
+     "examples": [
+      "\"export { Hfs } from \\\"./hfs.js\\\";\\nexport {\" @ token from",
+      "\"xport { Path } from \\\"./path.js\\\";\\nexport \" @ token from",
+      "\".js\\\";\\nexport * from \\\"./errors.js\\\";\\n\" @ token from"
+     ]
+    },
+    {
+     "type": "TaggedTemplateExpression",
+     "chars": 44,
+     "n": 1,
+     "examples": [
+      "\"body.body.push(_core.template.statement.\" @ token VariableName"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>async",
+     "chars": 40,
+     "n": 8,
+     "examples": [
+      "\");\\n    }\\n  }\\n  async runAllTimersAsync()\" @ token async",
+      "\");\\n    }\\n  }\\n  async runOnlyPendingTimer\" @ token async",
+      "\" }\\n    }\\n  }\\n  async advanceTimersToNext\" @ token async"
+     ]
+    },
+    {
+     "type": "PropertyDeclaration>PrivatePropertyDefinition",
+     "chars": 20,
+     "n": 2,
+     "examples": [
+      "\"Visitor {\\n    #exportNode;\\n    #referenc\" @ token PrivatePropertyDefinition",
+      "\"portNode;\\n    #referencer;\\n    construct\" @ token PrivatePropertyDefinition"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>PrivatePropertyDefinition",
+     "chars": 18,
+     "n": 1,
+     "examples": [
+      "\";\\n    }\\n  }\\n  #createMockFunction(implem\" @ token PrivatePropertyDefinition"
+     ]
+    },
+    {
+     "type": "ExportDeclaration>ExportGroup",
+     "chars": 14,
+     "n": 7,
+     "examples": [
+      "\"rt { applyDecs as default };\" @ token as",
+      "\"yDescriptorSet as default };\" @ token as",
+      "\"ivateFieldSet2 as default };\" @ token as"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>static",
+     "chars": 12,
+     "n": 2,
+     "examples": [
+      "\"ype;\\n    }\\n    static create(checker, ts\" @ token static",
+      "\"cer;\\n    }\\n    static visit(referencer, \" @ token static"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>set",
+     "chars": 9,
+     "n": 3,
+     "examples": [
+      "\"   }\\n    }\\n    set buffer(value) {\\n     \" @ token set",
+      "\"fer;\\n    }\\n    set view(value) {\\n       \" @ token set",
+      "\"gth;\\n    }\\n    set length(value) {\\n     \" @ token set"
+     ]
+    },
+    {
+     "type": "MethodDeclaration>get",
+     "chars": 9,
+     "n": 3,
+     "examples": [
+      "\"er);\\n    }\\n    get buffer() {\\n        re\" @ token get",
+      "\"ue);\\n    }\\n    get view() {\\n        retu\" @ token get",
+      "\"iew;\\n    }\\n    get length() {\\n        re\" @ token get"
+     ]
+    },
+    {
+     "type": "ExportDeclaration>default",
+     "chars": 7,
+     "n": 1,
+     "examples": [
+      "\" })\\n */\\nexport default ({ types: t }) =>\" @ token default"
+     ]
+    },
+    {
+     "type": "ImportDeclaration>ImportGroup",
+     "chars": 6,
+     "n": 3,
+     "examples": [
+      "\"mport { Object as _Object_ } from '../ob\" @ token as",
+      "\"e, IsUndefined as IsUndefinedValue } fro\" @ token as",
+      "\" defaultKeyMap as defaultKeyMap$1 } from\" @ token as"
+     ]
+    },
+    {
+     "type": "ForStatement>await",
+     "chars": 5,
+     "n": 1,
+     "examples": [
+      "\"           for await (const chunk of ite\" @ token await"
+     ]
+    },
+    {
+     "type": "ArrowFunction>async",
+     "chars": 5,
+     "n": 1,
+     "examples": [
+      "\"ce, args).then(async (ret)=>{\\n          \" @ token async"
+     ]
+    },
+    {
+     "type": ";",
+     "chars": 2,
+     "n": 2,
+     "examples": [
+      "\"rable'\\n    );\\n};\\n\\nclass ChunkParser {\\n  \" @ token ;",
+      "\".value;\\n    }\\n};\\n\" @ token ;"
+     ]
+    },
+    {
+     "type": "UnaryExpression>VariableName",
+     "chars": 1,
+     "n": 1,
+     "examples": [
+      "\"rn (a & b) ^ (~a & c);\\n}\\n/** Majority fu\" @ token VariableName"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "TemplateString",
+     "chars": 4076,
+     "n": 122
+    },
+    {
+     "type": "Hashbang",
+     "chars": 18,
+     "n": 1
+    }
+   ]
+  },
+  "js-node_modules-examples": {
+   "note": "up to 40 example/demo .js sampled (seed 11) from 48 files: the nearest thing to beginner-style programs found locally",
+   "language": "javascript",
+   "files": 40,
+   "lines": 758,
+   "chars": 12529,
+   "coverage": {
+    "real": 96.7,
+    "opaque": 3.3,
+    "fallback": 0
+   },
+   "topStatements": {
+    "fully": 188,
+    "partly": 8,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 294,
+    "partly": 16,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 12.6,
+   "tableLines": {
+    "file": 117,
+    "nodes": 69,
+    "rules": 12
+   },
+   "missingTop25": [
+    {
+     "type": "FunctionExpression>VariableDefinition",
+     "chars": 1,
+     "n": 1,
+     "examples": [
+      "\"1, 2, function f(n) { return n + 5; }, 4\" @ token VariableDefinition"
+     ]
+    }
+   ],
+   "opaqueTop10": [
+    {
+     "type": "TemplateString",
+     "chars": 413,
+     "n": 11
+    }
+   ]
+  }
  }
 }

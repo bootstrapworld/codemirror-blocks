@@ -183,7 +183,7 @@ export class Renderer {
       el.appendChild(kw);
     }
     for (const slot of node.slots) {
-      if (slot.glue) {
+      if (slot.glue && (slot.kind === "one" || slot.nodes.length)) {
         const g = this.create("span", "blocks-glue");
         g.textContent = slot.glue;
         g.setAttribute("aria-hidden", "true");

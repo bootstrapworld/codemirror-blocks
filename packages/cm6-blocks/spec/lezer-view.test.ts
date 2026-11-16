@@ -96,10 +96,10 @@ describe.each(Object.keys(LANGS))("lezer editor: %s", (name) => {
     // into / out of a list slot below a root
     let target: BNode | null = null;
     for (const r of ed.roots()) walk(r, (n) => {
-      if (!target && n.slots.some((s) => s.kind === "list" && s.nodes.length >= 2)) target = n;
+      if (!target && n.slots.some((s) => s.kind === "list" && s.name !== "rest" && s.nodes.length >= 2)) target = n;
     });
     expect(target).not.toBeNull();
-    const slot = (target as unknown as BNode).slots.find((s) => s.kind === "list" && s.nodes.length >= 2)!;
+    const slot = (target as unknown as BNode).slots.find((s) => s.kind === "list" && s.name !== "rest" && s.nodes.length >= 2)!;
     const count = slot.nodes.length;
     const t0 = textOf(ed);
     ed.insertText(slot, 1, L.snippets[0]);
