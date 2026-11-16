@@ -97,22 +97,36 @@ for (const lang of ["scheme", "javascript", "python"]) {
       const withList = () => inView().filter((r: any) => list(r).length);
       const focusCases: any = {};
       const textAt = (n: any) => (n ? ed.view.state.doc.sliceString(n.from, n.to).slice(0, 30) : null);
-      const idxs = ed.roots().map((_: any, i: number) => i).filter((i: number) => ed.renderer.has(ed.roots()[i]) && ed.renderer.element(ed.roots()[i]).isConnected && list(ed.roots()[i]).length);
-      const midRoot = idxs[Math.floor(idxs.length / 2)], earlier = idxs[0], later = idxs[idxs.length - 1];
+      ed.view.scrollDOM.scrollTop = ed.view.scrollDOM.scrollHeight / 2;
+      await raf(); await raf(); await raf();
+      const hasList = (i: number) => list(ed.roots()[i]).length > 0;
+      const idxs = ed.roots().map((_: any, i: number) => i).filter((i: number) => ed.renderer.has(ed.roots()[i]) && ed.renderer.element(ed.roots()[i]).isConnected && hasList(i));
+      // the focused root is the first one in view with a list; "earlier" and "later" are the nearest roots with a list at least 4 away (different roots, not neighbours)
+      const midRoot = idxs[Math.floor(idxs.length / 2)];
+      const near = (from: number, dir: number) => { for (let k = from; k >= 0 && k < ed.roots().length; k += dir) if (hasList(k)) return k; return -1; };
+      const later = near(midRoot + 4, 1);
+      const earlier = near(midRoot - 4, -1);
       out.focusRoots = { inViewWithLists: idxs.length, midRoot, earlier, later };
       // nodes are looked up by root index each time: a root that an edit rebuilt is a new object
-      const slotFrom = (i: number): any => { for (let k = i; k < ed.roots().length; k++) { const l = list(ed.roots()[k]); if (l.length) return l[0]; } return null; };
-      const at = (i: number, k: number) => slotFrom(i).nodes[k];
+      const anyList = (r: any) => { const o: any[] = []; const w = (x: any) => { x.slots.forEach((s: any) => { if (s.kind === "list" && s.nodes.length >= 1) o.push(s); s.nodes.forEach(w); }); }; w(r); return o; };
+      const slotFrom = (i: number, k = 0): any => (k >= 1 ? list(ed.roots()[i]) : anyList(ed.roots()[i]))[0];
+      const at = (i: number, k: number) => slotFrom(i, k).nodes[k];
       const run = async (name: string, focus: () => any, act: () => void) => {
-        const f0 = focus();
-        ed.focusNode(f0);
-        await raf();
-        const before = ed.stats().focusRestores;
-        const was = textAt(f0);
-        act();
-        await raf();
-        const f = ed.focusedNode();
-        focusCases[name] = { focusedBefore: was, focusedAfter: textAt(f), stillTheSameBlock: f === f0, focusOnABlock: !!f, restores: ed.stats().focusRestores - before, activeIsBody: document.activeElement === document.body };
+        try {
+          const f0 = focus();
+          ed.focusNode(f0);
+          await raf();
+          const focusedBefore = ed.focusedNode() === f0;
+          const before = ed.stats().focusRestores;
+          const was = textAt(f0);
+          const top0 = ed.view.scrollDOM.scrollTop;
+          act();
+          await raf();
+          const f = ed.focusedNode();
+          focusCases[name] = { focusedBefore: was, focusWasOnIt: focusedBefore, focusedAfter: textAt(f), stillTheSameBlock: f === f0, focusOnABlock: !!f, restores: ed.stats().focusRestores - before, activeIsBody: document.activeElement === document.body, scrollShift: Math.round(ed.view.scrollDOM.scrollTop - top0), f0StillConnected: ed.renderer.has(f0) && ed.renderer.element(f0).isConnected };
+        } catch (e) {
+          focusCases[name] = { error: String(e).slice(0, 160) };
+        }
       };
       await run("edit_in_the_focused_blocks_parent", () => at(midRoot, 0), () => ed.removeNode(at(midRoot, 1)));
       await run("edit_in_a_later_root", () => at(midRoot, 0), () => ed.removeNode(at(later, 1)));

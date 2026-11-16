@@ -398,6 +398,18 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       const snap = trs.some((t) => t.docChanged) ? takeSnapshot() : null;
       v.update(trs);
       restoreFocus(snap, trs);
+      // undo and redo scroll to the old selection (the top, for block edits): show what changed instead
+      const last = trs.find((t) => t.docChanged && (t.isUserEvent("undo") || t.isUserEvent("redo")));
+      if (last) {
+        let at = -1;
+        last.changes.iterChangedRanges((_a, _b, fromB) => {
+          if (at < 0) at = fromB;
+        });
+        if (at >= 0) {
+          v.dispatch({ effects: EditorView.scrollIntoView(at, { y: "nearest" }) });
+          restoreFocus(snap, trs);
+        }
+      }
     },
   });
   const detach = attachInteraction(ed);

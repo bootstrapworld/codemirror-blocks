@@ -590,3 +590,42 @@ Same section style; running table at the end of this round. Evidence = test or m
 - Side fix found by it: removing the only element of a list left a blank (`(h )`); it
   now also removes the blanks before it on the same line (`(h)`, `h()`), but never a
   line's indentation.
+
+### A4: why Scheme edits cost 4x (profiled, fixed)
+- Measured with timers on the 3000-line Scheme document (one inserted space, mean of 20):
+  incremental parse 0.6 ms; collecting the top-level candidates (`fromTree` keeping every
+  root) **9.2 ms** with the table's `kind` rule, 0.39 ms with the rules removed. The
+  JS and Python numbers for the same step: 0.10 and 0.08 ms. So the cost was OURS, in the
+  Scheme rule, not the grammar's deep wrapping (a full walk of all 62,001 Lezer nodes is 1.6
+  ms; the top-level children walk is 0.05 ms).
+- Cause: the "is this a clause of a cond" check climbed four parents and, for a
+  top-level form, landed on the program node and asked it for its list items, which scans
+  all 1250 children: quadratic per edit. Fix: 1 condition (the parent must be a list) and
+  read the head symbol before counting items. Collect now 1.4 ms (the remaining ~1 ms is the
+  rule's first-symbol check; a deeper wrap costs about 1 ms per 1250 top-level forms).
+- In Chromium (same document): edit near top / middle, synchronous with layout, 9.8 / 9.2
+  ms -> 3.0 / 2.5 ms; total time in the field update over the run 296 ms -> 52 ms.
+  JS 2.8 / 2.7 ms, Python 2.5 / 1.8 ms. Judgement: a table rule that looks at the tree
+  must not walk siblings; this trap is easy to fall into and invisible in small tests.
+
+### A5: the focus cases redone with different roots (Chromium, 3000 lines)
+Focus is on the first argument of a call in a root in the middle of the document; "later"
+and "earlier" are the nearest roots with a list, 4 or more roots away; restores = times the
+editor gave focus back; all cases ended with focus on a block. `e2e/results.json`.
+
+| case | Scheme | JavaScript | Python |
+|---|---|---|---|
+| edit in the focused block's parent | restored, same place (1) | 1 | 1 |
+| edit in a later root | not touched (0) | 0 | 0 |
+| edit in an earlier root | 0 | 0 | 0 |
+| undo of an edit in an earlier / a later root | same block, 1 restore each | same, 1 each | same, 1 each |
+| remove the focused block | next/previous/parent, 1 | 1 | 1 |
+
+- The first version of these cases was wrong for JavaScript (only one root in view had a
+  list) and, after fixing that, showed a REAL bug for Python: after undo of an edit above,
+  focus was lost (`activeElement` = body). Cause: CodeMirror's undo scrolls to the old
+  selection, which for block edits is the top of the document (scroll shift -76,396 px);
+  the focused block left the drawn viewport and its element was removed. Fix (in the
+  editor's `dispatchTransactions`): after an undo or redo, scroll to the first changed
+  position (`scrollIntoView(nearest)`) and restore focus. Now focus survives in all three
+  languages (the restore runs once per undo: the element is moved when the line is redrawn).

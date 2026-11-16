@@ -24,15 +24,17 @@ export const schemeTable: BlockTable = {
     apply(n: import("@lezer/common").SyntaxNode, text: string) {
       if (n.name !== "ParenList" && n.name !== "BracketList") return undefined;
       const items = (l: import("@lezer/common").SyntaxNode) => { const c = l.getChild("ListContent"); return c ? c.getChildren("Datum") : []; };
-      const ds = items(n);
-      const head = ds[0] && !ds[0].getChild("List") ? text.slice(ds[0].from, ds[0].to) : "";
+      // the head first (one child), the rest only when it is define/lambda/if/cond
+      const first = n.getChild("ListContent")?.getChild("Datum");
+      const head = first && !first.getChild("List") ? text.slice(first.from, first.to) : "";
       const h = HEADS[head];
+      const ds = h ? items(n) : [];
       if (h && (h[0] === 0 || h[0] === ds.length)) return h[1];
       // a clause: a bracketed or parenthesised list directly inside a cond
       const up = n.parent?.parent?.parent?.parent; // List > Datum > ListContent > ParenList
-      if (up && n.parent?.name === "List" && n.parent.parent?.name === "Datum") {
+      if (up && (up.name === "ParenList" || up.name === "BracketList") && n.parent?.name === "List" && n.parent.parent?.name === "Datum") {
         const outer = items(up);
-        if (outer[0] && text.slice(outer[0].from, outer[0].to) === "cond" && outer.slice(1).every((d) => d.getChild("List"))) return ds.length ? "ClauseForm" : undefined;
+        if (outer[0] && text.slice(outer[0].from, outer[0].to) === "cond" && outer.slice(1).every((d) => d.getChild("List"))) return first ? "ClauseForm" : undefined;
       }
       return head && h ? "ParenList" : undefined;
     },
