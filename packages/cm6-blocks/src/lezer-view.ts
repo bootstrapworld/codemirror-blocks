@@ -332,7 +332,16 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     },
     replaceText(node, snippet) {
       live(node);
-      dispatch({ from: node.from, to: node.to, insert: snippet });
+      if (node.from !== node.to) return dispatch({ from: node.from, to: node.to, insert: snippet });
+      // a missing node (zero-width blank): put the slot's connector before it, and a space where the text would stick together
+      const t = currentText();
+      const row = node.parent && table.nodes[keyOfNode(node.parent) ?? ""];
+      const before = row?.slots?.find((q) => q.name === node.slot?.name)?.before;
+      const prev = t[node.from - 1] ?? "";
+      const next = t[node.to] ?? "";
+      const left = before ?? (prev === "" || /[\s([{]/.test(prev) ? "" : " ");
+      const right = next === "" || /[\s)\]};,]/.test(next) ? "" : " ";
+      dispatch({ from: node.from, to: node.to, insert: left + snippet + right });
     },
     change: dispatch,
     focusNode(node) {

@@ -59,3 +59,25 @@ describe.each(Object.keys(OPTS))("A1: stale nodes are refused: %s", (l) => {
     ok(ed);
   });
 });
+
+describe("A2: a missing 'one' slot (zero-width blank) is filled where it belongs", () => {
+  const cases: [string, string, string][] = [
+    ["javascript", "function f() { return; }", "function f() { return 5; }"],
+    ["javascript", "let x;", "let x = 5;"],
+    ["python", "def f():\n    return\n", "def f():\n    return 5\n"],
+    ["python", "return", "return 5"],
+  ];
+  test.each(cases)("%s %j", (l, text, expected) => {
+    const ed = make(l, text);
+    const blank = all(ed).find((n) => n.kind === "blank")!;
+    expect(blank).toBeDefined();
+    ed.replaceText(blank, "5");
+    expect(textOf(ed)).toBe(expected);
+    ok(ed);
+  });
+  test("a blank is where the missing node would go, not after the owner", () => {
+    const ed = make("javascript", "return; f();");
+    const blank = all(ed).find((n) => n.kind === "blank")!;
+    expect(blank.from).toBeLessThan(6 + 1);
+  });
+});

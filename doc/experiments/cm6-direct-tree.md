@@ -568,3 +568,15 @@ Same section style; running table at the end of this round. Evidence = test or m
   `node N (kind) is no longer in the tree`, decided by `doc.byId`; nothing is dispatched.
   Test first (3 failed before, `spec/fixes.test.ts`), passes now in all three languages.
   Throwing, not returning false, so a caller cannot ignore it.
+
+### A2: a missing "one" slot is filled where it belongs
+- Before (test failed, 4 of 5 cases): the zero-width blank sat at the owner's END, so
+  `return;` + "5" gave `return;5`. Now the blank is placed after what the earlier slots
+  hold (else after the keyword, else after the opening bracket), and writing into it adds
+  a space where the text would stick together. A table slot may say `before` (the
+  connector): JS `let x;` needs ` = ` before the value (1 field on 1 slot). Tests: JS
+  `return;`, `let x;`, Python `return` (nested and top-level) now give `return 5`,
+  `let x = 5;`, etc. and the oracle passes.
+- Judgement: the connector is the first thing a pure "slots and separators" table could
+  not say; it costs one field, but every construct with punctuation between its parts
+  (JS `for (x of y)`, Python `x = `) will want one when its part is missing.

@@ -19,7 +19,7 @@ export const javascriptTable: BlockTable = {
     CompareOp: leaf("operator", "operator"),
     BinaryExpression: { kind: "binary", label: "operation", slots: [one("left", ["#0"]), one("op", ["ArithOp", "CompareOp"]), one("right", ["#2"])] },
     AssignmentExpression: { kind: "assign", label: "assignment", slots: [one("target", ["#0"]), one("value", ["#1"])] },
-    VariableDeclaration: { kind: "declare", label: "declaration", keyword: "let", slots: [one("name", ["VariableDefinition"]), one("value", ["#1"])] },
+    VariableDeclaration: { kind: "declare", label: "declaration", keyword: "let", slots: [one("name", ["VariableDefinition"]), { ...one("value", ["#1"]), before: " = " }] },
     FunctionDeclaration: { kind: "function", label: "function", keyword: "function", slots: [one("name", ["#0"]), list("params", ["ParamList"]), one("body", ["Block"])] },
     ReturnStatement: { kind: "return", label: "return", keyword: "return", slots: [one("value", ["#0"])] },
     IfStatement: { kind: "if", label: "if", keyword: "if", slots: [one("test", ["ParenthesizedExpression"]), one("then", ["Block#0"]), list("else", ["Block#1"])] },

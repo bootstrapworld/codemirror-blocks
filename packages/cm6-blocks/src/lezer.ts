@@ -19,7 +19,7 @@ export interface BlockRow {
    * position "#n" among the block children, by "Type#n" (the n-th child that
    * has that type on its way), or "*" (whatever no other slot took).
    */
-  slots?: { name: string; kind: "one" | "list"; take: string[] | "*" }[];
+  slots?: { name: string; kind: "one" | "list"; take: string[] | "*"; /** text put before a node written into this slot when it was missing (`" = "`) */ before?: string }[];
   leaf?: boolean; // a value: its source text is its value
   dataType?: string;
   keyword?: string; // text drawn at its head
@@ -136,9 +136,12 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       child.slot = slot;
       slot.nodes.push(child);
     });
-    b.slots.forEach((s) => {
+    b.slots.forEach((s, si) => {
       if (s.kind === "one" && !s.nodes.length) {
-        const blank = makeNode("blank", [], { value: "...", from: b.to, to: b.to });
+        // where the missing node would go: after what the earlier slots hold, else after the keyword or the opening bracket
+        let at = b.keywordTo ?? b.from + (row.brackets ? 1 : 0);
+        for (let k = 0; k < si; k++) for (const c of b.slots[k].nodes) if (c.kind !== "blank") at = Math.max(at, c.to);
+        const blank = makeNode("blank", [], { value: "...", from: at, to: at });
         blank.parent = b;
         blank.slot = s;
         s.nodes.push(blank);
