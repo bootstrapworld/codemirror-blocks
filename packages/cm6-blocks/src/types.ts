@@ -31,6 +31,12 @@ export interface BNode {
   value?: string;
   /** for a literal: "number" | "string" | "symbol" | "boolean" | "char" | "other" */
   dataType?: string;
+  /**
+   * ADDED by the model core: for a node with a `keyword`, the offset where the
+   * keyword ends in the text (so a child can be put right after it, however much
+   * space or comment the source has between the bracket and the keyword).
+   */
+  keywordTo?: number;
   /** the word drawn at the head of a compound node (`define`, `cond`, `if`, `lambda`); none for a call */
   keyword?: string;
   /** the brackets it is written in: "()" or "[]" (compound nodes only) */
@@ -85,6 +91,13 @@ export interface Language {
   print(node: BNode): string;
   /** A blank: what is left where a node that has to be there is deleted. */
   blank(): BNode;
+  /**
+   * ADDED by the model core (optional): read `text` as a node of the given
+   * `kind` that is not a form of its own (a cond clause `[a 1]` reads as a call
+   * on its own), with offsets plus `offset`. Null if it cannot. Used to place a
+   * node that was written alone.
+   */
+  parseAs?(kind: string, text: string, offset: number): BNode | null;
   /** What a screenreader says of the node. */
   describe(node: BNode): string;
 }

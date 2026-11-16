@@ -1,0 +1,53 @@
+.blocks-node {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 1px 2px;
+  font-family: monospace;
+  border-radius: 6px;
+  outline: none;
+}
+.blocks-compound {
+  border: 2px solid #5b7fbf;
+  background: #eef3fb;
+  padding: 1px 3px;
+}
+.blocks-if, .blocks-cond, .blocks-clause { border-color: #c47f2c; background: #fbf3e8; }
+.blocks-define, .blocks-lambda { border-color: #4a9a5c; background: #edf8f0; }
+.blocks-value {
+  border: 1px solid #999;
+  background: #fff;
+  padding: 0 4px;
+}
+.blocks-operator {
+  display: inline-block;
+  border-left: 5px solid #5b7fbf;
+  padding: 0 4px 0 3px;
+  margin-right: 2px;
+  font-weight: bold;
+}
+.blocks-args, .blocks-slot { display: inline; }
+.blocks-gap {
+  display: inline-block;
+  width: 4px;
+  height: 1.2em;
+  vertical-align: middle;
+  border-radius: 2px;
+  background: transparent;
+  transition: width 0.1s;
+}
+.blocks-gap:hover,
+.blocks-gap-active {
+  width: 14px;
+  background: rgba(91, 127, 191, 0.35);
+}
+.blocks-node:focus {
+  outline: 2px solid #1a73e8;
+  outline-offset: 1px;
+}
+.blocks-blank {
+  color: #aaa;
+  font-style: italic;
+}
+.blocks-blank::before { content: ""; }
+.blocks-literal-string { color: #a31515; }
+.blocks-literal-number { color: #0b6b0b; }
