@@ -1487,3 +1487,22 @@ focus EVENTS; it is not evidence about what NVDA, JAWS or VoiceOver say. Results
 - Touch: one language, Chromium only, no real device; the gaps are small targets for a finger; tap on a call's own area is taken by touch adjustment.
 - Not re-measured this round: bundle sizes (the code grew by about 25 KB of source: selection, edit-as-text, anchors, chunks, pieces, touch).
 - Preact was not checked (the package has no React or Preact).
+
+## Sixth round (2026-11-16)
+
+The owner's words: "hit the 'selection is lost on any block an edit rebuilds' issue -- if I modify a block, I expect the focus to be on the newly-created block in its place. After that, collapse/expand, single-click literal editing, and then comments. Search can wait."
+Order: (1) focus and selection follow a rebuilt block; (2) collapse / expand; (3) click edits a literal; (4) comments; (5) bundle sizes.
+
+### 1. Focus and selection follow a rebuilt block
+
+- Before: focus was restored by the node's old position mapped through the change (`deepestAt`), selection by node object (a replaced block left it silently).
+- Now one function pair in `lezer-view.ts`: `placeOf(node)` (the path from the program: owner, slot name, index, slot length at each step; taken BEFORE the edit) and `resolvePlace(path)`
+  (after the edit: from the deepest owner on the path that is still in the tree, the node at the same index of the same slot, clamped, then down the same path as far as it goes; `exact` is false when
+  the slot got shorter or the path ended early). Used by: focus restore (`restoreFocus`, falls back to the mapped position only if the path leads nowhere), `removeNodes` (focus after a delete: the
+  node now at the first removed block's place, else its neighbour, else the owner; this replaced a search by owner position and kind), selection and (step 2) collapsed state (`carryMarks`).
+- Choices: edit turned one block into several: the first (same index). Insert: the inserted block (unchanged, the insert code focuses it). Committed text that is an error node or plain text: `nearestDrawn`
+  (a neighbour in the slot by distance, then up the parents). Selection: only the OUTERMOST selected blocks are followed; their new node is selected and a pass selects what is inside; a block whose slot got
+  shorter (really removed) leaves. A selected ancestor whose descendant was edited is a kept object, so it stays, and the new descendant is selected by the pass.
+- Not changed, on purpose: opening an edit box (Enter, Cmd/Ctrl-Enter) still clears the selection, as in the old editor, so the selection follows edits made by paste, the API, undo/redo, drag, delete of other blocks.
+- Evidence: `spec/follow.test.ts` (36 tests, 12 per language): leaf edit, leaf into a call, edit as text, one into several (first), top-level, unparseable text, a blank filled, undo/redo, selection of a leaf / ancestor /
+  replaced block / removed block / undo. Six of them fail with `carryMarks` switched off.

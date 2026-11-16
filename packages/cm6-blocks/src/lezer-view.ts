@@ -486,18 +486,98 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
 
   /* ---- focus */
 
+  /*
+   * "The node now at this place": ONE function for focus, selection (and collapsing). A place is the path from the program down to a
+   * node: at each step the owner, the slot's name, the index in it and how many nodes the slot held. After an edit, the place is
+   * walked again from the deepest owner that is still in the tree: the node at the same index of the same slot (clamped), then down
+   * the same path as far as it goes. `exact` is false when the place is gone: the slot got shorter (the block was removed), or the
+   * path could not be followed to its end.
+   */
+  interface Step {
+    owner: BNode;
+    slot: string;
+    index: number;
+    count: number;
+  }
   interface Snap {
     node: BNode;
     pos: number;
+    place: Step[];
+    /** the outermost selected blocks, each with its place */
+    sel: { node: BNode; place: Step[] }[];
+    /** the outermost collapsed blocks, each with its place */
+    folded: { node: BNode; place: Step[] }[];
+  }
+  function placeOf(node: BNode): Step[] {
+    const steps: Step[] = [];
+    for (let c: BNode | null = node; c && c.parent && c.slot; c = c.parent) {
+      steps.unshift({ owner: c.parent, slot: c.slot.name, index: c.slot.nodes.indexOf(c), count: c.slot.nodes.length });
+    }
+    return steps;
+  }
+  const alive = (n: BNode): boolean => n === program || doc.byId.get(n.id) === n;
+  function resolvePlace(steps: Step[]): { node: BNode | null; exact: boolean } {
+    let k = steps.length - 1;
+    while (k >= 0 && !alive(steps[k].owner)) k--;
+    if (k < 0) return { node: null, exact: false };
+    let owner = steps[k].owner;
+    let node: BNode | null = owner === program ? null : owner;
+    for (let i = k; i < steps.length; i++) {
+      const st = steps[i];
+      const sl = owner.slots.find((q) => q.name === st.slot);
+      if (!sl || sl.nodes.length === 0) return { node, exact: false };
+      const idx = Math.min(Math.max(st.index, 0), sl.nodes.length - 1);
+      node = sl.nodes[idx];
+      if (i === steps.length - 1) return { node, exact: st.index >= 0 && st.index < sl.nodes.length && sl.nodes.length >= st.count };
+      owner = node;
+    }
+    return { node, exact: false };
+  }
+  /** a block that can be drawn, near `node`: itself, a neighbour in its slot, then up the parents */
+  function nearestDrawn(node: BNode | null): BNode | null {
+    let c = node;
+    while (c && c.kind !== "program") {
+      if (isDrawn(c)) return c;
+      const sibs = c.slot ? c.slot.nodes : [];
+      const i = sibs.indexOf(c);
+      for (let d = 1; d < sibs.length; d++) {
+        for (const j of [i - d, i + d]) if (sibs[j] && isDrawn(sibs[j])) return sibs[j];
+      }
+      c = c.parent;
+    }
+    return null;
   }
   const isDrawn = (n: BNode): boolean => drawn(n) && n.kind !== "program" && renderer.has(n) && renderer.element(n).isConnected;
+
+  /** the outermost nodes of a set: those whose parent is not in it, each with its place */
+  function outermost(set: BNode[]): { node: BNode; place: Step[] }[] {
+    const all = new Set(set);
+    return set.filter((n) => !(n.parent && all.has(n.parent))).map((n) => ({ node: n, place: placeOf(n) }));
+  }
 
   function takeSnapshot(): Snap | null {
     if (!view) return null;
     const active = view.dom.ownerDocument.activeElement;
-    if (!active || !view.contentDOM.contains(active)) return null;
-    const node = renderer.nodeOf(active);
-    return node && doc.byId.get(node.id) === node ? { node, pos: node.from } : null;
+    const node = active && view.contentDOM.contains(active) ? renderer.nodeOf(active) : null;
+    const f = node && doc.byId.get(node.id) === node ? node : null;
+    const sel = renderer.selected().length ? outermost(renderer.selected()) : [];
+    const folded = renderer.collapsedNodes().length ? outermost(renderer.collapsedNodes()) : [];
+    if (!f && !sel.length && !folded.length) return null;
+    return { node: f as BNode, pos: f ? f.from : 0, place: f ? placeOf(f) : [], sel, folded };
+  }
+
+  /** after an edit: selection and collapsed state follow the blocks an edit replaced */
+  function carryMarks(s: Snap | null): void {
+    if (!s) return;
+    const follow = (list: Snap["sel"], has: (n: BNode) => boolean, put: (n: BNode) => void): void => {
+      for (const m of list) {
+        if (doc.byId.get(m.node.id) === m.node) continue; // kept
+        const r = resolvePlace(m.place);
+        if (r.node && r.exact && !has(r.node)) put(r.node);
+      }
+    };
+    follow(s.sel, (n) => renderer.isSelected(n), (n) => renderer.setSelected(n, true));
+    follow(s.folded, (n) => renderer.isCollapsed(n), (n) => renderer.setCollapsed(n, true));
   }
 
   /** the deepest node containing `pos`, else the nearest root before it */
@@ -520,14 +600,18 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     if (!s || gone || holdFocus) return;
     const active = view.dom.ownerDocument.activeElement;
     if (active && view.contentDOM.contains(active) && renderer.nodeOf(active)) return;
+    if (!s.node) return;
     let target: BNode | null;
     if (doc.byId.get(s.node.id) === s.node) target = s.node;
     else {
-      let pos = s.pos;
-      for (const t of trs) pos = t.changes.mapPos(pos, 1);
-      target = deepestAt(pos);
+      target = resolvePlace(s.place).node;
+      if (!target) {
+        let pos = s.pos;
+        for (const t of trs) pos = t.changes.mapPos(pos, 1);
+        target = deepestAt(pos);
+      }
     }
-    while (target && !isDrawn(target)) target = target.parent;
+    target = nearestDrawn(target);
     if (!target || target.kind === "program") return;
     stats.focusRestores++;
     renderer.element(target).focus();
@@ -706,8 +790,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       const f = ed.focusedNode();
       let inside = false;
       for (let c: BNode | null = f; c; c = c.parent) if (sorted.includes(c)) inside = true;
-      const owner = node.parent as BNode;
-      const where = { from: owner.from, kind: owner.kind, slot: node.slot!.name, index: node.slot!.nodes.indexOf(node) };
+      const place = placeOf(node);
       const t = currentText();
       const cs = sorted.map((n): TextChange => (n.slot!.kind === "one" || n.slot!.pieces ? { from: n.from, to: n.to, insert: table.blank ?? "..." } : removeChange(n, t)));
       holdFocus = inside;
@@ -717,19 +800,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         holdFocus = false;
       }
       if (!inside) return;
-      let target: BNode | null = null;
-      let o: BNode | null = null;
-      if (owner === program) o = program;
-      else
-        for (const r of rootsSlot.nodes) {
-          walk(r, (n) => {
-            if (!o && n.from === where.from && n.kind === where.kind) o = n;
-          });
-        }
-      const sl = (o as BNode | null)?.slots.find((q) => q.name === where.slot);
-      if (sl) target = sl.nodes[where.index] ?? sl.nodes[where.index - 1] ?? (o === program ? null : o);
-      if (!target) target = deepestAt(where.from);
-      while (target && !isDrawn(target)) target = target.parent;
+      const target = nearestDrawn(resolvePlace(place).node);
       if (target && target.kind !== "program") ed.focusNode(target);
     },
     said,
@@ -894,6 +965,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       v.update(trs);
       // a selected block that left the tree leaves the selection (the renderer forgets most of them; this is the net under it)
       if (trs.some((t) => t.docChanged)) for (const n of renderer.selected()) if (doc.byId.get(n.id) !== n) renderer.setSelected(n, false);
+      carryMarks(snap);
       // blocks that are new inside a selected block are selected with it
       if (trs.some((t) => t.docChanged)) for (const m of renderer.selected()) walk(m, (n) => renderer.setSelected(n, true));
       restoreFocus(snap, trs);

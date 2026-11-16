@@ -24,6 +24,9 @@ export class Renderer {
   /** the blocks that are selected (Space): drawn with aria-selected="true" and the class `blocks-selected` */
   private selection = new Set<BNode>();
 
+  /** the blocks that are collapsed (only their head is drawn) */
+  private folded = new Set<BNode>();
+
   constructor(private language: Language) {}
 
   element(node: BNode): HTMLElement {
@@ -56,6 +59,20 @@ export class Renderer {
     if (el) this.paintSelected(el, on);
   }
 
+  isCollapsed(node: BNode): boolean {
+    return this.folded.has(node);
+  }
+
+  collapsedNodes(): BNode[] {
+    return [...this.folded];
+  }
+
+  setCollapsed(node: BNode, on: boolean): void {
+    if (on === this.folded.has(node)) return;
+    if (on) this.folded.add(node);
+    else this.folded.delete(node);
+  }
+
   /** take the selection of another renderer (the checker's fresh drawing must show the same selection) */
   adoptSelection(other: Renderer): void {
     this.selection = new Set(other.selection);
@@ -68,6 +85,7 @@ export class Renderer {
 
   forget(node: BNode): void {
     this.selection.delete(node);
+    this.folded.delete(node);
     const el = this.els.get(node);
     if (el) {
       this.els.delete(node);
