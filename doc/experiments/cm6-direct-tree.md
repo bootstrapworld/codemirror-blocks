@@ -535,3 +535,26 @@ orders of magnitude, not benchmarks. All of this is measurement unless marked ju
   without a bracket. A real block would also want newlines and indentation inside `{}`;
   not done (a per-language template, see 5b). The keyboard (box on a gap of an empty
   list) now works for the same cases because it calls `insertText`.
+
+### Step 5d: broken input (`spec/broken.test.ts`, measurement)
+
+A five-statement program with a closing bracket missing in the second statement
+(`(b 2` / `b(2;` / `b(2`), roots as the adapter gives them:
+
+| language | roots (good -> broken) | what became of the ones after the break |
+|---|---|---|
+| Scheme | 5 -> 2 (`call`, `call` with an error inside) | all three later forms are swallowed as children of the unclosed one: blocks after the break are lost as roots, and the whole tail is drawn inside one broken block |
+| JavaScript | 5 -> 5 (one statement has an error inside) | Lezer recovers at the `;`: all later statements stay clean blocks |
+| Python | 5 -> 4 (one with an error, one error root) | one later statement is eaten by the error, two survive |
+
+Judgement: how much survives is Lezer's grammar and error recovery, not our code; Scheme
+(no statement terminator) is the worst case, and a per-language rule that closes an
+unbalanced list at the next line starting at column 0 would be needed for it.
+The editor itself handles all of these without special code (fuzzer text edits made such
+input constantly). Lezer's incremental tree and a fresh parse agreed in every fuzz run.
+
+### Not done in this session
+
+- 5b (templates for blocks that were never parsed, toolbar) and 5c (`describe`
+  templates per row): not started. The notes above give the cost of everything else.
+- No flicker or screenreader check of the focus restore; no Preact comparison.
