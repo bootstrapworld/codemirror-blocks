@@ -16,6 +16,7 @@ export const schemeTable: BlockTable = {
     CondForm: { kind: "cond", label: "cond", keyword: "cond", brackets: true, slots: [{ name: "clauses", kind: "list", take: ["ClauseForm"] }] },
     ClauseForm: { kind: "clause", label: "clause", brackets: true, slots: [{ name: "test", kind: "one", take: ["#0"] }, { name: "body", kind: "list", take: "*" }] },
   },
+  blank: "...",
   separators: { roots: "\n" },
   rules: [{
     name: "kind",

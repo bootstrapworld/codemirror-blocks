@@ -33,6 +33,7 @@ export const javascriptTable: BlockTable = {
     ObjectExpression: { kind: "object", label: "object", slots: [list("properties", "*")] },
     Property: { kind: "property", label: "property", slots: [one("key", ["PropertyDefinition"]), one("value", ["#1"])] },
   },
+  blank: "undefined",
   separators: { args: ", ", elements: ", ", properties: ", ", body: " ", roots: "\n" },
 };
 export { parser as javascriptParser };

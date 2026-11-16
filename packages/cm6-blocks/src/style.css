@@ -89,3 +89,14 @@
 .blocks-binary { border-color: #5b7fbf; background: #eef3fb; }
 .blocks-array, .blocks-object { border-color: #999; background: #fafafa; }
 .cm-line > .blocks-node { display: block; width: fit-content; margin-top: 2px; margin-bottom: 2px; }
+
+/* ---- the edit box (Enter on a leaf, a click on a gap, Ctrl-] / Ctrl-[) ---- */
+.blocks-edit {
+  font: inherit;
+  font-family: monospace;
+  border: 2px solid #1a73e8;
+  border-radius: 4px;
+  padding: 0 2px;
+  margin: 1px 2px;
+  min-width: 2ch;
+}

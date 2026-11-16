@@ -364,6 +364,7 @@ what the tables cannot do yet. Running table (evidence = a test or measurement;
 |---|---|---|---|---|
 | 1 Lezer editor | yes | `src/lezer-view.ts` 464, spec 231, +25 in lezer.ts/render.ts/tables | see below | see below |
 | 2 demo page | yes | demo.ts 110, index.html 36, css +45, e2e smoke | runs in Chromium for all three languages | bundle is bigger than React's 400 KB (below) |
+| 3 keys and mouse | yes | interact.ts 260, spec 190, +3 table lines | every key works in jsdom for all three languages with only `insertText` / `removeNode` / `replaceText` | not tried in a real browser yet; see below |
 
 ### Step 1: `createLezerBlockEditor` (`src/lezer-view.ts`)
 
@@ -417,7 +418,7 @@ what the tables cannot do yet. Running table (evidence = a test or measurement;
 - Evidence (opened in Chromium through Playwright, `e2e/smoke.e2e.ts`, no console
   errors): all three languages draw blocks; screenshots in `e2e/screens/`.
 - Bundle size, minified, ONE page with all three languages and the editor:
-  **443,5xx bytes (434 KB), 153 KB gzipped**. Today: 400 KB (React), 215 KB (Preact,
+  **444,741 bytes (434 KB), 153,873 bytes (150 KB) gzipped**. Today: 400 KB (React), 215 KB (Preact,
   "lite"). By package (bytes in the minified output): @codemirror/view 152 K,
   @lezer/javascript 78 K, @codemirror/state 47 K, @lezer/python 38 K, @lezer/lr 27 K,
   @codemirror/commands 23 K, our own code 22 K, @lezer/common 21 K,
@@ -433,3 +434,35 @@ what the tables cannot do yet. Running table (evidence = a test or measurement;
   with an array shows `...` for the iterable (the table takes `VariableName#0` only),
   JS assignment hides `=` and a member call shows the object and property as two
   blocks, Python `print(...)` shows `print` as a block.
+
+### Step 3: keyboard and mouse (`src/interact.ts`, wired into the Lezer editor)
+
+- Evidence: `spec/interact.test.ts`, 11 jsdom tests per language (33): click focuses a
+  block; ArrowDown/ArrowUp walk every block in document order and stop at the ends;
+  ArrowRight goes to the first child, ArrowLeft to the parent (a root stays);
+  Delete and Backspace remove a list element; Delete in a "one" slot puts the
+  language's blank; Enter edits a leaf in an `<input>` placed in the block (Enter
+  commits by replacing the node's text, Escape cancels, the DOM equals a fresh drawing
+  afterwards); text that does not parse cleanly (`(((`, `2 +* (`) is accepted and the
+  oracle stays clean; Ctrl-] / Ctrl-[ open the box for a sibling after / before; a
+  click on a gap opens it there; Ctrl-Z / Ctrl-Shift-Z undo and redo through CodeMirror's
+  history; focus lands on a block after a delete. All edits go through the same three
+  text-change methods, so each is one undo step. 169 tests in the package pass.
+- Blank texts chosen (a `blank` field in each table, one line): Scheme `...`
+  (WeScheme's own hole), Python `...` (Ellipsis is a valid expression), JavaScript
+  `undefined` (a valid expression; `...` is not). Judgement: for JS a "named hole"
+  would be better for a person but is not valid code; deleting an operator of a
+  binary expression leaves `a undefined b`, which Lezer reads as an error. Looseness
+  is accepted here, as asked.
+- Design points worth knowing: widgets tell CodeMirror to ignore events inside them,
+  so the keys are handled by one capturing listener on the editor's DOM (the key map
+  of CodeMirror never sees them; hence undo and redo are called by hand). The edit box
+  is a real `<input>` put INSIDE the block's own element (the root's element for a
+  root), never into a CodeMirror line, and it is removed before the change is
+  dispatched; blur cancels. Focus is given back to the anchor block before dispatch so
+  the editor's focus restore (by mapped position) takes over.
+- Not done / known: a blank in a "one" slot that the TEXT lacks (e.g. `(define x)`)
+  is zero-width at the end of its owner, so editing it inserts after the closing
+  bracket (wrong place); insert into an empty list is not possible (`lastError` is
+  set; step 5a); the box for a sibling of a ROOT is inside the root's element, so it
+  looks attached to the block rather than between lines.

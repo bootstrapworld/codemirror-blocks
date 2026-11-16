@@ -30,6 +30,7 @@ import { walk } from "./doc";
 import { BlockTable, insertChange, LezerLanguage, lezerLanguage, removeChange, keyOfNode, hasError } from "./lezer";
 import { Renderer } from "./render";
 import { RootWidget } from "./view";
+import { attachInteraction } from "./interact";
 import { makeNode } from "./node";
 import type { BNode, Doc, Slot, TextChange } from "./types";
 
@@ -56,6 +57,8 @@ export interface LezerBlockEditor {
   readonly language: LezerLanguage;
   readonly renderer: Renderer;
   readonly options: LezerOptions;
+  /** the message of the last edit the keyboard or mouse could not make (e.g. insert into an empty list) */
+  lastError: string | null;
   roots(): BNode[];
   /** insert source text `snippet` as element `index` of a list slot (a text change, one undo step) */
   insertText(slot: Slot, index: number, snippet: string): void;
@@ -296,6 +299,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     language,
     renderer,
     options,
+    lastError: null,
     roots: () => rootsSlot.nodes,
     insertText(slot, index, snippet) {
       if (slot.nodes.length === 0) {
@@ -335,6 +339,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     stats: () => ({ ...stats }),
     destroy() {
       gone = true;
+      detach();
       view.destroy();
     },
   };
@@ -351,6 +356,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       restoreFocus(snap, trs);
     },
   });
+  const detach = attachInteraction(ed);
   internals.set(ed, { field, blockMode: () => blockMode });
   return ed;
 }

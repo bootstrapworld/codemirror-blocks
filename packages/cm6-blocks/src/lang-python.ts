@@ -26,6 +26,7 @@ export const pythonTable: BlockTable = {
     CallExpression: { kind: "call", label: "call", slots: [one("func", ["#0"]), list("args", ["ArgList"])] },
     ArrayExpression: { kind: "array", label: "list", slots: [list("elements", "*")] },
   },
+  blank: "...",
   separators: { args: ", ", elements: ", ", roots: "\n" },
   rules: [{
     // statements of a body are one per line, at the indentation of their neighbour
