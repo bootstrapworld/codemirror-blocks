@@ -1023,3 +1023,48 @@ Judgement (mine):
 - What these numbers do not show: whether the blocks are the right blocks for a learner (a `rest` list of operators and
   operands is covered but not pleasant), how a screenreader reads a flat list, or how the drawing looks at 98 percent
   coverage (not looked at: no screenshots were retaken this round).
+
+## Fourth round (2026-11-16)
+
+### 1. Bundle, like for like (measurement: esbuild 0.28, `--minify`, one run each; gzip -9)
+
+Entries: `demo/demo.ts` (editor + three languages) and `demo/scheme-only.ts`. "CM6 external" =
+`@codemirror/state`, `@codemirror/view`, `@codemirror/commands` marked `--external`. "grammars external" =
+also `@lezer/javascript`, `@lezer/python`, `cm6-lezer-scheme-common-lang`.
+
+| build | minified | gzipped | what is in it |
+|---|---|---|---|
+| (a) everything, 3 languages | 467,454 | 160,845 | all of it |
+| (b) CM6 external, 3 languages | 236,647 | 86,949 | our code 46 K, JS grammar 78 K, Python grammar 38 K, @lezer/lr 27 K, @lezer/common 20 K, @codemirror/language 11 K, Scheme grammar 8 K, @lezer/highlight 5.5 K, style-mod 2 K |
+| (c) CM6 external, Scheme only | 102,787 | 35,585 | our code 28 K, @lezer/lr 27 K, @lezer/common 20 K, @codemirror/language 11 K, Scheme grammar 8 K, highlight 5.5 K, style-mod 2 K |
+| (d) CM6 + all grammars external, Scheme entry | 48,215 | 17,215 | our code 28 K + @lezer/common 19.5 K only |
+| (d') same, 3-language entry | 66,113 | 21,776 | our code 46 K + @lezer/common 19.5 K |
+
+(a) by package, bytes in the minified output: @codemirror/view 152,289; @lezer/javascript 77,773; @codemirror/state
+47,055; our code (src + demo + css text) 45,800; @lezer/python 37,962; @lezer/lr 26,989; @codemirror/commands
+23,218; @lezer/common 20,490; @codemirror/language 16,030; Scheme grammar 8,254; @lezer/highlight 5,501;
+@marijn/find-cluster-break 2,329; style-mod 2,223; w3c-keyname 1,516. (Our code is 28 K in the Scheme-only entry
+and 46 K with the three tables, the 3-language demo page, and the samples.)
+
+`@codemirror/language`: in (d) it is gone, and so is `@lezer/lr` and `@lezer/highlight`. In (c) it is pulled in ONLY by
+`cm6-lezer-scheme-common-lang` (its `dist/index.js` imports it for `LRLanguage`/`LanguageSupport`; esbuild's metafile
+shows that is the only importer). Our own code imports `@lezer/common` and the grammars' `parser` export only. So a
+language-independent core (the code that takes any Lezer `Parser`) is about 48 KB min / 17 KB gz plus `@lezer/common`,
+and each language adds its grammar: Python 38 K, JavaScript 78 K (+ @lezer/lr 27 K shared), Scheme 8 K (+ language
+11 K and highlight 5.5 K that only this package drags in).
+
+What today's two numbers contain (read from `packages/cmb-toolkit/src/webpack.ts`, `packages/codemirror-blocks/webpack/`
+and `src/umd.ts`; nothing was built): `getWebpackBundleConfig` has `externals` for `codemirror`,
+`codemirror/addon/search/search` and `.../searchcursor`, mapped to the global `CodeMirror` that the page loads with its
+own `<script>`. So CodeMirror 5 is NOT in the 400 KB or 215 KB, as the owner said. React is: `react`, `react-dom`
+(about half of the file, per the comment in `umd-lite.config.js`), `react-redux`, `redux`, `redux-thunk`, `reselect`,
+`react-modal`, `react-tabs`, `react-codemirror2`, `react-contenteditable`, `classnames`,
+`fast-json-stable-stringify` and `pretty-fast-pretty-printer` (`umd.ts` re-exports React and Pretty on the global) are all in
+`dependencies` and none is external. The lite build aliases react/react-dom to `preact/compat`. Judgement: the
+comparable pair is therefore (b) 237 KB / 87 KB gz for three languages (103 KB / 36 KB Scheme only) against 400 / 215
+KB, PLUS CodeMirror 5 on the page on the old side; the other side's CodeMirror 6 view/state/commands (222 KB min) is
+what (a) adds back. I did not check whether 400 / 215 are minified-only or gzip, and no `dist/` exists here to
+look at. For scale (measured): CodeMirror 5's `lib/codemirror.js` minified with esbuild is 174,153 bytes
+(58,029 gz): so "CM5 + the old editor" is roughly 574 KB (React) / 389 KB (Preact), against 467 KB for ours with
+everything and 334 KB Scheme-only (a, c with CM6 included). The old figures are the owner's, summed with my CM5
+measurement; the sum is a judgement, not a build.
