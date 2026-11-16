@@ -1548,3 +1548,38 @@ About 30 K minified (10 K gzipped) more in the Scheme-only build over round four
 ### Final checks of the sixth round (2026-11-16)
 jsdom 535 passed (6 skipped), tsc clean, model fuzzers at 800 seeds x 25 steps per language clean, the whole Chromium suite 49 passed (all e2e files, port 8177, server stopped).
 Not done: search; the old editor's cut taking the attached comment along; comments in blocks whose slots are all "one"; a screen reader was never run.
+
+## Seventh round (2026-11-16)
+
+The owner's words: "keep going. And can you make the scheme blocks look as close as possible to the ones in the CM5 branch?"
+Order: (1) the Scheme look; (2) round-six leftovers; (3) the parity table's "no" rows; (4) per-edit cost at 3000 lines; (5) bundle sizes. Evidence = a measurement or a test; judgement is said so.
+
+### 1. The Scheme look (2026-11-16)
+
+How the reference was made: `npm run build:libs` (4.6 s; builds the existing editor's libs, which were missing in the worktree), then the existing editor's example page on a port of my own,
+`cd packages/codemirror-blocks && npx webpack serve --config webpack/example.config.js --port 8190` (started and stopped by me), and a throwaway Playwright test that is not part of the suite
+(`packages/cm6-blocks/e2e/cm5-ref.cm5.ts`, run with `npx playwright test -c packages/cm6-blocks/e2e/cm5-ref.config.ts`; a config of its own without a web server, files named `.cm5.ts` so the normal config never picks them up). It does what `openInBlockMode` does
+(`window.cmb.setValue`, click "switch to blocks mode"), at a 1100 x 1300 window. The CSS values were read from `default-style.less`, `blocks.less`, `wescheme/src/style.less` AND measured (`getComputedStyle` in the real page, dumped by `cm5-dump.cm5.ts`).
+The pictures: `e2e/screens/scheme-cm5.png` / `scheme-cm6.png` (one program with every form: comment, variable and function definition, nested calls, cond with else, if, lambda, strings, numbers, boolean, symbols, a character, an empty call),
+`scheme-large-cm5.png` / `scheme-large-cm6.png` (`packages/wescheme-blocks/dev-server/ast-test.rkt`), and `scheme-states-*`, `scheme-comment-*`, `scheme-edit-*` (focus, selection, collapse, a blank, the comment box, an edit box). The cm6 ones are made by `e2e/scheme-look.e2e.ts` (part of the suite, 3 tests).
+
+What was done (all CSS except two lines in the Scheme table and one in the view):
+- `BlockTable.lang` (new, optional): the editor gets the class `blocks-lang-<lang>` (`EditorView.editorAttributes`; the three tables say `scheme`, `javascript`, `python`). All the new rules are under `.blocks-lang-scheme` (about 250 lines at the end of `style.css`). NO shared rule was changed: JavaScript and Python look as before (their screenshots were not retaken; the jsdom and Chromium suites pass).
+- `render.ts` is NOT changed. The existing editor's DOM is a column (strip, then arguments); ours is the same for calls. For definitions and lambda, which here have the keyword, the name slot and the value slot as siblings, the strip is made with a CSS grid
+  (`1fr auto auto 1fr`, the black band is a background gradient behind the first row, `define (` / `)` / `λ (` are pseudo-elements; the keyword text `lambda` stays in the DOM because the tree's positions need it: the strip shows `λ` by `font-size: 0` and `::before`).
+  `(define (f x) ...)` here has a call block in its name slot: it is drawn flat (no frame, no strip) as the existing editor's name + parameter list; `:has()` tells it from `(define x ...)`. cond is a flex column of clauses (the existing editor's table);
+  the else row is told by `[aria-label="symbol else"]` (a hack: it works because the label says it; judgement: a node attribute would be cleaner). `if` is a column: test, then, the word `else`, else, as the existing editor (whose `if` is not a table either: read from its CSS and measured).
+- A new rule in the Scheme table: the symbol `...` is a blank (kind "blank"), drawn gold with a `?` as the existing editor does (it is the exercises' placeholder).
+- Evidence of the match: the sizes of all seven root blocks of the sample, measured in both pages, are IDENTICAL to a tenth of a pixel
+  (existing / here: 84.4x48, 194x82, 274x191.8, 167x210, 285.4x48, 35x48, 392x112), and crops of the states look the same by eye (judgement: the pictures, not a pixel diff).
+
+Visible differences that remain (all seen in the pictures):
+- A comment is a block of its own here (dark, italic) AND marks the block it goes with; the existing editor draws only the balloon and a box on focus. Cannot change without hiding a block that can be focused (judgement: left).
+- The balloon's box sits about 4 px lower than the existing one's; spacing of `define (` / `λ (` differs by a pixel or two (letter widths of pseudo-elements).
+- `(lambda (n) ...)`: the parameter list is the first parameter as the call's "function" here, so `λ ( n [gap] )` has its dotted target after `n`, the existing one before and after.
+- Drop targets between the clauses of a cond: the existing editor draws none; here a zero-height strip that opens on hover or while dragging (needed to drop there).
+- Page chrome (the existing page's toolbar of primitives, line numbers, trash can, the page header) is not part of the editor here. The editor's own frame is the demo page's.
+- Hover / drag colours were copied (lightblue, white on hover) but not compared in pictures.
+- A character literal is black in both (the existing CSS says `-char`, its class is `-character`: a bug there, copied on purpose).
+- NOT a look difference but found here: the published grammar `cm6-lezer-scheme-common-lang` reads `*`, `/` or `#` followed (even after a space) by a parenthesised list as a TAGGED list, so `(* (- 1 2) (+ 9 8))` is a call whose function is the call `(* - 1 2)` (see the large picture).
+  The text and the edit paths stay right (blocks are ranges), but the blocks are wrong; the fix belongs in the grammar (a tag must touch its bracket). Not worked around.
