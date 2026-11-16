@@ -117,7 +117,7 @@
 
 /* ---- dragging a block (interact.ts) ---- */
 .blocks-dragging { cursor: grabbing; user-select: none; }
-.blocks-dragging .blocks-gap { width: 12px; }
+.blocks-dragging .blocks-gap { width: 12px; transition: none; } /* (no animation: where a gap is must not change while the pointer travels to it) */
 .blocks-dragging .blocks-block > .blocks-args > .blocks-gap,
 .blocks-dragging .blocks-body > .blocks-args > .blocks-gap { width: auto; height: 8px; }
 .blocks-drag-source { opacity: 0.5; }
@@ -488,3 +488,29 @@
 }
 .blocks-lang-scheme .blocks-node.blocks-comment .blocks-literal-other { color: inherit; }
 .blocks-lang-scheme .blocks-node.blocks-comment:focus { outline: 2px solid orange; border: 1px solid #333; }
+
+/* ---- the help dialog (Shift-Ctrl-/): the list of keys, made from keys.ts ---- */
+.blocks-help {
+  position: fixed;
+  z-index: 1000;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(90vw, 640px);
+  max-height: 80vh;
+  overflow: auto;
+  background: #000;
+  color: #fff;
+  border: 3px double #fff;
+  border-radius: 30px;
+  padding: 20px;
+  font: 14px/20px sans-serif;
+  text-align: center;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+}
+.blocks-help h2 { margin: 0 0 10px; font-size: larger; font-weight: 900; }
+.blocks-help table { margin: 0 auto; border-collapse: collapse; text-align: left; }
+.blocks-help td { padding: 3px 12px; vertical-align: top; }
+.blocks-help kbd { font-family: monospace; border: 1px solid #aaa; border-radius: 4px; padding: 0 5px; }
+.blocks-help kbd + kbd { margin-left: 10px; }
+.blocks-help .closeDialog { display: block; margin: 20px auto 0; width: 150px; background: #000; color: #fff; border: 3px double #fff; font-size: 18px; cursor: pointer; }

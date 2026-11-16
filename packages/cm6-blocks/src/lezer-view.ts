@@ -42,6 +42,8 @@ export interface LezerOptions {
   reconcile?: boolean;
   /** inside a touched root, take old nodes over without building them where the change is not near (the fifth round); false builds the whole root and compares it (for measuring) */
   anchors?: boolean;
+  /** Shift-Tab on a block calls this (the old editor moves the focus to its toolbar); without it the key does what the browser does */
+  focusToolbar?: () => void;
 }
 
 export interface LezerStats {
@@ -94,6 +96,8 @@ export interface LezerBlockEditor {
   beginTemplateDrag(e: PointerEvent, name: string): void;
   /** edit a leaf in place (its box); `typed` starts the text with that key */
   edit(node: BNode, typed?: string): void;
+  /** put the focus back in the editor, after a trip to the toolbar: on the block that had it last, else the first one */
+  focusEditor(): void;
   /** the block that had focus last (it may have lost it to a toolbar), if it is still in the tree */
   lastFocused(): BNode | null;
   /** insert source text `snippet` as element `index` of a list slot (a text change, one undo step) */
@@ -810,7 +814,21 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   region.setAttribute("aria-atomic", "true");
   parent.appendChild(region);
   let sayTimer: ReturnType<typeof setTimeout> | undefined;
+  /** an announcement that waits, and goes if anything else is said or the focus moves first ("Use enter to edit" 1.25 s after a literal got focus) */
+  let queued: ReturnType<typeof setTimeout> | undefined;
+  const unqueue = (): void => {
+    if (queued) clearTimeout(queued);
+    queued = undefined;
+  };
+  function sayLater(text: string, ms: number): void {
+    unqueue();
+    queued = setTimeout(() => {
+      queued = undefined;
+      say(text);
+    }, ms);
+  }
   function say(text: string): void {
+    unqueue();
     said.push(text);
     if (said.length > 50) said.shift();
     region.textContent = "";
@@ -819,6 +837,38 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     sayTimer = setTimeout(() => {
       region.textContent = text;
     }, 50);
+  }
+
+  const done: string[] = [];
+  const undone: string[] = [];
+  /** the words of an edit, as the old editor says them: "inserted x", "changed x", "deleted x" (one for each change, joined by "and") */
+  function describeChange(t: Transaction, before: EditorState): string {
+    const out: string[] = [];
+    const short = (x: string): string => {
+      const w = x.replace(/\s+/g, " ").replace(/^[,;\s]+|[,;\s]+$/g, "");
+      return w.length > 40 ? w.slice(0, 39) + "..." : w;
+    };
+    t.changes.iterChanges((fa, ta, _fb, _tb, ins) => {
+      const gone = before.doc.sliceString(fa, ta);
+      const put = ins.toString();
+      if (!short(put)) out.push(`deleted ${short(gone)}`);
+      else out.push(`${short(gone) ? "changed" : "inserted"} ${short(put)}`);
+    });
+    return out.slice(0, 3).join(" and ");
+  }
+  /** the first time the program is drawn as blocks: what is at its top level ("At the top level, this program contains 2 definitions and 1 call.") */
+  let summarized = false;
+  function summarize(): void {
+    if (summarized || !rootsSlot.nodes.length) return;
+    summarized = true;
+    const counts = new Map<string, number>();
+    for (const r of rootsSlot.nodes) {
+      const label = (r.kind === "error" ? "unparsed text" : table.nodes[keyOfNode(r) ?? ""]?.label) ?? r.kind;
+      counts.set(label, (counts.get(label) ?? 0) + 1);
+    }
+    const parts = [...counts].map(([l, n]) => `${n} ${n === 1 ? l : /(s|x|sh|ch)$/.test(l) ? l + "es" : l + "s"}`);
+    const list = parts.length > 2 ? parts.slice(0, -1).join(", ") + ", and " + parts[parts.length - 1] : parts.join(" and ");
+    say(`At the top level, this program contains ${list}.`);
   }
 
   const ed: LezerBlockEditor = {
@@ -893,6 +943,10 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     beginTemplateDrag: (e, name) => interaction.beginTemplateDrag(e, name),
     edit: (node, typed) => interaction.edit(node, typed),
     lastFocused: () => (lastNode && doc.byId.get(lastNode.id) === lastNode ? lastNode : null),
+    focusEditor() {
+      const n = ed.lastFocused() ?? rootsSlot.nodes.find((r) => r.kind !== "error") ?? null;
+      if (n) ed.focusNode(n);
+    },
     removeNode(node) {
       ed.removeNodes([node]);
     },
@@ -1125,12 +1179,17 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     setBlockMode(on) {
       if (blockMode === on) return;
       blockMode = on;
+      done.length = 0;
+      undone.length = 0;
       view.dispatch({ effects: compartment.reconfigure(on ? blockExtension : []) });
+      sayLater(`${on ? "Block" : "Text"} Mode Enabled`, 500);
+      if (on) summarize();
     },
     stats: () => ({ ...stats }),
     destroy() {
       gone = true;
       if (sayTimer) clearTimeout(sayTimer);
+      unqueue();
       region.remove();
       interaction.detach();
       view.destroy();
@@ -1145,7 +1204,25 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     }),
     dispatchTransactions(trs, v) {
       const snap = trs.some((t) => t.docChanged) ? takeSnapshot() : null;
+      const before = v.state;
       v.update(trs);
+      // what undo and redo say they undid or redid: the words of the edit ("changed 22"), kept in two stacks in step with the history
+      if (blockMode)
+        for (const t of trs) {
+          if (!t.docChanged) continue;
+          if (t.isUserEvent("undo")) {
+            const d = done.pop();
+            if (d !== undefined) undone.push(d);
+            say(d ? `UNDID: ${d}` : "UNDID");
+          } else if (t.isUserEvent("redo")) {
+            const d = undone.pop();
+            if (d !== undefined) done.push(d);
+            say(d ? `REDID: ${d}` : "REDID");
+          } else if (t.isUserEvent("input.block")) {
+            done.push(describeChange(t, before));
+            undone.length = 0;
+          }
+        }
       // a selected block that left the tree leaves the selection (the renderer forgets most of them; this is the net under it)
       if (trs.some((t) => t.docChanged)) for (const n of renderer.selected()) if (doc.byId.get(n.id) !== n) renderer.setSelected(n, false);
       if (trs.some((t) => t.docChanged)) renderer.refreshComments();
@@ -1171,7 +1248,11 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   view.dom.addEventListener("focusin", (e) => {
     const n = renderer.nodeOf(e.target as Element);
     if (n) lastNode = n;
+    unqueue();
+    // the old editor: a block that can be edited in place says so, after a moment, unless something else is said or the focus moves
+    if (n && blockMode && n.slots.length === 0 && (n.kind === "literal" || n.kind === "blank") && !renderer.isCollapsed(n) && !(e.target as Element).closest(".blocks-edit")) sayLater("Use enter to edit", 1250);
   });
+  summarize();
   internals.set(ed, { field, blockMode: () => blockMode });
   return ed;
 }

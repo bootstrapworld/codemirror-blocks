@@ -79,7 +79,7 @@ function show(text: string, reconcile = true, anchors = true): void {
   ed?.destroy();
   $("editor").textContent = "";
   const t0 = performance.now();
-  ed = createLezerBlockEditor($("editor"), text, { ...LANGS[lang].opts, reconcile, anchors });
+  ed = createLezerBlockEditor($("editor"), text, { ...LANGS[lang].opts, reconcile, anchors, focusToolbar: () => ($("templates").querySelector("button") as HTMLElement | null)?.focus() });
   ed.setBlockMode($<HTMLInputElement>("blocks").checked);
   const ms = performance.now() - t0;
   const demo = { ed, lang, createMs: ms, firstDrawMs: -1, paintedMs: -1, setLanguage, show, loadBig, loadSample, undo: () => undo(ed!.view), redo: () => redo(ed!.view), check: () => checkLezerEditor(ed!) };
@@ -102,6 +102,15 @@ function show(text: string, reconcile = true, anchors = true): void {
     b.addEventListener("click", () => ed!.insertTemplate(t.name, ed!.focusedNode() ?? ed!.lastFocused()));
     bar.appendChild(b);
   }
+  // Tab from the last button goes back into the editor, to the block that had the focus
+  if (!bar.dataset.tabs) bar.addEventListener("keydown", (e) => {
+    const last = bar.querySelector("button:last-of-type");
+    if (e.key === "Tab" && !e.shiftKey && e.target === last) {
+      e.preventDefault();
+      ed!.focusEditor();
+    }
+  });
+  bar.dataset.tabs = "1";
   stats();
 }
 

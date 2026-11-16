@@ -75,6 +75,7 @@ for (const lang of Object.keys(SMALL)) {
       await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
       await page.mouse.down();
       await page.mouse.move(box.x + box.width / 2 + 12, box.y + box.height / 2 + 3, { steps: 3 });
+      await page.waitForSelector(".blocks-dragging"); // (the gaps widen when the drag starts: measure after that)
       // drop into h(4) after the 4
       const gap = page.locator(`.cm-content .blocks-args[data-slot="args"] > .blocks-gap[data-index="1"]`).last();
       const g = (await gap.boundingBox())!;

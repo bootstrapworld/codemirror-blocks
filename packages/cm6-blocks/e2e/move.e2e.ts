@@ -52,7 +52,7 @@ for (const lang of Object.keys(SMALL)) {
       await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
       await page.mouse.down();
       await page.mouse.move(box.x + box.width / 2 + 12, box.y + box.height / 2 + 3, { steps: 3 });
-      expect(await page.locator(".cm-editor.blocks-dragging, .blocks-dragging").count()).toBeGreaterThan(0);
+      await page.waitForSelector(".blocks-dragging"); // (the gaps widen when the drag starts: measure after that)
       const gap = page.locator(`.cm-content .blocks-args[data-slot="args"] > .blocks-gap[data-index="0"]`).first();
       const g = (await gap.boundingBox())!;
       await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2, { steps: 8 });

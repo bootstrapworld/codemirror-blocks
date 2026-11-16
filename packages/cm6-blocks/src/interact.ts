@@ -24,6 +24,8 @@ import { redo, undo } from "@codemirror/commands";
 import { EditorView } from "@codemirror/view";
 import type { LezerBlockEditor } from "./lezer-view";
 import { plainComment } from "./render";
+import { Command, commandOf } from "./keys";
+import { Help, openHelp } from "./help";
 import type { BNode, Slot } from "./types";
 
 const kids = (n: BNode): BNode[] => n.slots.flatMap((s) => s.nodes);
@@ -171,7 +173,10 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       (t) => {
         if (t === (node.value ?? "") ) return;
         if (t.trim() === "") ed.removeNode(node);
-        else ed.replaceText(node, t);
+        else {
+          ed.replaceText(node, t);
+          ed.say(`changed ${t}`);
+        }
       },
       typed === undefined
     );
@@ -204,6 +209,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
         const tail = (view.state.doc.sliceString(node.from, node.to).match(/\s*$/) as RegExpMatchArray)[0];
         try {
           ed.replaceText(node, v.replace(/\n/g, "\n" + indent) + tail);
+          ed.say(`changed ${v.replace(/\s+/g, " ")}`);
         } catch (err) {
           ed.lastError = (err as Error).message;
         }
@@ -247,6 +253,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       if (t.trim() === "") return;
       try {
         ed.insertText(slot, index, t);
+        ed.say(`inserted ${t}`);
       } catch (e) {
         ed.lastError = (e as Error).message;
       }
@@ -269,108 +276,142 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     });
   }
 
-  function onKey(e: KeyboardEvent): void {
-    const t = e.target as Element;
-    if (t.closest?.(".blocks-edit")) return;
-    const node = renderer.nodeOf(t);
-    if (!node) return;
-    const mod = e.ctrlKey || e.metaKey;
-    const handled = (): void => {
-      e.preventDefault();
-      e.stopPropagation();
-    };
-    const k = e.key;
-    if (k === "Escape" || (e.altKey && !mod && e.code === "KeyQ")) {
+  type Handler = (node: BNode, e: KeyboardEvent, handled: () => void) => void;
+  let help: Help | null = null;
+  /** one handler for each command of the key table (keys.ts): a command without one does not compile */
+  const run: Record<Command, Handler> = {
+    clearSelection: (_n, _e, handled) => {
       handled();
       ed.clearSelection();
-      return;
-    }
-    if (e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey && (e.code === "BracketRight" || k === "}" || k === "]")) {
+    },
+    editComment: (n, _e, handled) => {
       handled();
-      editComment(node);
-      return;
-    }
-    if (!mod && e.shiftKey && (k === "ArrowLeft" || k === "ArrowRight")) {
-      // collapse / expand: all blocks (Shift), or the current root (Shift-Alt); focus goes to the root
+      editComment(n);
+    },
+    help: (n, _e, handled) => {
       handled();
-      const root = rootsOf(node);
-      if (e.altKey) ed.collapseRoot(root, k === "ArrowLeft");
-      else ed.collapseAll(k === "ArrowLeft");
-      focusSoon(root);
-      return;
-    }
-    if (mod && !e.altKey) {
-      if (k === "v" || k === "V") pasteBefore = e.shiftKey; // the paste event that follows is a paste before
-      if (k === "Enter" && (isMac() ? e.metaKey && !e.ctrlKey : e.ctrlKey)) {
-        handled();
-        editAll(node);
-      } else if (k === "z" || k === "Z") {
-        handled();
-        if (e.shiftKey) redo(view);
-        else undo(view);
-      } else if (k === "y") {
-        handled();
-        redo(view);
-      } else if (k === "]" || k === "[") {
-        handled();
-        siblingBox(node, k === "]");
-      }
-      return;
-    }
-    if (e.altKey) return;
-    if (e.shiftKey) {
-      if (k === "<" || k === ",") {
-        handled();
-        const r = rootsOf(node);
-        if (r !== node) focusSoon(r);
-      } else if (k === "|" || k === "\\") {
-        handled();
-        const c = kids(node).map((n) => ed.language.describe(n));
-        ed.say(c.length ? c.join(", ") : "no children");
-      }
-      return;
-    }
-    if (k === " ") {
+      if (help) return;
+      const back = n;
+      help = openHelp(view.dom.parentElement ?? view.dom, isMac(), () => {
+        help = null;
+        ed.focusNode(back);
+      });
+    },
+    // the old editor's "Shift Focus": the focus goes to the toolbar (Tab from there comes back: the page's toolbar calls `focusEditor`)
+    focusToolbar: (_n, _e, handled) => {
+      if (!ed.options.focusToolbar) return;
       handled();
-      if (ed.toggleSelect(node) === "refused") beep();
-    } else if (k === "\\") {
+      ed.options.focusToolbar();
+    },
+    // collapse / expand: all blocks, or the current root and what is in it; focus goes to the root
+    collapseAll: (n, _e, handled) => {
       handled();
-      const parts = [ed.language.describe(node)];
-      for (let p = node.parent; p && p.kind !== "program"; p = p.parent) parts.push(ed.language.describe(p) + ", at level " + level(p));
+      ed.collapseAll(true);
+      focusSoon(rootsOf(n));
+    },
+    expandAll: (n, _e, handled) => {
+      handled();
+      ed.collapseAll(false);
+      focusSoon(rootsOf(n));
+    },
+    collapseRoot: (n, _e, handled) => {
+      handled();
+      ed.collapseRoot(rootsOf(n), true);
+      focusSoon(rootsOf(n));
+    },
+    expandRoot: (n, _e, handled) => {
+      handled();
+      ed.collapseRoot(rootsOf(n), false);
+      focusSoon(rootsOf(n));
+    },
+    editAll: (n, _e, handled) => {
+      handled();
+      editAll(n);
+    },
+    undo: (_n, _e, handled) => {
+      handled();
+      undo(view);
+    },
+    redo: (_n, _e, handled) => {
+      handled();
+      redo(view);
+    },
+    // (the paste event that follows is a paste before, or after: the browser makes the event)
+    pasteBefore: () => {
+      pasteBefore = true;
+    },
+    paste: () => {
+      pasteBefore = false;
+    },
+    copy: () => undefined,
+    cut: () => undefined,
+    insertBefore: (n, _e, handled) => {
+      handled();
+      siblingBox(n, false);
+    },
+    insertAfter: (n, _e, handled) => {
+      handled();
+      siblingBox(n, true);
+    },
+    jumpToRoot: (n, _e, handled) => {
+      handled();
+      const r = rootsOf(n);
+      if (r !== n) focusSoon(r);
+    },
+    readChildren: (n, _e, handled) => {
+      handled();
+      const c = kids(n).map((k) => ed.language.describe(k));
+      ed.say(c.length ? c.join(", ") : "no children");
+    },
+    toggleSelection: (n, _e, handled) => {
+      handled();
+      if (ed.toggleSelect(n) === "refused") beep();
+    },
+    readAncestors: (n, _e, handled) => {
+      handled();
+      const parts = [ed.language.describe(n)];
+      for (let p = n.parent; p && p.kind !== "program"; p = p.parent) parts.push(ed.language.describe(p) + ", at level " + level(p));
       if (parts.length > 1) ed.say(parts.join(", inside "));
       else beep();
-    } else if (k === "Home") {
+    },
+    first: (_n, _e, handled) => {
       handled();
       const f = ed.roots().find(drawable);
       if (f) focusSoon(f);
-    } else if (k === "End") {
+    },
+    last: (_n, _e, handled) => {
       handled();
       const l = lastBlock(ed.roots(), isClosed);
       if (l) focusSoon(l);
-    } else if (k === "ArrowDown") {
+    },
+    next: (n, _e, handled) => {
       handled();
-      const n = nextBlock(node, isClosed);
-      if (n) focusSoon(n);
-    } else if (k === "ArrowUp") {
+      const x = nextBlock(n, isClosed);
+      if (x) focusSoon(x);
+    },
+    previous: (n, _e, handled) => {
       handled();
-      const n = prevBlock(node, isClosed);
-      if (n) focusSoon(n);
-    } else if (k === "ArrowRight") {
+      const x = prevBlock(n, isClosed);
+      if (x) focusSoon(x);
+    },
+    expandOrChild: (n, _e, handled) => {
       handled();
-      if (renderer.isCollapsed(node)) ed.collapse(node, false);
+      if (renderer.isCollapsed(n)) ed.collapse(n, false);
       else {
-        const c = kids(node)[0];
+        const c = kids(n)[0];
         if (c) focusSoon(c);
       }
-    } else if (k === "ArrowLeft") {
+    },
+    collapseOrParent: (n, _e, handled) => {
       handled();
-      if (node.slots.length > 0 && !renderer.isCollapsed(node)) ed.collapse(node, true);
-      else if (node.parent && node.parent.kind !== "program") focusSoon(node.parent);
-    } else if (k === "Delete" || k === "Backspace") {
+      if (n.slots.length > 0 && !renderer.isCollapsed(n)) ed.collapse(n, true);
+      else if (n.parent && n.parent.kind !== "program") focusSoon(n.parent);
+    },
+    delete: (_n, _e, handled) => {
       handled();
       const sel = ed.selectedBlocks();
       if (sel.length) {
-        ed.say("deleted " + sel.map((n) => ed.language.describe(n)).join(" and "));
+        ed.say("deleted " + sel.map((x) => ed.language.describe(x)).join(" and "));
         ed.clearSelection();
         ed.removeNodes(sel);
       } else {
@@ -378,15 +419,30 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
         ed.say("Nothing selected");
         beep();
       }
-    } else if (k === "Enter") {
+    },
+    enter: (n, _e, handled) => {
       handled();
-      if (node.slots.length === 0) editLeaf(node);
-      else ed.collapse(node, !renderer.isCollapsed(node)); // (the old editor: Enter on a compound block collapses or expands it)
-    } else if (k.length === 1 && node.slots.length === 0 && node.value === (ed.options.table.blank ?? "...")) {
-      // typing into a hole replaces it
+      if (n.slots.length === 0) editLeaf(n);
+      else ed.collapse(n, !renderer.isCollapsed(n)); // (the old editor: Enter on a compound block collapses or expands it)
+    },
+    typeIntoHole: (n, e, handled) => {
+      if (n.slots.length !== 0 || n.value !== (ed.options.table.blank ?? "...")) return;
       handled();
-      editLeaf(node, k);
-    }
+      editLeaf(n, e.key);
+    },
+  };
+
+  function onKey(e: KeyboardEvent): void {
+    const t = e.target as Element;
+    if (t.closest?.(".blocks-edit")) return;
+    const node = renderer.nodeOf(t);
+    if (!node) return;
+    const cmd = commandOf(e, isMac());
+    if (!cmd) return;
+    run[cmd](node, e, () => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
   }
 
   /** a short sound is the old editor's way to say "no": here, only the words said already */
@@ -444,6 +500,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       ed.clearSelection();
     } catch (err) {
       ed.lastError = (err as Error).message;
+      ed.say(`Cannot paste ${before ? "before" : "after"} this node.`);
     }
   }
   const onCopyEv = (e: Event) => onCopy(e as ClipboardEvent, false);

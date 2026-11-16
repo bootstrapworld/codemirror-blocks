@@ -38,6 +38,7 @@ function clipboardEvent(type: string, data: { v: string }): Event {
 describe.each(LANGS)("selection: %s", (l) => {
   test("every block says aria-selected=false, the tree is multiselectable; Space toggles aria-selected and the class", () => {
     const ed = make(l);
+    const said0 = [...ed.said]; // (the summary of the program, said when it was first drawn)
     expect(ed.view.contentDOM.getAttribute("aria-multiselectable")).toBe("true");
     const els = Array.from(ed.view.dom.querySelectorAll(".blocks-node"));
     expect(els.length).toBeGreaterThan(8);
@@ -47,7 +48,7 @@ describe.each(LANGS)("selection: %s", (l) => {
     expect(sel(ed, two)).toBe("true");
     expect(ed.renderer.element(two).classList.contains("blocks-selected")).toBe(true);
     expect(ed.selectedBlocks()).toEqual([two]);
-    expect(ed.said).toEqual([]); // (like the old editor: the state is announced through aria-selected, nothing is said)
+    expect(ed.said).toEqual(said0); // (like the old editor: the state is announced through aria-selected, nothing is said)
     ok(ed);
     space(ed, two);
     expect(sel(ed, two)).toBe("false");
