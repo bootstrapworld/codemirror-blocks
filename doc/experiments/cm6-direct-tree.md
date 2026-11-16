@@ -980,7 +980,7 @@ Still not expressible, or only as text (each listed with what it would need):
   detached element, so a stray `<input>` showed up later and the page differed from a fresh drawing. Reduced to a
   600-line test (`spec/templates.test.ts`, "a template inserted outside the viewport leaves no edit box behind"; it
   fails without the one-line fix in `interact.ts`).
-- No other failure: 0 of 130 files and 3,500 edits in the final run (plus the earlier baseline run, which had the 2
+- No other failure: 0 of 182 files and 3,640 edits in the final run (plus the earlier baseline run, which had the 2
   failures above). The earlier fuzzers (60 seeds x 25 steps per language) still pass with the grown tables.
 - Real programs also made two table changes necessary for the oracle's sake: the test that picks a list slot in
   `lezer-view.test.ts` now skips the new flat `rest` lists; two inline snapshots changed (binary expressions and
@@ -993,9 +993,8 @@ Still not expressible, or only as text (each listed with what it would need):
   109,843 bytes gzipped. By package: @codemirror/view 152 KB, state 47 KB, our own code 28 KB, @lezer/lr 27 KB,
   @codemirror/commands 23 KB, @lezer/common 20 KB, @codemirror/language 16 KB, the Scheme grammar 8 KB.
   The estimate in round one ("Scheme alone about 200 KB") was wrong: CodeMirror 6's view alone is about half the bundle.
-  Growth of the tables and adapter: +23 KB over round two for the three-language build (+6 KB of it ours: the rest are
-  the grammar tables inside the language packages' bundles being unchanged, so about 23 KB is our rows, glue, templates,
-  describe strings and adapter).
+  Growth over round two for the three-language build: +22.7 KB (rows, glue, templates, describe strings, adapter and the
+  edit-box and comment code of the earlier rounds; the grammar packages are unchanged).
 
 
 ### Revised answer: does a language reduce to a table and a handful of rules?
@@ -1007,7 +1006,7 @@ Evidence (the numbers above):
   Coverage grew from about 50 percent to 98 percent for JavaScript and 76 to 98 for Python while the tables grew
   about 1.7 times; the growth was steady, one row at a time, with no step that needed a redesign until the last
   few percent.
-- Correctness did not depend on the language: the oracle found 0 failures in 3,500 random edits on 130 real files
+- Correctness did not depend on the language: the oracle found 0 failures in 3,640 random edits on 182 real files
   across the final tables (and one failure, in generic code, on the way).
 - Time is linear and small (13 to 19 ms per 1000 lines to parse and build in node), except that the one-root-per-class
   shape makes a single edit rebuild a whole class (about 108 ms in jsdom for 2,000 nodes).
