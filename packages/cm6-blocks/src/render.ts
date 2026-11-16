@@ -119,6 +119,12 @@ export class Renderer {
     }
   }
 
+  /** the spoken label of a drawn node, after what is inside it changed */
+  refresh(node: BNode): void {
+    const el = this.els.get(node);
+    if (el) this.setAttr(el, "aria-label", this.language.describe(node));
+  }
+
   /** aria-setsize / aria-posinset of every drawn node of a slot (after nodes were added or removed around them) */
   renumberSlot(slot: Slot): void {
     this.renumber(slot, 0);

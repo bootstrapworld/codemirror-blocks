@@ -32,11 +32,14 @@ import { Renderer } from "./render";
 import { RootWidget } from "./view";
 import { attachInteraction } from "./interact";
 import { makeNode } from "./node";
+import { compatible, reconcile, ReconcileEnv } from "./reconcile";
 import type { BNode, Doc, Slot, TextChange } from "./types";
 
 export interface LezerOptions {
   parser: Parser;
   table: BlockTable;
+  /** lay a touched root over its old nodes (reconcile.ts); false rebuilds it whole, as before the fourth round (for measuring) */
+  reconcile?: boolean;
 }
 
 export interface LezerStats {
@@ -46,7 +49,12 @@ export interface LezerStats {
   focusRestores: number;
   rootsKept: number;
   rootsRebuilt: number;
+  /** touched roots whose old nodes were kept and changed in place (node-level reuse) */
+  rootsReconciled: number;
+  /** nodes that are new in the tree: built for a rebuilt root, or inserted / replaced inside a reconciled one */
   nodesRebuilt: number;
+  /** nodes of reconciled roots compared with their old counterparts */
+  nodesCompared: number;
   /** nodes in the largest root rebuilt so far */
   maxRootNodes: number;
   /** time spent in the field update, in ms: reparse; and the rest (matching, building, positions, decorations) */
@@ -118,7 +126,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   const renderer = new Renderer(language);
   const stats: LezerStats = {
     edits: 0, reparses: 0, widgetsBuilt: 0, focusRestores: 0,
-    rootsKept: 0, rootsRebuilt: 0, nodesRebuilt: 0, maxRootNodes: 0, parseMs: 0, restMs: 0,
+    rootsKept: 0, rootsRebuilt: 0, rootsReconciled: 0, nodesRebuilt: 0, nodesCompared: 0, maxRootNodes: 0, parseMs: 0, restMs: 0,
   };
   const counters = stats as unknown as { ops: number; reparses: number; widgetsBuilt: number; focusRestores: number };
   const program = makeNode("program", [["roots", "list"]], { from: 0, to: text.length });
@@ -185,11 +193,11 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         const last = lo - 1;
         for (let k = Math.max(0, first - 1); k <= Math.min(rs.length - 1, last + 1); k++) affected.add(k);
       }
-      const old = new Map<number, { node: BNode; to: number; touched: boolean }>();
+      const old = new Map<number, { node: BNode; to: number; touched: boolean; from0: number; to0: number }>();
       rs.forEach((r, k) => {
         const from = tr.changes.mapPos(r.from, 1);
         const to = tr.changes.mapPos(r.to, -1);
-        if (to > from) old.set(from, { node: r, to, touched: affected.has(k) });
+        if (to > from) old.set(from, { node: r, to, touched: affected.has(k), from0: r.from, to0: r.to });
       });
       const kept = new Set<BNode>();
       const roots = language.fromTree(tree, s, (from, to, key) => {
@@ -198,7 +206,26 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         kept.add(o.node);
         return o.node;
       });
-      const dropped = v.roots.filter((r) => !kept.has(r));
+      // touched roots: the old nodes are kept as far as they are the same (reconcile.ts)
+      const env: ReconcileEnv = {
+        apply: (c) => renderer.apply(c),
+        refresh: (n) => renderer.refresh(n),
+        added: (n) => walk(n, (m) => { doc.byId.set(m.id, m); stats.nodesRebuilt++; }),
+        removed: (n) => walk(n, (m) => doc.byId.delete(m.id)),
+      };
+      const reconciled = new Map<BNode, { from0: number; to0: number }>();
+      for (let i = 0; i < roots.length; i++) {
+        const r = roots[i];
+        if (kept.has(r)) continue;
+        const o = old.get(r.from);
+        if (options.reconcile === false || !o || reconciled.has(o.node) || o.node.kind === "error" || r.kind === "error" || !compatible(o.node, r)) continue;
+        stats.nodesCompared += count(r);
+        reconcile(o.node, r, env);
+        reconciled.set(o.node, { from0: o.from0, to0: o.to0 });
+        roots[i] = o.node;
+        stats.rootsReconciled++;
+      }
+      const dropped = v.roots.filter((r) => !kept.has(r) && !reconciled.has(r));
       for (const r of dropped) {
         renderer.forget(r);
         walk(r, (n) => doc.byId.delete(n.id));
@@ -209,7 +236,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
           const d = tr.changes.mapPos(r.from, 1) - r.from;
           if (d !== 0) shiftTree(r, d);
           stats.rootsKept++;
-        } else {
+        } else if (!reconciled.has(r)) {
           fresh.push(r);
           const c = count(r);
           stats.rootsRebuilt++;
@@ -224,13 +251,21 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       let decos = v.decos.map(tr.changes);
       const drop = new Set(dropped.filter(drawn));
       const add = fresh.filter(drawn).map((r) => decoFor(r).range(r.from, r.to));
+      let lo = Infinity;
+      let hi = -Infinity;
+      for (const r of drop) {
+        lo = Math.min(lo, tr.changes.mapPos(r.from, -1));
+        hi = Math.max(hi, tr.changes.mapPos(r.to, 1));
+      }
+      // a reconciled root keeps its widget, unless its range is no longer what the mapped decoration has
+      for (const [r, p] of reconciled) {
+        if (!drawn(r) || (tr.changes.mapPos(p.from0, 1) === r.from && tr.changes.mapPos(p.to0, -1) === r.to)) continue;
+        drop.add(r);
+        add.push(decoFor(r).range(r.from, r.to));
+        lo = Math.min(lo, tr.changes.mapPos(p.from0, -1));
+        hi = Math.max(hi, tr.changes.mapPos(p.to0, 1), r.to);
+      }
       if (drop.size || add.length) {
-        let lo = Infinity;
-        let hi = -Infinity;
-        for (const r of drop) {
-          lo = Math.min(lo, tr.changes.mapPos(r.from, -1));
-          hi = Math.max(hi, tr.changes.mapPos(r.to, 1));
-        }
         decos = decos.update({
           add,
           sort: true,
@@ -485,6 +520,20 @@ export const divergences = { count: 0 };
 
 const FIELDS = ["kind", "from", "to", "value", "dataType", "keyword", "keywordTo", "brackets"] as const;
 
+/** where two DOM trees first differ, as a short description (for the checker's message) */
+function domDiff(live: Element, fresh: Element, path = ""): string {
+  const here = `${path}/${live.className.toString().split(" ").slice(0, 2).join(".")}`;
+  const names = new Set([...live.getAttributeNames(), ...fresh.getAttributeNames()]);
+  for (const a of names) if (live.getAttribute(a) !== fresh.getAttribute(a)) return `${here} @${a}: live ${live.getAttribute(a)}, fresh ${fresh.getAttribute(a)}`;
+  if (live.children.length !== fresh.children.length) return `${here}: ${live.children.length} children, fresh ${fresh.children.length}`;
+  if (live.children.length === 0 && live.textContent !== fresh.textContent) return `${here}: text ${live.textContent}, fresh ${fresh.textContent}`;
+  for (let i = 0; i < live.children.length; i++) {
+    const d = domDiff(live.children[i], fresh.children[i], `${here}[${i}]`);
+    if (d) return d;
+  }
+  return "";
+}
+
 /**
  * The live block tree equals a fresh parse of the text (kinds, slots, values,
  * ranges); links and byId are right; decorations match the roots; the live DOM
@@ -574,7 +623,7 @@ export function checkLezerEditor(ed: LezerBlockEditor): string[] {
     const el = ed.renderer.element(r);
     if (on && r.from >= vp.from && r.to <= vp.to && !el.isConnected) say(`root ${r.id} is in the viewport and its element is not in the document`);
     if (!freshR) freshR = new Renderer(ed.language);
-    if (!freshR.element(r).isEqualNode(el)) say(`root ${r.id}: its DOM is not what a fresh drawing gives`);
+    if (!freshR.element(r).isEqualNode(el)) say(`root ${r.id}: its DOM is not what a fresh drawing gives (${domDiff(el, freshR.element(r))})`);
   }
   return problems;
 }

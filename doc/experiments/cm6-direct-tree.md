@@ -1068,3 +1068,22 @@ look at. For scale (measured): CodeMirror 5's `lib/codemirror.js` minified with 
 (58,029 gz): so "CM5 + the old editor" is roughly 574 KB (React) / 389 KB (Preact), against 467 KB for ours with
 everything and 334 KB Scheme-only (a, c with CM6 included). The old figures are the owner's, summed with my CM5
 measurement; the sum is a judgement, not a build.
+
+### 2. Node-level reuse (work in progress, 2026-11-16)
+
+- Code: `src/reconcile.ts` (about 120 lines), `adoptMeta` in lezer.ts (8), `Renderer.refresh` (5), about 60 lines in the
+  field update of lezer-view.ts, an option `reconcile: false` that restores the old rebuild-the-root path (to measure both).
+- The rule (the safe one, as it came out): a touched root (a change in it or in a neighbour) is still built whole from the new
+  Lezer tree, as before (cheap: no DOM). Then the new tree is laid over the old one, node by node: the old `BNode` is KEPT
+  where the table row, the kind, the keyword, the glue words, the slot shapes and (for a leaf) the value and data type agree;
+  it is then given ALL the fields of the new node (range, `brackets`, source text, error flag), so the result is the fresh
+  tree by construction, whatever Lezer's error recovery or Python's dedents did. Where they disagree the old node is replaced
+  by the new one. In a list, the common prefix and suffix of nodes with the same shape AND the same source text are paired
+  first; the middle is paired by position (so a typed edit in one child recurses into it) and the rest is inserted or
+  removed. Each insert / remove / replace is a `TreeChange` that the renderer patches, one at a time. Nothing is assumed from
+  "the range and text did not change", which is what the earlier rounds found unsafe.
+- One thing the first run caught (fuzzer, 60 seeds): the glue word of a LIST slot (`=` of a `let x = ...`) is drawn only while
+  the list is non-empty, so a list that gains or loses its first element is a different shape: `compatible` says so.
+- Oracle: the fuzzers (3 languages x 60 seeds x 25 steps) pass; the fuzzer now has a second test on the constructs sample
+  (about 30 lines per language, classes, nested bodies). Stale-node tests changed: a node whose owner is edited in place is
+  NOT stale any more, so the tests now make the owner into another thing first.

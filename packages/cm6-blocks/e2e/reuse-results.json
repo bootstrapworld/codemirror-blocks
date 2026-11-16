@@ -1,0 +1,159 @@
+{
+ "round4-after": {
+  "js 618-line class (core.js)": {
+   "lines": 618,
+   "before": {
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 104.44,
+     "nodesRebuiltPerEdit": 2595,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 104.29,
+     "nodesRebuiltPerEdit": 2595,
+     "nodesComparedPerEdit": 0
+    },
+    "biggestRootNodes": 1999,
+    "oracle": true
+   },
+   "after": {
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 5.63,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 2595
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 4.82,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 2595
+    },
+    "biggestRootNodes": 1999,
+    "oracle": true
+   }
+  },
+  "py 4006-line file (__init__.py)": {
+   "lines": 4006,
+   "before": {
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 9.47,
+     "nodesRebuiltPerEdit": 4934,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 3.35,
+     "nodesRebuiltPerEdit": 1463,
+     "nodesComparedPerEdit": 0
+    },
+    "biggestRootNodes": 4864,
+    "oracle": true
+   },
+   "after": {
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 9.96,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 4934
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 3.35,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 1463
+    },
+    "biggestRootNodes": 4864,
+    "oracle": true
+   }
+  },
+  "scheme 3000 lines (constructs sample repeated)": {
+   "lines": 2801,
+   "before": {
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 6.74,
+     "nodesRebuiltPerEdit": 39,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 4.2,
+     "nodesRebuiltPerEdit": 12,
+     "nodesComparedPerEdit": 0
+    },
+    "biggestRootNodes": 14,
+    "oracle": true
+   },
+   "after": {
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 4.84,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 39
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 4.17,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 11
+    },
+    "biggestRootNodes": 14,
+    "oracle": true
+   }
+  },
+  "js 3000 lines (constructs sample repeated)": {
+   "lines": 2925,
+   "before": {
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 4.19,
+     "nodesRebuiltPerEdit": 58,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 1.96,
+     "nodesRebuiltPerEdit": 10,
+     "nodesComparedPerEdit": 0
+    },
+    "biggestRootNodes": 27,
+    "oracle": true
+   },
+   "after": {
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 2.57,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 58
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 1.92,
+     "nodesRebuiltPerEdit": 1,
+     "nodesComparedPerEdit": 9
+    },
+    "biggestRootNodes": 27,
+    "oracle": true
+   }
+  },
+  "py 3000 lines (constructs sample repeated)": {
+   "lines": 2913,
+   "before": {
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 4.69,
+     "nodesRebuiltPerEdit": 69,
+     "nodesComparedPerEdit": 0
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 3.04,
+     "nodesRebuiltPerEdit": 97,
+     "nodesComparedPerEdit": 0
+    },
+    "biggestRootNodes": 27,
+    "oracle": true
+   },
+   "after": {
+    "typedSpaceInBiggestRoot": {
+     "medianMs": 2.56,
+     "nodesRebuiltPerEdit": 0.4,
+     "nodesComparedPerEdit": 69
+    },
+    "typedSpaceInMiddleRoot": {
+     "medianMs": 2.07,
+     "nodesRebuiltPerEdit": 0,
+     "nodesComparedPerEdit": 97
+    },
+    "biggestRootNodes": 30,
+    "oracle": true
+   }
+  }
+ }
+}

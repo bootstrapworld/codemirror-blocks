@@ -17,7 +17,7 @@ describe.each(Object.keys(OPTS))("A1: stale nodes are refused: %s", (l) => {
     const ed = make(l);
     const stale = all(ed).find((n) => n.kind === "literal" && ed.view.state.doc.sliceString(n.from, n.to) === "4")!;
     const slot = stale.slot!;
-    ed.view.dispatch({ changes: { from: 0, insert: "zz\n" } }); // rebuilds the neighbours
+    ed.view.dispatch({ changes: { from: stale.parent!.from, to: stale.parent!.to, insert: "x" } }); // the owner becomes another thing: both nodes are gone
     const before = textOf(ed);
     expect(ed.doc.byId.get(stale.id)).not.toBe(stale);
     expect(() => ed.removeNode(stale)).toThrow(/no longer in the tree/);

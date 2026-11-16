@@ -6,6 +6,7 @@ import { schemeParser, schemeTable } from "../src/lang-scheme";
 import { javascriptParser, javascriptTable } from "../src/lang-javascript";
 import { pythonParser, pythonTable } from "../src/lang-python";
 import type { BNode } from "../src/types";
+import { BIG } from "../demo/samples";
 
 const zeroRect = { x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0, toJSON: () => ({}) };
 if (!Range.prototype.getClientRects) Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
@@ -135,9 +136,10 @@ describe.each(Object.keys(LANGS))("lezer editor: %s", (name) => {
     ok(ed);
     const now = ed.roots();
     const keptCount = now.filter((r) => roots.includes(r)).length;
-    // the edited root and its next neighbour are read again; the rest keep node and element
-    expect(keptCount).toBe(roots.length - 2);
-    expect(els(ed).filter((e) => elements.includes(e)).length).toBe(roots.length - 2);
+    // the edited root and its next neighbour are read again and laid over the old nodes (reconcile.ts); the rest keep node and element untouched
+    expect(keptCount).toBeGreaterThanOrEqual(roots.length - 2);
+    expect(els(ed).filter((e) => elements.includes(e)).length).toBeGreaterThanOrEqual(roots.length - 2);
+    expect(ed.stats().rootsKept).toBe(roots.length - 2);
   });
 
   test("block mode off and on", () => {
@@ -167,9 +169,19 @@ function mulberry32(seed: number): () => number {
 describe("fuzzer", () => {
   test.each(Object.keys(LANGS))("%s: 60 seeds x 25 steps, oracle after each step", (name) => {
     const L = LANGS[name];
-    const seeds = Number(process.env.CMB_SEEDS) || 60;
+    fuzz(name, L, L.start, Number(process.env.CMB_SEEDS) || 60);
+  });
+  // a larger program, with classes, nested bodies and long argument lists: node-level reuse inside a root
+  test.each(Object.keys(LANGS))("%s: a larger program, 20 seeds x 25 steps", (name) => {
+    fuzz(name, LANGS[name], [BIG[name].split("\n").slice(0, 70).join("\n")], Number(process.env.CMB_BIGSEEDS) || 20);
+  });
+});
+
+function fuzz(name: string, L: (typeof LANGS)[string], starts: string[], seeds: number): void {
+  {
     let steps = 0;
     let rebuilt = 0;
+    let recon = 0;
     let kept = 0;
     let nodes = 0;
     let maxRoot = 0;
@@ -177,7 +189,7 @@ describe("fuzzer", () => {
     for (let seed = Number(process.env.CMB_SEED) || 1; seed <= (Number(process.env.CMB_SEED) || seeds); seed++) {
       const rnd = mulberry32(seed * 7919 + name.length);
       const pick = <T,>(a: T[]): T => a[Math.floor(rnd() * a.length)];
-      const ed = make(L.opts, L.start[seed % L.start.length]);
+      const ed = make(L.opts, starts[seed % starts.length]);
       const log: string[] = [];
       for (let i = 0; i < 25; i++) {
         const len = ed.view.state.doc.length;
@@ -220,12 +232,13 @@ describe("fuzzer", () => {
       }
       const st = ed.stats();
       rebuilt += st.rootsRebuilt;
+      recon += st.rootsReconciled;
       kept += st.rootsKept;
       nodes += st.nodesRebuilt;
       maxRoot = Math.max(maxRoot, st.maxRootNodes);
       total += ed.roots().length;
     }
     // eslint-disable-next-line no-console
-    console.log(`${name}: ${steps} steps; roots rebuilt ${rebuilt} (mean ${(nodes / rebuilt).toFixed(1)} nodes, max ${maxRoot}), kept ${kept}; divergences from a fresh parse so far ${divergences.count}`);
-  });
-});
+    console.log(`${name}: ${steps} steps; roots rebuilt ${rebuilt} (mean ${(nodes / rebuilt).toFixed(1)} nodes, max ${maxRoot}), reconciled ${recon}, kept ${kept}; divergences from a fresh parse so far ${divergences.count}`);
+  }
+}

@@ -83,6 +83,15 @@ export const keyOfNode = (n: BNode): string | undefined => keys.get(n);
 const dirty = new WeakSet<BNode>();
 export const hasError = (n: BNode): boolean => dirty.has(n);
 
+/** `old` takes over what the adapter remembers of `nw` (its source text and error flag); both were built from the same table row */
+export function adoptMeta(old: BNode, nw: BNode): void {
+  const s = sources.get(nw);
+  if (s === undefined) sources.delete(old);
+  else sources.set(old, s);
+  if (dirty.has(nw)) dirty.add(old);
+  else dirty.delete(old);
+}
+
 export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage {
   const rule = (name: string) => table.rules?.filter((r) => r.name === name) ?? [];
   const keyOf = (n: SyntaxNode, text: string): string => {
