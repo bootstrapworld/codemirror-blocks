@@ -30,7 +30,7 @@ import { walk } from "./doc";
 import { BlockTable, insertChange, LezerLanguage, lezerLanguage, removeChange, keyOfNode, hasError } from "./lezer";
 import { Renderer } from "./render";
 import { RootWidget } from "./view";
-import { makeNode } from "./wescheme";
+import { makeNode } from "./node";
 import type { BNode, Doc, Slot, TextChange } from "./types";
 
 export interface LezerOptions {

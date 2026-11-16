@@ -16,7 +16,7 @@ import {
   TextSource,
   TreeChange,
 } from "./types";
-import { makeNode } from "./wescheme";
+import { makeNode } from "./node";
 
 /* ---------------------------------------------------------------- creation */
 

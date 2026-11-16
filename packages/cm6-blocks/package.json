@@ -5,8 +5,9 @@
   "description": "EXPERIMENT: blocks on CodeMirror 6, without React, by direct edits of one tree (see doc/experiments/cm6-direct-tree.md)",
   "main": "./src/index.ts",
   "scripts": {
-    "build": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --outfile=demo/demo.js",
-    "serve": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --outfile=demo/demo.js --servedir=demo --serve=8177"
+    "build": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --loader:.css=text --outfile=demo/demo.js",
+    "build:min": "esbuild demo/demo.ts --bundle --format=iife --minify --loader:.css=text --outfile=demo/demo.js",
+    "serve": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --loader:.css=text --outfile=demo/demo.js --servedir=demo --serve=8177"
   },
   "devDependencies": {
     "esbuild": "^0.28.2"

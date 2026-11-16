@@ -7,7 +7,7 @@
  * `keyword` says what is drawn at the head).
  */
 import type { Parser, SyntaxNode, Tree } from "@lezer/common";
-import { makeNode } from "./wescheme";
+import { makeNode } from "./node";
 import type { BNode, Language, Slot, TextChange } from "./types";
 
 export interface BlockRow {

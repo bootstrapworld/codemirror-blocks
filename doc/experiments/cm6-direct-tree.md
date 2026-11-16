@@ -363,6 +363,7 @@ what the tables cannot do yet. Running table (evidence = a test or measurement;
 | step | done? | lines added | what it showed | what did not work |
 |---|---|---|---|---|
 | 1 Lezer editor | yes | `src/lezer-view.ts` 464, spec 231, +25 in lezer.ts/render.ts/tables | see below | see below |
+| 2 demo page | yes | demo.ts 110, index.html 36, css +45, e2e smoke | runs in Chromium for all three languages | bundle is bigger than React's 400 KB (below) |
 
 ### Step 1: `createLezerBlockEditor` (`src/lezer-view.ts`)
 
@@ -403,3 +404,32 @@ what the tables cannot do yet. Running table (evidence = a test or measurement;
 - Positions are still absolute; kept roots after an edit are shifted by walking them.
 - The tables gained `roots: "\n"` as the separator for top-level insertion and an
   exported `table`/`parser` each (`schemeTable`, `schemeParser`, ...), one line each.
+
+### Step 2: the demo page (`demo/index.html`, `demo/demo.ts`)
+
+- `npm run build -w @bootstrapworld/cm6-blocks` (esbuild, iife, sourcemap, the CSS
+  is imported as text and injected) and `build:min`. Output `demo/demo.js` and its map
+  are git-ignored. A language picker, a block-mode checkbox, "Load a big document"
+  (the sample repeated to about 3000 lines) and "Load the sample"; `window.demo`
+  exposes the editor for the browser checks.
+- To keep the bundle free of WeScheme's lexer, `makeNode`/`nextId` moved to
+  `src/node.ts` (wescheme.ts re-exports them).
+- Evidence (opened in Chromium through Playwright, `e2e/smoke.e2e.ts`, no console
+  errors): all three languages draw blocks; screenshots in `e2e/screens/`.
+- Bundle size, minified, ONE page with all three languages and the editor:
+  **443,5xx bytes (434 KB), 153 KB gzipped**. Today: 400 KB (React), 215 KB (Preact,
+  "lite"). By package (bytes in the minified output): @codemirror/view 152 K,
+  @lezer/javascript 78 K, @codemirror/state 47 K, @lezer/python 38 K, @lezer/lr 27 K,
+  @codemirror/commands 23 K, our own code 22 K, @lezer/common 21 K,
+  @codemirror/language 16 K (pulled in by the grammars), scheme grammar 8 K. So the
+  three grammars are about 124 K of the total; with one language the page would be
+  about 310 K, and a Scheme-only page about 200 K. Judgement: not smaller than the
+  React build for three languages; comparable to Preact for one. The CM5 build also
+  carries CodeMirror 5 itself, which this figure for React/Preact may or may not
+  include; I did not check what those two numbers contain.
+- Layout (judgement, from the screenshots): JS and Python statements stack in a
+  column with indented bodies after 45 lines of CSS (`.blocks-block`, `.blocks-body`,
+  top-level widgets as blocks). Visible table gaps, not fixed here: JS `for ... of`
+  with an array shows `...` for the iterable (the table takes `VariableName#0` only),
+  JS assignment hides `=` and a member call shows the object and property as two
+  blocks, Python `print(...)` shows `print` as a block.

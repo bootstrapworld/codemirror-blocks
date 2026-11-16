@@ -51,3 +51,41 @@
 .blocks-blank::before { content: ""; }
 .blocks-literal-string { color: #a31515; }
 .blocks-literal-number { color: #0b6b0b; }
+
+/* ---- statement languages (JavaScript, Python): statements in a column, bodies indented ---- */
+.blocks-block,
+.blocks-body {
+  display: block;
+  margin: 2px 0 2px 1.4em;
+  padding: 2px 4px;
+  border-left: 3px solid #b8c4dd;
+  background: transparent;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-radius: 0;
+}
+.blocks-block > .blocks-args,
+.blocks-body > .blocks-args {
+  display: block;
+}
+.blocks-block > .blocks-args > .blocks-node,
+.blocks-body > .blocks-args > .blocks-node {
+  display: block;
+}
+.blocks-block > .blocks-args > .blocks-gap,
+.blocks-body > .blocks-args > .blocks-gap {
+  display: block;
+  width: auto;
+  height: 3px;
+}
+.blocks-block > .blocks-args > .blocks-gap:hover,
+.blocks-body > .blocks-args > .blocks-gap:hover {
+  width: auto;
+  height: 8px;
+}
+.blocks-function, .blocks-while, .blocks-for { border-color: #4a9a5c; background: #edf8f0; }
+.blocks-return, .blocks-assign, .blocks-declare, .blocks-statement { border-color: #8a7fbf; background: #f3f0fb; }
+.blocks-binary { border-color: #5b7fbf; background: #eef3fb; }
+.blocks-array, .blocks-object { border-color: #999; background: #fafafa; }
+.cm-line > .blocks-node { display: block; width: fit-content; margin-top: 2px; margin-bottom: 2px; }

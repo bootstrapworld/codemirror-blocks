@@ -15,33 +15,8 @@ import { lexWithComments } from "../../wescheme/src/reader/lex";
 import { symbolExpr, literal } from "../../wescheme/src/reader/structures";
 import { BNode, Language, ParseError, Slot } from "./types";
 
-let idCounter = 0;
-/** A fresh node id. */
-export function nextId(): number {
-  return ++idCounter;
-}
-
-/** A node with the given slots (`[name, kind]`), no children yet. from/to are 0 until placed. */
-export function makeNode(
-  kind: string,
-  slots: [string, "one" | "list"][] = [],
-  extra: Partial<BNode> = {}
-): BNode {
-  const node: BNode = {
-    id: nextId(),
-    kind,
-    from: 0,
-    to: 0,
-    parent: null,
-    slot: null,
-    slots: [],
-    ...extra,
-  };
-  for (const [name, k] of slots) {
-    node.slots.push({ name, kind: k, owner: node, nodes: [] });
-  }
-  return node;
-}
+import { nextId, makeNode } from "./node";
+export { nextId, makeNode };
 
 function slotOf(node: BNode, name: string): Slot {
   return node.slots.find((s) => s.name === name) as Slot;
