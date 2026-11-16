@@ -229,3 +229,34 @@ then built the model, the renderer (in parallel, on separate files) and the
 CodeMirror 6 layer against it, each with a seeded fuzzer and an oracle as part of
 its brief. Their reports were checked by running the suite and the typecheck
 here; the code itself was not read line by line.
+
+## Second idea: take the tree from CodeMirror 6's own Lezer parser
+
+Asked by the owner after the first stop: could the blocks be built from the
+Lezer tree CodeMirror 6 already makes, so that any language with a Lezer grammar
+gets blocks without work on that language's parser? Does a language then reduce
+to a table and a handful of rules?
+
+Reasoning before trying it (not yet tested when this was written):
+
+- Lezer would REPLACE the per-language reader (`wescheme.ts`), `settle` (an
+  incremental parser already notices when the text changes what a form is),
+  `reparseChange` (it already reads again only what changed: the earlier spike
+  measured 0.6 ms per edit at 5,000 lines) and the "error root" (it always
+  returns a tree, with error nodes). `NodeWeakMap` in `@lezer/common` can attach
+  data to tree nodes that survives the reuse of unchanged subtrees, which is how
+  unchanged blocks could keep their identity and DOM.
+- It would KEEP the renderer, the three operations and the oracles.
+- It would NOT give, for free:
+  - meaning. A Lezer tree is concrete: node types and positions, no named slots,
+    and wrappers and punctuation among the children. A per-language table has to
+    say which node types are blocks, which children are slots, which are lists,
+    and what each is called aloud. Every node as a block works but is noisy.
+  - writing. Lezer parses; it does not print. Inserting or deleting a block needs
+    the language's separators (commas, semicolons, and indentation in Python).
+    Moving existing source text is mostly generic.
+  - every language. The older stream modes give tokens, not structure.
+
+### What was tried, and what it showed
+
+(the Lezer attempt writes its findings below as it goes)
