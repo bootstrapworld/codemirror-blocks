@@ -260,3 +260,67 @@ Reasoning before trying it (not yet tested when this was written):
 ### What was tried, and what it showed
 
 (the Lezer attempt writes its findings below as it goes)
+
+- 2026-11-15, step 1 (grammar). `cm6-lezer-scheme-common-lang` 0.1.2 exists and
+  installs (ESM+CJS, exports `parser`, `schemeLanguage`, `scheme()`). It is a
+  broad Guile/Racket-ish s-expression grammar; its tree is deeply wrapped
+  (`Form > Datum > List > ParenList > ListContent > Datum > AtomLike > Symbol`),
+  separates `[...]` (`BracketList`) from `(...)`, and tokenises `define` as its
+  own type but `if`/`lambda`/`cond` as plain `Symbol`. Usable as is.
+  `@codemirror/lang-lisp` and `lezer-scheme` do not exist on npm. `@lezer/javascript`,
+  `@lezer/python` installed. Code: `src/lezer.ts` (198 lines, the one adapter).
+- 2026-11-15, Scheme (`src/lang-scheme.ts`, 38 lines). One rule (16 lines):
+  "a list whose first symbol is define/lambda/if/cond, with the arity wescheme
+  asks for, is that form; a list inside a cond is a clause". Against `wescheme`
+  on 11 programs without comments, kinds, slot names, shapes and ranges are
+  identical except one: a special form of the wrong arity (`(if 1 2)`) is an
+  "unknown" list in wescheme and a call here (nothing in the table says "unknown"
+  for it). Lost: comments only (they were never nodes).
+- 2026-11-15, JavaScript (`src/lang-javascript.ts`, 37 lines, no rules). All 8
+  programs come out as expected; nothing lost (`=`, `:`, `.`, brackets, `;` are
+  treated as punctuation). Compromises: `let`/`const`/`var` are all drawn as
+  `let` (the keyword is static in the table); a function with no body or an `if`
+  with a bare statement (no Block) is not handled.
+- 2026-11-15, Python (`src/lang-python.ts`, 39 lines, one rule of 5 lines: the
+  separator of a `body` list is newline plus the indentation of its first
+  statement). 7 programs fine; `elif`/`else` branches arrive as one flat list
+  `rest` (test, body, body...), because the table cannot say "pair these up".
+- 2026-11-15, renderer: no change needed for JS or Python (it draws any kind,
+  keyword, and slots; the only special case is `call` + `func`). Snapshot in
+  `spec/lezer.test.ts`.
+- 2026-11-15, IDENTITY (most important): in a 300-statement JS program a one
+  character edit in the middle, reparsed incrementally in 1.7 ms (3.9 ms for a
+  full parse; small text, so only the ratio means anything), leaves 3 of 6 `Tree`
+  objects shared by identity, and 0 of the 300 top-level statements are `Tree`
+  objects at all: Lezer packs them in `TreeBuffer`s, which have no identity.
+  `NodeWeakMap` set on the old statements was found on the new ones for 222 of
+  300 (it keys buffers by position), and for 0 of those that are Trees. The 78
+  that are not found are the ones in the buffer that was rebuilt. So block identity
+  cannot ride on Lezer: unchanged blocks must be found by range matching, as
+  `reparseChange` does today (or by a table-driven comparison of old and new
+  block trees).
+- 2026-11-15, editing: insert and remove in a list slot, done as a text change from
+  node ranges plus the table's separator, then reparse: correct for Scheme call
+  args, JS call args, JS block statements and Python body statements (4 cases).
+  Python needed the indentation rule (5 lines). Not covered: inserting into an
+  EMPTY list (where it goes after `(` needs a rule per language), and printing a
+  node that was never parsed (the adapter prints parsed nodes from their remembered
+  source; a constructed node would need a template per kind).
+
+| language | grammar source | table lines | rules (count, lines) | what the table could not express | what was lost |
+|---|---|---|---|---|---|
+| Scheme | cm6-lezer-scheme-common-lang 0.1.2 | 38 | 1, 16 | head-symbol decides kind (that is the rule); wrong-arity forms as "unknown" | comments |
+| JavaScript | @lezer/javascript | 37 | 0, 0 | let/const/var; if without braces; empty-list insertion | nothing |
+| Python | @lezer/python | 39 | 1, 5 | pairing elif tests with bodies; empty-body insertion | nothing |
+
+Answer to the owner. Evidence: for three languages, a table of 37-39 lines plus
+one 198-line generic adapter produced the expected blocks, exact ranges, nothing
+lost but comments, and correct text edits; Scheme needed one 16-line rule, Python
+one 5-line rule, JavaScript none; the renderer did not change. Also evidence: the
+Lezer tree cannot carry block identity (statements live in buffers), so the
+incremental part (`reparseChange` or similar) stays. Judgement: yes, a language
+is mostly a table plus a handful of small rules, for languages whose grammar
+already says what we want; the open cost is in what these tests did not touch
+(printing new nodes, empty lists, error recovery quality, slot semantics such as
+elif pairs, and the accessibility wording), which I expect to be where each
+language's real work goes.
