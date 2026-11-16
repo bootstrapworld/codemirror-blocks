@@ -7,6 +7,7 @@
     "npm": ">=11"
   },
   "workspaces": [
+    "packages/cm6-blocks",
     "packages/cmb-toolkit",
     "packages/codemirror-blocks",
     "packages/example",

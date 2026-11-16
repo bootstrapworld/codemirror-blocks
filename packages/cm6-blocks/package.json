@@ -1,0 +1,19 @@
+{
+  "name": "@bootstrapworld/cm6-blocks",
+  "version": "0.0.0",
+  "private": true,
+  "description": "EXPERIMENT: blocks on CodeMirror 6, without React, by direct edits of one tree (see doc/experiments/cm6-direct-tree.md)",
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --outfile=demo/demo.js",
+    "serve": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --outfile=demo/demo.js --servedir=demo --serve=8177"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15"
+  }
+}
