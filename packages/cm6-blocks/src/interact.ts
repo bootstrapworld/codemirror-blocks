@@ -8,7 +8,10 @@
  *   Enter                 on a leaf: edit its text in place (Enter commits, Escape cancels)
  *   Ctrl-] / Ctrl-[       a box for a new sibling after / before (list slots)
  *   Ctrl-Z / Ctrl-Shift-Z undo / redo through CodeMirror's history
- * Mouse: click a block to focus it; click a gap to open the box for a new sibling there.
+ *   Ctrl/Cmd-C / X / V    copy / cut / paste the block's source text (the browser's copy, cut and paste events, so the
+ *                         system clipboard works); paste goes after the focused block, or replaces a focused blank
+ * Mouse: click a block to focus it; click a gap to open the box for a new sibling there; drag a block (pointer events,
+ * so a finger or a pen too) onto a gap, a blank, or the top or bottom edge of a top-level block to move it.
  * Text that does not parse cleanly is accepted: the root then shows as text.
  */
 import { redo, undo } from "@codemirror/commands";
@@ -222,7 +225,143 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     }
   }
 
+  /* ---- clipboard */
+
+  let clip = "";
+  const active = (e: Event): BNode | null => {
+    const t = e.target as Element | null;
+    if (!t || !t.closest || t.closest(".blocks-edit")) return null;
+    return renderer.nodeOf(t);
+  };
+  function onCopy(e: ClipboardEvent, cut: boolean): void {
+    const node = active(e);
+    if (!node || !node.slot) return;
+    clip = ed.copyText(node);
+    e.clipboardData?.setData("text/plain", clip);
+    e.preventDefault();
+    e.stopPropagation();
+    if (cut) ed.removeNode(node);
+  }
+  function onPaste(e: ClipboardEvent): void {
+    const node = active(e);
+    if (!node) return;
+    const text = e.clipboardData?.getData("text/plain") || clip;
+    e.preventDefault();
+    e.stopPropagation();
+    if (!text.trim()) return;
+    try {
+      ed.pasteText(node, text);
+    } catch (err) {
+      ed.lastError = (err as Error).message;
+    }
+  }
+  const onCopyEv = (e: Event) => onCopy(e as ClipboardEvent, false);
+  const onCutEv = (e: Event) => onCopy(e as ClipboardEvent, true);
+  const onPasteEv = (e: Event) => onPaste(e as ClipboardEvent);
+
+  /* ---- drag and drop (pointer events: mouse, finger, pen) */
+
+  type Target = { slot: Slot; index: number } | { blank: BNode };
+  interface Drag {
+    node: BNode;
+    x: number;
+    y: number;
+    on: boolean;
+    target: Target | null;
+    mark: Element | null;
+  }
+  let drag: Drag | null = null;
+  let swallowClick = false;
+  const doc = dom.ownerDocument;
+  const rootsOf = (n: BNode): BNode => {
+    let r = n;
+    while (r.parent && r.parent.kind !== "program") r = r.parent;
+    return r;
+  };
+
+  /** what a drop at (x, y) would mean: a gap, a blank, or the top or bottom edge of a top-level block */
+  function targetAt(x: number, y: number, node: BNode): { target: Target; mark: Element } | null {
+    const el = doc.elementFromPoint(x, y);
+    if (!el || !dom.contains(el)) return null;
+    const gap = renderer.gapOf(el);
+    if (gap) return { target: gap, mark: el.closest(".blocks-gap") as Element };
+    const hit = renderer.nodeOf(el);
+    if (!hit) return null;
+    if (ed.isBlank(hit) && hit !== node) return { target: { blank: hit }, mark: renderer.element(hit) };
+    const root = rootsOf(hit);
+    if (root !== node && root.parent && root.slot) {
+      const r = renderer.element(root).getBoundingClientRect();
+      const i = root.slot.nodes.indexOf(root);
+      if (r.height > 0 && y < r.top + r.height * 0.3) return { target: { slot: root.slot, index: i }, mark: renderer.element(root) };
+      if (r.height > 0 && y > r.bottom - r.height * 0.3) return { target: { slot: root.slot, index: i + 1 }, mark: renderer.element(root) };
+    }
+    return null;
+  }
+  function clearDrag(): void {
+    if (drag) {
+      drag.mark?.classList.remove("blocks-drop-target");
+      if (renderer.has(drag.node)) renderer.element(drag.node).classList.remove("blocks-drag-source");
+    }
+    dom.classList.remove("blocks-dragging");
+    drag = null;
+    doc.removeEventListener("pointermove", onMove, true);
+    doc.removeEventListener("pointerup", onUp, true);
+    doc.removeEventListener("pointercancel", onCancel, true);
+  }
+  function onDown(e: PointerEvent): void {
+    if (e.button !== 0 || (e.target as Element).closest?.(".blocks-edit")) return;
+    const node = renderer.nodeOf(e.target as Element);
+    if (!node || !node.slot || renderer.gapOf(e.target as Element)) return;
+    drag = { node, x: e.clientX, y: e.clientY, on: false, target: null, mark: null };
+    doc.addEventListener("pointermove", onMove, true);
+    doc.addEventListener("pointerup", onUp, true);
+    doc.addEventListener("pointercancel", onCancel, true);
+  }
+  function onMove(e: PointerEvent): void {
+    if (!drag) return;
+    if (!drag.on) {
+      if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;
+      drag.on = true;
+      dom.classList.add("blocks-dragging");
+      renderer.element(drag.node).classList.add("blocks-drag-source");
+    }
+    e.preventDefault();
+    const hit = targetAt(e.clientX, e.clientY, drag.node);
+    if (hit?.mark !== drag.mark) {
+      drag.mark?.classList.remove("blocks-drop-target");
+      hit?.mark.classList.add("blocks-drop-target");
+    }
+    drag.target = hit?.target ?? null;
+    drag.mark = hit?.mark ?? null;
+  }
+  function onUp(e: PointerEvent): void {
+    if (!drag) return;
+    const d = drag;
+    if (d.on) {
+      const hit = targetAt(e.clientX, e.clientY, d.node);
+      swallowClick = true;
+      setTimeout(() => (swallowClick = false), 0);
+      clearDrag();
+      if (hit) {
+        try {
+          ed.moveNode(d.node, hit.target);
+        } catch (err) {
+          ed.lastError = (err as Error).message;
+        }
+      }
+    } else clearDrag();
+  }
+  function onCancel(): void {
+    clearDrag();
+  }
+
   function onClick(e: MouseEvent): void {
+    if (swallowClick) {
+      swallowClick = false;
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     const t = e.target as Element;
     if (t.closest?.(".blocks-edit")) return;
     const gap = renderer.gapOf(t);
@@ -238,12 +377,21 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
 
   dom.addEventListener("keydown", onKey, true);
   dom.addEventListener("click", onClick, true);
+  dom.addEventListener("copy", onCopyEv, true);
+  dom.addEventListener("cut", onCutEv, true);
+  dom.addEventListener("paste", onPasteEv, true);
+  dom.addEventListener("pointerdown", onDown as EventListener, true);
   return {
     edit: editLeaf,
     detach() {
       open?.cancel();
       dom.removeEventListener("keydown", onKey, true);
       dom.removeEventListener("click", onClick, true);
+      dom.removeEventListener("copy", onCopyEv, true);
+      dom.removeEventListener("cut", onCutEv, true);
+      dom.removeEventListener("paste", onPasteEv, true);
+      dom.removeEventListener("pointerdown", onDown as EventListener, true);
+      clearDrag();
     },
   };
 }

@@ -376,7 +376,9 @@ export function insertChange(table: BlockTable, text: string, slot: Slot, index:
     let last = ns.length - 1;
     while (last > 0 && ns[last].kind === "comment") last--;
     if (ns[last].kind === "comment") return { from: ns[last].to, to: ns[last].to, insert: "\n" + snippet };
-    return { from: ns[last].to, to: ns[last].to, insert: sep + snippet };
+    // the last block already ends with its newline (a Python statement): no second one
+    const end = ns[last].to;
+    return { from: end, to: end, insert: (sep.startsWith("\n") && text[end - 1] === "\n" ? sep.slice(1) : sep) + snippet };
   }
   return { from: ns[index].from, to: ns[index].from, insert: snippet + sep };
 }
@@ -386,7 +388,12 @@ export function removeChange(node: BNode, text?: string): TextChange {
   const ns = node.slot!.nodes;
   const i = ns.indexOf(node);
   if (i + 1 < ns.length) return { from: node.from, to: ns[i + 1].from, insert: "" };
-  if (i > 0) return { from: ns[i - 1].to, to: node.to, insert: "" };
+  if (i > 0) {
+    // the last of a list whose previous element ends with its own newline (a statement): take the node's newline too
+    const prevEnd = ns[i - 1].to;
+    const lastLine = !!text && text[node.to] === "\n" && (prevEnd === 0 || text[prevEnd - 1] === "\n");
+    return { from: prevEnd, to: node.to + (lastLine ? 1 : 0), insert: "" };
+  }
   // the only element: also the blanks before it on the same line (`(h 4)` -> `(h)`)
   let from = node.from;
   if (text) {

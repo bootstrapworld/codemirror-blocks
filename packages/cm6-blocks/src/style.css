@@ -114,3 +114,11 @@
 .blocks-member, .blocks-index { border-color: #aab; background: #f7f7fb; }
 .blocks-quote, .blocks-vector { border-color: #c47f2c; background: #fbf3e8; }
 .blocks-unknown, .blocks-unary { border-color: #bbb; }
+
+/* ---- dragging a block (interact.ts) ---- */
+.blocks-dragging { cursor: grabbing; user-select: none; }
+.blocks-dragging .blocks-gap { width: 12px; }
+.blocks-dragging .blocks-block > .blocks-args > .blocks-gap,
+.blocks-dragging .blocks-body > .blocks-args > .blocks-gap { width: auto; height: 8px; }
+.blocks-drag-source { opacity: 0.5; }
+.blocks-drop-target { background: rgba(26, 115, 232, 0.35) !important; outline: 2px dashed #1a73e8; }

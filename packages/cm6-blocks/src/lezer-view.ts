@@ -98,6 +98,8 @@ export interface LezerBlockEditor {
   pasteText(anchor: BNode | null, text: string): BNode | null;
   /** Move a block to a gap (`slot`, `index`) or onto a blank: ONE text change (cut and paste), one undo step. Throws if the target is inside the block. */
   moveNode(node: BNode, target: { slot: Slot; index: number } | { blank: BNode }): void;
+  /** is this block a hole (a blank): what a drop or a paste replaces */
+  isBlank(node: BNode): boolean;
   /** apply one text change as one undo step */
   change(c: TextChange): void;
   focusNode(node: BNode): void;
@@ -375,6 +377,8 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     if (doc.byId.get(n.id) !== n) throw new Error(`node ${n.id} (${n.kind}) is no longer in the tree: look it up again after an edit`);
   };
 
+  /** a hole: a block that is not there (zero width) or is the table's blank text */
+  const isBlank = (n: BNode): boolean => n.kind === "blank" || (n.slots.length === 0 && n.value === (table.blank ?? "..."));
   const indentAt = (pos: number): string => {
     const t = currentText();
     return (t.slice(t.lastIndexOf("\n", pos - 1) + 1, pos).match(/^[ \t]*/) as RegExpMatchArray)[0];
@@ -485,13 +489,14 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       live(node);
       dispatch(replaceChange(node, snippet));
     },
+    isBlank,
     copyText(node) {
       live(node);
-      return dedent(view.state.doc.sliceString(node.from, node.to), indentAt(node.from));
+      return dedent(view.state.doc.sliceString(node.from, node.to), indentAt(node.from)).replace(/\s+$/, "");
     },
     pasteText(anchor, text) {
       if (anchor) live(anchor);
-      if (anchor && anchor.kind === "blank") {
+      if (anchor && isBlank(anchor)) {
         const c = replaceChange(anchor, text.replace(/\n/g, "\n" + indentAt(anchor.from)));
         dispatch(c);
         const at = c.from + c.insert.indexOf(text.split("\n")[0]);
@@ -528,7 +533,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       if ("slot" in target && target.slot === node.slot && (target.index === i || target.index === i + 1)) return; // where it is
       if ("blank" in target && target.blank === node) return;
       const t = currentText();
-      const snippet = dedent(t.slice(node.from, node.to), indentAt(node.from));
+      const snippet = dedent(t.slice(node.from, node.to), indentAt(node.from)).replace(/\s+$/, "");
       const gone: TextChange = node.slot.kind === "one" ? { from: node.from, to: node.to, insert: table.blank ?? "..." } : removeChange(node, t);
       let put: TextChange;
       if ("blank" in target) put = replaceChange(target.blank, snippet.replace(/\n/g, "\n" + indentAt(target.blank.from)));
