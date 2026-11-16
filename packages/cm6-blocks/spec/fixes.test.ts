@@ -81,3 +81,26 @@ describe("A2: a missing 'one' slot (zero-width blank) is filled where it belongs
     expect(blank.from).toBeLessThan(6 + 1);
   });
 });
+
+describe.each(Object.keys(OPTS))("A3: focus after Delete: %s", (l) => {
+  const key = (el: Element, k: string) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
+  const focusedText = (ed: LezerBlockEditor) => {
+    const n = ed.focusedNode();
+    return n ? ed.view.state.doc.sliceString(n.from, n.to) : null;
+  };
+  const withText = (ed: LezerBlockEditor, t: string) =>
+    all(ed).find((n) => ed.view.state.doc.sliceString(n.from, n.to) === t && n.kind !== "statement")!;
+  test("next sibling, else previous sibling, else parent", () => {
+    const ed = make(l);
+    ed.focusNode(withText(ed, "1"));
+    key(ed.renderer.element(ed.focusedNode()!), "Delete");
+    expect(focusedText(ed)).toBe(l === "scheme" ? "(g 2)" : "g(2)");
+    ed.focusNode(withText(ed, l === "scheme" ? "3" : "3"));
+    key(ed.renderer.element(ed.focusedNode()!), "Delete");
+    expect(focusedText(ed)).toBe(l === "scheme" ? "(g 2)" : "g(2)");
+    ed.focusNode(withText(ed, "4"));
+    key(ed.renderer.element(ed.focusedNode()!), "Delete");
+    expect(focusedText(ed)).toBe(l === "scheme" ? "(h)" : l === "python" ? "h()" : "h()");
+    ok(ed);
+  });
+});

@@ -580,3 +580,13 @@ Same section style; running table at the end of this round. Evidence = test or m
 - Judgement: the connector is the first thing a pure "slots and separators" table could
   not say; it costs one field, but every construct with punctuation between its parts
   (JS `for (x of y)`, Python `x = `) will want one when its part is missing.
+
+### A3: focus after Delete
+- Test first (3 failed): focus landed on a parent or the call's head. Now `removeNode`,
+  when focus is on the node or inside it, finds the owner again by (range start, kind),
+  its slot by name, and focuses the node now at the same index, else the one before,
+  else the owner. Same code for every language. Tests: `f(1, g(2), 3)` delete `1`
+  -> `g(2)`; delete `3` -> `g(2)`; delete the only argument `4` -> the call (`h()`).
+- Side fix found by it: removing the only element of a list left a blank (`(h )`); it
+  now also removes the blanks before it on the same line (`(h)`, `h()`), but never a
+  line's indentation.

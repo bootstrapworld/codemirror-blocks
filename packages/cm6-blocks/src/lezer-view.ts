@@ -327,8 +327,28 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     removeNode(node) {
       live(node);
       if (!node.slot) throw new Error("not removable");
+      // where focus should go afterwards, if it is on the node (or inside it): the node now at its place
+      const f = ed.focusedNode();
+      let inside = false;
+      for (let c: BNode | null = f; c; c = c.parent) if (c === node) inside = true;
+      const owner = node.parent as BNode;
+      const where = { from: owner.from, kind: owner.kind, slot: node.slot.name, index: node.slot.nodes.indexOf(node) };
       if (node.slot.kind === "one") dispatch({ from: node.from, to: node.to, insert: table.blank ?? "..." });
-      else dispatch(removeChange(node));
+      else dispatch(removeChange(node, currentText()));
+      if (!inside) return;
+      let target: BNode | null = null;
+      let o: BNode | null = null;
+      if (owner === program) o = program;
+      else
+        for (const r of rootsSlot.nodes) {
+          walk(r, (n) => {
+            if (!o && n.from === where.from && n.kind === where.kind) o = n;
+          });
+        }
+      const sl = (o as BNode | null)?.slots.find((q) => q.name === where.slot);
+      if (sl) target = sl.nodes[where.index] ?? sl.nodes[where.index - 1] ?? (o === program ? null : o);
+      while (target && !isDrawn(target)) target = target.parent;
+      if (target && target.kind !== "program") ed.focusNode(target);
     },
     replaceText(node, snippet) {
       live(node);

@@ -221,12 +221,19 @@ export function insertChange(table: BlockTable, text: string, slot: Slot, index:
 }
 
 /** The text change that removes a list element and one separator. */
-export function removeChange(node: BNode): TextChange {
+export function removeChange(node: BNode, text?: string): TextChange {
   const ns = node.slot!.nodes;
   const i = ns.indexOf(node);
   if (i + 1 < ns.length) return { from: node.from, to: ns[i + 1].from, insert: "" };
   if (i > 0) return { from: ns[i - 1].to, to: node.to, insert: "" };
-  return { from: node.from, to: node.to, insert: "" };
+  // the only element: also the blanks before it on the same line (`(h 4)` -> `(h)`)
+  let from = node.from;
+  if (text) {
+    let a = from;
+    while (a > 0 && (text[a - 1] === " " || text[a - 1] === "\t")) a--;
+    if (a > 0 && text[a - 1] !== "\n") from = a;
+  }
+  return { from, to: node.to, insert: "" };
 }
 
 /**
