@@ -842,3 +842,185 @@ recognised node drawn as its own text), or NOT DRAWN: dropped from a block that 
 table has no row for (the `x` of `throw x` would show as a block on its own, so it is not
 counted as real). A statement is "fully blocks" when none of its characters is opaque or not
 drawn, "none" when none is real.
+
+### Result tables (evidence: `e2e/corpus-results.json`, run `CMB_CORPUS=full CMB_STEP=final`)
+
+Coverage = share of non-space, non-comment characters: real blocks / opaque text / not drawn (see the method above and its
+limits). Statements = top-level statements fully blocks / partly / not at all (all statements, nested too, in the JSON).
+Oracle = `checkLezerEditor` after construction and after 20 random edits (delete a block, insert a template, type text)
+in a sample of 30 files (files over 1500 lines left out of this sample; every file of the smaller corpora). Final tables.
+
+| language | corpus | files | lines | coverage real / opaque / not drawn | top-level statements fully / partly / none | oracle failures (files, edits) |
+|---|---|---|---|---|---|---|
+| Scheme | scheme-repo-files | 11 | 1931 | 100 / 0 / 0 | 100% / 0% / 0% | 0 (11, 220) |
+| Scheme | scheme-test-literals | 582 | 1014 | 99.8 / 0 / 0.2 | 100% / 0% / 0% | 0 (30, 600) |
+| JavaScript | js-repo-own | 30 | 3314 | 87.8 / 11.3 / 0.9 | 72% / 28% / 0% | 0 (30, 600) |
+| JavaScript | js-node_modules-library | 200 | 14733 | 97.7 / 1.2 / 1.1 | 85% / 15% / 0% | 0 (30, 600) |
+| JavaScript | js-node_modules-examples | 40 | 758 | 96.7 / 3.3 / 0 | 96% / 4% / 0% | 0 (30, 600) |
+| Python | py-stdlib-library | 200 | 90370 | 98.1 / 1.3 / 0.6 | 69% / 12% / 19% | 0 (30, 600) |
+| Python | py-turtledemo | 21 | 2429 | 97.2 / 2.4 / 0.4 | 73% / 8% / 19% | 0 (21, 420) |
+
+Before (the tables at the end of round two, same measure, no glue-word credit):
+
+| corpus | coverage real / opaque / not drawn | top-level statements fully / partly / none |
+|---|---|---|
+| scheme-repo-files | 87.3 / 0 / 12.7 | 87% / 13% / 0% |
+| scheme-test-literals | 93.8 / 0 / 6.2 | 94% / 4% / 2% |
+| js-repo-own | 32.4 / 61.8 / 5.8 | 39% / 48% / 13% |
+| js-node_modules-library | 49.8 / 32.7 / 17.4 | 52% / 35% / 13% |
+| js-node_modules-examples | 61.4 / 32.7 / 5.9 | 60% / 40% / 0% |
+| py-stdlib-library | 75.7 / 7 / 17.3 | 39% / 40% / 21% |
+| py-turtledemo | 90.2 / 5.3 / 4.5 | 46% / 35% / 19% |
+
+Parse and build blocks per 1000 lines (all rows, `final`): scheme-repo-files 17.9 ms, scheme-test-literals 14.8 ms, js-repo-own 19.1 ms, js-node_modules-library 16 ms, js-node_modules-examples 15.5 ms, py-stdlib-library 13.5 ms, py-turtledemo 12.9 ms (jsdom/node, not a browser). Typed edit in the middle of the largest sampled file (jsdom, field update + CodeMirror update + building the root's DOM): scheme-repo-files: huge-code.rkt 776 lines 0.51 ms, scheme-test-literals: random-sequences-test.ts:1157 11 lines 1.03 ms, js-repo-own: soak.js 713 lines 1.53 ms, js-node_modules-library: core.js 618 lines 108.29 ms, js-node_modules-examples: stream-multiple.js 50 lines 7.82 ms, py-stdlib-library: __init__.py 4006 lines 3.22 ms, py-turtledemo: __main__.py 387 lines 3.62 ms.
+
+Lezer error nodes in files the real language accepts (grammar problems, not ours): JavaScript 0 in all three corpora;
+Python 29 error nodes in 10 of the 200 standard-library files and 5 in 3 of the 21 turtledemo files (the examples
+seen: `n/6.` a float with a trailing dot, `(yield)` in parentheses, and zero-width errors at line starts that I did
+not trace); Scheme: 27 of the 582 test literals have one (some are intentionally broken, some are CSS selectors or
+JSON that the tests keep in strings: `[contenteditable=true]`), 0 in the 11 real `.rkt` files.
+
+### The long tail made concrete: top 10 missing node types before and after
+
+- js-node_modules-library, baseline: SwitchBody 10188; Property>Block 9493; ThrowStatement 4401; IfStatement>IfStatement 3871; CallExpression>ParenthesizedExpression 2382; SequenceExpression 2153; IfStatement>ReturnStatement 1775; IfStatement>ThrowStatement 1304; IfStatement>ExpressionStatement 1200; Block>SwitchStatement 1199
+- js-node_modules-library, final: ImportGroup 1580; ForStatement>ForOfSpec 540; ImportDeclaration>from 392; ExportGroup 378; FunctionExpression>VariableDefinition 196; ForInSpec 117; ForStatement>ForInSpec 84; CallExpression>super 70; FunctionDeclaration>async 65; ExportDeclaration>from 48
+- py-stdlib-library, baseline: TryStatement 107626; DecoratedStatement 41264; RaiseStatement 35866; AssignStatement>ParenthesizedExpression 23078; WithStatement 19078; ClassDefinition>ArgList 11456; ContinuedString 7469; Body>TryStatement 7272; AssignStatement>CallExpression 6982; IfStatement>else 4184
+- py-stdlib-library, final: SetExpression 1705; ForStatement>Body 1240; YieldExpression 1091; ReturnStatement>VariableName 1015; ArrayComprehensionExpression>for 456; DictionaryComprehensionExpression 426; ComprehensionExpression 409; MemberExpression>BinaryExpression 323; ArrayComprehensionExpression>in 304; ReturnStatement>CallExpression 249
+
+
+### The curve: table lines against coverage (strict count: glue words not credited)
+
+JavaScript, library corpus (200 node_modules files; the example and own groups follow the same path, in the JSON):
+
+| step | rows added (cumulative) | `nodes` lines | `rules` lines | coverage real / opaque / not drawn | top-level statements fully | all statements fully |
+|---|---|---|---|---|---|---|
+| baseline (round two) | 0 | 37 | 9 | 49.8 / 32.7 / 17.4 | 52% | 32% |
+| + throw, switch (5 rows) | 5 | 42 | 9 | 53.3 / 34.2 / 12.5 | 52% | 35% |
+| + arrow, function expr, ?:, new, await; braceless if/loops (5 rows, 5 edits) | 10 | 47 | 9 | 73.8 / 7.6 / 18.6 | 59% | 55% |
+| + patterns, try/catch/finally, do, for-in, regexp, sequence (10 rows) | 20 | 57 | 10 | 78.7 / 7.6 / 13.7 | 65% | 61% |
+| + labels, break/continue, class expr/fields, typeof/void (7 rows, 3 rule lines) | 27 | 64 | 12 | 88.6 / 7.9 / 3.5 | 72% | 74% |
+| + import/export, yield, x++, private names, flat binary, multi-declarators (5 rows) | 32 | 69 | 12 | 97.4 / 1.2 / 1.4 | 81% | 87% |
+
+Python, standard library (200 files):
+
+| step | rows added (cumulative) | `nodes` lines | `rules` lines | coverage real / opaque / not drawn | top-level statements fully | all statements fully |
+|---|---|---|---|---|---|---|
+| baseline (round two) | 0 | 32 | 8 | 75.7 / 7 / 17.3 | 39% | 58% |
+| + try, raise, with, decorators (5 rows) | 5 | 37 | 8 | 86.2 / 7.6 / 6.2 | 40% | 70% |
+| + else/elif/except keywords, assert, del, global, continued strings (5 rows, 1 rule line) | 10 | 42 | 9 | 90.5 / 7.6 / 1.9 | 54% | 77% |
+| + dict, tuple, comprehension, conditional, yield (5 rows) and `@before`/`@after` takes (adapter, 12 lines), flat binary | 15 | 47 | 9 | 98 / 1.3 / 0.7 | 64% | 89% |
+
+Python, turtledemo (beginner-style, 21 programs):
+
+| step | rows added (cumulative) | `nodes` lines | `rules` lines | coverage real / opaque / not drawn | top-level statements fully | all statements fully |
+|---|---|---|---|---|---|---|
+| baseline | 0 | 32 | 8 | 90.2 / 5.3 / 4.5 | 46% | 78% |
+| +5 rows | 5 | 37 | 8 | 91.9 / 5.5 / 2.6 | 46% | 80% |
+| +15 rows | 15 | 47 | 9 | 96.9 / 2.4 / 0.7 | 59% | 88% |
+
+Scheme (11 files and 582 literals; tiny corpora): 2 alias rows (`TaggedParenList` for lists whose head the grammar tags, `BracketList` for `[...]` outside a `cond`) took the real files from 87.3% to 100% and the literals from 93.8% to 99.8%.
+
+Reading the curve (evidence from the tables above; interpretation is mine):
+- Every step raised "real" coverage; the biggest single steps were turning the opaque rows into real ones (JavaScript
+  arrows and functions: +20 points in the library corpus, 5 rows; Python dict/tuple/comprehension/conditional: +7.5
+  points, 5 rows) and `try/raise/with/decorator` in Python (+10 points, 5 rows). After about 30 rows in each of JS and
+  Python the characters are 98% real; the last 2% and the last fraction of statements are where one row each buys little.
+- "Not drawn" fell from 17% to about 1% in both languages. "Fully blocks" for statements is a stricter measure and
+  stayed lower (JS library 85% of top-level statements, Python stdlib 69%): the shortfall is imports (opaque by choice;
+  they are 19% of Python's top-level statements counted as "none"), template strings, and dropped modifier words.
+- The tables grew from 37 to 69 `nodes` lines (JS) and from 32 to 47 (Python): about 1.5 to 2 times, for a coverage
+  rise from 50 to 98 and from 76 to 98 percent. Whether that is "a table" is a matter of taste: the rows are still one
+  line each, but there are 60 of them and they have to agree on slot positions (`#0`, `#2`).
+- Caution about the number: coverage counts characters, and a row that keeps only some words of a construct still
+  counts its other characters as real. A block can be "real" while hiding a word (`async`, `static`, `default`,
+  `from` in `import`, `else` before the glue credit). The glue-word credit (the row draws `else`, `of`, `extends`
+  itself) moves JS library from 97.4 to 97.7, so it is not hiding much. I did not count dropped modifier words
+  separately.
+
+### Constructs that need more than a row (what each needs, as far as I can tell)
+
+Done with a mechanism, not a row (cost in lines of adapter or rule):
+- Python `a, b = f()` and `for a, b in x`: slots that take by position around a token (`@before:AssignOp`, `@after:in`),
+  and type takes tried before positional ones: 12 lines in `lezer.ts`; without it the value of a tuple assignment was
+  dropped (`AssignStatement>CallExpression`, 7k characters in the library corpus).
+- JavaScript `x[0]`, `for (k in o)` / `for (k of o)` / `for(;;)`, `+=`, object methods in literals, `typeof`/`void`/`in`
+  tokens, Python `and/or/not/in/is`, keywords `else/elif/except/finally/as`: a `kind` rule line each (10 lines total):
+  Lezer gives these the same node name as a different construct, or leaves the keyword as a bare token.
+- Words that the row draws as glue (`else`, `of`, `in`, `extends`, `=`, `.`): a `before` string on the slot (a field,
+  not a row), drawn by the renderer when the slot is not empty.
+
+Still not expressible, or only as text (each listed with what it would need):
+- Imports (`import {a as b} from "x"`, `from m import a as b`) and template strings with `${}`: kept as opaque text
+  (counted as covered-as-text). A real block needs a row per node type and a way to draw a word between two blocks
+  (`from`) that is a token of the parent, not a slot: the glue mechanism could do it (`before` on each slot).
+- Modifier words before a construct (`async`, `static`, `export default`, `get`/`set`, `await` before `for`): the
+  Lezer tree has them as bare tokens that no slot takes. Needs a `modifiers` list on the row: collect tokens in a set
+  of names and draw them as keyword text. About 8 lines in the adapter, 1 line per row. Not done; counted as not drawn.
+- A named function expression `function f() {}` (the name is dropped: the params slot must come after the name slot in
+  draw order but the name is a `VariableDefinition` that is also what params contain): needs a rule that splits by
+  position relative to `ParamList`, the same mechanism as `@before`.
+- Python `elif`/`else` pairs, `try/except` clauses and dict key/value pairs are flat lists of blocks and keyword
+  blocks: readable, but the pairing is not structure. Needs the table to say "pairs" or "groups of n" for a list (an
+  adapter feature, about 15 lines, plus renderer support to draw a group).
+- Statement groups `a = 1; b = 2` (Python `StatementGroup`), JS comma-separated `let a = 1, b = f()` (done only as a flat
+  `rest` list), `with a as b, c as d`: grouping again.
+- Comments inside a block: they are Lezer nodes but the numbering of children (`#n`) counts them; they need to be
+  filtered out of positions and drawn somewhere. About 10 lines in the adapter; not done.
+- Large single roots: a class or module-wide function is ONE root; every edit rebuilds the root (and its two
+  neighbours). On the largest JavaScript file sampled (a 618-line class, one root of about 2,000 nodes) one typed
+  edit costs about 108 ms in jsdom, of which 6 ms is the incremental parse and block building and the rest is
+  building its DOM and CodeMirror's update (jsdom is much slower than a browser; I did not measure the browser).
+  Needs node-level reuse inside a root (identity by range matching one level down): a design change, not a row.
+- Error recovery: the Python grammar reports errors for `6.` and `(yield)`: not ours to fix in a table.
+
+
+### Oracle failures found and fixed
+- One real bug, found by the first full corpus run on `cow-game.rkt` and `ast-test.rkt` (2 of 11 Scheme files, in the
+  template step of the random edits): a template inserted into a node outside the viewport opened its edit box inside a
+  detached element, so a stray `<input>` showed up later and the page differed from a fresh drawing. Reduced to a
+  600-line test (`spec/templates.test.ts`, "a template inserted outside the viewport leaves no edit box behind"; it
+  fails without the one-line fix in `interact.ts`).
+- No other failure: 0 of 130 files and 3,500 edits in the final run (plus the earlier baseline run, which had the 2
+  failures above). The earlier fuzzers (60 seeds x 25 steps per language) still pass with the grown tables.
+- Real programs also made two table changes necessary for the oracle's sake: the test that picks a list slot in
+  `lezer-view.test.ts` now skips the new flat `rest` lists; two inline snapshots changed (binary expressions and
+  assignments are now flat or list slots).
+
+
+### Bundle sizes (minified esbuild, `npm run build:min` and `build:min:scheme`; was 444,741 bytes before this round)
+- All three languages: 467,454 bytes (456 KB), 161,157 bytes gzipped. React build today 400 KB, Preact 215 KB.
+- Scheme only (a second entry, `demo/scheme-only.ts`, with the editor and the Scheme table only): 333,588 bytes (326 KB),
+  109,843 bytes gzipped. By package: @codemirror/view 152 KB, state 47 KB, our own code 28 KB, @lezer/lr 27 KB,
+  @codemirror/commands 23 KB, @lezer/common 20 KB, @codemirror/language 16 KB, the Scheme grammar 8 KB.
+  The estimate in round one ("Scheme alone about 200 KB") was wrong: CodeMirror 6's view alone is about half the bundle.
+  Growth of the tables and adapter: +23 KB over round two for the three-language build (+6 KB of it ours: the rest are
+  the grammar tables inside the language packages' bundles being unchanged, so about 23 KB is our rows, glue, templates,
+  describe strings and adapter).
+
+
+### Revised answer: does a language reduce to a table and a handful of rules?
+Evidence (the numbers above):
+- On real programs, with tables of 47 to 69 `nodes` lines, 9 to 12 lines of rules, about 10 templates and 10 describe
+  strings per language, 98 percent of the characters of the Python standard library sample, 97.7 percent of the
+  JavaScript library sample and 100 percent of the Scheme files are in real blocks, and 85 percent of JavaScript
+  top-level statements and 69 percent of Python's are drawn with no opaque or missing piece (imports are the rest).
+  Coverage grew from about 50 percent to 98 percent for JavaScript and 76 to 98 for Python while the tables grew
+  about 1.7 times; the growth was steady, one row at a time, with no step that needed a redesign until the last
+  few percent.
+- Correctness did not depend on the language: the oracle found 0 failures in 3,500 random edits on 130 real files
+  across the final tables (and one failure, in generic code, on the way).
+- Time is linear and small (13 to 19 ms per 1000 lines to parse and build in node), except that the one-root-per-class
+  shape makes a single edit rebuild a whole class (about 108 ms in jsdom for 2,000 nodes).
+Judgement (mine):
+- Yes, with a correction to "a handful of rules": about 30 rows per language beyond the first dozen, 10 lines of
+  `kind` rules, and four small generic mechanisms (glue words, take-by-position around a token, opaque, top-level-only
+  comments). Each of those mechanisms was found by looking at a real program, not by thinking about the language; a
+  fourth language would probably need one or two more. The table is the right shape for the first 90 percent; the
+  last 10 percent is a long tail whose cost per construct is flat (a row) but whose total is not small, and where
+  modifier words, imports, template strings and grouped clauses need design, not rows.
+- The corpora are libraries and standard-library code, harder than what students write; the closest local match
+  (turtledemo, example folders) got the same or better coverage (97.2 and 96.7 percent). They are small, and no Racket or
+  WeScheme student program beyond the repo's own was available, so the Scheme figure says little.
+- What these numbers do not show: whether the blocks are the right blocks for a learner (a `rest` list of operators and
+  operands is covered but not pleasant), how a screenreader reads a flat list, or how the drawing looks at 98 percent
+  coverage (not looked at: no screenshots were retaken this round).

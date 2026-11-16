@@ -7,7 +7,8 @@
   "scripts": {
     "build": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --loader:.css=text --outfile=demo/demo.js",
     "build:min": "esbuild demo/demo.ts --bundle --format=iife --minify --loader:.css=text --outfile=demo/demo.js",
-    "serve": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --loader:.css=text --outfile=demo/demo.js --servedir=demo --serve=8177"
+    "serve": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --loader:.css=text --outfile=demo/demo.js --servedir=demo --serve=8177",
+    "build:min:scheme": "esbuild demo/scheme-only.ts --bundle --format=iife --minify --loader:.css=text --outfile=demo/scheme-only.js"
   },
   "devDependencies": {
     "esbuild": "^0.28.2"
