@@ -9,6 +9,7 @@ const list = (name: string, take: string[] | "*") => ({ name, kind: "list" as co
 const one = (name: string, take: string[]) => ({ name, kind: "one" as const, take });
 
 export const pythonTable: BlockTable = {
+  lang: "python",
   nodes: {
     Number: { ...leaf("literal", "number"), dataType: "number" },
     String: { ...leaf("literal", "string"), dataType: "string" },

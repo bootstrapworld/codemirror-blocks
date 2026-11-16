@@ -9,6 +9,7 @@ const one = (name: string, take: string[]) => ({ name, kind: "one" as const, tak
 const stmts = (kind: string, label: string): BlockRow => ({ kind, label, slots: [list("body", "*")] });
 
 export const javascriptTable: BlockTable = {
+  lang: "javascript",
   nodes: {
     Number: { ...leaf("literal", "number"), dataType: "number" },
     String: { ...leaf("literal", "string"), dataType: "string" },

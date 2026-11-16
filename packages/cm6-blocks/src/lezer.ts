@@ -47,6 +47,8 @@ export interface BlockRow {
 }
 
 export interface BlockTable {
+  /** the language's name: the editor gets the class `blocks-lang-<lang>`, so a style sheet can draw a language its own way */
+  lang?: string;
   nodes: Record<string, BlockRow>;
   /** types drawn as their own text ("unknown" leaf) */
   opaque?: string[];

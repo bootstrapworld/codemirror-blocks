@@ -6,6 +6,7 @@ const atom = (dataType: string): BlockRow => ({ kind: "literal", label: dataType
 const HEADS: Record<string, [number, string]> = { define: [3, "DefineForm"], lambda: [3, "LambdaForm"], if: [4, "IfForm"], cond: [0, "CondForm"] };
 
 export const schemeTable: BlockTable = {
+  lang: "scheme",
   nodes: {
     Symbol: atom("symbol"), Define: atom("symbol"), CatchHead: atom("symbol"), Number: atom("number"),
     String: atom("string"), Boolean: atom("boolean"), Char: atom("char"),

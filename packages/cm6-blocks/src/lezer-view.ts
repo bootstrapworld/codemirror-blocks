@@ -509,6 +509,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   const blockExtension: Extension = [
     EditorView.decorations.from(field, (v) => v.decos),
     EditorView.atomicRanges.of((v) => v.state.field(field).decos),
+    EditorView.editorAttributes.of({ class: options.table.lang ? `blocks-lang-${options.table.lang}` : "" }),
     EditorView.contentAttributes.of({ role: "tree", "aria-label": "program", "aria-multiselectable": "true" }),
   ];
   let blockMode = true;
