@@ -1,5 +1,6 @@
 // EXPERIMENT: a page that runs the Lezer block editor in a browser.
 import css from "../src/style.css";
+import { redo, undo } from "@codemirror/commands";
 import { createLezerBlockEditor, LezerBlockEditor } from "../src/lezer-view";
 import { schemeParser, schemeTable } from "../src/lang-scheme";
 import { javascriptParser, javascriptTable } from "../src/lang-javascript";
@@ -80,7 +81,15 @@ function show(text: string): void {
   ed = createLezerBlockEditor($("editor"), text, LANGS[lang].opts);
   ed.setBlockMode($<HTMLInputElement>("blocks").checked);
   const ms = performance.now() - t0;
-  (window as unknown as { demo: unknown }).demo = { ed, lang, createMs: ms, setLanguage, loadBig, loadSample };
+  const demo = { ed, lang, createMs: ms, firstDrawMs: -1, paintedMs: -1, setLanguage, loadBig, loadSample, undo: () => undo(ed!.view), redo: () => redo(ed!.view) };
+  (window as unknown as { demo: unknown }).demo = demo;
+  const poll = () => {
+    if (document.querySelector(".cm-content .blocks-node") || !$<HTMLInputElement>("blocks").checked) {
+      demo.firstDrawMs = performance.now();
+      requestAnimationFrame(() => setTimeout(() => (demo.paintedMs = performance.now()), 0));
+    } else requestAnimationFrame(poll);
+  };
+  poll();
   stats();
 }
 
@@ -108,4 +117,10 @@ $<HTMLInputElement>("blocks").addEventListener("change", (e) => ed?.setBlockMode
 $("big").addEventListener("click", loadBig);
 $("small").addEventListener("click", loadSample);
 setInterval(stats, 1000);
-loadSample();
+const q = new URLSearchParams(location.search);
+if (q.get("lang") && q.get("lang")! in LANGS) {
+  lang = q.get("lang") as LangName;
+  $<HTMLSelectElement>("lang").value = lang;
+}
+if (q.get("big")) loadBig();
+else loadSample();

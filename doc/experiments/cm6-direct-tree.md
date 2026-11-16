@@ -364,6 +364,7 @@ what the tables cannot do yet. Running table (evidence = a test or measurement;
 |---|---|---|---|---|
 | 1 Lezer editor | yes | `src/lezer-view.ts` 464, spec 231, +25 in lezer.ts/render.ts/tables | see below | see below |
 | 2 demo page | yes | demo.ts 110, index.html 36, css +45, e2e smoke | runs in Chromium for all three languages | bundle is bigger than React's 400 KB (below) |
+| 4 real browser | yes | measure.e2e.ts 150, keys.e2e.ts 100 | numbers below; every key works in Chromium in all 3 languages | Scheme edits cost about 4x JS/Python (cause not isolated) |
 | 3 keys and mouse | yes | interact.ts 260, spec 190, +3 table lines | every key works in jsdom for all three languages with only `insertText` / `removeNode` / `replaceText` | not tried in a real browser yet; see below |
 
 ### Step 1: `createLezerBlockEditor` (`src/lezer-view.ts`)
@@ -466,3 +467,59 @@ what the tables cannot do yet. Running table (evidence = a test or measurement;
   bracket (wrong place); insert into an empty list is not possible (`lastError` is
   set; step 5a); the box for a sibling of a ROOT is inside the root's element, so it
   looks attached to the block rather than between lines.
+
+### Step 4: real Chromium (Playwright, `e2e/measure.e2e.ts`, `e2e/keys.e2e.ts`)
+
+Run: `npx playwright test -c packages/cm6-blocks/e2e/playwright.config.ts` (builds the
+minified bundle, serves it on 8177, stops the server at the end). Raw numbers:
+`e2e/results.json`, `e2e/keys-results.json`; screenshots of the 3000-line documents in
+`e2e/screens/`. One run each, headless Chromium, 1100x800, this laptop: treat as
+orders of magnitude, not benchmarks. All of this is measurement unless marked judgement.
+
+| | Scheme | JavaScript | Python |
+|---|---|---|---|
+| lines / roots / nodes | 2751 / 1250 / 13750 | 2821 / 940 / 11092 | 2773 / 1155 / 13398 |
+| navigation to first blocks in DOM (page clock) | 88 ms | 66 ms | 70 ms |
+| ... to after first frame | 94 ms | 72 ms | 75 ms |
+| create editor (parse + build + first draw) | 64 ms | 43 ms | 48 ms |
+| root widgets built at load / roots in DOM at once | 36 / 15 | 36 / 9 | 60 / 10 |
+| one edit (remove a block), sync incl. forced layout, near top / middle | 9.8 / 9.2 ms | 2.5 / 3.5 ms | 2.2 / 1.9 ms |
+| same, to after next frame | 16.5 / 16.8 ms | 16.5 / 16.7 ms | 16.4 / 16.8 ms |
+| undo, to after next frame | 16.6 / 16.6 ms | 16.6 / 16.8 ms | 16.9 / 16.7 ms |
+| scrolling top to bottom: widgets built / max roots in DOM at once | 1861 / 39 | 1603 / 23 | 1999 / 25 |
+
+- The "to after next frame" figures sit at one 60 Hz frame (16.6 ms): the edit fits
+  inside a frame; the sync figure is the real cost. Median of 7 repetitions each.
+- Only the viewport is built: 9 to 15 roots of about 1000 at load; scrolling builds
+  about 1600 to 2000 widgets over the whole document (a widget is rebuilt when a root
+  scrolls back in), never more than 39 roots in the DOM at once. (The earlier worry that
+  CodeMirror's layout would not stay small with thousands of widgets did not show.)
+- Scheme edits cost about 4x the others. In the editor's own timers (34 reparses,
+  includes the focus cases): parse 19 / 36 / 23 ms in total, everything else in the field
+  update 296 / 36 / 33 ms. So for Scheme it is not Lezer's parse but our matching and
+  building; likely the Scheme kind rule (it walks the list's items for every candidate)
+  run for every top-level node on every edit, but I did not profile it. Judgement.
+- Focus (a block is focused, then an edit is made; "restores" = times the editor had to
+  give focus back; focus was always on a block afterwards, never on the page body):
+  - edit inside the focused block's parent: block rebuilt, focus restored to the block at
+    the same place, 1 restore (all three languages).
+  - edit in a later root, in an earlier root, undo of either: focus untouched, 0
+    restores, same block (Scheme and Python). JavaScript: 0 restores, and focus on a
+    block with the same text but a different object, because the demo's JS roots
+    are statements next to each other, so the "later/earlier" root chosen was a
+    neighbour and was rebuilt, yet focus held (0 restores, i.e. it never left).
+  - removing the focused block: 1 restore (Scheme, Python); 0 in JavaScript.
+  - Not measured: whether the restore flickers or is announced twice by a screenreader.
+- Keyboard in real Chromium (real key presses, all steps passed in all three languages):
+  click focuses a block; ArrowDown/ArrowUp/ArrowLeft/ArrowRight move as specified; Enter on
+  a leaf shows the box, typing and Enter replace the text (`1` became `77`), Escape cancels;
+  Ctrl-] adds a sibling after (`77 55`); Delete and Backspace remove; Ctrl-Z / Ctrl-Shift-Z
+  undo and redo and keep focus on a block; a click on a gap opens the box and commits.
+  What does not work or is odd: after Delete in JS/Python focus lands on the call's head
+  (`g`) rather than the next argument, because the restore picks the deepest node at the
+  mapped position; in Scheme it lands on `(g 2)`. Judgement: arguably wrong for JS/Python.
+- Bug found by the first run of the measurement and fixed in the script, not the editor:
+  using a node object from before an edit (its root had been rebuilt) gave wrong
+  ranges and a corrupt document. An API that takes node objects across edits has this
+  trap; edits should probably take a (root index, path) or be refused when the node is
+  no longer in the tree (not done: `removeNode` does not check `doc.byId`).

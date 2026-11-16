@@ -1,0 +1,206 @@
+{
+  "scheme": {
+    "click_focuses_block": {
+      "focused": {
+        "kind": "literal",
+        "text": "1"
+      }
+    },
+    "ArrowDown": {
+      "kind": "call",
+      "text": "(g 2)"
+    },
+    "ArrowUp": {
+      "kind": "literal",
+      "text": "1"
+    },
+    "ArrowLeft_to_parent": {
+      "kind": "call",
+      "text": "(f 1 (g 2) 3)"
+    },
+    "ArrowRight_to_first_child": {
+      "kind": "literal",
+      "text": "f"
+    },
+    "Enter_edit_leaf_commit": {
+      "boxShown": 1,
+      "text": "(f 77 (g 2) 3)\n(h 4)\n",
+      "boxGone": true,
+      "focused": {
+        "kind": "literal",
+        "text": "77"
+      }
+    },
+    "Escape_cancels": {
+      "unchanged": true,
+      "focused": {
+        "kind": "literal",
+        "text": "77"
+      }
+    },
+    "CtrlBracket_sibling_after": {
+      "boxShown": 1,
+      "text": "(f 77 55 (g 2) 3)\n(h 4)\n"
+    },
+    "Delete": {
+      "shorter": true,
+      "text": "(f 77 (g 2) 3)\n(h 4)\n",
+      "focused": {
+        "kind": "call",
+        "text": "(g 2)"
+      }
+    },
+    "Backspace": {
+      "shorter": true,
+      "text": "(f (g 2) 3)\n(h 4)\n"
+    },
+    "Undo_Ctrl-Z": {
+      "undoChanged": true,
+      "redoRestored": true,
+      "focused": {
+        "kind": "call",
+        "text": "(g 2)"
+      }
+    },
+    "gap_click_box": {
+      "boxShown": 1,
+      "has88": true
+    }
+  },
+  "javascript": {
+    "click_focuses_block": {
+      "focused": {
+        "kind": "literal",
+        "text": "1"
+      }
+    },
+    "ArrowDown": {
+      "kind": "call",
+      "text": "g(2)"
+    },
+    "ArrowUp": {
+      "kind": "literal",
+      "text": "1"
+    },
+    "ArrowLeft_to_parent": {
+      "kind": "call",
+      "text": "f(1, g(2), 3)"
+    },
+    "ArrowRight_to_first_child": {
+      "kind": "literal",
+      "text": "f"
+    },
+    "Enter_edit_leaf_commit": {
+      "boxShown": 1,
+      "text": "f(77, g(2), 3);\nh(4);\n",
+      "boxGone": true,
+      "focused": {
+        "kind": "literal",
+        "text": "77"
+      }
+    },
+    "Escape_cancels": {
+      "unchanged": true,
+      "focused": {
+        "kind": "literal",
+        "text": "77"
+      }
+    },
+    "CtrlBracket_sibling_after": {
+      "boxShown": 1,
+      "text": "f(77, 55, g(2), 3);\nh(4);\n"
+    },
+    "Delete": {
+      "shorter": true,
+      "text": "f(77, g(2), 3);\nh(4);\n",
+      "focused": {
+        "kind": "literal",
+        "text": "g"
+      }
+    },
+    "Backspace": {
+      "shorter": true,
+      "text": "f(g(2), 3);\nh(4);\n"
+    },
+    "Undo_Ctrl-Z": {
+      "undoChanged": true,
+      "redoRestored": true,
+      "focused": {
+        "kind": "literal",
+        "text": "g"
+      }
+    },
+    "gap_click_box": {
+      "boxShown": 1,
+      "has88": true
+    }
+  },
+  "python": {
+    "click_focuses_block": {
+      "focused": {
+        "kind": "literal",
+        "text": "1"
+      }
+    },
+    "ArrowDown": {
+      "kind": "call",
+      "text": "g(2)"
+    },
+    "ArrowUp": {
+      "kind": "literal",
+      "text": "1"
+    },
+    "ArrowLeft_to_parent": {
+      "kind": "call",
+      "text": "f(1, g(2), 3)"
+    },
+    "ArrowRight_to_first_child": {
+      "kind": "literal",
+      "text": "f"
+    },
+    "Enter_edit_leaf_commit": {
+      "boxShown": 1,
+      "text": "f(77, g(2), 3)\nh(4)\n",
+      "boxGone": true,
+      "focused": {
+        "kind": "literal",
+        "text": "77"
+      }
+    },
+    "Escape_cancels": {
+      "unchanged": true,
+      "focused": {
+        "kind": "literal",
+        "text": "77"
+      }
+    },
+    "CtrlBracket_sibling_after": {
+      "boxShown": 1,
+      "text": "f(77, 55, g(2), 3)\nh(4)\n"
+    },
+    "Delete": {
+      "shorter": true,
+      "text": "f(77, g(2), 3)\nh(4)\n",
+      "focused": {
+        "kind": "literal",
+        "text": "g"
+      }
+    },
+    "Backspace": {
+      "shorter": true,
+      "text": "f(g(2), 3)\nh(4)\n"
+    },
+    "Undo_Ctrl-Z": {
+      "undoChanged": true,
+      "redoRestored": true,
+      "focused": {
+        "kind": "literal",
+        "text": "g"
+      }
+    },
+    "gap_click_box": {
+      "boxShown": 1,
+      "has88": true
+    }
+  }
+}

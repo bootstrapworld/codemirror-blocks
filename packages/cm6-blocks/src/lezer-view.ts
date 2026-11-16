@@ -49,6 +49,9 @@ export interface LezerStats {
   nodesRebuilt: number;
   /** nodes in the largest root rebuilt so far */
   maxRootNodes: number;
+  /** time spent in the field update, in ms: reparse; and the rest (matching, building, positions, decorations) */
+  parseMs: number;
+  restMs: number;
 }
 
 export interface LezerBlockEditor {
@@ -103,7 +106,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   const renderer = new Renderer(language);
   const stats: LezerStats = {
     edits: 0, reparses: 0, widgetsBuilt: 0, focusRestores: 0,
-    rootsKept: 0, rootsRebuilt: 0, nodesRebuilt: 0, maxRootNodes: 0,
+    rootsKept: 0, rootsRebuilt: 0, nodesRebuilt: 0, maxRootNodes: 0, parseMs: 0, restMs: 0,
   };
   const counters = stats as unknown as { ops: number; reparses: number; widgetsBuilt: number; focusRestores: number };
   const program = makeNode("program", [["roots", "list"]], { from: 0, to: text.length });
@@ -141,7 +144,10 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       const cr: { fromA: number; toA: number; fromB: number; toB: number }[] = [];
       tr.changes.iterChangedRanges((fromA, toA, fromB, toB) => cr.push({ fromA, toA, fromB, toB }));
       const frags = TreeFragment.applyChanges(v.fragments, cr);
+      const tp = performance.now();
       const tree = parser.parse(s, frags);
+      const tq = performance.now();
+      stats.parseMs += tq - tp;
 
       // Old roots, where they now are. A root is only kept if no change is in it or in its
       // neighbours: error recovery and the layout rules (Python's indentation, JS's automatic
@@ -221,6 +227,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
           filterTo: drop.size ? hi : undefined,
         });
       }
+      stats.restMs += performance.now() - tq;
       return { tree, fragments: TreeFragment.addTree(tree, frags), roots, decos };
     },
   });
