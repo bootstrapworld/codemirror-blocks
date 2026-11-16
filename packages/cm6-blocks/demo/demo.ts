@@ -2,6 +2,7 @@
 import css from "../src/style.css";
 import { redo, undo } from "@codemirror/commands";
 import { createLezerBlockEditor, LezerBlockEditor } from "../src/lezer-view";
+import { BIG } from "./samples";
 import { schemeParser, schemeTable } from "../src/lang-scheme";
 import { javascriptParser, javascriptTable } from "../src/lang-javascript";
 import { pythonParser, pythonTable } from "../src/lang-python";
@@ -125,6 +126,7 @@ function loadBig(): void {
 $<HTMLSelectElement>("lang").addEventListener("change", (e) => setLanguage((e.target as HTMLSelectElement).value as LangName));
 $<HTMLInputElement>("blocks").addEventListener("change", (e) => ed?.setBlockMode((e.target as HTMLInputElement).checked));
 $("big").addEventListener("click", loadBig);
+$("constructs").addEventListener("click", () => show(BIG[lang]));
 $("small").addEventListener("click", loadSample);
 setInterval(stats, 1000);
 const q = new URLSearchParams(location.search);
@@ -133,4 +135,5 @@ if (q.get("lang") && q.get("lang")! in LANGS) {
   $<HTMLSelectElement>("lang").value = lang;
 }
 if (q.get("big")) loadBig();
+else if (q.get("constructs")) show(BIG[lang]);
 else loadSample();

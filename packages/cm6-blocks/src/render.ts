@@ -183,6 +183,12 @@ export class Renderer {
       el.appendChild(kw);
     }
     for (const slot of node.slots) {
+      if (slot.glue) {
+        const g = this.create("span", "blocks-glue");
+        g.textContent = slot.glue;
+        g.setAttribute("aria-hidden", "true");
+        el.appendChild(g);
+      }
       if (slot.kind === "one") {
         const wrap = this.create(
           "span",

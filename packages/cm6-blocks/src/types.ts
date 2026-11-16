@@ -55,6 +55,8 @@ export interface Slot {
   readonly kind: "one" | "list";
   readonly owner: BNode;
   nodes: BNode[];
+  /** a word or sign drawn before the slot's content (`=`, `of`, `.`), from the table */
+  glue?: string;
 }
 
 /**

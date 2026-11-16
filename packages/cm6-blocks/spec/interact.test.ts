@@ -235,8 +235,8 @@ describe("insert into an empty list", () => {
   });
   test("an empty Python body is impossible", () => {
     const ed = make("python", "def f():\n    pass\n");
-    // `pass` is not in the table: the body is empty
-    const body = all(ed).find((n) => n.kind === "body");
+    // (`pass` is a block now: only a body with nothing in it counts, and Lezer may not give one at all)
+    const body = all(ed).find((n) => n.kind === "body" && n.slots[0].nodes.length === 0);
     if (body) expect(() => ed.insertText(body.slots[0], 0, "x = 1")).toThrow(/closing bracket/);
   });
 });

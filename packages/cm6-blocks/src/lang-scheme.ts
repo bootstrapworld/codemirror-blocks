@@ -9,6 +9,12 @@ export const schemeTable: BlockTable = {
   nodes: {
     Symbol: atom("symbol"), Define: atom("symbol"), CatchHead: atom("symbol"), Number: atom("number"),
     String: atom("string"), Boolean: atom("boolean"), Char: atom("char"),
+    QuoteForm: { kind: "quote", label: "quote", keyword: "\'", slots: [{ name: "datum", kind: "one", take: ["#0"] }] },
+    QuasiquoteForm: { kind: "quote", label: "quasiquote", keyword: "`", slots: [{ name: "datum", kind: "one", take: ["#0"] }] },
+    UnquoteForm: { kind: "quote", label: "unquote", keyword: ",", slots: [{ name: "datum", kind: "one", take: ["#0"] }] },
+    Vector: { kind: "vector", label: "vector", keyword: "#", slots: [{ name: "elements", kind: "list", take: "*" }] },
+    LineComment: { kind: "comment", label: "comment", leaf: true, topLevelOnly: true },
+    BlockComment: { kind: "comment", label: "comment", leaf: true, topLevelOnly: true },
     ParenList: { kind: "call", label: "call", brackets: true, slots: [{ name: "func", kind: "one", take: ["#0"] }, { name: "args", kind: "list", take: "*" }] },
     DefineForm: { kind: "define", label: "definition", keyword: "define", brackets: true, slots: [{ name: "name", kind: "one", take: ["#1"] }, { name: "value", kind: "one", take: ["#2"] }] },
     LambdaForm: { kind: "lambda", label: "function", keyword: "lambda", brackets: true, slots: [{ name: "params", kind: "one", take: ["#1"] }, { name: "body", kind: "one", take: ["#2"] }] },

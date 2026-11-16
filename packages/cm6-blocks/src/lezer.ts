@@ -21,6 +21,8 @@ export interface BlockRow {
    */
   slots?: { name: string; kind: "one" | "list"; take: string[] | "*"; /** text put before a node written into this slot when it was missing (`" = "`) */ before?: string }[];
   leaf?: boolean; // a value: its source text is its value
+  /** only a block when it is a direct child of the tree's top (comments: not inside other blocks) */
+  topLevelOnly?: boolean;
   dataType?: string;
   keyword?: string; // text drawn at its head
   brackets?: boolean; // read "()" or "[]" from its first character
@@ -89,16 +91,18 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     return n.name;
   };
 
-  function collect(n: SyntaxNode, path: string[], out: Cand[], text: string): void {
+  function collect(n: SyntaxNode, path: string[], out: Cand[], text: string, top = false): void {
     for (let c = n.firstChild; c; c = c.nextSibling) {
       if (c.type.isError) {
         out.push({ node: c, key: "@error", path });
         continue;
       }
       const key = keyOf(c, text);
-      if (table.nodes[key]) out.push({ node: c, key, path: [...path, c.name, key] });
-      else if (c.firstChild) collect(c, [...path, c.name], out, text);
+      const row = table.nodes[key];
+      if (row && (!row.topLevelOnly || top)) out.push({ node: c, key, path: [...path, c.name, key] });
+      else if (row) continue;
       else if (table.opaque?.includes(c.name)) out.push({ node: c, key: "@opaque", path });
+      else if (c.firstChild) collect(c, [...path, c.name], out, text);
     }
   }
 
@@ -123,12 +127,17 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     if (row.leaf) return leaf(row.kind, n, text, offset, row.dataType ? { dataType: row.dataType } : {});
     const extra: Partial<BNode> = { from: n.from + offset, to: n.to + offset };
     if (row.keyword) {
-      extra.keyword = row.keyword;
-      const at = text.indexOf(row.keyword, n.from);
-      extra.keywordTo = (at >= 0 ? at + row.keyword.length : n.from) + offset;
+      // "$first": the node's own first word (`const`, `let`, `var`)
+      const kw = row.keyword === "$first" ? (/^\w+/.exec(text.slice(n.from, n.to)) ?? [row.keyword])[0] : row.keyword;
+      extra.keyword = kw;
+      const at = text.indexOf(kw, n.from);
+      extra.keywordTo = (at >= 0 ? at + kw.length : n.from) + offset;
     }
     if (row.brackets) extra.brackets = text[n.from] === "[" ? "[]" : "()";
     const b = makeNode(row.kind, (row.slots ?? []).map((s) => [s.name, s.kind]), extra);
+    (row.slots ?? []).forEach((sp, i) => {
+      if (sp.before?.trim()) b.slots[i].glue = sp.before.trim();
+    });
     sources.set(b, text.slice(n.from, n.to));
     const cands: Cand[] = [];
     collect(n, [], cands, text);
@@ -185,12 +194,12 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     parse(text, offset = 0) {
       const top = parser.parse(text).topNode;
       const out: Cand[] = [];
-      collect(top, [], out, text);
+      collect(top, [], out, text, true);
       return out.map((c) => build(c, text, offset));
     },
     fromTree(tree, text, keep) {
       const out: Cand[] = [];
-      collect(tree.topNode, [], out, text);
+      collect(tree.topNode, [], out, text, true);
       return out.map((c) => keep?.(c.node.from, c.node.to, c.key) ?? build(c, text, 0));
     },
     print(node) {

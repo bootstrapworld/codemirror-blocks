@@ -675,3 +675,42 @@ Question: does a language stay "a table and a handful of rules" once blocks must
     template inserted after a statement in Python becomes an expression statement.
     A kind check by the tests is only "a block of that kind exists after", not "exactly this
     block was added".
+
+### C: the table gaps, with a larger program per language (`demo/samples.ts`)
+A "constructs" sample per language (comments, imports, classes, strings, nested calls,
+lambdas/arrows, list and dict/object literals, return, loops, member access, unary and
+boolean operators) was read, the characters no leaf block carried were listed, and the
+tables extended until what is left is only keywords drawn by `keyword`. Changes, in table
+lines (JS +17, Python +17, Scheme +6) and 25 lines of adapter/renderer:
+- generic additions (adapter): `opaque` now works for nodes with children (it only did for
+  leaves): a construct we do not model is drawn as its own text, one block, not as noise;
+  a slot may carry `before`, now also DRAWN as glue between slots (`=`, `of`, `in`, `.`;
+  `Slot.glue`, 5 lines in the renderer); `keyword: "$first"` draws the node's own first word
+  (JS `const` / `let`, which were all shown as `let`); `topLevelOnly` rows.
+- JavaScript: `=` shown (declarations, assignments), `+=` as `UpdateAssign`, `for (... of ...)`
+  now takes the ARRAY or any expression as the iterable, classic `for(;;)`, `class` / class body
+  / method, `this`, `true/false`, `null`, unary and logical operators, `x.y` as a member block
+  with `.` between, `x[0]` as an index block (a `kind` rule, 3 lines, shared by Python).
+  Opaque (one block of plain text): arrow functions, function expressions, template strings,
+  `?:`, `import`/`export`, `new`, `await`, `i++`.
+- Python: `=`, `in`, `.` shown; `and/or/not/in/is` as operator blocks (a `kind` rule for tokens
+  that are also keywords elsewhere, 3 lines), `+=`, `class`, `lambda`, `pass/break/continue`,
+  `x.y`, `x[0]`, `...`, `True`, `None`. Opaque: `import`, dict, tuple, comprehensions, `if`-else
+  expressions, f-strings, `await`, `yield`. Still flat: `elif`/`else` branches (a list `rest`).
+- Scheme: quote, quasiquote, unquote as a block with the mark as its keyword (`'(1 2 3)` used
+  to look like an ordinary call: noise), vectors. `let` and `(quote x)` stay ordinary calls;
+  its `[a 1]` pairs are call blocks (readable, not named).
+- Where the table ends: Scheme 63 lines of file (14 in `nodes`, 11 templates, 1 rule of 15),
+  JavaScript 81 (37 `nodes`, 10 templates, 1 rule of 7), Python 73 (32 `nodes`, 10 templates,
+  1 rule of 7).
+- Still falls through to plain text or noise: comments INSIDE a block are hidden (the
+  root's widget covers them; only top-level comments are blocks, see E); JS arrow functions
+  and template strings, Python dicts/tuples/comprehensions are one opaque block each; JS
+  object methods and getters, destructuring, spread, default parameters, `try/catch`,
+  `switch`, `async` (the word is dropped) are read as whatever blocks happen to be inside, or
+  as nothing; Python `elif`/`else`, `try/except`, `with`, decorators likewise; the third word
+  of `class C(B)` (the base) is dropped from the drawing (the text keeps it). I did not
+  measure how many of these a larger real program hits.
+- Screenshots retaken from the constructs sample: `e2e/screens/*.png` (top of the document).
+- Evidence: package tests 290 pass (two inline snapshots updated because the renderer now
+  draws `=` and ids shifted); the earlier fuzzers (60 seeds x 25 steps) still pass.

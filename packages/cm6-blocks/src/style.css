@@ -100,3 +100,14 @@
   margin: 1px 2px;
   min-width: 2ch;
 }
+
+/* ---- glue words, comments, classes, members ---- */
+.blocks-glue { color: #667; font-weight: bold; margin: 0 2px; }
+.blocks-comment { border: 0; background: transparent; color: #6a7a6a; font-style: italic; }
+.blocks-classbody { display: block; margin: 2px 0 2px 1.4em; padding: 2px 4px; border-left: 3px solid #b8c4dd; border-top: 0; border-right: 0; border-bottom: 0; border-radius: 0; background: transparent; }
+.blocks-classbody > .blocks-args { display: block; }
+.blocks-classbody > .blocks-args > .blocks-node { display: block; }
+.blocks-class, .blocks-method { border-color: #4a9a5c; background: #edf8f0; }
+.blocks-member, .blocks-index { border-color: #aab; background: #f7f7fb; }
+.blocks-quote, .blocks-vector { border-color: #c47f2c; background: #fbf3e8; }
+.blocks-unknown, .blocks-unary { border-color: #bbb; }
