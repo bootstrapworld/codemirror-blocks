@@ -1,7 +1,6 @@
 // EXPERIMENT: Python blocks from @lezer/python. Raw trees: spec/lezer.test.ts "raw trees".
 import { parser } from "@lezer/python";
-import { lezerLanguage, BlockRow, BlockTable } from "./lezer";
-import type { Slot } from "./types";
+import { lezerLanguage, BlockRow, BlockTable, lineSeparator } from "./lezer";
 
 const leaf = (kind: string, label: string): BlockRow => ({ kind, label, leaf: true });
 const list = (name: string, take: string[] | "*") => ({ name, kind: "list" as const, take });
@@ -12,6 +11,9 @@ export const pythonTable: BlockTable = {
     Number: { ...leaf("literal", "number"), dataType: "number" },
     String: { ...leaf("literal", "string"), dataType: "string" },
     VariableName: { ...leaf("literal", "name"), dataType: "symbol" },
+    Ellipsis: { ...leaf("literal", "hole"), dataType: "symbol" },
+    Boolean: { ...leaf("literal", "boolean"), dataType: "boolean" },
+    None: { ...leaf("literal", "none"), dataType: "other" },
     ArithOp: leaf("operator", "operator"),
     CompareOp: leaf("operator", "operator"),
     BinaryExpression: { kind: "binary", label: "operation", slots: [one("left", ["#0"]), one("op", ["ArithOp", "CompareOp"]), one("right", ["#2"])] },
@@ -28,15 +30,20 @@ export const pythonTable: BlockTable = {
   },
   blank: "...",
   separators: { args: ", ", elements: ", ", roots: "\n" },
-  rules: [{
-    // statements of a body are one per line, at the indentation of their neighbour
-    name: "separator",
-    apply(slot: Slot, text: string) {
-      if (slot.name !== "body" || !slot.nodes.length) return undefined;
-      const at = slot.nodes[0].from;
-      return "\n" + text.slice(text.lastIndexOf("\n", at - 1) + 1, at);
-    },
-  }],
+  rules: [lineSeparator()],
+  statementSlots: ["body", "roots"],
+  templates: {
+    variable: { text: "${name|x} = ${value}", kind: "assign", stmt: true },
+    function: { text: "def ${name|func}(${param|x}):\n    ${body}", kind: "function", stmt: true },
+    call: { text: "${func}(${arg})", kind: "call" },
+    "if-else": { text: "if ${test}:\n    ${then}\nelse:\n    ${else}", kind: "if", stmt: true },
+    while: { text: "while ${test}:\n    ${body}", kind: "while", stmt: true },
+    for: { text: "for ${item|x} in ${items}:\n    ${body}", kind: "for", stmt: true },
+    return: { text: "return ${value}", kind: "return", stmt: true },
+    number: { text: "0", kind: "literal" },
+    string: { text: '"text"', kind: "literal" },
+    list: { text: "[${a}, ${b}]", kind: "array" },
+  },
 };
 export { parser as pythonParser };
 export const python = lezerLanguage(parser as never, pythonTable);

@@ -57,7 +57,7 @@ export function prevBlock(n: BNode): BNode | null {
   return null;
 }
 
-export function attachInteraction(ed: LezerBlockEditor): () => void {
+export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(node: BNode, typed?: string): void } {
   const { view, renderer } = ed;
   const dom = view.dom;
   let open: { cancel(): void } | null = null;
@@ -75,7 +75,7 @@ export function attachInteraction(ed: LezerBlockEditor): () => void {
   }
 
   /** a text box, placed by `put`; Enter calls `commit(text)`, Escape or blur cancels */
-  function box(initial: string, put: (input: HTMLInputElement) => void, done: () => void, commit: (text: string) => void): void {
+  function box(initial: string, put: (input: HTMLInputElement) => void, done: () => void, commit: (text: string) => void, select = true): void {
     open?.cancel();
     const input = dom.ownerDocument.createElement("input");
     input.className = "blocks-edit";
@@ -108,10 +108,12 @@ export function attachInteraction(ed: LezerBlockEditor): () => void {
     put(input);
     open = self;
     input.focus();
-    input.select();
+    if (select) input.select();
+    else input.setSelectionRange(input.value.length, input.value.length);
   }
 
-  function editLeaf(node: BNode): void {
+  function editLeaf(node: BNode, typed?: string): void {
+    ed.focusNode(node);
     const el = renderer.element(node);
     const text = el.firstElementChild as HTMLElement | null;
     const back = () => {
@@ -119,7 +121,7 @@ export function attachInteraction(ed: LezerBlockEditor): () => void {
       ed.focusNode(node);
     };
     box(
-      node.kind === "blank" ? "" : node.value ?? "",
+      typed ?? (node.kind === "blank" ? "" : node.value ?? ""),
       (input) => {
         if (text) {
           text.style.display = "none";
@@ -131,7 +133,8 @@ export function attachInteraction(ed: LezerBlockEditor): () => void {
         if (t === (node.value ?? "") ) return;
         if (t.trim() === "") ed.removeNode(node);
         else ed.replaceText(node, t);
-      }
+      },
+      typed === undefined
     );
   }
 
@@ -210,6 +213,10 @@ export function attachInteraction(ed: LezerBlockEditor): () => void {
     } else if (k === "Enter") {
       handled();
       if (node.slots.length === 0) editLeaf(node);
+    } else if (k.length === 1 && node.slots.length === 0 && node.value === (ed.options.table.blank ?? "...")) {
+      // typing into a hole replaces it
+      handled();
+      editLeaf(node, k);
     }
   }
 
@@ -229,9 +236,12 @@ export function attachInteraction(ed: LezerBlockEditor): () => void {
 
   dom.addEventListener("keydown", onKey, true);
   dom.addEventListener("click", onClick, true);
-  return () => {
-    open?.cancel();
-    dom.removeEventListener("keydown", onKey, true);
-    dom.removeEventListener("click", onClick, true);
+  return {
+    edit: editLeaf,
+    detach() {
+      open?.cancel();
+      dom.removeEventListener("keydown", onKey, true);
+      dom.removeEventListener("click", onClick, true);
+    },
   };
 }

@@ -62,6 +62,12 @@
         "text": "(g 2)"
       }
     },
+    "template_if_else_then_type_into_hole": {
+      "boxShown": 1,
+      "hasCond1": true,
+      "text": "(f (g 2) 3)\n(if cond1 ... ...)\n(h 4)\n",
+      "roots": "call,if,call"
+    },
     "gap_click_box": {
       "boxShown": 1,
       "has88": true
@@ -114,8 +120,8 @@
       "shorter": true,
       "text": "f(77, g(2), 3);\nh(4);\n",
       "focused": {
-        "kind": "literal",
-        "text": "g"
+        "kind": "call",
+        "text": "g(2)"
       }
     },
     "Backspace": {
@@ -129,6 +135,12 @@
         "kind": "literal",
         "text": "g"
       }
+    },
+    "template_if_else_then_type_into_hole": {
+      "boxShown": 1,
+      "hasCond1": true,
+      "text": "f(g(2), 3);\nif (cond1) {\n  undefined\n} else {\n  undefined\n}\nh(4);\n",
+      "roots": "statement,if,statement"
     },
     "gap_click_box": {
       "boxShown": 1,
@@ -182,8 +194,8 @@
       "shorter": true,
       "text": "f(77, g(2), 3)\nh(4)\n",
       "focused": {
-        "kind": "literal",
-        "text": "g"
+        "kind": "call",
+        "text": "g(2)"
       }
     },
     "Backspace": {
@@ -197,6 +209,12 @@
         "kind": "literal",
         "text": "g"
       }
+    },
+    "template_if_else_then_type_into_hole": {
+      "boxShown": 1,
+      "hasCond1": true,
+      "text": "f(g(2), 3)\nif cond1:\n    ...\nelse:\n    ...\nh(4)\n",
+      "roots": "statement,if,statement"
     },
     "gap_click_box": {
       "boxShown": 1,

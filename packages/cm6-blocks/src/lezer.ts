@@ -30,6 +30,16 @@ export interface BlockTable {
   nodes: Record<string, BlockRow>;
   /** types drawn as their own text ("unknown" leaf) */
   opaque?: string[];
+  /**
+   * Blocks that can be WRITTEN without having been parsed: name -> source text with holes
+   * `${name}` (each hole becomes `blank`). `kind` is the kind of the block it makes (checked by
+   * the tests); `stmt` marks a template that is a statement (it goes into a statement list).
+   */
+  templates?: Record<string, { text: string; kind: string; stmt?: boolean }>;
+  /** names of the list slots that hold statements (none given: every list slot takes every template) */
+  statementSlots?: string[];
+  /** put after an expression written where a statement goes (`;` in JavaScript) */
+  statementSuffix?: string;
   /** text put where a node that has to be there (a "one" slot) is deleted; default "..." */
   blank?: string;
   /** how elements of a list are separated, by list-slot name or node kind */
@@ -249,4 +259,44 @@ export function insertEmptyChange(text: string, slot: Slot, snippet: string): Te
   const pad = prev === "" || /[\s([{]/.test(prev) ? "" : " ";
   const at = o.to - 1;
   return { from: at, to: at, insert: pad + snippet };
+}
+
+/**
+ * The generic separator rule for statement lists: a newline and the indentation of the first
+ * statement; or `inline` when that statement is not first on its line (`{ a(); b(); }`), if given.
+ */
+export const lineSeparator = (inline?: string) => ({
+  name: "separator",
+  apply(slot: Slot, text: string): string | undefined {
+    if (slot.name !== "body" || !slot.nodes.length) return undefined;
+    const at = slot.nodes[0].from;
+    const before = text.slice(text.lastIndexOf("\n", at - 1) + 1, at);
+    return inline !== undefined && /\S/.test(before) ? inline : "\n" + before.replace(/\S.*$/, "");
+  },
+});
+
+/** the source of template `name`: holes become the table's blank; also the offset of the first hole (-1: none) */
+export function fillTemplate(table: BlockTable, name: string, indent = ""): { text: string; hole: number; kind: string; stmt: boolean } {
+  const t = table.templates?.[name];
+  if (!t) throw new Error(`no template ${name}`);
+  const blank = table.blank ?? "...";
+  let hole = -1;
+  let text = "";
+  let last = 0;
+  for (const m of t.text.matchAll(/\$\{[^}]*\}/g)) {
+    text += t.text.slice(last, m.index);
+    if (hole < 0) hole = text.length;
+    // `${label|text}`: a hole that cannot be the blank (a Python name) shows `text` instead
+    text += m[0].includes("|") ? m[0].slice(m[0].indexOf("|") + 1, -1) : blank;
+    last = (m.index as number) + m[0].length;
+  }
+  text += t.text.slice(last);
+  if (indent) {
+    // the indentation applies to every line after the first: move the hole offset with it
+    const before = text.slice(0, hole < 0 ? 0 : hole);
+    const extra = (before.match(/\n/g) ?? []).length * indent.length;
+    text = text.replace(/\n/g, "\n" + indent);
+    if (hole >= 0) hole += extra;
+  }
+  return { text, hole, kind: t.kind, stmt: !!t.stmt };
 }

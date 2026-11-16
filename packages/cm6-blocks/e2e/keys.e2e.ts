@@ -86,6 +86,15 @@ for (const lang of Object.keys(SMALL)) {
       await page.keyboard.press("Control+Shift+z");
       return { undoChanged: t1 !== before, redoRestored: (await text()) === before, focused: await active() };
     });
+    await step("template_if_else_then_type_into_hole", async () => {
+      await page.locator(".cm-content .blocks-literal", { hasText: /^f$/ }).first().click();
+      await page.locator('button[data-template="if-else"]').click();
+      const box = await page.locator("input.blocks-edit").count();
+      await page.keyboard.type("cond1");
+      await page.keyboard.press("Enter");
+      const t = await text();
+      return { boxShown: box, hasCond1: t.includes("cond1"), text: t.slice(-80), roots: await page.evaluate(() => (window as any).demo.ed.roots().map((r: any) => r.kind).join(",")) };
+    });
     await step("gap_click_box", async () => {
       await page.locator(".cm-content .blocks-gap").nth(1).click({ force: true });
       const box = await page.locator("input.blocks-edit").count();

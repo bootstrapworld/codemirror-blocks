@@ -1,6 +1,6 @@
 // EXPERIMENT: JavaScript blocks from @lezer/javascript. Raw trees: spec/lezer.test.ts "raw trees".
 import { parser } from "@lezer/javascript";
-import { lezerLanguage, BlockRow, BlockTable } from "./lezer";
+import { lezerLanguage, BlockRow, BlockTable, lineSeparator } from "./lezer";
 
 const leaf = (kind: string, label: string): BlockRow => ({ kind, label, leaf: true });
 const list = (name: string, take: string[] | "*") => ({ name, kind: "list" as const, take });
@@ -34,7 +34,22 @@ export const javascriptTable: BlockTable = {
     Property: { kind: "property", label: "property", slots: [one("key", ["PropertyDefinition"]), one("value", ["#1"])] },
   },
   blank: "undefined",
-  separators: { args: ", ", elements: ", ", properties: ", ", body: " ", roots: "\n" },
+  separators: { args: ", ", elements: ", ", properties: ", ", roots: "\n" },
+  rules: [lineSeparator(" ")],
+  statementSlots: ["body", "roots"],
+  statementSuffix: ";",
+  templates: {
+    variable: { text: "let ${name} = ${value};", kind: "declare", stmt: true },
+    function: { text: "function ${name}(${param}) {\n  ${body}\n}", kind: "function", stmt: true },
+    call: { text: "${func}(${arg})", kind: "call" },
+    "if-else": { text: "if (${test}) {\n  ${then}\n} else {\n  ${else}\n}", kind: "if", stmt: true },
+    while: { text: "while (${test}) {\n  ${body}\n}", kind: "while", stmt: true },
+    for: { text: "for (const ${item} of ${items}) {\n  ${body}\n}", kind: "for", stmt: true },
+    return: { text: "return ${value};", kind: "return", stmt: true },
+    number: { text: "0", kind: "literal" },
+    string: { text: '"text"', kind: "literal" },
+    array: { text: "[${a}, ${b}]", kind: "array" },
+  },
 };
 export { parser as javascriptParser };
 export const javascript = lezerLanguage(parser as never, javascriptTable);

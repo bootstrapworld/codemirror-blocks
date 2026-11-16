@@ -18,6 +18,19 @@ export const schemeTable: BlockTable = {
   },
   blank: "...",
   separators: { roots: "\n" },
+  templates: {
+    variable: { text: "(define ${name} ${value})", kind: "define" },
+    function: { text: "(define (${name} ${param}) ${body})", kind: "define" },
+    lambda: { text: "(lambda (${param}) ${body})", kind: "lambda" },
+    call: { text: "(${func} ${arg})", kind: "call" },
+    "if-else": { text: "(if ${test} ${then} ${else})", kind: "if" },
+    cond: { text: "(cond [${test} ${result}] [else ${result}])", kind: "cond" },
+    number: { text: "0", kind: "literal" },
+    string: { text: '"text"', kind: "literal" },
+    boolean: { text: "#t", kind: "literal" },
+    char: { text: "#\\a", kind: "literal" },
+    symbol: { text: "x", kind: "literal" },
+  },
   rules: [{
     name: "kind",
     // "a list whose first element is the symbol define is a definition", checked for the arity wescheme demands

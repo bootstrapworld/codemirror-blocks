@@ -27,7 +27,7 @@ import { defaultKeymap, history, historyKeymap, isolateHistory } from "@codemirr
 import { Tree, TreeFragment } from "@lezer/common";
 import type { Parser } from "@lezer/common";
 import { walk } from "./doc";
-import { BlockTable, insertChange, insertEmptyChange, LezerLanguage, lezerLanguage, removeChange, keyOfNode, hasError } from "./lezer";
+import { BlockTable, fillTemplate, insertChange, insertEmptyChange, LezerLanguage, lezerLanguage, removeChange, keyOfNode, hasError } from "./lezer";
 import { Renderer } from "./render";
 import { RootWidget } from "./view";
 import { attachInteraction } from "./interact";
@@ -63,6 +63,18 @@ export interface LezerBlockEditor {
   /** the message of the last edit the keyboard or mouse could not make (e.g. insert into an empty list) */
   lastError: string | null;
   roots(): BNode[];
+  /** the templates of the language (the table's), in the order written */
+  templates(): { name: string; kind: string; stmt: boolean }[];
+  /**
+   * Write template `name` after `anchor` (or the nearest ancestor that sits in a list that takes it),
+   * else at the end of the program. Holes are the language's blank. Returns the first hole (or the
+   * new block), also focused with its edit box open.
+   */
+  insertTemplate(name: string, anchor?: BNode | null): BNode | null;
+  /** edit a leaf in place (its box); `typed` starts the text with that key */
+  edit(node: BNode, typed?: string): void;
+  /** the block that had focus last (it may have lost it to a toolbar), if it is still in the tree */
+  lastFocused(): BNode | null;
   /** insert source text `snippet` as element `index` of a list slot (a text change, one undo step) */
   insertText(slot: Slot, index: number, snippet: string): void;
   /** remove a node: out of a list with one separator, or (a "one" slot) put the table's blank there */
@@ -297,6 +309,15 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     view.dispatch({ changes: c, annotations: [isolateHistory.of("full")], userEvent: "input.block" });
   }
   const currentText = () => view.state.doc.toString();
+  let lastNode: BNode | null = null;
+  /** the text change that writes `snippet` as element `index` of a list slot (an empty list too) */
+  function changeFor(slot: Slot, index: number, snippet: string): TextChange {
+    if (slot.nodes.length === 0) {
+      if (slot.owner === program) return { from: 0, to: 0, insert: snippet + (view.state.doc.length ? "\n" : "") };
+      return insertEmptyChange(currentText(), slot, snippet);
+    }
+    return insertChange(table, currentText(), slot, index, snippet);
+  }
   /** Nodes are only good until the next change that rebuilds their root: refuse a stale one (throws). */
   const live = (n: BNode): void => {
     if (doc.byId.get(n.id) !== n) throw new Error(`node ${n.id} (${n.kind}) is no longer in the tree: look it up again after an edit`);
@@ -314,16 +335,45 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     roots: () => rootsSlot.nodes,
     insertText(slot, index, snippet) {
       live(slot.owner);
-      if (slot.nodes.length === 0) {
-        if (slot.owner === program) {
-          dispatch({ from: 0, to: 0, insert: snippet + (view.state.doc.length ? "\n" : "") });
-          return;
-        }
-        dispatch(insertEmptyChange(currentText(), slot, snippet));
-        return;
-      }
-      dispatch(insertChange(table, currentText(), slot, index, snippet));
+      dispatch(changeFor(slot, index, snippet));
     },
+    templates: () => Object.entries(table.templates ?? {}).map(([name, t]) => ({ name, kind: t.kind, stmt: !!t.stmt })),
+    insertTemplate(name, anchor) {
+      const t = table.templates?.[name];
+      if (!t) throw new Error(`no template ${name}`);
+      if (anchor) live(anchor);
+      const takes = (sl: Slot) => sl.kind === "list" && (!t.stmt || !table.statementSlots || table.statementSlots.includes(sl.name));
+      let slot = rootsSlot;
+      let ref: BNode | null = rootsSlot.nodes[rootsSlot.nodes.length - 1] ?? null;
+      let index = rootsSlot.nodes.length;
+      for (let n: BNode | null = anchor ?? null; n; n = n.parent) {
+        if (n.slot && takes(n.slot)) {
+          slot = n.slot;
+          ref = n;
+          index = n.slot.nodes.indexOf(n) + 1;
+          break;
+        }
+      }
+      const text = currentText();
+      const indent = ref ? (text.slice(text.lastIndexOf("\n", ref.from - 1) + 1, ref.from).match(/^[ \t]*/) as RegExpMatchArray)[0] : "";
+      const f = fillTemplate(table, name, indent);
+      const asStatement = !t.stmt && !!table.statementSlots?.includes(slot.name);
+      const snippet = f.text + (asStatement ? table.statementSuffix ?? "" : "");
+      const change = changeFor(slot, index, snippet);
+      dispatch(change);
+      const start = change.from + change.insert.indexOf(snippet);
+      const pos = start + Math.max(f.hole, 0);
+      let found: BNode | null = null;
+      for (const r of rootsSlot.nodes) {
+        walk(r, (n) => {
+          if (n.slots.length === 0 && n.from === pos && n.to > n.from && (!found || n.from >= found.from) && !found) found = n;
+        });
+      }
+      if (found) ed.edit(found);
+      return found;
+    },
+    edit: (node, typed) => interaction.edit(node, typed),
+    lastFocused: () => (lastNode && doc.byId.get(lastNode.id) === lastNode ? lastNode : null),
     removeNode(node) {
       live(node);
       if (!node.slot) throw new Error("not removable");
@@ -383,7 +433,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     stats: () => ({ ...stats }),
     destroy() {
       gone = true;
-      detach();
+      interaction.detach();
       view.destroy();
     },
   };
@@ -412,7 +462,11 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       }
     },
   });
-  const detach = attachInteraction(ed);
+  const interaction = attachInteraction(ed);
+  view.dom.addEventListener("focusin", (e) => {
+    const n = renderer.nodeOf(e.target as Element);
+    if (n) lastNode = n;
+  });
   internals.set(ed, { field, blockMode: () => blockMode });
   return ed;
 }

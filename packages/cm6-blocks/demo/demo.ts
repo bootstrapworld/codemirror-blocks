@@ -90,6 +90,16 @@ function show(text: string): void {
     } else requestAnimationFrame(poll);
   };
   poll();
+  const bar = $("templates");
+  bar.textContent = "Insert after the focused block: ";
+  for (const t of ed.templates()) {
+    const b = document.createElement("button");
+    b.textContent = t.name;
+    b.dataset.template = t.name;
+    b.addEventListener("mousedown", (e) => e.preventDefault()); // keep the focus on the block
+    b.addEventListener("click", () => ed!.insertTemplate(t.name, ed!.focusedNode() ?? ed!.lastFocused()));
+    bar.appendChild(b);
+  }
   stats();
 }
 

@@ -629,3 +629,49 @@ editor gave focus back; all cases ended with focus on a block. `e2e/results.json
   editor's `dispatchTransactions`): after an undo or redo, scroll to the first changed
   position (`scrollIntoView(nearest)`) and restore focus. Now focus survives in all three
   languages (the restore runs once per undo: the element is moved when the line is redrawn).
+
+### B: writing blocks that were never parsed (templates)
+Question: does a language stay "a table and a handful of rules" once blocks must be WRITTEN?
+
+- A table gets `templates: { name: { text, kind, stmt? } }` with `${hole}` holes (each
+  becomes the table's blank; `${name|text}` shows `text` where the blank is not valid),
+  `statementSlots` (which list slots take statements) and `statementSuffix` (JS `;`).
+  The editor's `insertTemplate(name, anchor)` writes it after the anchor (or the nearest
+  ancestor that sits in a list that takes it: a statement template skips out of an
+  argument list; an expression template inside a statement list gets the suffix), indents
+  continuation lines to the anchor's line, focuses the first hole and opens its edit box;
+  typing a character on a focused hole (blank) starts the box with that character. The
+  demo has a toolbar of the language's templates (`mousedown` is prevented so the block
+  keeps focus).
+- Templates per language: Scheme 11 (variable, function, lambda, call, if-else, cond,
+  number, string, boolean, char, symbol), JavaScript 10 (variable, function, call,
+  if-else, while, for-of, return, number, string, array), Python 10 (variable, function,
+  call, if-else, while, for-in, return, number, string, list). Lines of table: see the
+  summary table at the end of this round (about 12 per language, plus 2 to 3 for
+  statementSlots / suffix / separator rule).
+- Evidence (`spec/templates.test.ts`, 99 tests): every template of every language is
+  inserted at (a) top level, (b) after the statement in a function body, (c) after the
+  statement in an if body (Scheme: after an argument inside the body, because Scheme has no
+  statement lists: the body is one expression); the result has no root with an error
+  node, contains a block of the kind the template names, passes `checkLezerEditor`, has the
+  first hole focused in its box, and typing replaces the hole. All 290 package tests pass.
+  In Chromium (keys.e2e.ts): click a block, click the `if-else` button, type a condition,
+  Enter: `(if cond1 ... ...)`, `if (cond1) {...}`, `if cond1:` appear with the right roots.
+- Findings (the answer to the question, as far as it goes):
+  - Indentation was NOT per-language: one generic rule (indent of the anchor's line, applied
+    to the template's continuation lines) plus the one shared `lineSeparator` rule that Python
+    already needed, now used by JavaScript too (1 line each in the tables). Nested Python
+    bodies work because the indent comes from the line of the anchor statement.
+  - The blank is not a universal hole. Python `def ... (...)` and `for ... in` are not valid
+    code, so those holes need a placeholder (`${name|func}`): a few characters in 3 templates.
+    JavaScript's `undefined` happens to be a valid identifier and expression everywhere used.
+  - A hole that is a blank is a LITERAL block in all three languages, which needed the table to
+    know it: Python had no node for `...` (added `Ellipsis`, `Boolean`, `None`: 3 lines).
+  - Not expressible / not done: a template into an EMPTY Python body (no closing bracket; the
+    body of a freshly written `def` is a hole, so it works, but a hand-written `def f():`
+    with no statement cannot take one); JS statements land in `{ }` on separate lines only if
+    the block was multi-line; Scheme has no loop template (recursion); no template for
+    `class`, `import`, lambda/arrow in JS and Python, dict/object (see C). An expression
+    template inserted after a statement in Python becomes an expression statement.
+    A kind check by the tests is only "a block of that kind exists after", not "exactly this
+    block was added".
