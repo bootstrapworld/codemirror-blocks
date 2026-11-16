@@ -324,3 +324,31 @@ already says what we want; the open cost is in what these tests did not touch
 (printing new nodes, empty lists, error recovery quality, slot semantics such as
 elif pairs, and the accessibility wording), which I expect to be where each
 language's real work goes.
+
+## Where to pick up (written 2026-11-15, when the usage limit stopped the work)
+
+The owner's direction after the Lezer result: "Let's see how far we can push it!
+I'm not as concerned with micro-compatibility with the CM5 version right now: it
+should work similarly, but need not work identically." Nothing below is started.
+
+1. **Make Lezer the source of the tree in the editor.** Today `view.ts` runs on
+   the hand-written `wescheme.ts` with `settle` and `reparseChange`. Replace
+   that path: CodeMirror's incremental Lezer tree is read through
+   `lezerLanguage(parser, table)`, and after each transaction the block tree is
+   rebuilt only for the top-level nodes whose range changed, keeping the old
+   `BNode` objects for the rest by range matching (Lezer gives no identity for
+   statements: see the identity finding above). `settle` should then not be
+   needed. Keep `checkEditor` and the fuzzers as the oracle.
+2. **A demo page and a real browser**: `demo/demo.ts` with a language picker
+   (Scheme, JavaScript, Python), bundled with esbuild; Playwright for time to
+   first draw, time per edit with layout at 3000 lines, focus cases, and the
+   bundle size against 400 KB (React) / 215 KB (Preact) today.
+3. **Keyboard and editing** (`src/interact.ts`): arrow keys through the tree,
+   Delete, Enter to edit a leaf in place, typing at a gap, all as text changes
+   computed from node ranges and the table's separators.
+4. **What the tables do not yet cover**: writing a node that was never parsed (a
+   block from a toolbar), inserting into an empty list, broken input, slot
+   meaning the grammar does not give (`elif` pairs), words for screenreaders.
+   Each of these says how much a language really costs beyond its table.
+5. Guard or replace the vendored WeScheme lexer's hanging inputs (only matters
+   if `wescheme.ts` is kept; with Lezer it is not used).
