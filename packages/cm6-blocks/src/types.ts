@@ -16,7 +16,9 @@ export interface BNode {
   /**
    * What it is: "literal", "blank", "call", "define", "lambda", "cond",
    * "clause", "if", "unknown" (a list that is none of those), "program" (the
-   * one root: its only slot is the list "roots").
+   * one root: its only slot is the list "roots"). ADDED: "error", a top-level
+   * node with no slots that stands for text that does not parse (`value` is
+   * the text, trimmed). It is never drawn as a block: the editor shows its text.
    */
   kind: string;
   /** Offsets in the document. Kept right by `shift` after every change. */
@@ -53,6 +55,17 @@ export interface Slot {
   readonly kind: "one" | "list";
   readonly owner: BNode;
   nodes: BNode[];
+}
+
+/**
+ * ADDED by the editor layer: the text of the document, read by ranges. A
+ * string is one, and so is any adapter over a rope (CodeMirror's `Text`:
+ * `{ length: doc.length, slice: (a, b) => doc.sliceString(a, b) }`), so that
+ * `settle` and `reparseChange` never need the document as one string.
+ */
+export interface TextSource {
+  readonly length: number;
+  slice(from: number, to: number): string;
 }
 
 /** A change of the text: replace [from, to) with `insert`. Offsets are in the text BEFORE the change. */
