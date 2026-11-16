@@ -558,3 +558,13 @@ input constantly). Lezer's incremental tree and a fresh parse agreed in every fu
 - 5b (templates for blocks that were never parsed, toolbar) and 5c (`describe`
   templates per row): not started. The notes above give the cost of everything else.
 - No flicker or screenreader check of the focus restore; no Preact comparison.
+
+## Second round (2026-11-16): bugs, templates, table gaps, describe, comments
+
+Same section style; running table at the end of this round. Evidence = test or measurement.
+
+### A1: stale nodes are refused
+- `removeNode`, `replaceText` and `insertText` (checks the slot's owner) now THROW
+  `node N (kind) is no longer in the tree`, decided by `doc.byId`; nothing is dispatched.
+  Test first (3 failed before, `spec/fixes.test.ts`), passes now in all three languages.
+  Throwing, not returning false, so a caller cannot ignore it.

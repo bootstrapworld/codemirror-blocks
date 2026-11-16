@@ -297,6 +297,10 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     view.dispatch({ changes: c, annotations: [isolateHistory.of("full")], userEvent: "input.block" });
   }
   const currentText = () => view.state.doc.toString();
+  /** Nodes are only good until the next change that rebuilds their root: refuse a stale one (throws). */
+  const live = (n: BNode): void => {
+    if (doc.byId.get(n.id) !== n) throw new Error(`node ${n.id} (${n.kind}) is no longer in the tree: look it up again after an edit`);
+  };
 
   const ed: LezerBlockEditor = {
     get view() {
@@ -309,6 +313,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     lastError: null,
     roots: () => rootsSlot.nodes,
     insertText(slot, index, snippet) {
+      live(slot.owner);
       if (slot.nodes.length === 0) {
         if (slot.owner === program) {
           dispatch({ from: 0, to: 0, insert: snippet + (view.state.doc.length ? "\n" : "") });
@@ -320,11 +325,13 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       dispatch(insertChange(table, currentText(), slot, index, snippet));
     },
     removeNode(node) {
+      live(node);
       if (!node.slot) throw new Error("not removable");
       if (node.slot.kind === "one") dispatch({ from: node.from, to: node.to, insert: table.blank ?? "..." });
       else dispatch(removeChange(node));
     },
     replaceText(node, snippet) {
+      live(node);
       dispatch({ from: node.from, to: node.to, insert: snippet });
     },
     change: dispatch,
