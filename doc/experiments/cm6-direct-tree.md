@@ -1506,3 +1506,4 @@ Order: (1) focus and selection follow a rebuilt block; (2) collapse / expand; (3
 - Not changed, on purpose: opening an edit box (Enter, Cmd/Ctrl-Enter) still clears the selection, as in the old editor, so the selection follows edits made by paste, the API, undo/redo, drag, delete of other blocks.
 - Evidence: `spec/follow.test.ts` (36 tests, 12 per language): leaf edit, leaf into a call, edit as text, one into several (first), top-level, unparseable text, a blank filled, undo/redo, selection of a leaf / ancestor /
   replaced block / removed block / undo. Six of them fail with `carryMarks` switched off.
+- 2026-11-16 step 1 checked: jsdom all green (481), tsc clean, model fuzzers at 800 seeds x 25 steps clean, Chromium `select.e2e.ts` 15/15 (the Meta+Enter edit-as-text tests are in that file).
