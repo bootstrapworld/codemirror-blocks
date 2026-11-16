@@ -1507,3 +1507,13 @@ Order: (1) focus and selection follow a rebuilt block; (2) collapse / expand; (3
 - Evidence: `spec/follow.test.ts` (36 tests, 12 per language): leaf edit, leaf into a call, edit as text, one into several (first), top-level, unparseable text, a blank filled, undo/redo, selection of a leaf / ancestor /
   replaced block / removed block / undo. Six of them fail with `carryMarks` switched off.
 - 2026-11-16 step 1 checked: jsdom all green (481), tsc clean, model fuzzers at 800 seeds x 25 steps clean, Chromium `select.e2e.ts` 15/15 (the Meta+Enter edit-as-text tests are in that file).
+
+### 2. Collapse and expand (2026-11-16)
+
+Read from `keymap.tsx` and `Node.tsx` of the old editor and matched: Left on an expanded compound block collapses it, else focuses the parent (beep there, silent here); Right on a collapsed block
+expands it, else focuses the first child; Shift-Left / Shift-Right collapse / expand every block (focus to the root); Shift-Alt-Left / Right the current root and what is in it (focus to the root);
+double click toggles; Enter on a compound block toggles (leaves still edit). `aria-expanded` is now real (`false` when collapsed; leaves have none).
+- State: a set of nodes in the `Renderer` (`isCollapsed`, `setCollapsed`, `collapsedNodes`), the same kind of state as the selection. It follows a rebuilt block through the same `placeOf` / `resolvePlace` (step 1), and a removed block drops it (`forget`). Text is never touched.
+- Drawing is CSS only (`blocks-collapsed`): the head (keyword, or the operator slot of a call) and an ellipsis (`::after`); the argument list, glue and other slots are `display: none`, so the inside cannot be focused or clicked (the head child of a call has `pointer-events: none`). Arrow Up / Down (`nextBlock`, `prevBlock`, `lastBlock` take a `closed` predicate) skip the inside; collapsing while focus is inside moves focus to the collapsed block.
+- Differences from the old editor: collapsing all collapses every compound block (the old list holds every id, leaves included; no visible difference); no sound. Judgement: a collapsed block whose head is a call's function name still has that name as a drawn block that cannot be clicked or reached.
+- Evidence: `spec/collapse.test.ts` (24 jsdom tests, 8 per language), `e2e/collapse.e2e.ts` (3 Chromium tests with real keys); `spec/interact.test.ts` changed (ArrowLeft on a compound child collapses first, as the old editor does).

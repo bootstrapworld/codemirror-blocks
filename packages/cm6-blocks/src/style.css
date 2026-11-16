@@ -161,3 +161,10 @@
 .blocks-dragging .blocks-node {
   user-select: none;
 }
+
+/* collapsed blocks: only the head (the keyword, or the operator of a call) and an ellipsis; what is inside cannot be reached */
+.blocks-collapsed > .blocks-args,
+.blocks-collapsed > .blocks-glue,
+.blocks-collapsed > .blocks-slot:not(.blocks-operator) { display: none; }
+.blocks-collapsed .blocks-node { pointer-events: none; }
+.blocks-collapsed::after { content: " \2026"; color: #667; }

@@ -106,6 +106,12 @@ export interface LezerBlockEditor {
    */
   toggleSelect(node: BNode): "selected" | "unselected" | "refused";
   clearSelection(): void;
+  /** collapse (only the head and an ellipsis are drawn; the inside is not reachable) or expand a compound block; the text is untouched */
+  collapse(node: BNode, on: boolean): void;
+  /** collapse / expand every block */
+  collapseAll(on: boolean): void;
+  /** collapse / expand a root and everything inside it */
+  collapseRoot(root: BNode, on: boolean): void;
   /** announce `text` to a screen reader (a live region next to the editor); also kept in `said` */
   say(text: string): void;
   /** what was announced, newest last (the last 50) */
@@ -838,6 +844,23 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       for (const m of sel) if (inside(m, node)) renderer.setSelected(m, false);
       for (const m of all(node)) renderer.setSelected(m, true);
       return "selected";
+    },
+    collapse(node, on) {
+      if (node.slots.length === 0 || node.kind === "program") return;
+      renderer.setCollapsed(node, on);
+      // focus inside what is now hidden goes to the block that holds it
+      const f = ed.focusedNode();
+      if (on && f && f !== node) for (let c = f.parent; c; c = c.parent) if (c === node) ed.focusNode(node);
+    },
+    collapseAll(on) {
+      for (const r of rootsSlot.nodes) ed.collapseRoot(r, on);
+    },
+    collapseRoot(root, on) {
+      walk(root, (n) => {
+        if (n.slots.length > 0) renderer.setCollapsed(n, on);
+      });
+      const f = ed.focusedNode();
+      if (on && f) ed.focusNode(root);
     },
     clearSelection() {
       for (const m of renderer.selected()) renderer.setSelected(m, false);

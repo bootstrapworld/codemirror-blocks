@@ -29,16 +29,16 @@ const drawable = (n: BNode): boolean => n.kind !== "error" && n.kind !== "progra
 /** the platform of the old editor's key map: Cmd-Enter on a Mac, Ctrl-Enter elsewhere */
 const isMac = (): boolean => typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || "");
 
-export function lastBlock(roots: BNode[]): BNode | null {
+export function lastBlock(roots: BNode[], closed: (n: BNode) => boolean = () => false): BNode | null {
   let n: BNode | null = [...roots].reverse().find(drawable) ?? null;
-  for (let k = n ? kids(n) : []; k.length; k = kids(n)) n = k[k.length - 1];
+  for (let k = n && !closed(n) ? kids(n) : []; k.length; k = closed(n) ? [] : kids(n)) n = k[k.length - 1];
   return n;
 }
 
-export function nextBlock(n: BNode): BNode | null {
+export function nextBlock(n: BNode, closed: (n: BNode) => boolean = () => false): BNode | null {
   let c: BNode | null = n;
   while (c) {
-    const k = kids(c);
+    const k: BNode[] = closed(c) ? [] : kids(c);
     let r: BNode | null = null;
     if (k.length) r = k[0];
     else {
@@ -54,7 +54,7 @@ export function nextBlock(n: BNode): BNode | null {
   return null;
 }
 
-export function prevBlock(n: BNode): BNode | null {
+export function prevBlock(n: BNode, closed: (n: BNode) => boolean = () => false): BNode | null {
   let c: BNode | null = n;
   while (c) {
     const p: BNode | null = c.parent;
@@ -64,7 +64,7 @@ export function prevBlock(n: BNode): BNode | null {
     let r: BNode | null;
     if (i > 0) {
       r = sibs[i - 1];
-      for (let k = kids(r); k.length; k = kids(r)) r = k[k.length - 1];
+      for (let k = closed(r) ? [] : kids(r); k.length; k = closed(r) ? [] : kids(r)) r = k[k.length - 1];
     } else r = p;
     c = r;
     if (c && c.kind === "program") return null;
@@ -79,6 +79,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   const { view, renderer } = ed;
   const dom = view.dom;
   let open: { cancel(): void } | null = null;
+  const isClosed = (n: BNode): boolean => renderer.isCollapsed(n);
 
   function focusSoon(n: BNode): void {
     ed.focusNode(n);
@@ -247,6 +248,15 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       ed.clearSelection();
       return;
     }
+    if (!mod && e.shiftKey && (k === "ArrowLeft" || k === "ArrowRight")) {
+      // collapse / expand: all blocks (Shift), or the current root (Shift-Alt); focus goes to the root
+      handled();
+      const root = rootsOf(node);
+      if (e.altKey) ed.collapseRoot(root, k === "ArrowLeft");
+      else ed.collapseAll(k === "ArrowLeft");
+      focusSoon(root);
+      return;
+    }
     if (mod && !e.altKey) {
       if (k === "v" || k === "V") pasteBefore = e.shiftKey; // the paste event that follows is a paste before
       if (k === "Enter" && (isMac() ? e.metaKey && !e.ctrlKey : e.ctrlKey)) {
@@ -293,23 +303,27 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       if (f) focusSoon(f);
     } else if (k === "End") {
       handled();
-      const l = lastBlock(ed.roots());
+      const l = lastBlock(ed.roots(), isClosed);
       if (l) focusSoon(l);
     } else if (k === "ArrowDown") {
       handled();
-      const n = nextBlock(node);
+      const n = nextBlock(node, isClosed);
       if (n) focusSoon(n);
     } else if (k === "ArrowUp") {
       handled();
-      const n = prevBlock(node);
+      const n = prevBlock(node, isClosed);
       if (n) focusSoon(n);
     } else if (k === "ArrowRight") {
       handled();
-      const c = kids(node)[0];
-      if (c) focusSoon(c);
+      if (renderer.isCollapsed(node)) ed.collapse(node, false);
+      else {
+        const c = kids(node)[0];
+        if (c) focusSoon(c);
+      }
     } else if (k === "ArrowLeft") {
       handled();
-      if (node.parent && node.parent.kind !== "program") focusSoon(node.parent);
+      if (node.slots.length > 0 && !renderer.isCollapsed(node)) ed.collapse(node, true);
+      else if (node.parent && node.parent.kind !== "program") focusSoon(node.parent);
     } else if (k === "Delete" || k === "Backspace") {
       handled();
       const sel = ed.selectedBlocks();
@@ -324,6 +338,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     } else if (k === "Enter") {
       handled();
       if (node.slots.length === 0) editLeaf(node);
+      else ed.collapse(node, !renderer.isCollapsed(node)); // (the old editor: Enter on a compound block collapses or expands it)
     } else if (k.length === 1 && node.slots.length === 0 && node.value === (ed.options.table.blank ?? "...")) {
       // typing into a hole replaces it
       handled();
@@ -556,6 +571,15 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   }
 
   dom.addEventListener("keydown", onKey, true);
+  function onDblClick(e: MouseEvent): void {
+    const t = e.target as Element;
+    if (t.closest?.(".blocks-edit")) return;
+    const node = renderer.nodeOf(t);
+    if (!node || node.slots.length === 0) return;
+    e.preventDefault();
+    ed.collapse(node, !renderer.isCollapsed(node));
+  }
+  dom.addEventListener("dblclick", onDblClick, true);
   dom.addEventListener("click", onClick, true);
   dom.addEventListener("copy", onCopyEv, true);
   dom.addEventListener("cut", onCutEv, true);
@@ -567,6 +591,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       open?.cancel();
       dom.removeEventListener("keydown", onKey, true);
       dom.removeEventListener("click", onClick, true);
+      dom.removeEventListener("dblclick", onDblClick, true);
       dom.removeEventListener("copy", onCopyEv, true);
       dom.removeEventListener("cut", onCutEv, true);
       dom.removeEventListener("paste", onPasteEv, true);

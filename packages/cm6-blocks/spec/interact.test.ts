@@ -92,8 +92,11 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
     expect(ed.focusedNode()).toBe(child);
     el = ed.renderer.element(child);
     key(el, "ArrowLeft");
+    if (child.slots.length > 0) key(el, "ArrowLeft"); // (a compound block collapses first, as in the old editor)
     expect(ed.focusedNode()).toBe(g);
-    key(ed.renderer.element(g), "ArrowLeft"); // a root has no parent: stays
+    ed.collapse(g, false);
+    key(ed.renderer.element(g), "ArrowLeft"); // (collapses) a root has no parent: stays
+    key(ed.renderer.element(g), "ArrowLeft"); // collapsed already, and a root has no parent: stays
     expect(ed.focusedNode()).toBe(g);
   });
 

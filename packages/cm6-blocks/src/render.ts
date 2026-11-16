@@ -71,11 +71,21 @@ export class Renderer {
     if (on === this.folded.has(node)) return;
     if (on) this.folded.add(node);
     else this.folded.delete(node);
+    const el = this.els.get(node);
+    if (el) this.paintCollapsed(el, node);
+  }
+
+  private paintCollapsed(el: HTMLElement, node: BNode): void {
+    if (node.slots.length === 0) return;
+    const on = this.folded.has(node);
+    this.setAttr(el, "aria-expanded", on ? "false" : "true");
+    el.classList.toggle("blocks-collapsed", on);
   }
 
   /** take the selection of another renderer (the checker's fresh drawing must show the same selection) */
   adoptSelection(other: Renderer): void {
     this.selection = new Set(other.selection);
+    this.folded = new Set(other.folded);
   }
 
   private paintSelected(el: HTMLElement, on: boolean): void {
@@ -277,6 +287,7 @@ export class Renderer {
       return el;
     }
     el.setAttribute("aria-expanded", "true");
+    if (this.folded.has(node)) this.paintCollapsed(el, node);
     if (node.modifier) {
       const md = this.create("span", "blocks-operator blocks-modifier");
       md.textContent = node.modifier;
