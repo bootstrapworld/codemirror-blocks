@@ -14,6 +14,7 @@
  *                         Delete, cut, copy and a drag then use the selected blocks (none selected: the focused one)
  *   Cmd-Enter (Mac) / Ctrl-Enter (elsewhere)   edit the whole block as text in a box (Enter commits, Shift-Enter is a newline,
  *                         Escape cancels); text that does not parse is accepted
+ *   Shift-Ctrl-]          edit the comment of the block (a comment block directly above it or after it on its line; none: written above)
  *   Home / End            first / last block;  Shift-,  jump to the root;  \  read the ancestors;  Shift-\  read the children
  * Mouse: click a block to focus it (a click on a literal opens its edit box, as in the old editor; a touch needs a second tap); click a gap to open the box for a new sibling there; drag a block (pointer events,
  * so a finger or a pen too) onto a gap, a blank, or the top or bottom edge of a top-level block to move it.
@@ -22,6 +23,7 @@
 import { redo, undo } from "@codemirror/commands";
 import { EditorView } from "@codemirror/view";
 import type { LezerBlockEditor } from "./lezer-view";
+import { plainComment } from "./render";
 import type { BNode, Slot } from "./types";
 
 const kids = (n: BNode): BNode[] => n.slots.flatMap((s) => s.nodes);
@@ -203,6 +205,33 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     );
   }
 
+  /** Shift-Ctrl-]: a box for the comment of a block (the old editor's "Edit Comment") */
+  function editComment(node: BNode): void {
+    if (node.kind === "comment") {
+      ed.say("Press Enter to edit a comment block");
+      beep();
+      return;
+    }
+    const host = ed.commentHost(node);
+    if (renderer.isCollapsed(host)) ed.collapse(host, false);
+    const c = ed.commentOf(host);
+    const raw = c ? view.state.doc.sliceString(c.from, c.to) : "";
+    const words = c ? plainComment(raw) : "";
+    ed.say(c ? `editing comment: ${words}.  Use Enter to save, and Alt-Q to cancel` : "adding a comment.  Use Enter to save, and Alt-Q to cancel");
+    box(
+      words,
+      (input) => renderer.element(host).insertBefore(input, renderer.element(host).firstChild),
+      () => ed.focusNode(host),
+      (t) => {
+        try {
+          ed.setComment(host, t);
+        } catch (err) {
+          ed.lastError = (err as Error).message;
+        }
+      }
+    );
+  }
+
   /** a box for a new element at `index` of `slot`, shown by `put`; focus goes to `anchor` first */
   function insertBox(slot: Slot, index: number, anchor: BNode, put: (input: Field) => void): void {
     ed.say("inserting.  Use Enter to save, and Alt-Q to cancel");
@@ -246,6 +275,11 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     if (k === "Escape" || (e.altKey && !mod && e.code === "KeyQ")) {
       handled();
       ed.clearSelection();
+      return;
+    }
+    if (e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey && (e.code === "BracketRight" || k === "}" || k === "]")) {
+      handled();
+      editComment(node);
       return;
     }
     if (!mod && e.shiftKey && (k === "ArrowLeft" || k === "ArrowRight")) {

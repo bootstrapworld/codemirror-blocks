@@ -106,6 +106,12 @@ export interface LezerBlockEditor {
    */
   toggleSelect(node: BNode): "selected" | "unselected" | "refused";
   clearSelection(): void;
+  /** the comment block that goes with a block (directly above it, or after it on its line), if any */
+  commentOf(node: BNode): BNode | null;
+  /** the block a comment written for `node` goes with: the outermost block that starts where `node` does and is first on its line */
+  commentHost(node: BNode): BNode;
+  /** set the words of the comment of a block: writes a line comment above it if there is none; empty text removes the comment */
+  setComment(node: BNode, words: string): void;
   /** collapse (only the head and an ellipsis are drawn; the inside is not reachable) or expand a compound block; the text is untouched */
   collapse(node: BNode, on: boolean): void;
   /** collapse / expand every block */
@@ -864,6 +870,39 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       for (const m of sel) if (inside(m, node)) renderer.setSelected(m, false);
       for (const m of all(node)) renderer.setSelected(m, true);
       return "selected";
+    },
+    commentOf: (n) => commentOf(n),
+    commentHost(n) {
+      let c = n;
+      for (;;) {
+        while (c.parent && c.parent.kind !== "program" && c.parent.from === c.from) c = c.parent;
+        const lineStart = curDoc.lastIndexOf("\n", c.from - 1) + 1;
+        if (/^[ \t]*$/.test(curDoc.slice(lineStart, c.from)) || !c.parent || c.parent.kind === "program") return c;
+        c = c.parent;
+      }
+    },
+    setComment(node, words) {
+      live(node);
+      if (node.kind === "comment") throw new Error("a comment block is edited like any block");
+      const host = ed.commentHost(node);
+      const c = commentOf(host);
+      const t = words.replace(/\s+/g, " ").trim();
+      const prefix = table.lineComment ?? "#";
+      if (c) {
+        if (!t) {
+          ed.removeNode(c);
+          return;
+        }
+        const raw = curDoc.slice(c.from, c.to);
+        const block = raw.startsWith(prefix) ? null : [raw.slice(0, 2), raw.slice(-2)];
+        const next = block ? `${block[0]} ${t} ${block[1]}` : `${prefix} ${t}`;
+        if (next !== raw) dispatch({ from: c.from, to: c.to, insert: next });
+        return;
+      }
+      if (!t) return;
+      const lineStart = curDoc.lastIndexOf("\n", host.from - 1) + 1;
+      const indent = (curDoc.slice(lineStart, host.from).match(/^[ \t]*/) as RegExpMatchArray)[0];
+      dispatch({ from: host.from, to: host.from, insert: `${prefix} ${t}\n${indent}` });
     },
     collapse(node, on) {
       if (node.slots.length === 0 || node.kind === "program") return;
