@@ -32,10 +32,10 @@ for (const lang of Object.keys(SMALL)) {
 
     test("Space selects with a real key press; Delete removes the selected blocks; undo brings them back", async ({ page }) => {
       await load(page, SMALL[lang]);
-      await lit(page, "1").click();
+      await lit(page, "1").click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
       expect(await page.locator('.cm-content [aria-selected="true"]').count()).toBe(1);
-      await lit(page, "3").click();
+      await lit(page, "3").click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
       expect(await page.locator('.cm-content [aria-selected="true"]').count()).toBe(2);
       expect(await page.locator(".cm-content .blocks-selected").count()).toBe(2);
@@ -53,9 +53,9 @@ for (const lang of Object.keys(SMALL)) {
 
     test("Escape clears; copy takes the selection in document order", async ({ page }) => {
       await load(page, SMALL[lang]);
-      await lit(page, "3").click();
+      await lit(page, "3").click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
-      await lit(page, "1").click();
+      await lit(page, "1").click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
       await page.keyboard.press("ControlOrMeta+c");
       expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("1\n3");
@@ -66,9 +66,9 @@ for (const lang of Object.keys(SMALL)) {
 
     test("a real mouse drag of a selected block moves the whole selection", async ({ page }) => {
       await load(page, SMALL[lang]);
-      await lit(page, "1").click();
+      await lit(page, "1").click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
-      await lit(page, "3").click();
+      await lit(page, "3").click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
       const three = lit(page, "3");
       const box = (await three.boundingBox())!;
@@ -89,7 +89,7 @@ for (const lang of Object.keys(SMALL)) {
 
     test(`${EDIT} edits a block as text; Enter commits, Escape cancels`, async ({ page }) => {
       await load(page, SMALL[lang]);
-      await page.locator(".cm-content .blocks-node.blocks-literal", { hasText: /^g$/ }).first().click();
+      await page.locator(".cm-content .blocks-node.blocks-literal", { hasText: /^g$/ }).first().click({ modifiers: ["Shift"] });
       await page.keyboard.press("ArrowLeft"); // to the call g(2)
       await page.keyboard.press(EDIT);
       const ta = page.locator("textarea.blocks-edit");

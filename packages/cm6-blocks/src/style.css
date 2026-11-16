@@ -168,3 +168,8 @@
 .blocks-collapsed > .blocks-slot:not(.blocks-operator) { display: none; }
 .blocks-collapsed .blocks-node { pointer-events: none; }
 .blocks-collapsed::after { content: " \2026"; color: #667; }
+
+/* a comment that goes with a block: a marker, and its words on hover (the title) and while the block has focus */
+.blocks-has-comment::before { content: "\201C"; color: #a60; font-weight: bold; margin-right: 2px; }
+.blocks-has-comment:focus::before { content: "\201C " attr(data-comment) "\201D "; font-weight: normal; font-style: italic; }
+.blocks-text-hidden { display: none; }

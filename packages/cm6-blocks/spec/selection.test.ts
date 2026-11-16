@@ -111,8 +111,8 @@ describe.each(LANGS)("selection: %s", (l) => {
   test("a click does not change the selection; focus can move on", () => {
     const ed = make(l);
     space(ed, lit(ed, "1"));
-    ed.renderer.element(lit(ed, "3")).dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(ed.focusedNode()).toBe(lit(ed, "3"));
+    ed.renderer.element(g(ed)).dispatchEvent(new MouseEvent("click", { bubbles: true })); // (a literal would open its edit box, which clears the selection)
+    expect(ed.focusedNode()).toBe(g(ed));
     expect(ed.selectedBlocks()).toEqual([lit(ed, "1")]);
   });
 

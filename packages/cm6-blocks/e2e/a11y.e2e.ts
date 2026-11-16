@@ -175,7 +175,7 @@ for (const lang of Object.keys(SMALL)) {
     const first = await record("0 loaded", async () => {});
     fs.writeFileSync(path.join(__dirname, `a11y-outline-${lang}.txt`), first.lines.join("\n") + "\n");
     // focus the 2 (inside g(2)), then insert a 7 into f's arguments through the editor
-    await lit("2").click();
+    await lit("2").click({ modifiers: ["Shift"] });
     await record("1 insert (a block is focused in the same call)", async () => {
       await page.evaluate(() => {
         const d = (window as any).demo;
@@ -184,15 +184,15 @@ for (const lang of Object.keys(SMALL)) {
       });
     });
     // delete the 3 with the key
-    await lit("3").click();
+    await lit("3").click({ modifiers: ["Shift"] });
     await record("2 delete (the focused block, with the Delete key)", async () => {
       await page.keyboard.press("Delete");
     });
     // select two blocks with Space
-    await lit("1").click();
+    await lit("1").click({ modifiers: ["Shift"] });
     await record("3 selection (Space on 1 and on 4)", async () => {
       await page.keyboard.press("Space");
-      await lit("4").click();
+      await lit("4").click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
     });
     // undo the delete

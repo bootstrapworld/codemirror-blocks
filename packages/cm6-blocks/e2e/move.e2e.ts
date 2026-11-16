@@ -28,14 +28,14 @@ for (const lang of Object.keys(SMALL)) {
       });
 
     test("ControlOrMeta+c, +x, +v", async ({ page }) => {
-      await page.locator(".cm-content .blocks-literal", { hasText: /^3$/ }).first().click();
+      await page.locator(".cm-content .blocks-literal", { hasText: /^3$/ }).first().click({ modifiers: ["Shift"] });
       await page.keyboard.press("ControlOrMeta+c");
       expect(await text(page)).toBe(SMALL[lang]); // copy changes nothing
       expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("3");
       // cut it, then paste after the 1
       await page.keyboard.press("ControlOrMeta+x");
       expect(await text(page)).not.toMatch(/3/);
-      await page.locator(".cm-content .blocks-literal", { hasText: /^1$/ }).first().click();
+      await page.locator(".cm-content .blocks-literal", { hasText: /^1$/ }).first().click({ modifiers: ["Shift"] });
       await page.keyboard.press("ControlOrMeta+v");
       expect(await text(page)).toMatch(/1[, ]+3/);
       expect(await focusedText(page)).toBe("3");

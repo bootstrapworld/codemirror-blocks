@@ -17,12 +17,84 @@ export interface RenderStats {
   attrWrites: number;
 }
 
+/** the words of a comment, without its signs (the line comment sign, or the block comment brackets) */
+export function plainComment(raw: string): string {
+  return raw
+    .trim()
+    .replace(/^(#\||\/\*)/, "")
+    .replace(/(\|#|\*\/)$/, "")
+    .replace(/^\s*(;+|\/\/+|#+)/, "")
+    .trim();
+}
+
+const FLAGS = ["blocks-collapsed", "blocks-has-comment", "blocks-selected"];
+/** switch one of the state classes, keeping them in one order (the checker compares the class attribute as a string) */
+function flagClass(el: Element, name: string, on: boolean): void {
+  const state = FLAGS.map((f) => (f === name ? on : el.classList.contains(f)));
+  el.classList.remove(...FLAGS);
+  FLAGS.forEach((f, i) => state[i] && el.classList.add(f));
+}
+
 export class Renderer {
+  /** the comment that goes with a block (the editor says which: see `commentOf` in lezer-view.ts) */
+  attached: (node: BNode) => BNode | null = () => null;
   private els = new Map<BNode, HTMLElement>();
   private byId = new Map<number, BNode>();
   private stats: RenderStats = { created: 0, removed: 0, attrWrites: 0 };
   /** the blocks that are selected (Space): drawn with aria-selected="true" and the class `blocks-selected` */
   private selection = new Set<BNode>();
+
+  /** the spoken label of a block: what the language says, and "with comment: ..." when a comment goes with it */
+  labelOf(node: BNode): string {
+    const c = this.attached(node);
+    const base = this.language.describe(node);
+    return c ? `${base}, with comment: ${plainComment(c.value ?? "")}` : base;
+  }
+
+  /** label and comment marker of a drawn block */
+  relabel(node: BNode): void {
+    const el = this.els.get(node);
+    if (!el) return;
+    this.setAttr(el, "aria-label", this.labelOf(node));
+    this.paintComment(el, node);
+  }
+
+  /** the blocks drawn with a comment marker */
+  private marked = new Set<BNode>();
+
+  /** after an edit: the drawn blocks next to a comment, and those that had a marker, may have changed (a kept block is not repainted otherwise) */
+  refreshComments(): void {
+    const todo = new Set<BNode>(this.marked);
+    for (const n of this.els.keys()) {
+      if (n.kind !== "comment" || !n.slot) continue;
+      const i = n.slot.nodes.indexOf(n);
+      for (const m of [n.slot.nodes[i - 1], n.slot.nodes[i + 1]]) if (m) todo.add(m);
+    }
+    for (const n of todo) if (this.els.has(n)) this.relabel(n);
+  }
+
+  private paintComment(el: HTMLElement, node: BNode): void {
+    const c = this.attached(node);
+    if (c) this.marked.add(node);
+    else this.marked.delete(node);
+    flagClass(el, "blocks-has-comment", !!c);
+    if (c) {
+      const t = plainComment(c.value ?? "");
+      this.setAttr(el, "data-comment", t);
+      this.setAttr(el, "title", t);
+    } else if (el.hasAttribute("data-comment")) {
+      el.removeAttribute("data-comment");
+      el.removeAttribute("title");
+    }
+  }
+
+  /** the neighbours of a slot index: a comment that came, went or changed there may belong to them */
+  private relabelAround(slot: Slot, index: number): void {
+    for (let j = index - 1; j <= index + 1; j++) {
+      const n = slot.nodes[j];
+      if (n && this.els.has(n)) this.relabel(n);
+    }
+  }
 
   /** the blocks that are collapsed (only their head is drawn) */
   private folded = new Set<BNode>();
@@ -79,7 +151,7 @@ export class Renderer {
     if (node.slots.length === 0) return;
     const on = this.folded.has(node);
     this.setAttr(el, "aria-expanded", on ? "false" : "true");
-    el.classList.toggle("blocks-collapsed", on);
+    flagClass(el, "blocks-collapsed", on);
   }
 
   /** take the selection of another renderer (the checker's fresh drawing must show the same selection) */
@@ -90,12 +162,13 @@ export class Renderer {
 
   private paintSelected(el: HTMLElement, on: boolean): void {
     this.setAttr(el, "aria-selected", on ? "true" : "false");
-    el.classList.toggle("blocks-selected", on);
+    flagClass(el, "blocks-selected", on);
   }
 
   forget(node: BNode): void {
     this.selection.delete(node);
     this.folded.delete(node);
+    this.marked.delete(node);
     const el = this.els.get(node);
     if (el) {
       this.els.delete(node);
@@ -178,10 +251,12 @@ export class Renderer {
     for (let n: BNode | null = owner; n && n.kind !== "program"; n = n.parent) {
       const el = this.els.get(n);
       if (el) {
-        this.setAttr(el, "aria-label", this.language.describe(n));
+        this.setAttr(el, "aria-label", this.labelOf(n));
+        this.paintComment(el, n);
         this.repaintPieces(n);
       }
     }
+    this.relabelAround(slot, change.index);
   }
 
   /** the text pieces of a node's slots (after its text or its children changed) */
@@ -222,9 +297,11 @@ export class Renderer {
   refresh(node: BNode): void {
     const el = this.els.get(node);
     if (el) {
-      this.setAttr(el, "aria-label", this.language.describe(node));
+      this.setAttr(el, "aria-label", this.labelOf(node));
+      this.paintComment(el, node);
       this.repaintPieces(node);
     }
+    if (node.kind === "comment" && node.slot) this.relabelAround(node.slot, node.slot.nodes.indexOf(node));
   }
 
   /** aria-setsize / aria-posinset of every drawn node of a slot (after nodes were added or removed around them) */
@@ -268,9 +345,10 @@ export class Renderer {
     el.setAttribute("tabindex", "-1");
     el.setAttribute("contenteditable", "false");
     el.setAttribute("data-id", String(node.id));
-    el.setAttribute("aria-label", this.language.describe(node));
+    el.setAttribute("aria-label", this.labelOf(node));
+    this.paintComment(el, node);
     el.setAttribute("aria-selected", this.selection.has(node) ? "true" : "false");
-    if (this.selection.has(node)) el.classList.add("blocks-selected");
+    if (this.selection.has(node)) flagClass(el, "blocks-selected", true);
     el.setAttribute("aria-level", String(this.level(node)));
     const siblings = node.slot ? node.slot.nodes : [node];
     el.setAttribute("aria-setsize", String(siblings.length));

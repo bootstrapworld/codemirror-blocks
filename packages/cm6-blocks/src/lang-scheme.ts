@@ -25,6 +25,7 @@ export const schemeTable: BlockTable = {
     ClauseForm: { kind: "clause", label: "clause", describe: "clause when ${test}", brackets: true, slots: [{ name: "test", kind: "one", take: ["#0"] }, { name: "body", kind: "list", take: "*" }] },
   },
   blank: "...",
+  lineComment: ";",
   separators: { roots: "\n" },
   templates: {
     variable: { text: "(define ${name} ${value})", kind: "define" },

@@ -195,6 +195,24 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   const { parser, table } = options;
   const language = lezerLanguage(parser, table);
   const renderer = new Renderer(language);
+  /** the text of the document as the tree stands now (the renderer asks where a comment sits) */
+  let curDoc = text;
+  /**
+   * The comment that goes with a block: a comment block that is the sibling directly above it (only a line break and indentation between,
+   * and that comment is not the trailing comment of the block before it), or one on the same line after it. Comments stay blocks of their own.
+   */
+  const commentOf = (n: BNode): BNode | null => {
+    if (!n.slot || n.kind === "comment" || n.kind === "error") return null;
+    const sibs = n.slot.nodes;
+    const i = sibs.indexOf(n);
+    const trailing = (a: BNode | undefined, c: BNode): boolean => !!a && a.kind !== "comment" && /^[ \t,]*$/.test(curDoc.slice(a.to, c.from));
+    const prev = sibs[i - 1];
+    if (prev && prev.kind === "comment" && /^[ \t]*\r?\n[ \t]*$/.test(curDoc.slice(prev.to, n.from)) && !trailing(sibs[i - 2], prev)) return prev;
+    const next = sibs[i + 1];
+    if (next && next.kind === "comment" && trailing(n, next)) return next;
+    return null;
+  };
+  renderer.attached = commentOf;
   const stats: LezerStats = {
     edits: 0, reparses: 0, widgetsBuilt: 0, focusRestores: 0,
     rootsKept: 0, rootsRebuilt: 0, rootsReconciled: 0, nodesRebuilt: 0, nodesCompared: 0, nodesAnchored: 0, anchorBails: 0, maxRootNodes: 0, parseMs: 0, restMs: 0,
@@ -217,6 +235,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   const field = StateField.define<LState>({
     create(state) {
       const s = state.doc.toString();
+      curDoc = s;
       const tree = parser.parse(s);
       const roots = language.fromTree(tree, s);
       install(roots, s.length);
@@ -233,6 +252,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       if (!tr.docChanged) return v;
       stats.reparses++;
       const s = tr.newDoc.toString();
+      curDoc = s;
       const cr: { fromA: number; toA: number; fromB: number; toB: number }[] = [];
       tr.changes.iterChangedRanges((fromA, toA, fromB, toB) => cr.push({ fromA, toA, fromB, toB }));
       const frags = TreeFragment.applyChanges(v.fragments, cr);
@@ -988,6 +1008,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       v.update(trs);
       // a selected block that left the tree leaves the selection (the renderer forgets most of them; this is the net under it)
       if (trs.some((t) => t.docChanged)) for (const n of renderer.selected()) if (doc.byId.get(n.id) !== n) renderer.setSelected(n, false);
+      if (trs.some((t) => t.docChanged)) renderer.refreshComments();
       carryMarks(snap);
       // blocks that are new inside a selected block are selected with it
       if (trs.some((t) => t.docChanged)) for (const m of renderer.selected()) walk(m, (n) => renderer.setSelected(n, true));
@@ -1134,6 +1155,7 @@ export function checkLezerEditor(ed: LezerBlockEditor): string[] {
     if (on && r.from >= vp.from && r.to <= vp.to && !el.isConnected) say(`root ${r.id} is in the viewport and its element is not in the document`);
     if (!freshR) {
       freshR = new Renderer(ed.language);
+      freshR.attached = ed.renderer.attached;
       freshR.adoptSelection(ed.renderer);
     }
     if (!freshR.element(r).isEqualNode(el)) say(`root ${r.id}: its DOM is not what a fresh drawing gives (${domDiff(el, freshR.element(r))})`);

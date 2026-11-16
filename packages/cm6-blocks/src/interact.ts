@@ -15,7 +15,7 @@
  *   Cmd-Enter (Mac) / Ctrl-Enter (elsewhere)   edit the whole block as text in a box (Enter commits, Shift-Enter is a newline,
  *                         Escape cancels); text that does not parse is accepted
  *   Home / End            first / last block;  Shift-,  jump to the root;  \  read the ancestors;  Shift-\  read the children
- * Mouse: click a block to focus it; click a gap to open the box for a new sibling there; drag a block (pointer events,
+ * Mouse: click a block to focus it (a click on a literal opens its edit box, as in the old editor; a touch needs a second tap); click a gap to open the box for a new sibling there; drag a block (pointer events,
  * so a finger or a pen too) onto a gap, a blank, or the top or bottom edge of a top-level block to move it.
  * Text that does not parse cleanly is accepted: the root then shows as text.
  */
@@ -145,7 +145,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     if (!el.isConnected) return;
     const text = el.firstElementChild as HTMLElement | null;
     const back = () => {
-      if (text) text.removeAttribute("style");
+      if (text) text.classList.remove("blocks-text-hidden");
       ed.focusNode(node);
     };
     ed.say(`editing ${typed ?? node.value ?? ""}.  Use Enter to save, and Alt-Q to cancel`);
@@ -153,7 +153,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       typed ?? (node.kind === "blank" ? "" : node.value ?? ""),
       (input) => {
         if (text) {
-          text.style.display = "none";
+          text.classList.add("blocks-text-hidden");
           el.insertBefore(input, text);
         } else el.appendChild(input);
       },
@@ -561,9 +561,16 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     const node = renderer.nodeOf(t);
     if (!node) return;
     // a tap on the block that already has the focus edits it (a finger has no Enter key): a leaf its text, any other block its whole text
-    const again = (e as PointerEvent).pointerType === "touch" && pressedFocused;
+    const touch = (e as PointerEvent).pointerType === "touch";
+    const again = touch && pressedFocused;
     pressedFocused = false;
     ed.focusNode(node);
+    // a click (not a drag: that one is swallowed above; not a touch: that is the second-tap rule below; not the second click of a
+    // double click) on a literal opens its edit box, focused or not, as in the old editor (`normallyEditable`); a compound block only gets focus
+    if (!touch && node.slots.length === 0 && node.kind !== "program" && e.detail <= 1 && !(e.shiftKey || e.ctrlKey || e.metaKey || e.altKey)) {
+      editLeaf(node);
+      return;
+    }
     if (again && node.kind !== "program") {
       if (node.slots.length === 0) editLeaf(node);
       else editAll(node);

@@ -66,6 +66,7 @@ export const pythonTable: BlockTable = {
     ArrayExpression: { kind: "array", label: "list", describe: "list of ${elements.length|item|items}", slots: [list("elements", "*")] },
   },
   blank: "...",
+  lineComment: "#",
   separators: { args: ", ", elements: ", ", items: ", ", names: ", ", roots: "\n" },
   opaque: ["AwaitExpression"],
   rules: [

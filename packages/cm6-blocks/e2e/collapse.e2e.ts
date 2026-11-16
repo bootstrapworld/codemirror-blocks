@@ -18,7 +18,7 @@ for (const lang of Object.keys(SMALL)) {
     const two = page.locator(".cm-content .blocks-literal", { hasText: /^2$/ }).first();
     const lit1 = page.locator(".cm-content .blocks-literal", { hasText: /^1$/ }).first();
     const lit3 = page.locator(".cm-content .blocks-literal", { hasText: /^3$/ }).first();
-    await two.click();
+    await two.click({ modifiers: ["Shift"] });
     await page.keyboard.press("ArrowLeft"); // the 2 is a leaf: focus goes to the call g(2)
     await page.keyboard.press("ArrowLeft"); // collapses it
     const call = page.locator('.cm-content [aria-expanded="false"]');
@@ -26,14 +26,14 @@ for (const lang of Object.keys(SMALL)) {
     expect(await two.isVisible()).toBe(false);
     expect(await page.evaluate(() => (window as any).demo.ed.view.state.doc.toString())).toBe(SMALL[lang]);
     // Up from 3 lands on the collapsed block, not on 2
-    await lit3.click();
+    await lit3.click({ modifiers: ["Shift"] });
     await page.keyboard.press("ArrowUp");
     expect(await page.evaluate(() => document.activeElement?.getAttribute("aria-expanded"))).toBe("false");
     await page.keyboard.press("ArrowRight"); // expands
     await expect(page.locator('.cm-content [aria-expanded="false"]')).toHaveCount(0);
     expect(await two.isVisible()).toBe(true);
     // Shift-ArrowLeft collapses everything; Shift-ArrowRight expands everything
-    await lit1.click();
+    await lit1.click({ modifiers: ["Shift"] });
     await page.keyboard.press("Shift+ArrowLeft");
     expect(await page.locator('.cm-content [aria-expanded="false"]').count()).toBeGreaterThan(2);
     expect(await lit1.isVisible()).toBe(false);

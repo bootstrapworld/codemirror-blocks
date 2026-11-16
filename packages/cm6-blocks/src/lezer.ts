@@ -62,6 +62,8 @@ export interface BlockTable {
   statementSuffix?: string;
   /** text put where a node that has to be there (a "one" slot) is deleted; default "..." */
   blank?: string;
+  /** the sign that starts a line comment (`;`, `//`, `#`): used to write a comment above a block */
+  lineComment?: string;
   /** how elements of a list are separated, by list-slot name or node kind */
   separators?: Record<string, string>;
   /**

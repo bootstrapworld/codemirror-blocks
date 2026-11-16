@@ -35,7 +35,7 @@ for (const lang of Object.keys(SMALL)) {
       }
     };
     await step("click_focuses_block", async () => {
-      await page.locator(".cm-content .blocks-literal", { hasText: /^1$/ }).first().click();
+      await page.locator(".cm-content .blocks-literal", { hasText: /^1$/ }).first().click({ modifiers: ["Shift"] });
       return { focused: await active() };
     });
     await step("ArrowDown", async () => { await page.keyboard.press("ArrowDown"); return await active(); });
@@ -43,7 +43,7 @@ for (const lang of Object.keys(SMALL)) {
     await step("ArrowLeft_to_parent", async () => { await page.keyboard.press("ArrowLeft"); return await active(); });
     await step("ArrowRight_to_first_child", async () => { await page.keyboard.press("ArrowRight"); return await active(); });
     await step("Enter_edit_leaf_commit", async () => {
-      await page.locator(".cm-content .blocks-literal", { hasText: /^1$/ }).first().click();
+      await page.locator(".cm-content .blocks-literal", { hasText: /^1$/ }).first().click({ modifiers: ["Shift"] });
       await page.keyboard.press("Enter");
       const box = await page.locator("input.blocks-edit").count();
       await page.keyboard.type("77");
@@ -51,7 +51,7 @@ for (const lang of Object.keys(SMALL)) {
       return { boxShown: box, text: await text(), boxGone: (await page.locator("input.blocks-edit").count()) === 0, focused: await active() };
     });
     await step("Escape_cancels", async () => {
-      await page.locator(".cm-content .blocks-literal", { hasText: /^77$/ }).first().click();
+      await page.locator(".cm-content .blocks-literal", { hasText: /^77$/ }).first().click({ modifiers: ["Shift"] });
       await page.keyboard.press("Enter");
       await page.keyboard.type("zz");
       await page.keyboard.press("Escape");
@@ -59,7 +59,7 @@ for (const lang of Object.keys(SMALL)) {
       return { unchanged: !t.includes("zz"), focused: await active() };
     });
     await step("CtrlBracket_sibling_after", async () => {
-      await page.locator(".cm-content .blocks-literal", { hasText: /^77$/ }).first().click();
+      await page.locator(".cm-content .blocks-literal", { hasText: /^77$/ }).first().click({ modifiers: ["Shift"] });
       await page.keyboard.press("Control+]");
       const box = await page.locator("input.blocks-edit").count();
       await page.keyboard.type("55");
@@ -68,14 +68,14 @@ for (const lang of Object.keys(SMALL)) {
     });
     await step("Delete", async () => {
       const before = await text();
-      await page.locator(".cm-content .blocks-literal", { hasText: /^55$/ }).first().click();
+      await page.locator(".cm-content .blocks-literal", { hasText: /^55$/ }).first().click({ modifiers: ["Shift"] });
       await page.keyboard.press("Delete");
       const t = await text();
       return { shorter: t.length < before.length, text: t, focused: await active() };
     });
     await step("Backspace", async () => {
       const before = await text();
-      await page.locator(".cm-content .blocks-literal", { hasText: /^77$/ }).first().click();
+      await page.locator(".cm-content .blocks-literal", { hasText: /^77$/ }).first().click({ modifiers: ["Shift"] });
       await page.keyboard.press("Backspace");
       return { shorter: (await text()).length < before.length, text: await text() };
     });
@@ -87,7 +87,7 @@ for (const lang of Object.keys(SMALL)) {
       return { undoChanged: t1 !== before, redoRestored: (await text()) === before, focused: await active() };
     });
     await step("template_if_else_then_type_into_hole", async () => {
-      await page.locator(".cm-content .blocks-literal", { hasText: /^f$/ }).first().click();
+      await page.locator(".cm-content .blocks-literal", { hasText: /^f$/ }).first().click({ modifiers: ["Shift"] });
       await page.locator('button[data-template="if-else"]').click();
       const box = await page.locator("input.blocks-edit").count();
       await page.keyboard.type("cond1");

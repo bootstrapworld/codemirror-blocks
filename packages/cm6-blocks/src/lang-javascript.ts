@@ -89,6 +89,7 @@ export const javascriptTable: BlockTable = {
   },
   opaque: ["Hashbang"],
   blank: "undefined",
+  lineComment: "//",
   separators: { args: ", ", elements: ", ", properties: ", ", roots: "\n", parts: "; " },
   rules: [
     {

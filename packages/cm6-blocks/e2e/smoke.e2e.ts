@@ -17,7 +17,7 @@ for (const lang of ["scheme", "javascript", "python"]) {
 test("screenshot: the toolbar with a template just inserted", async ({ page }) => {
   await page.goto(`/index.html?lang=javascript&constructs=1`);
   await page.waitForSelector(".cm-content .blocks-node");
-  await page.locator(".cm-content .blocks-literal").first().click();
+  await page.locator(".cm-content .blocks-literal").first().click({ modifiers: ["Shift"] });
   await page.locator('#templates button[data-template="if-else"]').click();
   await page.waitForSelector("input.blocks-edit");
   await page.screenshot({ path: `packages/cm6-blocks/e2e/screens/toolbar-template.png` });
