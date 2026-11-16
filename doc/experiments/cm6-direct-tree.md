@@ -1533,3 +1533,14 @@ Decision (cheapest faithful version, judgement): comments stay blocks of their o
 - Shift-Ctrl-] (`code BracketRight`, Ctrl and Shift only; Cmd is not it, as in the old editor): a box inside the block, holding the words (line sign stripped, `#| |#` and `/* */` brackets stripped); Enter writes them: replaces the comment (a block comment keeps its brackets), or, with none, writes `<sign> words` + line break + the line's indentation above the block; EMPTY text removes the comment block (trailing one too); Escape, Alt-Q or blur cancel. One text change, one undo step. The block that gets the comment is `commentHost`: the outermost block that starts where the focused one does, moved up to one that is first on its line (so a comment for `x` in `return x;` goes above the `return`, never between `return` and `x`, which would change a JavaScript program). The new table entry per language: `lineComment` (`;`, `//`, `#`).
 - Differences from the old editor: the comment is its own block too (it can be focused, deleted, moved on its own; deleting the host leaves the comment); one line of words only; a comment inside a block whose slots are all "one" (a Scheme `define`) is not a block at all there (known, from the fourth round), so nothing attaches in it; cut and copy of the host do not take its comment along (the old editor's cut does).
 - Evidence: `spec/attached.test.ts` (15 jsdom tests, 5 per language), `e2e/click.e2e.ts` (3 Chromium tests with the real key); the model fuzzers' DOM oracle now covers the markers and labels.
+
+### 5. Bundle sizes again (2026-11-16, esbuild 0.28 `--minify`, one run each, gzip -9; same entries as round four)
+
+| build | round 4 minified / gzip | now minified / gzip | change |
+|---|---|---|---|
+| (a) `demo/demo.ts`, three languages, everything bundled | 467,454 / 160,845 | 504,087 / 173,550 | +36,633 / +12,705 |
+| (b) same, CM6 (`@codemirror/state`, `view`, `commands`) external | 236,647 / 86,949 | 273,207 / 99,219 | +36,560 / +12,270 |
+| `demo/scheme-only.ts`, everything bundled | (not measured in round 4) | 363,654 / 120,102 | |
+| (c) `demo/scheme-only.ts`, CM6 external | 102,787 / 35,585 | 132,724 / 45,962 | +29,937 / +10,377 |
+
+About 30 K minified (10 K gzipped) more in the Scheme-only build over round four: the fifth-round work (selection, edit as text, anchors, touch, Python imports, template strings) and this round (places, collapse, click, attached comments, about 2.5 K of CSS text). Grammars are not external in any of these rows.
