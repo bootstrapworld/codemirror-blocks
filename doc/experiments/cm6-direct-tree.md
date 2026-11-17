@@ -2402,3 +2402,25 @@ Skipped and eligible: 179 jest + 99 Playwright = 278 (jest passes 421, 0 confirm
 **Share.** Jest: 421 passed of 421 + 179 = 600 eligible, 70.2 percent. The notes' 693 does not agree with the live count (93 fewer; the unported eligible files or a moved class are the likely gap: not chased). Playwright: 99 skipped + 30 un-runnable = 129 against the notes' 135 (6 apart, the six I-class skips); movable cannot be stated until index.html is restored (30 of 129, 23 percent, if all pass).
 
 **Decisions.** (1) TOPLEVEL-TYPING frees the most: 86 tests (jest 52, Playwright 34), the same 86 counting it anywhere. (2) WHITESPACE-DROP is second: 53 as the first listed dependency, up to 91 counting every mention; REAL-TOOLBAR is third (23, up to 51), and SPOKEN-LABELS (28, up to 49) is the cheapest by cost since it is mostly rewording.
+
+## Next major todo: top-level typing, option (a) (decided 2026-11-18, not started)
+
+The owner chose option (a) of D1 (sixteenth round): text typed at the top level,
+outside any block, is held in a pending buffer, shown as a ghost, until it
+parses to whole blocks; text that does not parse stays out of the tree and out
+of undo. This is the old editor's "quarantine". It was chosen over (b) (let the
+text in at once as an error block) even though (b) is cheaper, so that this
+editor keeps the old behaviour and the tests that say "nothing changes until it
+parses" can move over (about 10 of them were going to stay documented
+differences under (b)).
+
+- Why it is the next todo: it blocks 86 eligible old tests, the largest group
+  (52 jest + 34 Playwright; see the seventeenth round's table and
+  `packages/cm6-blocks/e2e/ported-blockers.csv`), including many undo-matrix
+  variants.
+- What it touches: a pending-text state that must stay right through undo and
+  redo, reconcile, focus restore, search, auto-scroll, touch, and the activity
+  log (a pending run is not yet an edit); the old editor's rules are in
+  `packages/codemirror-blocks/src` (search for the pending/quarantine code and
+  `spec/` tests named for top-level typing) and are to be read first.
+- Not started: the owner could not spare the tokens that day.
