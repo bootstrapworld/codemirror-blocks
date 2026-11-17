@@ -6,6 +6,7 @@
 import { redo, redoDepth, undo, undoDepth } from "@codemirror/commands";
 import { EditorSelection } from "@codemirror/state";
 import type { LezerBlockEditor } from "../../src/lezer-view";
+import { contentHash } from "../../src/hash";
 import type { BNode } from "../../src/types";
 
 export type Pos = { line: number; ch: number };
@@ -34,6 +35,10 @@ export class ASTNode {
   }
   get id(): string {
     return String(this.b.id);
+  }
+  /** what the old nodes' `hash` is for tests: equal for equal content (kind, keyword, value, children), whatever the place or the id */
+  get hash(): number {
+    return contentHash(this.b, this.api.ed.view.state.doc);
   }
   get element(): HTMLElement | null {
     return this.api.ed.renderer.has(this.b) ? this.api.ed.renderer.element(this.b) : null;

@@ -35,6 +35,7 @@ import type { Search } from "./search";
 import { ActivityExport, createRecorder, DEFAULT_LIMIT, LogEntry } from "./activity";
 import { browserPlayer, SoundEvent, SoundName, SoundPlayer } from "./sound";
 import { makeNode } from "./node";
+import { contentHash } from "./hash";
 import { Bail, compatible, reconcile, ReconcileEnv } from "./reconcile";
 import type { BNode, Doc, Slot, TextChange } from "./types";
 
@@ -1581,6 +1582,7 @@ export function checkLezerEditor(ed: LezerBlockEditor): string[] {
   const roots = prog.slots[0].nodes;
   if (prog.to !== text.length) say(`program ends at ${prog.to}, the text has ${text.length}`);
 
+  const refVersion = {};
   const compareLists = (live: BNode[], ref: BNode[], out: string[]): void => {
     const compare = (l: BNode, r: BNode, path: string): void => {
       for (const f of FIELDS) {
@@ -1593,6 +1595,8 @@ export function checkLezerEditor(ed: LezerBlockEditor): string[] {
         if (ls.nodes.length !== rs.nodes.length) return void out.push(`${path}.${ls.name}: ${ls.nodes.length} nodes, expected ${rs.nodes.length}`);
         ls.nodes.forEach((c, j) => compare(c, rs.nodes[j], `${path}.${ls.name}[${j}]`));
       });
+      // the content hash (cached per document version) is the fresh parse's, for every node
+      if (out.length === 0 && contentHash(l, state.doc) !== contentHash(r, refVersion)) out.push(`${path}: content hash differs from a fresh parse's`);
     };
     if (live.length !== ref.length) return void out.push(`${live.length} roots, expected ${ref.length}`);
     live.forEach((r, i) => compare(r, ref[i], `roots[${i}]`));
