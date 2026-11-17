@@ -69,8 +69,6 @@ describe("undoing and redoing a delete", () => {
     expect(focused()).toBe("f");
   });
 
-  // SKIPPED (U): undo does not put the focus back on the block that had it before the edit (the old history keeps the focus)
-
   it("undo puts focus back on the block that had it before the delete", () => {
     undo();
     expect(cmb.getValue()).toBe("(f x y)");
@@ -152,8 +150,6 @@ describe("undoing and redoing an insertion beside a block", () => {
     undo();
     expect(focused()).toBe("x");
   });
-
-  // SKIPPED (U): redo of an insertion beside a block: redo through the key did not redo (document unchanged)
 
   it("redo goes to the inserted block", () => {
     undo();

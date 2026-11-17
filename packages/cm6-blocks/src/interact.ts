@@ -398,6 +398,10 @@ export function attachInteraction(ed: LezerBlockEditor): {
     if (!slot || slot.kind !== "list" || slot.pieces) return;
     const i = slot.nodes.indexOf(node);
     const el = renderer.element(node);
+    // as in the old editor, Insert Left / Right also put the text cursor at the block's start / end
+    ed.view.dispatch({
+      selection: { anchor: after ? node.to : node.from },
+    });
     insertBox(slot, after ? i + 1 : i, node, (input) => {
       if (node.parent && node.parent.kind !== "program" && el.parentElement) {
         el.parentElement.insertBefore(input, after ? el.nextSibling : el);

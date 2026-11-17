@@ -46,7 +46,7 @@ describe("The CodeMirrorBlocks Class", function () {
       expect(ast.rootNodes.length).toBe(0);
     });
 
-    // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality
+    // SKIPPED (N): CM5 API (`cmb.setBlockMode`); the behaviour is tested through `setBlockMode` of this editor's own interface (spec/cm6-api.test.ts)
 
     it.skip("should set block mode to false", function () {
       cmb.setBlockMode(false);
@@ -109,7 +109,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
       // TODO: figure out how to fire a paste event
     });
-    // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toEqual(expected) // deep equality
+    // SKIPPED (D): `()` is an empty call here, with no invented blank for the function name; nothing to protect from deletion
     it.skip("should not allow required blanks to be deleted", async function () {
       cmb.setValue("()");
       // the parser fills in the missing function name with a blank
@@ -179,9 +179,7 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cursor.ch).toBe(0);
       });
 
-      // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality
-
-      it.skip("Ctrl-] should jump to the right of a top-level node", function () {
+      it("Ctrl-] should jump to the right of a top-level node", function () {
         mouseDown(firstRoot.element!);
         keyDown("]", { ctrlKey: true }, firstRoot.element!);
         const cursor = cmb.getCursor();

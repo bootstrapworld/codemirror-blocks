@@ -37,7 +37,7 @@ describe("focusing,", () => {
 
   afterEach(teardown);
 
-  // SKIPPED (U): node ids are a global counter here, the old ones count from 0 in each parse
+  // SKIPPED (D): node ids are a global counter here, the old ones count from 0 in each parse (an id is a label, not a position)
 
   it.skip("tabbing to the editor for the first time should activate node 0", async () => {
     cmb.focus();
@@ -127,7 +127,7 @@ describe("after a node has been edited in place,", () => {
   });
   afterEach(teardown);
 
-  // SKIPPED (U): the edit box is an input/textarea placed in the block, the old one a contenteditable: assertions on contenteditable, textContent or innerHTML of the box differ
+  // SKIPPED (D): the edit box is an input/textarea placed in the block, the old one a contenteditable: assertions on contenteditable, textContent or innerHTML of the box differ
 
   it.skip("the block that was edited is the one on the page, so focus can be sent to it", () => {
     const edited = cmb.getAst().rootNodes[0];

@@ -143,15 +143,15 @@ describe("what a block looks like", () => {
     teardown();
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toContain(expected) // indexOf
+  // EDITED (b): the old table drew a cond as `.blocks-cond-table` with `.blocks-cond-row`s; here a cond is `.blocks-cond` with `.blocks-clause` children (the parts are still inside it)
 
-  it.skip("draws the parts of a block inside it", () => {
+  it("draws the parts of a block inside it", () => {
     const { cmb } = mountCMB(wescheme);
     cmb.setValue("(cond [(> 1 2) 3] [else 4])");
-    const text = document.querySelector(".blocks-cond-table")?.textContent;
+    const text = document.querySelector(".blocks-cond")?.textContent;
     expect(text).toContain(">");
     expect(text).toContain("else");
-    expect(document.querySelectorAll(".blocks-cond-row")).toHaveLength(2);
+    expect(document.querySelectorAll(".blocks-clause")).toHaveLength(2);
     teardown();
   });
 });

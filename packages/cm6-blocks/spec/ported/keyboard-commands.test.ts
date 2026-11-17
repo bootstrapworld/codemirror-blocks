@@ -216,7 +216,7 @@ describe("Help (Shift-Ctrl-/)", () => {
     keyDown("/", { shiftKey: true, ctrlKey: true }, root());
   };
 
-  // SKIPPED (U): the help dialog lists the key table's own descriptions, not the old editor's names (`Next Block`)
+  // SKIPPED (D): the help dialog lists the key table's own descriptions, not the old editor's names (`Next Block`)
 
   it.skip("opens the keyboard shortcuts dialog", () => {
     openHelp();

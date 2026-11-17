@@ -68,7 +68,7 @@ describe("when testing CM apis,", () => {
     //expect(()=>cmb.off()).toThrow();
   });
 
-  // SKIPPED (M): not built / not in the compat layer: cmb.getLineHandle (CM5 line handles)
+  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.getLineHandle (CM5 line handles))
 
   it.skip("those that simply pass through should not throw errors", async () => {
     const domNode = document.createElement("span");
@@ -206,7 +206,7 @@ describe("when testing CM apis,", () => {
     expect(firstRoot!.getAttribute("aria-selected")).toBe("true");
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality
+  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality)
 
   it.skip("getCursor should work as-is for Text", async () => {
     cmb.setSelection({ line: 0, ch: 0 }, { line: 0, ch: 7 });
@@ -335,7 +335,7 @@ describe("when testing CM apis,", () => {
     ]);
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toThrow()
+  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toThrow())
 
   it.skip("replaceRange", async () => {
     cmb.setBlockMode(true);
@@ -349,7 +349,7 @@ describe("when testing CM apis,", () => {
     expect(cmb.getValue()).toBe("(+Maya\ny");
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toThrow()
+  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toThrow())
 
   it.skip("replaceSelection", async () => {
     cmb.setBlockMode(true);
@@ -388,7 +388,7 @@ describe("when testing CM apis,", () => {
     expect(cmb.getValue()).toBe("Maya\nx\nSchanzer");
   });
 
-  // SKIPPED (M): not built / not in the compat layer: cmb.setBookmark (CM5 bookmarks)
+  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.setBookmark (CM5 bookmarks))
 
   it.skip("setBookmark", async () => {
     const domNode = document.createElement("span");
@@ -402,7 +402,7 @@ describe("when testing CM apis,", () => {
     );
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: TypeError: Cannot read properties of undefined (reading 'nid')
+  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: TypeError: Cannot read properties of undefined (reading 'nid'))
 
   it.skip("setCursor should work as-is for text, or activate the containing block", async () => {
     // first test setCursor in text mode
@@ -484,7 +484,7 @@ describe("when testing CM apis,", () => {
     ]);
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality
+  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality)
 
   it.skip("somethingSelected should work for selected blocks and text ranges", async () => {
     cmb.setBlockMode(true);

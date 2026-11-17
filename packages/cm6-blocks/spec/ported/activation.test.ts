@@ -105,7 +105,7 @@ describe("when dealing with node activation,", () => {
     expect(isNodeEditable(literal1)).toBe(true);
   });
 
-  // SKIPPED (U): the edit box is an input/textarea placed in the block, the old one a contenteditable: assertions on contenteditable, textContent or innerHTML of the box differ
+  // SKIPPED (D): the edit box is an input/textarea placed in the block, the old one a contenteditable: assertions on contenteditable, textContent or innerHTML of the box differ
 
   it.skip("should cancel the editability of activated node when Esc is pressed", async () => {
     mouseDown(literal1);
@@ -207,7 +207,7 @@ describe("deleting a node", () => {
 });
 
 describe("Editing a node", () => {
-  // SKIPPED (U): the edit box is an input/textarea placed in the block, the old one a contenteditable: assertions on contenteditable, textContent or innerHTML of the box differ
+  // SKIPPED (D): the edit box is an input/textarea placed in the block, the old one a contenteditable: assertions on contenteditable, textContent or innerHTML of the box differ
   it.skip("should restore focus to the node after its edited", async () => {
     cmb.setValue("firstLiteral secondLiteral thirdLiteral");
     await userEvent.click(

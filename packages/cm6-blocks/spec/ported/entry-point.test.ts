@@ -19,7 +19,7 @@ const container = () => {
 };
 
 describe("CodeMirrorBlocks()", () => {
-  // SKIPPED (M): not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
+  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
   it.skip("opens an editor for a language said by its id", () => {
     let editor: ReturnType<typeof CodeMirrorBlocks>;
     act(() => {
@@ -28,7 +28,7 @@ describe("CodeMirrorBlocks()", () => {
     expect(editor!.getValue()).toBe("(+ 1 2)");
   });
 
-  // SKIPPED (M): not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)"
+  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
 
   it.skip("says which languages there are when the id is not one of them", () => {
     expect(() => CodeMirrorBlocks(container(), {}, "no-such-language")).toThrow(
@@ -36,7 +36,7 @@ describe("CodeMirrorBlocks()", () => {
     );
   });
 
-  // SKIPPED (I): uses the old implementation's internals or CM5 API methods the compat layer does not have: Error: Hooks cannot be defined inside tests. Hook of type "afterEach" is nested within "says that none have be
+  // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: Error: Hooks cannot be defined inside tests. Hook of type "afterEach" is nested within "says that none have be)
 
   it.skip("says that none have been added, when none have", () => {
     jest.isolateModules(() => {
@@ -47,7 +47,7 @@ describe("CodeMirrorBlocks()", () => {
     });
   });
 
-  // SKIPPED (M): not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
+  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
 
   it.skip("returns the editor that a container has when it is called again, and does not make a second", () => {
     const div = container();
@@ -76,7 +76,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
     return editor;
   };
 
-  // SKIPPED (M): not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
+  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
 
   it.skip("has every method in text mode, and is in text mode at first", () => {
     const editor = open();
@@ -87,7 +87,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
     expect(typeof editor.getValue).toBe("function");
   });
 
-  // SKIPPED (I): iterates the old API module's `blockModeOnlyMethods` (not in the compat layer; also text mode, which is not built)
+  // SKIPPED (N): CM5 API, out of scope on this branch (iterates the old API module's `blockModeOnlyMethods` (not in the compat layer; also text mode, which is not built))
   it.skip.each(["x"])(
     "%s() throws an Error that says it needs block mode, in text mode",
     (name) => {
@@ -98,7 +98,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
     }
   );
 
-  // SKIPPED (U): undocumented difference or not yet examined: TypeError: Cannot read properties of undefined (reading 'example')
+  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: TypeError: Cannot read properties of undefined (reading 'example'))
 
   it.skip("has a method for each one that block mode has", () => {
     const language = Languages.LANGUAGES["example"];
@@ -115,7 +115,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
     }
   });
 
-  // SKIPPED (M): not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
+  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
 
   it.skip("is the same object in block mode and back, and answers for the mode that shows", () => {
     const editor = open();
@@ -139,7 +139,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
     expect(editor.getAst().rootNodes).toHaveLength(1);
   });
 
-  // SKIPPED (M): not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
+  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
 
   it.skip("keeps the methods that block mode restricts restricted, and those that text mode does, in the mode that shows", () => {
     const editor = open();

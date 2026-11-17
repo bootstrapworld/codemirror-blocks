@@ -140,7 +140,7 @@ describe("the summary on first opening a program as blocks", () => {
     teardown();
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toEqual(expected) // deep equality
+  // SKIPPED (D): the summary is said when blocks are first drawn with content (construction, or block mode switched on); text a host sets into an empty editor later is not announced (an API load after mount was the first draw in the old editor)
 
   it.skip("is said once, and not again after switching modes", async () => {
     const say = jest.spyOn(announcer, "say");

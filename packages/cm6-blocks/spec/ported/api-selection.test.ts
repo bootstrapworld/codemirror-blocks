@@ -32,7 +32,7 @@ beforeEach(() => {
 afterEach(teardown);
 
 describe("things the editor does not support", () => {
-  // SKIPPED (M): not built / not in the compat layer: cmb.runMode (CM5 runMode)"
+  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.runMode (CM5 runMode))
   it.skip("runMode is refused in both modes", () => {
     expect(() => cmb.runMode()).toThrow("runMode is not supported");
     cmb.setBlockMode(false);
@@ -41,7 +41,7 @@ describe("things the editor does not support", () => {
 });
 
 describe("marking text", () => {
-  // SKIPPED (M): not built / not in the compat layer: cmb.markText (text marks on blocks)"
+  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.markText (text marks on blocks))
   it.skip("only on a block, and only with the options a block supports", () => {
     allowConsoleErrors(); // the refusals are logged
     // 0:1 to 0:4 is "+ 1", which is not a block
@@ -114,7 +114,7 @@ describe("extending a selection", () => {
     cmb.addSelection(pos(2, 7));
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toHaveLength(expected)
+  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toHaveLength(expected))
 
   it.skip("extendSelection moves the head to a block boundary, without failing", () => {
     // it once threw a TypeError from inside CodeMirror whenever the selection
@@ -124,7 +124,7 @@ describe("extending a selection", () => {
     expect(ranges(cmb)).toEqual([{ anchor: pos(2, 7), head: pos(2, 7) }]);
   });
 
-  // SKIPPED (I): uses the old implementation's internals or CM5 API methods the compat layer does not have: Error: expect(received).toThrow(expected)
+  // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: Error: expect(received).toThrow(expected))
 
   it.skip("extendSelection refuses to end in the middle of a block", () => {
     allowConsoleErrors();
@@ -133,7 +133,7 @@ describe("extending a selection", () => {
     );
   });
 
-  // SKIPPED (I): uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.extendSelections is not a function
+  // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.extendSelections is not a function)
 
   it.skip("extendSelections and extendSelectionsBy do the same", () => {
     cmb.extendSelections([pos(2, 7)]);

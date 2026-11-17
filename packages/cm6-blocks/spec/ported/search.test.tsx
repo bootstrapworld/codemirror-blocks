@@ -355,8 +355,6 @@ describe("the search rotor", () => {
     ]);
   });
 
-  // SKIPPED (U): with nothing to search for the rotor says one line here, two there
-
   it("says so when there is nothing to search for", () => {
     // (the user is in the editor, and deletes the last of its blocks: setting the
     // text through the API does not bring focus into an editor)
