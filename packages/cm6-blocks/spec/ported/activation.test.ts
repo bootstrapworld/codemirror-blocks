@@ -136,9 +136,8 @@ describe("when dealing with node activation,", () => {
     expect(cmb.getValue()).toBe("11\n54");
   });
 
-  // SKIPPED (U): the edit box is an input/textarea placed in the block, the old one a contenteditable: assertions on contenteditable, textContent or innerHTML of the box differ
 
-  it.skip("should cancel the editability of activated node when Alt-Q is pressed", async () => {
+  it("should cancel the editability of activated node when Alt-Q is pressed", async () => {
     mouseDown(literal1);
     expect(cmb.getFocusedNode()).toBe(literal1);
 

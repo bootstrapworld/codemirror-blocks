@@ -46,9 +46,11 @@ async function aim(page: any, which: "first" | "last", index: number, moveTo: (p
     const g = await gapBox(page, which, index);
     if (g) await moveTo(g);
     await page.waitForTimeout(120);
-    if ((await page.locator(".blocks-drop-target").count()) === 1) return;
+    // (the gap is under the pointer, whether or not its mark is drawn at this instant)
+    const hit = g && (await page.evaluate(({ x, y }: any) => !!document.elementFromPoint(x, y)?.closest(".blocks-gap"), g));
+    if (hit) return;
   }
-  throw new Error("the gap never became the drop target");
+  throw new Error("the gap never came under the pointer");
 }
 const scrollerBox = async (page: any) => (await page.locator(".cm-scroller").boundingBox())!;
 /** the centre of the first gap with this index of the root that is the first (`which` = "first") or the last statement; null when it is not drawn */

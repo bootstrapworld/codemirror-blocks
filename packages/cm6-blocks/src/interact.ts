@@ -831,6 +831,18 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     doc.addEventListener("pointerup", onUp, true);
     doc.addEventListener("pointercancel", onCancel, true);
     if (touch) {
+      // The touch goes on being sent to the element it began on, even after CodeMirror takes that element out of the page (it only draws
+      // what is in view, so a block that auto-scroll has moved out of view is gone). Events at a removed element do not reach the document,
+      // so the `touchmove` that holds the scrolling off must also be on that element, or the browser takes the touch for a scroll (pointercancel).
+      const held = e.target as Element;
+      held.addEventListener("touchmove", holdScroll, { passive: false });
+      const release = (): void => {
+        held.removeEventListener("touchmove", holdScroll);
+        held.removeEventListener("touchend", release);
+        held.removeEventListener("touchcancel", release);
+      };
+      held.addEventListener("touchend", release);
+      held.addEventListener("touchcancel", release);
       const d = drag;
       d.timer = setTimeout(() => {
         d.timer = null;

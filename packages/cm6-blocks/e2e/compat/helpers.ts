@@ -1,0 +1,89 @@
+/*
+ * Ninth round, step 2c: the old e2e/helpers.ts names and signatures over this editor's demo page (`demo/index.html`, `window.demo.ed`). Only what the
+ * ported files use. Not built: trashCan (this editor has none), dragWithMouse / dragWithEvents, settledCenter (no use yet).
+ */
+import { expect, Locator, Page } from "@playwright/test";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export const MOD = "ControlOrMeta";
+
+/** The old page's `window.cmb`, in the few methods the old helpers call, over `window.demo.ed` */
+const SHIM = () => {
+  const d = (window as any).demo;
+  const ed = d.ed;
+  const doc = () => ed.view.state.doc;
+  (window as any).cmb = {
+    getValue: () => doc().toString(),
+    setValue: (t: string) => ed.view.dispatch({ changes: { from: 0, to: doc().length, insert: t } }),
+    clearHistory: () => {},
+  };
+};
+
+/**
+ * Open the demo page, put `code` in the editor (the demo is always in blocks mode: there is no toggle to click). `language` is the demo's `?lang=`
+ * (default "scheme").
+ */
+export async function openInBlockMode(page: Page, code: string, language = "scheme") {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(`/index.html?lang=${language}`);
+  await page.waitForFunction(() => !!(window as any).demo, undefined, { timeout: 15_000 }).catch(() => {
+    throw new Error(`the demo page never created window.demo. Errors on the page: ${errors.join("; ") || "(none)"}`);
+  });
+  await page.evaluate(SHIM);
+  await page.evaluate((c) => (window as any).cmb.setValue(c), code);
+  await expect(page.getByRole("treeitem").first()).toBeVisible();
+}
+
+/** A block, found by the label a screenreader would read out. (This editor's labels are the table's: `call to f with 1 argument`, not `f expression, 1 input`.) */
+export const block = (page: Page, label: string | RegExp) => page.getByRole("treeitem", { name: label }).first();
+export const trashCan = (page: Page) => page.locator(".TrashCan");
+
+export type Snapshot = {
+  text: string;
+  roots: string[];
+  reparsed: string[] | string;
+  scrollTop: number;
+  history: { undo: number; redo: number };
+  focus: { tag: string; role: string | null; id: string };
+};
+
+export const snapshot = (page: Page): Promise<Snapshot> =>
+  page.evaluate(() => {
+    const ed = (window as any).demo.ed;
+    const roots = ed.roots().map((n: any) => ed.copyText(n));
+    const active = document.activeElement;
+    return {
+      text: ed.view.state.doc.toString(),
+      roots,
+      reparsed: roots, // (the one tree is the parse: `demo.check()` compares the DOM with a fresh drawing and the tree with the text)
+      scrollTop: ed.view.scrollDOM.scrollTop,
+      history: { undo: 0, redo: 0 }, // (not available from the page)
+      focus: { tag: active?.tagName ?? "", role: active?.getAttribute("role") ?? null, id: active?.id ?? "" },
+    };
+  });
+
+const problem = async (page: Page): Promise<string | null> => {
+  const s = await snapshot(page);
+  const found: string[] = await page.evaluate(() => (window as any).demo.check());
+  if (found.length) return `the editor's own checker says: ${found.join("; ")}`;
+  if (s.focus.tag === "BODY") return "keyboard focus fell to the page body";
+  return null;
+};
+
+/** The properties that must hold after any operation: the tree and the page agree with the text (the editor's checker), and keyboard focus is somewhere the editor can hear it. */
+export async function expectConsistent(page: Page) {
+  await expect.poll(() => problem(page), { timeout: 2000 }).toBeNull();
+  return snapshot(page);
+}
+/** (the old helpers press until the history is empty; the page cannot say, so a fixed number of presses) */
+export async function undoAll(page: Page) {
+  for (let i = 0; i < 10; i++) await page.keyboard.press(`${MOD}+z`);
+}
+export async function redoAll(page: Page) {
+  for (let i = 0; i < 10; i++) await page.keyboard.press(`${MOD}+Shift+z`);
+}
+export const center = async (l: Locator) => {
+  const b = (await l.boundingBox())!;
+  return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+};
