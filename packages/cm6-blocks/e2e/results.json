@@ -1,12 +1,12 @@
 {
   "scheme": {
-    "waitForSelectorMs": 111,
+    "waitForSelectorMs": 103,
     "lines": 2751,
     "roots": 1250,
     "nodes": 13750,
-    "firstDrawMs": 89.69999998807907,
-    "paintedMs": 97.90000003576279,
-    "createMs": 65.69999998807907,
+    "firstDrawMs": 84.10000002384186,
+    "paintedMs": 91.19999998807907,
+    "createMs": 62,
     "widgetsAtLoad": 36,
     "rootsInDomAtLoad": 8,
     "viewport": {
@@ -16,38 +16,38 @@
     },
     "edit_near_top": {
       "syncWithLayoutMs": 2.399999976158142,
-      "toPaintMs": 16,
-      "undoToPaintMs": 17.5,
+      "toPaintMs": 15.900000035762787,
+      "undoToPaintMs": 17.599999964237213,
       "all": [
-        7.4,
+        10.3,
+        16.5,
+        14.7,
+        16.3,
+        15.9,
         16,
-        15,
-        16.4,
-        16,
-        16.2,
         15.9
       ]
     },
     "edit_near_middle": {
-      "syncWithLayoutMs": 1.699999988079071,
+      "syncWithLayoutMs": 1.7999999523162842,
       "toPaintMs": 15.799999952316284,
       "undoToPaintMs": 17.5,
       "all": [
-        17,
-        15.8,
-        15.1,
-        15.6,
+        17.3,
         15.8,
         15.6,
-        16.5
+        15.7,
+        15.9,
+        15.7,
+        15.8
       ]
     },
     "middleRootIndex": 494,
     "scroll": {
-      "steps": 307,
-      "widgetsBuiltWhileScrolling": 2120,
+      "steps": 327,
+      "widgetsBuiltWhileScrolling": 2122,
       "maxRootsInDomAtOnce": 24,
-      "rootsInDomAtBottom": 10,
+      "rootsInDomAtBottom": 14,
       "scrollHeight": 173993
     },
     "focusRoots": {
@@ -109,7 +109,7 @@
         "focusOnABlock": true,
         "restores": 2,
         "activeIsBody": false,
-        "scrollShift": 415,
+        "scrollShift": 454,
         "f0StillConnected": true
       },
       "edit_the_focused_block_itself": {
@@ -120,14 +120,14 @@
         "focusOnABlock": true,
         "restores": 0,
         "activeIsBody": false,
-        "scrollShift": 0,
+        "scrollShift": -1,
         "f0StillConnected": false
       }
     },
     "stats": {
       "edits": 18,
       "reparses": 34,
-      "widgetsBuilt": 2511,
+      "widgetsBuilt": 2525,
       "focusRestores": 4,
       "rootsKept": 42398,
       "rootsRebuilt": 0,
@@ -137,19 +137,19 @@
       "nodesAnchored": 254,
       "anchorBails": 0,
       "maxRootNodes": 0,
-      "parseMs": 23.700000047683716,
-      "restMs": 38.90000003576279
+      "parseMs": 19.899999856948853,
+      "restMs": 34.400000274181366
     },
     "errors": []
   },
   "javascript": {
-    "waitForSelectorMs": 95,
+    "waitForSelectorMs": 92,
     "lines": 2821,
     "roots": 940,
     "nodes": 11656,
-    "firstDrawMs": 76.60000002384186,
-    "paintedMs": 82.10000002384186,
-    "createMs": 52.30000001192093,
+    "firstDrawMs": 74.5,
+    "paintedMs": 80,
+    "createMs": 51.39999997615814,
     "widgetsAtLoad": 36,
     "rootsInDomAtLoad": 8,
     "viewport": {
@@ -158,39 +158,39 @@
       "docLength": 45120
     },
     "edit_near_top": {
-      "syncWithLayoutMs": 3,
-      "toPaintMs": 16.30000001192093,
-      "undoToPaintMs": 17.099999964237213,
+      "syncWithLayoutMs": 2.200000047683716,
+      "toPaintMs": 16.400000035762787,
+      "undoToPaintMs": 17,
       "all": [
-        8.7,
-        16.2,
+        8.8,
         16.5,
-        16.3,
-        15.8,
         16.4,
-        16.3
+        16.2,
+        16.3,
+        16.5,
+        17.7
       ]
     },
     "edit_near_middle": {
-      "syncWithLayoutMs": 2.599999964237213,
-      "toPaintMs": 16.19999998807907,
-      "undoToPaintMs": 17.19999998807907,
+      "syncWithLayoutMs": 2.100000023841858,
+      "toPaintMs": 16.30000001192093,
+      "undoToPaintMs": 17.200000047683716,
       "all": [
-        18.3,
-        17.5,
-        16.2,
-        16.4,
-        15.5,
-        16,
-        15.8
+        17.1,
+        18.2,
+        16.1,
+        16.3,
+        16.5,
+        15.8,
+        15.6
       ]
     },
     "middleRootIndex": 324,
     "scroll": {
-      "steps": 245,
-      "widgetsBuiltWhileScrolling": 1586,
+      "steps": 259,
+      "widgetsBuiltWhileScrolling": 1573,
       "maxRootsInDomAtOnce": 22,
-      "rootsInDomAtBottom": 12,
+      "rootsInDomAtBottom": 10,
       "scrollHeight": 137836
     },
     "focusRoots": {
@@ -263,14 +263,14 @@
         "focusOnABlock": true,
         "restores": 0,
         "activeIsBody": false,
-        "scrollShift": 0,
+        "scrollShift": -4,
         "f0StillConnected": false
       }
     },
     "stats": {
       "edits": 18,
       "reparses": 34,
-      "widgetsBuilt": 1972,
+      "widgetsBuilt": 1960,
       "focusRestores": 4,
       "rootsKept": 31854,
       "rootsRebuilt": 0,
@@ -280,19 +280,19 @@
       "nodesAnchored": 216,
       "anchorBails": 0,
       "maxRootNodes": 0,
-      "parseMs": 37.799999952316284,
-      "restMs": 43.69999980926514
+      "parseMs": 32.99999988079071,
+      "restMs": 37.700000047683716
     },
     "errors": []
   },
   "python": {
-    "waitForSelectorMs": 102,
+    "waitForSelectorMs": 101,
     "lines": 2773,
     "roots": 1155,
     "nodes": 13629,
-    "firstDrawMs": 82.39999997615814,
-    "paintedMs": 88.30000001192093,
-    "createMs": 59.40000003576279,
+    "firstDrawMs": 81.80000001192093,
+    "paintedMs": 88.10000002384186,
+    "createMs": 58.69999998807907,
     "widgetsAtLoad": 60,
     "rootsInDomAtLoad": 10,
     "viewport": {
@@ -301,39 +301,39 @@
       "docLength": 47817
     },
     "edit_near_top": {
-      "syncWithLayoutMs": 2.900000035762787,
-      "toPaintMs": 16.30000001192093,
-      "undoToPaintMs": 17.19999998807907,
+      "syncWithLayoutMs": 2.600000023841858,
+      "toPaintMs": 16.799999952316284,
+      "undoToPaintMs": 16.5,
       "all": [
-        13.7,
-        15.9,
-        17.5,
-        16.3,
-        16.5,
-        16.3,
-        16.3
+        14.6,
+        15.4,
+        18.7,
+        14.8,
+        16.8,
+        17.4,
+        17.4
       ]
     },
     "edit_near_middle": {
-      "syncWithLayoutMs": 2.399999976158142,
-      "toPaintMs": 16.19999998807907,
-      "undoToPaintMs": 17.200000047683716,
+      "syncWithLayoutMs": 2.099999964237213,
+      "toPaintMs": 16.100000023841858,
+      "undoToPaintMs": 17.100000023841858,
       "all": [
-        13.1,
-        16.4,
-        15.3,
-        16.2,
-        16.3,
-        16.2,
-        16
+        14.9,
+        17.3,
+        16.1,
+        15.9,
+        16.6,
+        16.1,
+        16.3
       ]
     },
     "middleRootIndex": 226,
     "scroll": {
-      "steps": 270,
-      "widgetsBuiltWhileScrolling": 1950,
-      "maxRootsInDomAtOnce": 26,
-      "rootsInDomAtBottom": 11,
+      "steps": 286,
+      "widgetsBuiltWhileScrolling": 1935,
+      "maxRootsInDomAtOnce": 25,
+      "rootsInDomAtBottom": 19,
       "scrollHeight": 152145
     },
     "focusRoots": {
@@ -395,7 +395,7 @@
         "focusOnABlock": true,
         "restores": 2,
         "activeIsBody": false,
-        "scrollShift": 485,
+        "scrollShift": 524,
         "f0StillConnected": true
       },
       "edit_the_focused_block_itself": {
@@ -413,7 +413,7 @@
     "stats": {
       "edits": 18,
       "reparses": 34,
-      "widgetsBuilt": 2461,
+      "widgetsBuilt": 2441,
       "focusRestores": 4,
       "rootsKept": 39164,
       "rootsRebuilt": 0,
@@ -423,8 +423,8 @@
       "nodesAnchored": 186,
       "anchorBails": 0,
       "maxRootNodes": 0,
-      "parseMs": 31.799999952316284,
-      "restMs": 47.8999999165535
+      "parseMs": 32.90000009536743,
+      "restMs": 46.39999997615814
     },
     "errors": []
   }

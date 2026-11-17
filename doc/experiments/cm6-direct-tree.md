@@ -1958,3 +1958,40 @@ The undocumented differences found by the sample (findings; most important first
 10. **Native keys in the text**: Ctrl/Cmd-Enter with the focus in the text and no block focused inserts a line (CodeMirror's `insertBlankLine`), Ctrl/Cmd-X with no selection cuts the line (CodeMirror's native cut); the old editor does nothing. A paste and a copy are fine.
 11. **Node ids are one counter for the page's life, the old ones count from 0 in each parse** (focus-test: "activate node 0"); the old `getFocusedNode().hash` does not exist.
 12. Rotor with nothing to search for says one line, the old two (search-test, 1 test); deleting the parameter list of a `define` gives another result because of the table's slots (keyboard-commands, 1 test).
+
+Playwright sample (`e2e/ported/`, 9 tests; the demo page instead of the example page): `search.e2e.ts` (6): raw (the old labels) 0 of 6 pass (every test fails in its `beforeEach`, which finds the first block by `/^f expression/`); after the label edits (`/^call to f /`, `"x,"` to `"symbol x"`, `functionApp` to `call`) **5 of 6 pass**, the sixth is `test.fixme` (M: the demo page has a second combobox, the language chooser; a page difference). `undo-focus.e2e.ts` (3): raw not measured (labels); after the label edits 0 of 3: one is D (focus after a delete, A3), one is M (typing at the top level), one is M (the page's clipboard permission, to check again): all `test.fixme` with the reason. Playwright total 9 tests: 5 pass after edits, 4 fixme.
+
+Missing features, by the number of old tests they block (jest + Playwright, counting the files classed MISSING and the variants skipped in `undo-matrix`):
+1. **The CM5 public API** (`getSelections`, `markText`, `getHistory`, `replaceSelection`, the `CodeMirrorBlocks()` entry point and its events, constructor options): 89 jest tests in 6 files (`api-test`, `api-selection`, `api-edit-focus`, `markText`, `new-blocks`, `entry-point`) plus 53 uses inside behaviour files.
+2. **The toolbar of primitives and its search** (`.Primitive`, drag from it, the search box): 28 jest tests in 3 files plus 32 `undo-matrix` tests, 2 Playwright tests (this editor has templates and buttons, a page makes the toolbar).
+3. **Typing and pasting at the top level (the quarantine)**: `toplevel-input` 14, `edge-cases` 22 (partly), 16 `undo-matrix`, 6 Playwright (`typing`), several in sampled files.
+4. **The text/blocks toggle, text mode and the morph**: `lifecycle` 24, `ToggleEditor` 6, 13 Playwright (`mode-switch`, `morph`, `motion-sequences`, `reduced-motion`), and a few in the sample (`setBlockMode(false)` in `search`, `edit-errors`, `activation`).
+5. **A drop on bare whitespace, and onto an arbitrary node**: 16 + 16 + 4 `undo-matrix` tests, 3 `drop-targets` (documented: drops go on gaps, holes and root edges; whitespace is not built).
+6. **The trash can**: `TrashCan` 4, 16 `undo-matrix`, 6 Playwright.
+7. The summary read on first opening a program as blocks (`summary-test` 10), the error notice (6).
+
+#### 2e. The answer: how many could come over (estimate)
+
+Basis: **measured** on the 12 sampled files (476 jest tests + 9 Playwright tests: 476 of the 735 jest behaviour tests, 65%, but 258 of them are the one generated file `undo-matrix`; the MISSING class is not sampled, it is blocked by definition), **extrapolated** for the rest by the class's measured rate; the LANGUAGE, INTERNAL and HARNESS classes are classification only.
+
+Jest (2107 tests):
+| class | tests | pass as is | pass with edited expectations | blocked on a missing feature | differ (documented, or a finding to decide) | not coming over |
+|---|---|---|---|---|---|---|
+| SAME | 362 | 196 (measured 194 of 358, extrapolated 2 of 4) | 16 | 109 (measured: matrix 97, interaction 7, activation 2, keyboard 1, plus the 2 internals) | 41 (17 documented + 22 undocumented, measured) | 0 |
+| CHANGED | 170 | 52 (measured 35 of 115, extrapolated 17 of 55) | 22 (measured 15, extrapolated 7: labels in `nodes-test`, targets in `drag-test`) | 28 (measured 19, extrapolated 9) | 68 (measured 46 = 25 documented + 18 findings + 3 internal; extrapolated 22) | 0 |
+| MISSING | 203 | 0 | 0 | 203 (API 89, mode and lifecycle 30, toolbar 28, quarantine and edge cases 36, summary 10, error notice 6, trash 4) | 0 | 0 |
+| LANGUAGE | 611 | | | | | 611 |
+| INTERNAL | 624 | | | | | 624 |
+| HARNESS | 137 | | | | | 137 |
+| total | 2107 | 248 | 38 | 340 | 109 | 1372 |
+
+So of the 735 jest tests that are about behaviour, **about 286 (39%) could move over with nothing or an edited expectation** (248 as they are, 38 after the documented label, key and selector edits); **about 340 (46%) wait for a feature**; **about 109 (15%) differ and need a decision** (some of those are documented changes that make the old expectation wrong; some are the undocumented differences above). 1372 (65% of all jest tests) are not behaviour tests of this editor. Playwright (166): SAME 81, CHANGED 27, MISSING 27, LANGUAGE 8, INTERNAL 6, HARNESS 17; the 9 sampled: 5 pass after label edits (extrapolated to the behaviour files, roughly half of SAME and CHANGED, about 50 to 55 of the 108, would pass once the demo page has what the old page has: a block label helper and the clipboard permission; not measured beyond the sample).
+
+Pass rates measured on the sample: SAME files 58% raw (209 of 358, the matrix included), CHANGED files 30% raw (35 of 115) and 43% after the documented edits (50 of 115); the matrix alone 56% (145 of 258) after skipping what is missing.
+
+The cheapest next step to raise the number: the undocumented differences 1 to 3, 5 and 6 above are each a few lines (`aria-activedescendent` and the `block-node-` id; arrow keys from the cursor; focus to the editor after the last delete; empty box keeps the block; whether a root's line stays) and they unlock about 40 of the 476 sampled tests, so roughly 90 of the 735; after that the biggest block is the CM5 passthrough API in the compat layer (`getSelections`, `setSelections`, `addSelection`, `replaceSelection`, `getHistory`, `markText`: 53 uses, a few lines each over CodeMirror 6's selection and `markText` over decorations) which raises the SAME and CHANGED files without any change to the editor; then a toolbar-of-primitives helper for tests (a `.Primitive` list over the templates) for 60 tests, and the quarantine decision (typing at the top level) for about 58.
+
+### Final checks of the ninth round
+- `npx jest packages/cm6-blocks`: 1023 passed, 222 skipped (the ported files' skips: 216 of them in the 11 ported jest files, 6 earlier ones), 2 suites skipped whole (comment, and one all-skip file); `tsc --noEmit -p packages/cm6-blocks` clean.
+- The whole Chromium suite (port 8177, server stopped afterwards): **106 passed, 4 skipped** (the 4 `test.fixme` of the ported Playwright files), 0 failed; the 15 new auto-scroll tests and the 5 passing ported tests are in it.
+- Not done: auto-scroll was checked in Chromium emulation only (no real touch device, no WebKit; the iOS rule for the extra `touchmove` listener is read, not tested); the CM5 passthrough API (`getSelections` and the rest of the 53 uses), the toolbar-of-primitives helper, the quarantine, and the other 13 old Playwright behaviour files were not ported; `undo-redo-test` (4), `drag-test` (13) and `nodes-test` (42) are estimated, not run; `clearHistory` in the compat layer only forgets the depth.
