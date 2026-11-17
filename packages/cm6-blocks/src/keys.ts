@@ -49,7 +49,7 @@ export const KEYS: KeySpec[] = [
   { command: "undo", description: "Undo", keys: ["Mod-Z"], test: (e) => pmod(e) && !e.shiftKey && (e.key === "z" || e.key === "Z") },
   { command: "redo", description: "Redo", keys: ["Shift-Mod-Z", "Mod-Y"], test: (e) => pmod(e) && ((e.shiftKey && (e.key === "z" || e.key === "Z")) || e.key === "y") },
   { command: "pasteBefore", description: "Paste before the block", keys: ["Shift-Mod-V"], test: (e) => pmod(e) && e.shiftKey && (e.key === "v" || e.key === "V") },
-  { command: "paste", description: "Paste after the block (over a hole)", keys: ["Mod-V"], test: (e) => pmod(e) && !e.shiftKey && (e.key === "v" || e.key === "V") },
+  { command: "paste", description: "Paste after the block (over a hole, or over the block when it is selected)", keys: ["Mod-V"], test: (e) => pmod(e) && !e.shiftKey && (e.key === "v" || e.key === "V") },
   { command: "copy", description: "Copy the selected blocks, or the block (with its comment)", keys: ["Mod-C"], test: () => false },
   { command: "cut", description: "Cut the selected blocks (none selected: says so and beeps)", keys: ["Mod-X"], test: () => false },
   { command: "insertBefore", description: "Insert a new block before", keys: ["Ctrl-["], test: (e) => pmod(e) && e.key === "[" },

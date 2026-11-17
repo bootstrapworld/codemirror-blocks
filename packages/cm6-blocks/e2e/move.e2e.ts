@@ -50,6 +50,20 @@ for (const lang of Object.keys(SMALL)) {
       expect(await text(page)).toBe(SMALL[lang]);
     });
 
+    test("paste over a selected block replaces it (thirteenth round), one undo step brings it back", async ({ page }) => {
+      const lit = (t: string) => page.locator(".cm-content .blocks-literal", { hasText: new RegExp(`^${t}$`) }).first();
+      await lit("3").click({ modifiers: ["Shift"] });
+      await page.keyboard.press("ControlOrMeta+c");
+      await lit("1").click({ modifiers: ["Shift"] });
+      await page.keyboard.press("Space");
+      await page.keyboard.press("ControlOrMeta+v");
+      expect(await text(page)).toBe(SMALL[lang].replace("1", "3"));
+      expect(await focusedText(page)).toBe("3");
+      expect(await page.evaluate(() => (window as any).demo.ed.selectedBlocks().length)).toBe(0);
+      await page.keyboard.press("ControlOrMeta+z");
+      expect(await text(page)).toBe(SMALL[lang]);
+    });
+
     test("a real mouse drag moves a block onto a gap", async ({ page }) => {
       const three = page.locator(".cm-content .blocks-literal", { hasText: /^3$/ }).first();
       const box = (await three.boundingBox())!;

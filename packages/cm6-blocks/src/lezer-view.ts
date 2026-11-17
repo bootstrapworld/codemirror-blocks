@@ -181,6 +181,12 @@ export interface LezerBlockEditor {
   pasteText(anchor: BNode | null, text: string, before?: boolean): BNode | null;
   /** Move a block to a gap (`slot`, `index`) or onto a blank: ONE text change (cut and paste), one undo step. Throws if the target is inside the block. */
   moveNode(node: BNode, target: { slot: Slot; index: number } | { blank: BNode }): void;
+  /**
+   * Paste over a block (the old editor's `ReplaceNodeTarget`, thirteenth round): the block and the comment that goes with it are replaced by the
+   * text(s), as ONE text change. Several texts (several blocks copied together) are joined as separate elements and need a list slot; a place that
+   * takes one block throws. The first pasted block is focused. Returns it, if found.
+   */
+  replaceWithTexts(node: BNode, texts: string[]): BNode | null;
   /** is this block a hole (a blank): what a drop or a paste replaces */
   isBlank(node: BNode): boolean;
   /** apply one text change as one undo step */
@@ -1317,6 +1323,29 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       if (found) ed.focusNode(found);
       return found;
     },
+    replaceWithTexts(node, texts) {
+      live(node);
+      const slot = node.slot;
+      if (!slot || node.kind === "error" || !texts.length) throw new Error("nothing to replace");
+      if (texts.length > 1 && (slot.kind !== "list" || slot.pieces)) throw new Error("a place for one block takes one block");
+      const c = commentOf(node);
+      const from = Math.min(node.from, c ? c.from : node.from);
+      const to = Math.max(node.to, c ? c.to : node.to);
+      const ind = indentAt(node.from);
+      const snippet = texts.map((x) => x.replace(/\n/g, "\n" + ind)).join(separatorFor(table, currentText(), slot));
+      let change: TextChange;
+      if (isBlank(node) && !c) change = replaceChange(node, snippet);
+      else {
+        // (what the old range ended with, a Python statement's newline, stays)
+        const tail = (view.state.doc.sliceString(from, to).match(/\s*$/) as RegExpMatchArray)[0];
+        change = { from, to, insert: snippet.replace(/\s+$/, "") + tail };
+      }
+      dispatch(change);
+      let found = blockAt(change.from + change.insert.indexOf(texts[0].split("\n")[0]), texts[0].length);
+      if (found && found.kind === "comment" && found.slot && found.to - found.from < texts[0].length) found = found.slot.nodes[found.slot.nodes.indexOf(found) + 1] ?? found;
+      if (found) ed.focusNode(found);
+      return found;
+    },
     replaceText(node, snippet) {
       live(node);
       dispatch(replaceChange(node, snippet));
@@ -1505,6 +1534,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   named("replaceText", () => "replaceText", ((n: BNode) => n) as never);
   named("pasteText", () => "pasteText", ((n: BNode | null) => n) as never);
   named("pasteTexts", () => "pasteTexts", ((n: BNode | null) => n) as never);
+  named("replaceWithTexts", () => "replaceWithTexts", ((n: BNode) => n) as never);
   named("moveNodes", () => "moveNodes", ((n: BNode[]) => n[0] ?? null) as never);
   named("moveNode", () => "moveNodes", ((n: BNode) => n) as never);
   named("setComment", () => "setComment", ((n: BNode) => n) as never);

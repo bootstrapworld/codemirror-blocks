@@ -1,5 +1,6 @@
 /** @jest-environment jsdom */
 // Thirteenth round: difference 11 (content hash), cut with nothing selected, finding 13, paste over a selection, the define shape
+import { undo } from "@codemirror/commands";
 import { contentHash } from "../src/hash";
 import { walk } from "../src/doc";
 import { checkLezerEditor } from "../src/lezer-view";
@@ -108,5 +109,108 @@ describe("2. cut with nothing selected beeps (CHANGED from the old editor, which
     ed.renderer.element(n).dispatchEvent(clipEvent("cut", data));
     expect(heard).toEqual([]);
     expect(text(ed)).not.toBe(TEXT[l]);
+  });
+});
+
+describe("4. paste over a selection replaces the focused block (the old editor's ReplaceNodeTarget)", () => {
+  const find = (ed: LezerBlockEditor, src: string): BNode => {
+    let o: BNode | undefined;
+    ed.roots().forEach((r) => walk(r, (n) => { if (!o && n.kind !== "error" && text(ed).slice(n.from, n.to) === src) o = n; }));
+    return o as BNode;
+  };
+  const pasteOn = (ed: LezerBlockEditor, n: BNode, clip: string, data = { v: clip }) => {
+    ed.focusNode(n);
+    ed.renderer.element(n).dispatchEvent(clipEvent("paste", data));
+  };
+  const select = (ed: LezerBlockEditor, ...ns: BNode[]) => ns.forEach((n) => ed.toggleSelect(n));
+
+  test.each([
+    ["scheme", "(f x y)", "x", "z", "(f z y)"],
+    ["scheme", "a b", "a", "zzz", "zzz b"],
+    ["scheme", "(f x y)", "y", "(g 1 2)", "(f x (g 1 2))"],
+    ["javascript", "f(x, y);", "x", "z", "f(z, y);"],
+    ["javascript", "a;\nb;", "a;", "zzz;", "zzz;\nb;"],
+    ["python", "f(x, y)", "y", "z", "f(x, z)"],
+    ["python", "g(1)\nh(2)\n", "g(1)", "z", "z\nh(2)\n"],
+  ])("%s %j: select %j, paste %j gives %j; focus on the new block, selection cleared, one undo step, nothing said", (l, src, over, clip, result) => {
+    const { ed, heard } = rig(l, src);
+    const said = ed.said.length;
+    select(ed, find(ed, over));
+    const depth = undoDepth(ed.view.state);
+    pasteOn(ed, find(ed, over), clip);
+    expect(text(ed)).toBe(result);
+    expect(undoDepth(ed.view.state)).toBe(depth + 1);
+    expect(ed.selectedBlocks()).toEqual([]);
+    expect(ed.said.length).toBe(said);
+    expect(heard).toEqual([]);
+    const f = ed.focusedNode()!;
+    expect(text(ed).slice(f.from, f.to).trim()).toBe(clip.trim());
+    expect(checkLezerEditor(ed)).toEqual([]);
+    undo(ed.view);
+    expect(text(ed)).toBe(src);
+    expect(checkLezerEditor(ed)).toEqual([]);
+  });
+
+  test("with several blocks selected only the FOCUSED one is replaced, and the whole selection is cleared", () => {
+    const { ed } = rig("scheme", "(f x y z)");
+    const [x, y] = [find(ed, "x"), find(ed, "y")];
+    select(ed, x, y);
+    expect(ed.selectedBlocks()).toEqual([x, y]);
+    pasteOn(ed, y, "w");
+    expect(text(ed)).toBe("(f x w z)");
+    expect(ed.selectedBlocks()).toEqual([]);
+  });
+
+  test("a block that is not selected is not replaced: the paste goes after it, and clears the selection", () => {
+    const { ed } = rig("scheme", "(f x y z)");
+    select(ed, find(ed, "x"));
+    pasteOn(ed, find(ed, "y"), "w");
+    expect(text(ed)).toBe("(f x y w z)");
+    expect(ed.selectedBlocks()).toEqual([]);
+  });
+
+  test("the focused block inside a selected one (selecting selects what is inside) is the one replaced", () => {
+    const { ed } = rig("scheme", "(f (g 1) y)");
+    select(ed, find(ed, "(g 1)"));
+    pasteOn(ed, find(ed, "1"), "w");
+    expect(text(ed)).toBe("(f (g w) y)");
+  });
+
+  test("several blocks copied together replace the block as separate elements of its list; a place for one block refuses, with the beep, and nothing changes", () => {
+    const { ed, heard } = rig("scheme", "1 2 (f x y)");
+    const [one, two] = [find(ed, "1"), find(ed, "2")];
+    select(ed, one, two);
+    const data = { v: "" };
+    ed.renderer.element(one).dispatchEvent(clipEvent("copy", data));
+    ed.clearSelection();
+    const x = find(ed, "x");
+    select(ed, x);
+    pasteOn(ed, x, data.v, data);
+    expect(text(ed)).toBe("1 2 (f 1 2 y)");
+    // the callee takes one block
+    const g = rig("scheme", "(f x)\n1 2");
+    const f = find(g.ed, "f");
+    const d2 = { v: "" };
+    select(g.ed, find(g.ed, "1"), find(g.ed, "2"));
+    g.ed.renderer.element(find(g.ed, "1")).dispatchEvent(clipEvent("copy", d2));
+    g.ed.clearSelection();
+    select(g.ed, f);
+    pasteOn(g.ed, f, d2.v, d2);
+    expect(text(g.ed)).toBe("(f x)\n1 2");
+    expect(g.heard).toEqual([["beep", "paste-refused"]]);
+    expect(g.ed.said[g.ed.said.length - 1]).toBe("Cannot paste over this node.");
+    expect(heard).toEqual([]);
+  });
+
+  test("the comment that goes with the block is replaced with it; an empty clipboard does nothing", () => {
+    const { ed } = rig("scheme", "; about a\na\nb");
+    const a = find(ed, "a");
+    select(ed, a);
+    pasteOn(ed, a, "zzz");
+    expect(text(ed)).toBe("zzz\nb");
+    const e2 = rig("scheme", "a b").ed;
+    select(e2, find(e2, "a"));
+    pasteOn(e2, find(e2, "a"), "  ");
+    expect(text(e2)).toBe("a b");
   });
 });

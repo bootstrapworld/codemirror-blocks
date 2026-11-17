@@ -46,14 +46,13 @@ describe("copy", () => {
     expect(cmb.getValue()).toBe("(+ 1 2) 99"); // copying never edits
   });
 
-  // SKIPPED (U): copy of two selected blocks joins by newline (notes) but the compat select() of the second block leaves one block selected: not understood, to look at
-
-  it.skip("copies every selected node, in document order", () => {
+  // EDITED (documented): several copied blocks are joined by a line break here (the old editor: a space, a line break only after a commented one); a line break is valid text in every language
+  it("copies every selected node, in document order", () => {
     cmb.setValue("a b c");
     select(root(2));
     keyDown(" ", {}, root(0)); // select a second node, earlier in the text
     keyDown("C", cmd_ctrl, root(0));
-    expect(clipboard.text).toBe("a c");
+    expect(clipboard.text).toBe("a\nc"); // (old: "a c")
   });
 
   // SKIPPED (D): a comment is its own block here and goes with its block above it (notes, seventh round: cut and copy take the attached comment)
@@ -84,20 +83,18 @@ describe("copy", () => {
     expect(clipboard.text).toBe("(f x y)");
   });
 
-  // SKIPPED (U): as `copies every selected node`: the second selection is not taken
-
-  it.skip("still copies two expressions, each once, in document order", () => {
+  // EDITED (documented): joined by a line break, as above
+  it("still copies two expressions, each once, in document order", () => {
     cmb.setValue("(f x) (g y) (h z)");
     select(root(2));
     keyDown(" ", {}, root(0));
     keyDown("C", cmd_ctrl, root(0));
-    expect(clipboard.text).toBe("(f x) (h z)");
+    expect(clipboard.text).toBe("(f x)\n(h z)"); // (old: "(f x) (h z)")
   });
 });
 
 describe("paste onto a selected node", () => {
-  // SKIPPED (D): paste over a selection does not replace it: it pastes after the focused block and clears the selection (notes, parity table: Cmd/Ctrl-V)
-  it.skip("replaces a selected root", () => {
+  it("replaces a selected root", () => {
     cmb.setValue("a b");
     clipboard.text = "zzz";
     select(root(0));
@@ -105,9 +102,7 @@ describe("paste onto a selected node", () => {
     expect(cmb.getValue()).toBe("zzz b");
   });
 
-  // SKIPPED (D): paste over a selection does not replace it: it pastes after the focused block and clears the selection (notes, parity table: Cmd/Ctrl-V)
-
-  it.skip("replaces a selected child", () => {
+  it("replaces a selected child", () => {
     cmb.setValue("(f x y)");
     clipboard.text = "z";
     const x = argsOf(root(0))[0];
@@ -124,9 +119,7 @@ describe("paste onto a selected node", () => {
     expect(cmb.getSelectedNodes()).toEqual([]);
   });
 
-  // SKIPPED (D): paste over a selection does not replace it: it pastes after the focused block and clears the selection (notes, parity table: Cmd/Ctrl-V)
-
-  it.skip("can paste a whole expression over a node", () => {
+  it("can paste a whole expression over a node", () => {
     cmb.setValue("(f x y)");
     clipboard.text = "(g 1 2)";
     const y = argsOf(root(0))[1];

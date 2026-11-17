@@ -9,7 +9,7 @@
  *   Ctrl-] / Ctrl-[       a box for a new sibling after / before (list slots)
  *   Ctrl-Z / Ctrl-Shift-Z undo / redo through CodeMirror's history
  *   Ctrl/Cmd-C / X / V    copy / cut / paste the block's source text (the browser's copy, cut and paste events, so the
- *                         system clipboard works); paste goes after the focused block, or replaces a focused blank
+ *                         system clipboard works); paste goes after the focused block, replaces a focused blank, or replaces the focused block when it is selected
  *   Space                 select / unselect the block (aria-selected); Escape, Ctrl-Escape or Alt-Q clear the selection;
  *                         Delete, cut, copy and a drag then use the selected blocks (none selected: copy and a drag take the focused one; Delete and cut say "Nothing selected" and beep)
  *   Cmd-Enter (Mac) / Ctrl-Enter (elsewhere)   edit the whole block as text in a box (Enter commits, Shift-Enter is a newline,
@@ -609,13 +609,21 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     d.text = text;
     d.before = before;
     try {
+      // the focused block is selected (or inside a selected one): the paste REPLACES that block (the old editor's Case 1, `ReplaceNodeTarget`:
+      // only the focused block, not the other selected ones; the whole selection is cleared afterwards; one undo step; nothing is announced)
+      if (renderer.isSelected(node)) {
+        d.over = true;
+        ed.replaceWithTexts(node, clipItems.length > 1 && text === clip ? clipItems : [text]);
+        ed.clearSelection();
+        return;
+      }
       // several blocks were copied and the clipboard still holds them: they go in as separate elements
       if (clipItems.length > 1 && text === clip) ed.pasteTexts(node, clipItems, before);
       else ed.pasteText(node, text, before);
       ed.clearSelection();
     } catch (err) {
       ed.lastError = (err as Error).message;
-      ed.say(`Cannot paste ${before ? "before" : "after"} this node.`);
+      ed.say(d.over ? "Cannot paste over this node." : `Cannot paste ${before ? "before" : "after"} this node.`);
       beep("paste-refused");
     }
   }
