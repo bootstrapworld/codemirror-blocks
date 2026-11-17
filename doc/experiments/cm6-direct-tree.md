@@ -1747,3 +1747,161 @@ then open `http://<that address>:8177/index.html?lang=javascript` in the phone's
 ### Final checks of the eighth round (2026-11-16)
 jest with `CMB_SEEDS=800 CMB_BIGSEEDS=100`: 745 passed (6 skipped), fuzzers clean; `tsc --noEmit` clean; the whole Chromium suite (port 8177, server stopped): 86 passed (the 65 before plus search 6, touch-toolbar 15).
 Not done: auto-scroll of the editor while a finger drags; anything on a real touch device or in WebKit; replay of gestures (only text changes are replayed); the grammar's tagged-list bug and performance work (skipped on purpose).
+
+## Ninth round (2026-11-16)
+
+The owner's words: "Add auto-scroll. Then investigate how many of the cm5 tests could be moved over to cm6, modulo documented behavior changes. Obviously, language-specific tests won't come over."
+Order: 1. auto-scroll (committed first), 2. the investigation: inventory, classification, a compatibility layer for tests, a sample of 12 files moved, the estimate.
+
+### 1. Auto-scroll during a drag (2026-11-16)
+
+**The old editor has none.** I searched `packages/codemirror-blocks/src` for autoscroll, `scrollBy`, `scrollTop`: nothing in the drag layer, so a drop target that is off screen could not be reached there either. This is NEW behaviour, not parity.
+
+Built (`src/autoscroll.ts`, 135 lines, no CodeMirror in it; the wiring is in `src/interact.ts`):
+- **When**: while a block drag or a toolbar-template drag is ON (after the 5 px of a mouse, after the long press of a finger), the pointer inside the box of `ed.view.scrollDOM` and within a 40 px zone of its top or bottom edge (left or right too, when the content is wider than the box) scrolls it. Outside the box, or in the middle, nothing. If the content does not scroll that way, nothing.
+- **Feel**: speed grows with the depth into the zone, `120 px/s` at the zone's inner border up to `1400 px/s` at the edge, along `depth^1.5` (a gentle start, a quick finish). It runs on animation frames and uses the frames' time stamps, so the speed is the same at 60 and 120 Hz (a frame that comes late moves at most 50 ms worth). Fractions are carried over between frames. 1400 px/s is about 2 screens a second on a 665 px editor; with a JavaScript statement 80 px tall in the demo that is 17 blocks a second. Judgement, not tuned on a hand: `AutoScrollOptions` has `zone`, `minSpeed`, `maxSpeed`.
+- **After every frame** the drop target under the pointer is found again (`elementFromPoint` at the last pointer position), the mark moves, the holes are marked again for a finger drag (`markHoles` now walks the DRAWN blocks, not the whole tree: CodeMirror 6 only draws the viewport, so blocks that scroll into view are new widgets, and the ones that scroll out are gone), and the dragged blocks get their `blocks-drag-source` class again. The drop uses the target under the pointer at the moment of release, so it lands where the user sees it.
+- **Stops**: when the pointer leaves the zone, at the document's ends (the scroll is clamped; the frames go on while the pointer is in the zone, and it picks up again if CodeMirror measures more height), on `pointerup`, on cancel, and on Escape.
+- **Escape now cancels a drag** (it did not before, in either editor's drag code that I read here): nothing is written, the click that the release would make is swallowed.
+- **A bug found by the Chromium test, fixed**: with a finger, the touch goes on being sent to the element it began on, and when auto-scroll moves that block out of view CodeMirror removes it. `touchmove` events at a removed element never reach the document, so the document-level listener that holds the browser's scrolling off did not see them, the browser took the touch for a scroll and sent `pointercancel` (the drag ended, the gaps shrank back). The `touchmove` listener (non-passive) is now also put on the element the touch began on (and taken off at `touchend`/`touchcancel`). A mouse is not affected. Reading, not a device: on iOS the listener is added at `pointerdown`, which Safari may fire before `touchstart`; not verified.
+- **Growing gaps** (the last round's worry): while a finger drags, the gaps grow to 44 px; on the demo's 150-statement Scheme document `scrollHeight` goes from 4896 to 5424 px (+528, about 3.5 px per statement) when the long press begins, with `scrollTop` unchanged at that moment (CodeMirror keeps the scroll position, the content below the gaps moves down). While auto-scroll runs the target moves under the finger as CodeMirror measures what it has drawn, so a gap that was under the finger a moment ago may not be: the test aims again (up to 8 times) and a finger does the same by itself. What a person sees is gaps that appear and a list that is longer; I have not judged it on a phone.
+
+Tests:
+- `spec/autoscroll.test.ts`, 18 jsdom tests: `edgeDepth` (zone, sign, outside), no scroll outside the zones or when the content does not scroll, scrolls down near the bottom and up near the top with `onFrame` after each frame, faster the closer to the edge and the same distance at 16 ms and 8 ms frames, a late frame does not jump, sideways, stops when the pointer leaves, `stop()`, clamped at both ends; and the wiring with a fake scroller and fake timers, in all three languages: a mouse drag scrolls and the new element under the pointer is marked, Escape cancels and stops, letting go stops, a toolbar drag scrolls down and back up.
+- `e2e/autoscroll.e2e.ts` (Chromium, 150-statement documents, 5 tests per language): mouse, a block dragged from the top (`777`) to a gap that is off screen at the bottom (not even drawn at the start), dropped, one undo restores the text, redo again, and back to a gap at the top; stops when the pointer leaves the zone, on Escape (nothing written), at the document's end (stable, within 2 px of the maximum); a template from the toolbar to the gap at the bottom, one undo restores; touch emulation (CDP touches, a long press): a block dragged to the bottom gap and back to the top, and a template to the bottom gap; the window did not scroll, the visual viewport scale stayed 1, nothing was selected, the editor checker is clean after each drop.
+
+### 2. How many of the existing editor's tests could move over (2026-11-16)
+
+A study with evidence. Nothing of the existing editor was changed; its suite was run once for the counts.
+
+#### 2a. Inventory (measured)
+
+- **Jest**: `npx jest --testPathIgnorePatterns cm6-blocks --json`: 104 suite results in 2 jest projects (a few files run in both), 102 distinct test files, **2107 tests** (2089 in the first run; `edge-cases-test.ts` (22 tests) crashed that run with a SIGSEGV while a second browser job was running, and `cmb-toolkit/spec/webpack-test.ts` cannot run in the jsdom project (`TextDecoder is not defined`; it runs in the other project, 17 tests); `edge-cases-test.ts` run alone: 22 pass). Counts come from jest's own result list, so `it.each`, `describe.each` and loops are counted as they run (`undo-matrix-test.ts` is 258 tests from 18 variants x 8 + 2 blocks; `dropTarget-layout-test.tsx` 109). Locations: `packages/codemirror-blocks/spec/**` (82 files), `packages/{wescheme,lambda,example,cmb-toolkit}/spec` (9), `scripts/*.test.js` (2: the soak and field-report libraries), plus the `ui/` and `state/` folders.
+- **Playwright** (`packages/codemirror-blocks/e2e`, `npx playwright test --list`): **166 tests in 25 files** (Chromium).
+
+#### 2b. Classification
+
+Classes: LANGUAGE (a language package's parser, nodes, printing, primitives, or the pretty printer; not coming over), INTERNAL (the old implementation's internals that the design removed: React components and hooks, redux store, `patchAst`, `commitChanges`/`performEdits`, CM5 marker handling, focus keeper, bundle, `defineNode`/`forLanguage`, core node definitions), SAME (what a user or API caller sees, meant to be the same), CHANGED (as SAME, but a documented change alters the expected result), MISSING (a feature this editor does not have), HARNESS (soak, field replay, golden files, test utilities). **A test that drives behaviour through WeScheme text is not a LANGUAGE test**: `activation`, `keyboard-commands`, `undo-matrix`, `paste`, `search`... use WeScheme programs as documents, and are classed by what they test. The forms they use (calls, symbols, numbers, `define`, `lambda`, `if`, `cond`, nested lists, comments) are all in the Scheme table here; the known tagged-list bug (`*`, `/` or `#` followed by a list read as a tagged list) did not show up in any sampled test (no sampled document has a symbol `*`, `/` or `#` before a list). A file is put in ONE class by what most of its tests are; where a file is mixed the reason says how, and for the sampled files the measured split is in 2d.
+
+Jest, by class:
+
+| class | files | tests |
+|---|---|---|
+| LANGUAGE | 21 | 611 |
+| INTERNAL | 44 | 624 |
+| SAME | 5 | 362 |
+| CHANGED | 8 | 170 |
+| MISSING | 16 | 203 |
+| HARNESS | 8 | 137 |
+| total | 102 | 2107 |
+
+Playwright, by class (166 tests, 25 files): SAME 81 tests / 10 files (collapse-all-focus 3, delete-undo 5, drop-target-scroll 9, edit-literal 2, focus-dropped 1, insert-beside-root 2, matrix 42, moved-blocks 4, press-focus 5, touch 8); CHANGED 27 / 4 (comment-popup 2, edit-comment 16, search 6, undo-focus 3: labels, comment as a block); MISSING 27 / 7 (mode-switch 1, morph 7, motion-sequences 3, reduced-motion 2, toolbar-drag 2, trash-can 6, typing 6: the text/blocks morph and its motion, the toolbar of primitives, the trash can, the quarantine); LANGUAGE 8 / 2 (drop-target-lambda 3, routine 5); INTERNAL 6 / 1 (script-tags: the language bundles); HARNESS 17 / 1 (random: the old fuzzer; counterpart: the soak runner and the fuzzers in `lezer-view.test.ts`).
+
+Counterparts here for the INTERNAL and HARNESS classes (what the same guarantee is): the model and its operations `spec/model.test.ts`, `lezer.test.ts`; the tree/DOM/text oracle `checkLezerEditor` (run after every ported test, see below) and the fuzzers in `spec/lezer-view.test.ts` (`CMB_SEEDS`); comments `spec/comments.test.ts`; the activity log `spec/activity.test.ts` (`replay`); sounds `spec/sound.test.ts`; search `spec/search.test.ts`; focus and selection `spec/fixes.test.ts`, `selection.test.ts`; spoken labels `spec/describe.test.ts`; stylesheet and look `e2e/scheme-look.e2e.ts`; bundle sizes: the round-four and round-seven measurements. For the React components, redux store, `patchAst`, `commitChanges`, focus keeper, `defineNode` and the core node classes there is no counterpart because there is nothing like them.
+
+Full per-file list, jest (file | tests | class | reason):
+
+| file | tests | class | one-line reason |
+|---|---|---|---|
+| activation-test.ts | 35 | SAME | node activation, navigation, selection through WeScheme text (mixed: 2 tests need the mode toggle and top-level typing) |
+| api-edit-focus-test.ts | 6 | MISSING | API changes (replaceRange) while a block has focus: the CM5 passthrough API |
+| api-selection-test.ts | 16 | MISSING | CM5 selection API passthroughs (getSelections, addSelection, markText...) |
+| api-test.ts | 24 | MISSING | public API: CM5 passthroughs that throw or pass through in each mode |
+| ast-helpers-test.ts | 18 | INTERNAL | describing/finding nodes in the old AST classes; here the tree is BNode (model.test, describe.test) |
+| ast-test.ts | 13 | INTERNAL | the old ASTNode classes (Literal, Sequence, FunctionApp); here BNode (model.test.ts) |
+| attach-comments-test.ts | 24 | INTERNAL | the attachComments algorithm; here comments are blocks (comments.test.ts) |
+| bug-report-test.ts | 12 | INTERNAL | the old activity recorder module and bug report; here activity.ts (activity.test.ts) |
+| bundle-contents-test.ts | 4 | INTERNAL | contents of the old webpack bundle |
+| codemirror-host-test.tsx | 2 | INTERNAL | the CM5 host component |
+| comment-conformance-test.ts | 5 | LANGUAGE | toolkit check that a language's parser keeps comments |
+| comment-rules-test.ts | 29 | LANGUAGE | a language's commentRules |
+| comment-syntax-test.ts | 4 | LANGUAGE | how a language writes comments |
+| comment-test.ts | 3 | INTERNAL | builds quarantines through the redux store (actions.setQuarantine); ported: all 3 skipped |
+| commitChanges-test.ts | 14 | INTERNAL | computeFocusNodeFromChanges / FromHint of commitChanges (here: the focus follows by the operations, spec/fixes, selection) |
+| copypaste-test.ts | 13 | INTERNAL | the copy()/pasteFromClipboard() helper functions (here: the browser's clipboard events, interact.ts) |
+| core-css-test.ts | 3 | INTERNAL | the old stylesheet |
+| defineNode-test.tsx | 12 | INTERNAL | defineNode and the core node definitions |
+| drag-test.ts | 13 | CHANGED | drag a block onto a node/target: pointer events and targets (gaps, holes, root edges) differ: parity table 'drag a block' |
+| drop-targets-test.ts | 15 | CHANGED | drops: gaps are .blocks-gap, no drop on whitespace, no toolbar of primitives, labels from the table; ported 6 of 15 pass after edits |
+| dropTarget-layout-test.tsx | 109 | INTERNAL | the DropTarget component and layout language |
+| edge-cases-test.ts | 22 | MISSING | quarantine open while dragging, unmounting, remounting another language, lambda program, language without primitives: lifecycle and quarantine |
+| edit-errors-test.ts | 25 | CHANGED | edit in place: text that does not parse is accepted here; box is an input; store and mode toggle; ported 14 of 25 pass |
+| editor-history-test.ts | 2 | INTERNAL | CodeMirrorFacade.getTopmostAction |
+| entry-point-test.ts | 12 | MISSING | the CodeMirrorBlocks() entry point and the API object it returns |
+| error-notice-test.ts | 6 | MISSING | the notice that offers to report an error |
+| event-recording-test.ts | 6 | INTERNAL | the old event recorder (here activity.ts, activity.test.ts) |
+| field-replay-test.ts | 7 | HARNESS | replays field reports into the old editor (here: replay() of text changes, activity.test.ts) |
+| fixed-list-test.tsx | 8 | INTERNAL | a core node (FixedList) with a test language |
+| focus-keeper-test.tsx | 13 | INTERNAL | focus.ts, the focus keeper (here: real DOM focus) |
+| focus-recovery-test.ts | 10 | INTERNAL | recovering focus from the placeholder and CM5's scroller (here: no placeholder) |
+| focus-rescue-test.tsx | 2 | INTERNAL | the focus placeholder rescue |
+| focus-test.ts | 9 | CHANGED | focus after delete/insert (second round A3 differs); ported 1 of 9 pass |
+| for-language-test.ts | 7 | INTERNAL | Nodes.forLanguage |
+| if-node-test.tsx | 9 | INTERNAL | the core If node with a test language |
+| insertion-index-test.ts | 49 | INTERNAL | FakeAstInsertion / insertionPos / InsertTarget |
+| interaction-test.ts | 22 | SAME | click, double click, collapse, selection, focus between editor and toolbar; ported 12 of 22 pass (the rest: toolbar, redux store, focus after the last delete) |
+| invariants-test.ts | 5 | HARNESS | the old invariants checker (here: checkLezerEditor, the oracle) |
+| keyboard-commands-test.ts | 43 | SAME | Delete, Enter, Space, arrows, help, Shift-Tab; ported 34 of 43 pass unchanged |
+| lambda-conditional-test.ts | 12 | LANGUAGE | lambda language |
+| lambda-roundtrip-test.ts | 19 | LANGUAGE | lambda language |
+| languages/index-test.ts | 4 | LANGUAGE | language registry |
+| languages/primitives-test.ts | 14 | LANGUAGE | WeScheme primitives |
+| languages/wescheme-forms-test.ts | 115 | LANGUAGE | WeScheme forms |
+| languages/wescheme-parse-test.ts | 8 | LANGUAGE | WeScheme parser |
+| lifecycle-test.ts | 24 | MISSING | text/block mode switching, two editors on a page, unmounting, mount options (pretty-printing part is LANGUAGE) |
+| loop-page-test.ts | 7 | INTERNAL | the core Loop node |
+| markText-test.ts | 15 | MISSING | the markText API and marks across mode switches |
+| new-blocks-test.ts | 16 | MISSING | the CodeMirrorBlocks class: constructor options and events |
+| new-core-nodes-test.tsx | 15 | INTERNAL | core nodes Loop, BinaryOperation, Assignment |
+| node-labels-test.ts | 13 | INTERNAL | node type labels (here: the table's labels, describe.test.ts) |
+| nodeSpec-test.ts | 8 | INTERNAL | nodeSpec() |
+| nodes-test.ts | 42 | CHANGED | what a block says and looks like for each WeScheme form: spoken labels are the table's describe templates |
+| orphan-comments-test.ts | 66 | INTERNAL | which comments go with a node |
+| packages/cmb-toolkit/spec/simulate-test.ts | 40 | HARNESS | the simulate helpers' own tests (compat/test-utils.ts re-implements them) |
+| packages/cmb-toolkit/spec/webpack-test.ts | 17 | INTERNAL | webpack configuration helpers |
+| packages/example/spec/example-test.ts | 19 | LANGUAGE | the example language |
+| packages/lambda/spec/lambda-language-test.ts | 21 | LANGUAGE | lambda |
+| packages/lambda/spec/lambda-parser-test.ts | 17 | LANGUAGE | lambda |
+| packages/wescheme/spec/wescheme-node-conversion-test.js | 107 | LANGUAGE | WeScheme |
+| packages/wescheme/spec/wescheme-parser-edge-test.js | 54 | LANGUAGE | WeScheme parser |
+| paste-test.ts | 24 | CHANGED | copy, paste, cut: paste does not replace a selection; ported 11 of 24 pass |
+| performEdits-test.ts | 48 | INTERNAL | applyEdits / performEdits |
+| pretty-string-test.ts | 6 | LANGUAGE | the pretty printer |
+| printing-test.ts | 10 | LANGUAGE | sexpr / formSexpr / displayLines printing |
+| random-sequences-test.ts | 39 | HARNESS | the old fuzzer (here: lezer-view.test.ts fuzzers, the soak generator) |
+| reserved-types-test.ts | 3 | INTERNAL | reserved node type names |
+| root-blocks-test.ts | 4 | INTERNAL | React memo of unchanged roots |
+| routine-repeat-test.tsx | 5 | LANGUAGE | Routine language |
+| routine-roundtrip-test.ts | 5 | LANGUAGE | Routine language |
+| routine-test.tsx | 20 | LANGUAGE | Routine language |
+| scripts/field-reports.test.js | 13 | HARNESS | field-report ingestion |
+| scripts/soak-lib.test.js | 20 | HARNESS | soak runner library |
+| search-test.tsx | 26 | CHANGED | search dialog, rotor: keydown not keyup, labels of types; ported 15 of 26 pass after edits |
+| searchers-test.tsx | 23 | INTERNAL | the ByString / ByBlock searcher objects (here search.ts, search.test.ts) |
+| sounds-test.ts | 8 | INTERNAL | the inlined sound data (same file here: sound.test.ts) |
+| spoken-text-test.ts | 2 | HARNESS | golden file of spoken text |
+| state/store-test.ts | 16 | INTERNAL | redux store |
+| state/undo-state-test.ts | 5 | INTERNAL | undo bookkeeping in the store |
+| summary-test.ts | 10 | MISSING | the summary read on first opening a program as blocks |
+| switch-page-test.ts | 5 | INTERNAL | a core Switch node |
+| toolbar-drag-test.ts | 8 | MISSING | the toolbar of primitives with search |
+| toolkit/debug-test.ts | 11 | HARNESS | the debug page: download and replay of logs |
+| toplevel-block-memo-test.ts | 2 | INTERNAL | areNodesEqualish |
+| toplevel-input-test.ts | 14 | MISSING | typing and pasting at the top level (the quarantine) |
+| ui/Args-test.tsx | 3 | INTERNAL | React component |
+| ui/BlockEditor-test.tsx | 1 | INTERNAL | React component |
+| ui/ContentEditable-test.tsx | 8 | INTERNAL | React component |
+| ui/Node-test.tsx | 2 | INTERNAL | React component |
+| ui/NodeEditable-test.tsx | 4 | INTERNAL | React component |
+| ui/PrimitiveList-test.tsx | 11 | MISSING | the primitives list |
+| ui/ToggleEditor-test.tsx | 6 | MISSING | the text/blocks toggle |
+| ui/Toolbar-test.tsx | 9 | MISSING | the toolbar of primitives |
+| ui/TrashCan-test.tsx | 4 | MISSING | the trash can |
+| ui/useNodeState-test.tsx | 8 | INTERNAL | React hook |
+| undo-focus-test.ts | 16 | CHANGED | which block has focus after undo/redo; ported 3 of 16 pass |
+| undo-matrix-test.ts | 258 | SAME | undo and redo of every kind of edit (258 tests generated from variants), text and AST |
+| undo-redo-test.ts | 4 | SAME | undo/redo keep the AST in sync with the text |
+| util-helpers-test.ts | 20 | INTERNAL | src/util helpers |
+| util-test.ts | 5 | INTERNAL | minimizeChange, playSound |
+| wescheme-cond-test.tsx | 5 | LANGUAGE | the cond node of WeScheme |
+| wescheme-language-test.ts | 132 | LANGUAGE | WeScheme forms to blocks |

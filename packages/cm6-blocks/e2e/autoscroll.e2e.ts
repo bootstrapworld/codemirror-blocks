@@ -142,11 +142,17 @@ for (const lang of Object.keys(LONG)) {
       await page.mouse.down();
       await page.mouse.move(lit2.x + 30, lit2.y - 10, { steps: 4 });
       await page.mouse.move(box.x + box.width / 2, box.y + box.height - 2, { steps: 4 });
-      await page.waitForTimeout(800);
+      // (while the end is still being measured it moves away: the scroll goes on after it, which is right; wait until it has stopped)
+      let prev = "";
+      for (let i = 0; i < 60; i++) {
+        await page.waitForTimeout(500);
+        const cur = await page.evaluate(() => { const sc = (window as any).demo.ed.view.scrollDOM; return `${sc.scrollTop}/${sc.scrollHeight}`; });
+        if (cur === prev) break;
+        prev = cur;
+      }
       const e1 = await scrollTop(page);
       await page.waitForTimeout(400);
-      const e2 = await scrollTop(page);
-      expect(e2).toBe(e1);
+      expect(await scrollTop(page)).toBe(e1);
       expect(await page.evaluate(() => { const s = (window as any).demo.ed.view.scrollDOM; return s.scrollHeight - s.clientHeight - s.scrollTop; })).toBeLessThanOrEqual(2);
       await page.mouse.up();
     });
