@@ -32,6 +32,7 @@ import { Renderer } from "./render";
 import { RootWidget } from "./view";
 import { attachInteraction } from "./interact";
 import type { Search } from "./search";
+import { ActivityExport, createRecorder, DEFAULT_LIMIT, LogEntry } from "./activity";
 import { browserPlayer, SoundEvent, SoundName, SoundPlayer } from "./sound";
 import { makeNode } from "./node";
 import { Bail, compatible, reconcile, ReconcileEnv } from "./reconcile";
@@ -54,6 +55,8 @@ export interface LezerOptions {
   sounds?: boolean;
   /** what plays a sound; the default is the browser's Audio (sound.ts). A test passes one that records what was asked for which event */
   playSound?: SoundPlayer;
+  /** how many entries of the activity log are kept (default 200, as the old editor); the oldest are dropped, their changes folded into the log's starting text */
+  activityLimit?: number;
 }
 
 export interface LezerStats {
@@ -141,6 +144,17 @@ export interface LezerBlockEditor {
   collapseRoot(root: BNode, on: boolean): void;
   /** search: the dialog (F3, Ctrl-F, Cmd-F), PageDown / PageUp, the rotor; see search.ts */
   readonly search: Search;
+  /** the activity log: what the person did, oldest first, at most `activityLimit` entries (see activity.ts); a copy */
+  activityLog(): LogEntry[];
+  /** forget the log; the text now is where the next entries start from */
+  clearActivityLog(): void;
+  /** the log with the text it starts from and how many older entries were dropped: what a bug report would carry, and what `replay` takes */
+  exportActivity(): ActivityExport;
+  /**
+   * Run `fn` as one logged action (an action inside another is part of it). Text changes made inside belong to the entry; if there are none,
+   * one is made at the end unless `skip()` says there is nothing to record. For the parts of this package that handle the person's input.
+   */
+  act<T>(action: string, target: BNode | null | undefined, detail: Record<string, unknown> | undefined, fn: () => T, skip?: () => boolean): T;
   /** ask for a sound for an event (nothing happens while sounds are off); the player is the option `playSound` */
   sound(name: SoundName, event: SoundEvent): void;
   setSounds(on: boolean): void;
@@ -861,6 +875,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     return { slot, index, indent: ref ? indentAt(ref.from) : "" };
   }
 
+  const recorder = createRecorder(text, options.activityLimit ?? DEFAULT_LIMIT);
   let soundOn = options.sounds !== false;
   const defaultPlayer: SoundPlayer = browserPlayer();
 
@@ -1047,6 +1062,10 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     get search() {
       return interaction.search;
     },
+    act: (action, target, detail, fn, skip) => recorder.act(action, target ? { kind: target.kind, from: target.from, to: target.to } : null, detail, fn, skip),
+    activityLog: () => recorder.entries(),
+    clearActivityLog: () => recorder.clear(view.state.doc.toString()),
+    exportActivity: () => recorder.export(),
     said,
     say,
     sound(name, event) {
@@ -1274,6 +1293,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       extensions: [history(), keymap.of([...defaultKeymap, ...historyKeymap]), field, compartment.of(blockExtension)],
     }),
     dispatchTransactions(trs, v) {
+      for (const t of trs) recorder.transaction(t);
       const snap = trs.some((t) => t.docChanged) ? takeSnapshot() : null;
       const before = v.state;
       v.update(trs);
@@ -1315,6 +1335,29 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       }
     },
   });
+  // the API entry points that change something are logged as actions of their own when called by a page or a test (inside a key or a mouse
+  // handler they are part of that action)
+  const named = <K extends keyof LezerBlockEditor>(name: K, action: (...a: never[]) => string, target: (...a: never[]) => BNode | null, detail?: (...a: never[]) => Record<string, unknown> | undefined): void => {
+    const orig = (ed[name] as unknown as (...a: unknown[]) => unknown).bind(ed);
+    (ed as unknown as Record<string, unknown>)[name] = (...a: unknown[]) => ed.act((action as (...x: unknown[]) => string)(...a), (target as (...x: unknown[]) => BNode | null)(...a), detail && (detail as (...x: unknown[]) => Record<string, unknown> | undefined)(...a), () => orig(...a));
+  };
+  named("insertTemplate", () => "template", ((_n: string, anchor?: BNode | null) => anchor ?? null) as never, ((n: string) => ({ name: n })) as never);
+  named("insertTemplateAt", () => "templateAt", ((_n: string, t: { slot: Slot; index: number } | { blank: BNode }) => ("blank" in t ? t.blank : t.slot.owner)) as never, ((n: string) => ({ name: n })) as never);
+  named("setBlockMode", () => "mode", () => null, ((on: boolean) => ({ blocks: on })) as never);
+  named("collapse", ((_n: BNode, on: boolean) => (on ? "collapse" : "expand")) as never, ((n: BNode) => n) as never);
+  named("collapseAll", ((on: boolean) => (on ? "collapseAll" : "expandAll")) as never, () => null);
+  named("collapseRoot", ((_n: BNode, on: boolean) => (on ? "collapseRoot" : "expandRoot")) as never, ((n: BNode) => n) as never);
+  named("toggleSelect", () => "toggleSelect", ((n: BNode) => n) as never);
+  named("clearSelection", () => "clearSelection", () => null);
+  named("insertText", () => "insertText", ((s: Slot) => s.owner) as never);
+  named("removeNode", () => "removeNodes", ((n: BNode) => n) as never);
+  named("removeNodes", () => "removeNodes", ((n: BNode[]) => n[0] ?? null) as never);
+  named("replaceText", () => "replaceText", ((n: BNode) => n) as never);
+  named("pasteText", () => "pasteText", ((n: BNode | null) => n) as never);
+  named("pasteTexts", () => "pasteTexts", ((n: BNode | null) => n) as never);
+  named("moveNodes", () => "moveNodes", ((n: BNode[]) => n[0] ?? null) as never);
+  named("moveNode", () => "moveNodes", ((n: BNode) => n) as never);
+  named("setComment", () => "setComment", ((n: BNode) => n) as never);
   const interaction = attachInteraction(ed);
   view.dom.addEventListener("focusin", (e) => {
     const n = renderer.nodeOf(e.target as Element);

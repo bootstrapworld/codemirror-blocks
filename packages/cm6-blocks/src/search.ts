@@ -169,6 +169,13 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
   }
 
   function set(change: Parameters<Search["set"]>[0]): void {
+    const d: Record<string, unknown> = {};
+    ed.act("search.set", null, d, () => {
+      set1(change);
+      d.settings = { mode: state.mode, text: { ...state.text }, block: { ...state.block } }; // (the old log keeps the setting too, with the string)
+    });
+  }
+  function set1(change: Parameters<Search["set"]>[0]): void {
     const { mode, blockType, ...text } = change;
     if (Object.keys(text).length) state.text = { ...state.text, ...text };
     if (blockType !== undefined) state.block = { blockType };
@@ -176,6 +183,9 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
   }
 
   function rotor(forward: boolean): void {
+    ed.act("search.rotor", null, { forward }, () => rotor1(forward));
+  }
+  function rotor1(forward: boolean): void {
     const ts = types();
     const count = ts.length + (lastText ? 1 : 0);
     if (count === 0) {
@@ -202,6 +212,9 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
 
   function open(): void {
     if (dialog) return;
+    ed.act("search.open", null, {}, open1);
+  }
+  function open1(): void {
     const host = ui.host();
     const doc = host.ownerDocument;
     const back = ed.focusedNode() ?? ed.lastFocused();
@@ -317,6 +330,9 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     let closed = false;
     const finish = (go: boolean): void => {
       if (closed) return;
+      ed.act("search.close", null, { how: go ? "enter" : "escape" }, () => finish1(go));
+    };
+    const finish1 = (go: boolean): void => {
       closed = true;
       dialog = null;
       el.remove();
@@ -361,8 +377,8 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     open,
     close: (go = false) => dialog?.close(go),
     isOpen: () => !!dialog,
-    next: () => step(true),
-    previous: () => step(false),
+    next: () => ed.act("search.next", null, {}, () => step(true)),
+    previous: () => ed.act("search.previous", null, {}, () => step(false)),
     rotor,
     settings: () => ({ mode: state.mode, text: { ...state.text }, block: { ...state.block } }),
     set,
