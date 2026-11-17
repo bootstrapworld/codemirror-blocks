@@ -210,10 +210,8 @@ const variants = [false, true].flatMap((afterModeSwitch) =>
 );
 
 // SKIPPED variants (the whole block of each is skipped): toolbar and trash can (M: no toolbar of primitives, no trash can), typing and pasting at the top level
-// (M: no quarantine), a drop onto bare whitespace (M: not built), a drop onto an arbitrary node (D: drops go on gaps, holes and root edges, parity table 'drag a block'; 12 of
-// its 16 tests passed only because the drop did nothing).
-const SKIPPED_VARIANTS =
-  /toolbar|trash can|top level|onto whitespace|onto a node/;
+// (M: no quarantine), a drop onto bare whitespace (M: not built). (A drop onto a node replaces it now.)
+const SKIPPED_VARIANTS = /toolbar|trash can|top level|onto whitespace/;
 const eachVariant = (
   _name: string,
   fn: (v: (typeof variants)[number]) => void
