@@ -43,13 +43,13 @@ export interface Match {
 
 export interface Search {
   /** the dialog; false if the editor is not drawing blocks */
-  open(): void;
+  open(at?: number): void;
   /** close it: `go` (Enter) also goes to the first match; Escape and Close do not */
   close(go?: boolean): void;
   isOpen(): boolean;
   /** PageDown / PageUp: go to the next / previous match from the focused block; false (with a beep) if there is none */
-  next(): boolean;
-  previous(): boolean;
+  next(at?: number): boolean;
+  previous(at?: number): boolean;
   /** the next / previous search type (Ctrl-F3, Shift-Ctrl-F3) */
   rotor(forward: boolean): void;
   settings(): SearchSettings;
@@ -58,7 +58,7 @@ export interface Search {
   /** the types of block in the program, in the order of the list: [label, label, ...] */
   types(): string[];
   /** the match `next` / `previous` would go to, without going there */
-  find(forward: boolean): Match | null;
+  find(forward: boolean, at?: number): Match | null;
 }
 
 export const EMPTY_TEXT: TextSetting = { searchString: "", isRegex: false, isExactMatch: false, isIgnoreCase: false };
@@ -130,15 +130,19 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     return out;
   }
 
-  function find(forward: boolean): Match | null {
+  /**
+   * `at`: a position in the text, when the keys came from the text and no block has the focus (the old editor goes on "from the focused block, or
+   * else from the cursor": `goToMatch`): the search goes by position from there, in both kinds of search.
+   */
+  function find(forward: boolean, at?: number): Match | null {
     if (state.mode === null) return null;
     const list = candidates();
-    const focus = ed.focusedNode() ?? ed.lastFocused();
+    const focus = at !== undefined && !ed.focusedNode() ? null : (ed.focusedNode() ?? ed.lastFocused());
     const empty = state.mode === "text" && state.text.searchString === "";
     const block = state.mode === "block" || empty;
     // where the search starts: a block search goes by the order of the blocks (a parent before its children), a text search by position
     let after: (c: { node: BNode; key: number }) => boolean;
-    if (!focus) after = () => true;
+    if (!focus) after = at === undefined ? () => true : block ? (c) => (forward ? c.node.from >= at : c.node.to <= at) : (c) => (forward ? c.key >= at : c.key < at);
     else if (block) {
       const order = new Map(all().map((x, i) => [x.node, i]));
       const at = order.get(focus) ?? -1;
@@ -152,13 +156,13 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     return wrapped ? { node: wrapped.node, wrapped: true } : null;
   }
 
-  function step(forward: boolean): boolean {
+  function step(forward: boolean, at?: number): boolean {
     if (state.mode === null) {
       ed.say("No search settings have been selected");
       ed.sound("beep", "no-match");
       return false;
     }
-    const m = find(forward);
+    const m = find(forward, at);
     if (!m) {
       ed.say("No match found");
       ed.sound("beep", "no-match");
@@ -211,14 +215,14 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
 
   /* ---- the dialog */
 
-  function open(): void {
+  function open(at?: number): void {
     if (dialog) return;
-    ed.act("search.open", null, {}, open1);
+    ed.act("search.open", null, at === undefined ? {} : { fromText: true }, () => open1(at));
   }
-  function open1(): void {
+  function open1(at?: number): void {
     const host = ui.host();
     const doc = host.ownerDocument;
-    const back = ed.focusedNode() ?? ed.lastFocused();
+    const back = at !== undefined ? null : (ed.focusedNode() ?? ed.lastFocused()); // (opened from the text: the focus goes back to the text)
     const el = doc.createElement("div");
     el.className = "blocks-help blocks-search";
     el.setAttribute("role", "dialog");
@@ -340,11 +344,12 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
       release(); // (the page is shown again before the focus goes back to it)
       el.remove();
       if (back && ed.doc.byId.get(back.id) === back) ed.focusNode(back);
+      else if (at !== undefined) ed.view.contentDOM.focus({ preventScroll: true });
       else ed.focusEditor();
       if (go) {
         if (state.mode === "text" && state.text.searchString !== "") lastText = { ...state.text };
         ed.say("Searching for next match. Use PageUp and PageDown to search forwards and backwards");
-        step(true);
+        step(true, at);
       }
     };
     el.addEventListener("keydown", (e) => {
@@ -381,8 +386,8 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     open,
     close: (go = false) => dialog?.close(go),
     isOpen: () => !!dialog,
-    next: () => ed.act("search.next", null, {}, () => step(true)),
-    previous: () => ed.act("search.previous", null, {}, () => step(false)),
+    next: (at) => ed.act("search.next", null, {}, () => step(true, at)),
+    previous: (at) => ed.act("search.previous", null, {}, () => step(false, at)),
     rotor,
     settings: () => ({ mode: state.mode, text: { ...state.text }, block: { ...state.block } }),
     set,

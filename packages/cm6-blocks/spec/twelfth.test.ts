@@ -128,3 +128,70 @@ describe("10. native keys with no block focused", () => {
     expect(textOf(ed)).toBe(SRC.scheme); // (only the cut event the browser sends next does something: CodeMirror's, of the line)
   });
 });
+
+describe("12. the search keys work from the text, with no block focused (the old handlers need no block)", () => {
+  const SRC = { scheme: "(f x)\n(g xy x)\nx", javascript: "f(x);\ng(xy, x);\nx;", python: "f(x)\ng(xy, x)\nx" } as const;
+  const press = (ed: LezerBlockEditor, k: string, mods: KeyboardEventInit = {}) => {
+    const ev = new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods });
+    ed.view.contentDOM.dispatchEvent(ev);
+    return ev;
+  };
+  const label = (ed: LezerBlockEditor) => {
+    const n = ed.focusedNode();
+    return n ? textOf(ed).slice(n.from, n.to) : null;
+  };
+  test.each(Object.keys(SRC) as (keyof typeof SRC)[])("%s: PageDown goes to the first match after the cursor, PageUp to the one before it, wrapping", (lang) => {
+    const ed = make(lang, SRC[lang]);
+    ed.search.set({ mode: "text", searchString: "xy" });
+    const toText = (pos: number) => {
+      ed.view.contentDOM.focus();
+      ed.view.dispatch({ selection: { anchor: pos } });
+      expect(ed.focusedNode()).toBeFalsy();
+    };
+    toText(0);
+    const ev = press(ed, "PageDown");
+    expect(ev.defaultPrevented).toBe(true);
+    expect(label(ed)).toBe("xy");
+    ed.search.set({ mode: "text", searchString: "x" });
+    const text = textOf(ed);
+    const second = text.indexOf("x", text.indexOf("xy") + 2); // the x after xy
+    toText(second + 1); // after it: PageDown wraps to the first x, PageUp goes back to xy's x
+    press(ed, "PageUp");
+    expect(label(ed)).toBe("x");
+    expect(ed.focusedNode()!.from).toBe(second);
+    toText(text.indexOf("xy") + 1); // inside xy
+    press(ed, "PageDown");
+    expect(ed.focusedNode()!.from).toBeGreaterThanOrEqual(text.indexOf("xy") + 1);
+    ok(ed);
+  });
+  test("the rotor says so when there is nothing to search for, and PageDown that no settings were chosen", () => {
+    const ed = make("scheme", "");
+    const said: string[] = [];
+    const orig = ed.say.bind(ed);
+    ed.say = (t: string) => {
+      said.push(t);
+      orig(t);
+    };
+    ed.view.contentDOM.focus();
+    press(ed, "F3", { ctrlKey: true });
+    expect(said).toEqual(["No search types available"]);
+    press(ed, "PageDown");
+    expect(said.pop()).toBe("No search settings have been selected");
+  });
+  test("F3 from the text opens the dialog and Escape gives the focus back to the text; Enter goes to the first match after the cursor", () => {
+    const ed = make("scheme", SRC.scheme);
+    ed.view.contentDOM.focus();
+    ed.view.dispatch({ selection: { anchor: textOf(ed).indexOf("(g") } });
+    const ev = press(ed, "F3");
+    expect(ev.defaultPrevented).toBe(true);
+    expect(ed.search.isOpen()).toBe(true);
+    ed.search.close(false);
+    expect(ed.search.isOpen()).toBe(false);
+    expect(ed.focusedNode()).toBeFalsy();
+    press(ed, "F3");
+    ed.search.set({ mode: "text", searchString: "x" });
+    ed.search.close(true);
+    const n = ed.focusedNode()!;
+    expect(textOf(ed).slice(n.from, n.to)).toBe("xy"); // (the first "x" at or after the cursor, innermost block)
+  });
+});

@@ -510,6 +510,19 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
         e.stopPropagation();
         return;
       }
+      // the search keys work from the text too (the old handlers do not need a block: `goToMatch` goes "from the focused block, or else from
+      // the cursor"; the rotor and the dialog need nothing)
+      const textCmd = ed.isBlockMode() && view.contentDOM.contains(t) ? commandOf(e, isMac()) : null;
+      if (textCmd === "search" || textCmd === "searchNext" || textCmd === "searchPrevious" || textCmd === "nextSearchType" || textCmd === "previousSearchType") {
+        e.preventDefault();
+        e.stopPropagation();
+        const at = view.state.selection.main.head;
+        if (textCmd === "search") search.open(at);
+        else if (textCmd === "searchNext") search.next(at);
+        else if (textCmd === "searchPrevious") search.previous(at);
+        else search.rotor(textCmd === "nextSearchType");
+        return;
+      }
       if (!ed.isBlockMode() || !view.contentDOM.contains(t) || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
       if (commandOf(e, isMac()) !== (e.key === "ArrowDown" ? "next" : "previous")) return;
       const forward = e.key === "ArrowDown";

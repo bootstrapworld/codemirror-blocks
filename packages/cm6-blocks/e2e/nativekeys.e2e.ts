@@ -34,5 +34,16 @@ for (const lang of Object.keys(SRC)) {
       await page.keyboard.press(`${MOD}+z`);
       expect(await text(page)).toBe(SRC[lang]);
     });
+    test("F3 from the text opens the search dialog; Escape gives the focus back to the text, PageDown from the text goes to a match", async ({ page }) => {
+      await page.evaluate(() => (window as any).demo.ed.view.dispatch({ selection: { anchor: 0 } }));
+      await page.keyboard.press("F3");
+      await expect(page.locator(".blocks-search")).toBeVisible();
+      await page.keyboard.type("99");
+      await page.keyboard.press("Escape");
+      await expect(page.locator(".blocks-search")).toHaveCount(0);
+      expect(await page.evaluate(() => !!document.activeElement?.closest(".cm-content") && !document.activeElement?.classList.contains("blocks-node"))).toBe(true);
+      await page.keyboard.press("PageDown");
+      expect(await page.evaluate(() => { const d = (window as any).demo.ed; const n = d.focusedNode(); return n && d.view.state.doc.sliceString(n.from, n.to); })).toBe("99");
+    });
   });
 }

@@ -125,7 +125,7 @@ describe("Delete and Backspace", () => {
       ]);
     });
 
-    // SKIPPED (U): deleting the parameter list of a define: the old editor leaves a placeholder for the list, here the table's slots give another result
+    // SKIPPED (D): the old define has its name and its parameter LIST as separate children (children()[1] is the list, deleting it leaves `(f ...)`); here the header `(f a b)` is one call block (the table's slots), so children()[1] is the body and the delete leaves `(define (f a b) ...)`. A difference of the language table, not of the editor
 
     it.skip("can be a parameter list, which leaves a placeholder", () => {
       cmb.setValue("(define (f a b) a)");
