@@ -36,14 +36,14 @@ describe("the picture of a block that is being dragged", () => {
 
 describe("when dragging a node onto a node in a different subtree", () => {
   // SKIPPED (D): drops go on gaps, holes and root edges, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
-  it.skip("should replace the node that it's dropped onto and focus on the new node", () => {
+  it("should replace the node that it's dropped onto and focus on the new node", () => {
     cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
     drag(getNodeLabeled(/firstVar/)).dropOnto(getNodeLabeled(/fifthVar/));
     expect(cmb.getValue()).toEqual("(add secondVar) (sub fourthVar firstVar)");
     expect(getNodeLabeled(/firstVar/)).toHaveFocus();
   });
 
-  // SKIPPED (D): drops go on gaps, holes and root edges, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
+  // SKIPPED (D): the dropped block itself takes focus here, not its nth child (the replace works; only the focus differs)
 
   it.skip("should focus the nth child of the node that was just dropped", () => {
     cmb.setValue(
