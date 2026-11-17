@@ -679,12 +679,21 @@ export function lezerLanguage(
           )
           .replace(/:\s*$/, "");
       }
+      // a value reads as the value first and then what it is: "1, a number"
       if (node.slots.length === 0)
-        return node.value ? `${label} ${node.value}` : label;
+        return node.value ? `${node.value}, ${withArticle(label)}` : label;
       return `${label} with ${node.slots.map((s) => `${s.nodes.length} ${s.name}`).join(", ")}`;
     },
   };
   return lang;
+}
+
+/** "a number", "an operator" ("a" before the sounds of "u" as in "unary" and "o" as in "one") */
+function withArticle(label: string): string {
+  return (
+    (/^[aeiou]/i.test(label) && !/^(uni|use|one)/i.test(label) ? "an " : "a ") +
+    label
+  );
 }
 
 /* ---------------------------------------------------------------- writing */
