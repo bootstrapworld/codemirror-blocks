@@ -51,7 +51,12 @@ test("a template onto a blank replaces it; into a gap it goes there; its first h
 test("a template does not go where it cannot: onto a block of the wrong kind, into a one slot, a statement into an expression list", () => {
   const ed = make("scheme", "(f 1 2)\n");
   const one = find(ed, (n) => n.kind === "literal");
-  // (a block is replaced by a template dropped on it)
+  // (a value is replaced by a template dropped on it; a compound block is not a drop target)
+  const whole = ed.roots()[0];
+  expect(() => ed.insertTemplateAt("number", { blank: whole })).toThrow(
+    /only a value or a hole/
+  );
+  expect(ed.view.state.doc.toString()).toBe("(f 1 2)\n");
   ed.insertTemplateAt("number", { blank: one });
   expect(ed.view.state.doc.toString()).toBe("(0 1 2)\n");
   (

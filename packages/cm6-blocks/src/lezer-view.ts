@@ -1532,7 +1532,12 @@ export function createLezerBlockEditor(
       let hole: number;
       if ("blank" in target) {
         live(target.blank);
-        // (any block: a drop on a block replaces it; a statement goes only where statements do)
+        // (a template replaces a hole or a value (a literal), as in the old editor, where only those are drop targets: not a compound block; a statement goes only where statements do)
+        if (
+          !isBlank(target.blank) &&
+          (target.blank.slots.length > 0 || target.blank.kind === "comment")
+        )
+          throw new Error("a template replaces only a value or a hole");
         if (
           !isBlank(target.blank) &&
           t.stmt &&
