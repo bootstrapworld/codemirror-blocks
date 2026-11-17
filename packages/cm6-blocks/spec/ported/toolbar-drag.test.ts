@@ -5,6 +5,7 @@ import wescheme from "../compat/wescheme";
 import { mountCMB, teardown } from "../compat/test-utils";
 import { API } from "../compat/test-utils";
 import { drag, getNodeLabeled } from "../compat/dnd";
+import { toolbarPrimitive } from "../compat/gestures";
 
 // Scenarios from the old Editor-test-old.js / PrimitiveBlock-test-old.js
 // (issue #376): picking a block out of the toolbar and dragging it into the
@@ -19,13 +20,7 @@ afterEach(() => {
 });
 
 const primitives = () => [...document.querySelectorAll(".Primitive")];
-const primitive = (name: string) => {
-  const el = primitives().find((e) => e.textContent === name);
-  if (!el) {
-    throw new Error(`no toolbar primitive named ${name}`);
-  }
-  return el as HTMLElement;
-};
+const primitive = (name: string) => toolbarPrimitive(name) as HTMLElement;
 const searchToolbar = (text: string) =>
   fireEvent.change(screen.getByPlaceholderText("Search functions"), {
     target: { value: text },
@@ -70,8 +65,7 @@ describe("searching the toolbar, then using the result", () => {
 });
 
 describe("dragging from the toolbar repeatedly", () => {
-  // SKIPPED (M): the old toolbar of primitives and its search box are not built (a page makes the toolbar)
-  it.skip("leaves the primitive in the toolbar, and each drop is its own block", () => {
+  it("leaves the primitive in the toolbar, and each drop is its own block", () => {
     cmb.setValue("(f x y)");
     drag(primitive("sqrt")).dropOnto(getNodeLabeled(/^x,/));
     drag(primitive("sqrt")).dropOnto(getNodeLabeled(/^y,/));
@@ -81,9 +75,7 @@ describe("dragging from the toolbar repeatedly", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  // SKIPPED (M): the old toolbar of primitives and its search box are not built (a page makes the toolbar)
-
-  it.skip("drops different primitives into different places", () => {
+  it("drops different primitives into different places", () => {
     cmb.setValue("(f x y)");
     drag(primitive("sqrt")).dropOnto(getNodeLabeled(/^x,/));
     drag(primitive("sqr")).dropOnto(getNodeLabeled(/^y,/));
@@ -103,8 +95,7 @@ describe("a toolbar drag that is released without dropping", () => {
 });
 
 describe("dropping a toolbar primitive into a nested expression", () => {
-  // SKIPPED (M): the old toolbar of primitives and its search box are not built (a page makes the toolbar)
-  it.skip("replaces a deeply nested literal and keeps the rest intact", () => {
+  it("replaces a deeply nested literal and keeps the rest intact", () => {
     cmb.setValue("(f (g (h x)) y)");
     drag(primitive("sqrt")).dropOnto(getNodeLabeled(/^x,/));
     expect(cmb.getValue()).toBe("(f (g (h sqrt)) y)");

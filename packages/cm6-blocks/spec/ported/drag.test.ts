@@ -35,7 +35,6 @@ describe("the picture of a block that is being dragged", () => {
 });
 
 describe("when dragging a node onto a node in a different subtree", () => {
-  // SKIPPED (D): drops go on gaps, holes and root edges, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
   it("should replace the node that it's dropped onto and focus on the new node", () => {
     cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
     drag(getNodeLabeled(/firstVar/)).dropOnto(getNodeLabeled(/fifthVar/));
@@ -92,8 +91,6 @@ describe("when dragging a node over a drop target", () => {
       screen.getByRole("treeitem", { name: /call to add / })
     );
   });
-
-  // SKIPPED (D): drops go on gaps, holes and root edges, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
 
   it("should add the blocks-over-target css class to the drop target", () => {
     // edited: the class is `blocks-drop-target` here
@@ -176,7 +173,6 @@ describe("corner cases", () => {
 });
 
 describe("when the block being dragged goes away before the drop", () => {
-  // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
   it("drops it on the trash can without an error", () => {
     cmb.setValue(`(add firstVar secondVar)`);
     const el = getNodeLabeled(/firstVar/);

@@ -85,14 +85,11 @@ describe("dropping a node onto bare editor whitespace", () => {
 });
 
 describe("dragging from the toolbar", () => {
-  // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
   it("replaces the node it's dropped onto", () => {
     cmb.setValue("(f x y)");
     drag(toolbarPrimitive("sqrt")).dropOnto(getNodeLabeled(/^x\b|symbol x$/));
     expect(cmb.getValue()).toBe("(f sqrt y)");
   });
-
-  // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
 
   it("inserts into the field at a drop target", () => {
     cmb.setValue("(f x y)");
@@ -113,15 +110,11 @@ describe("dragging from the toolbar", () => {
     ]);
   });
 
-  // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
-
   it("does nothing when dropped on the trash can", () => {
     cmb.setValue("(f x y)");
     drag(toolbarPrimitive("sqrt")).dropOnto(trashCan());
     expect(cmb.getValue()).toBe("(f x y)");
   });
-
-  // SKIPPED (M): drop on bare whitespace (as above)
 
   it("can be undone", () => {
     cmb.setValue("(f x y)");
