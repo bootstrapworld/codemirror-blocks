@@ -1732,3 +1732,18 @@ then open `http://<that address>:8177/index.html?lang=javascript` in the phone's
 4. Press and hold `number` for about half a second without moving. Expected: a blue label `number` appears above your finger and the gaps between the blocks widen into blue-tinted slots about a thumb tall; the page does not scroll. Move your finger over a slot between two arguments of a call: the slot is outlined. Lift your finger. Expected: a `0` block is there and its box is open.
 5. Remove an argument inside an `if` (select it, Delete) to make a `...` hole, press and hold `number`, drag onto the hole, lift. Expected: the hole is outlined while you are over it and it becomes `0`.
 6. Press and hold a template and lift your finger over the toolbar again (no drag). Expected: nothing is written; no text is selected; no context menu or magnifier stays. Also try: during a drag, does the page scroll, zoom or select text anywhere? (it should not); does a long press ever open the browser's own menu before the label appears?
+
+### Parity table, after the eighth round (only the rows that changed since the seventh round's table)
+
+| key or gesture | here now |
+|---|---|
+| F3, Ctrl-F, Cmd-F | yes: the Search Settings dialog (two tabs, text with ignore case / exact match / regex, block types by label); Enter closes and finds the first match, Escape or Close closes. Differs: opens on the current search's tab; picks the first type when the block tab is chosen with none; "No match found" is said too; no Ctrl/Cmd-G (the old editor has none) |
+| PageDown / PageUp | yes: next / previous match from the focused block, never the focused block, wrap with the wrap sound, beep when none, "No search settings have been selected" before anything is chosen. A match inside a collapsed block is skipped (as the old editor); a match in no block is skipped (the old editor stops there) |
+| Ctrl-F3, Shift-Ctrl-F3 | yes: the rotor over the block types in the program then the last text, the same words |
+| sounds | yes: the old editor's two files (copied unchanged) at each place it beeps that exists here (14 events, listed in `src/sound.ts`), the wrap sound for search; `playSound` injectable, `sounds: false`, `ed.setSounds`; quiet in jsdom, before the first gesture, on a rejected `play()`. Differs: Delete with nothing selected beeps here, silent there; Enter on an uneditable block and "language has no comments" have no event here |
+| activity log | yes: `ed.activityLog()`, `clearActivityLog()`, `exportActivity()`, 200 entries as the old one, the base text kept; every key-table command, click, drag, toolbar button, search step, mode switch and text change; no keystroke inside a box is recorded, the committed text is (the old editor's privacy). `replay(log, startText, make)` gives the same text and tree. Differs: the old log holds reducer actions and the whole program after each change, and its replay drives gestures; this one holds changes and replays them |
+| drag from the toolbar, with a finger | built and tested under Chromium touch emulation only (long press, ghost, finger-sized gaps and holes); NOT verified on a real device; WebKit not installed |
+
+### Final checks of the eighth round (2026-11-16)
+jest with `CMB_SEEDS=800 CMB_BIGSEEDS=100`: 745 passed (6 skipped), fuzzers clean; `tsc --noEmit` clean; the whole Chromium suite (port 8177, server stopped): 86 passed (the 65 before plus search 6, touch-toolbar 15).
+Not done: auto-scroll of the editor while a finger drags; anything on a real touch device or in WebKit; replay of gestures (only text changes are replayed); the grammar's tagged-list bug and performance work (skipped on purpose).
