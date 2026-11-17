@@ -6,7 +6,7 @@ import { teardown, keyDown, mountCMB } from "../compat/test-utils";
 import { API } from "../compat/test-utils";
 import { ASTNode } from "../compat/test-utils";
 import { screen } from "../compat/testing-library";
-import { drag, getNodeLabeled } from "../compat/dnd";
+import { drag, dropTargets, getNodeLabeled } from "../compat/dnd";
 import userEvent from "@testing-library/user-event";
 
 let cmb!: API;
@@ -63,10 +63,12 @@ describe("when dragging a node onto a node that can't be dropped onto", () => {
     cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
     addExprEl = getNodeLabeled(/call to add /);
   });
-  // SKIPPED (D): drops go on gaps, holes and root edges, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
-  it.skip("should not add the blocks-over-target css class", () => {
-    drag(getNodeLabeled(/fifthVar/)).dragOver(addExprEl);
-    expect(addExprEl).not.toHaveClass("blocks-over-target");
+  it("should not add the blocks-over-target css class", () => {
+    const dragging = drag(getNodeLabeled(/fifthVar/));
+    dragging.dragOver(addExprEl);
+    // edited: the class is `blocks-drop-target` here
+    expect(addExprEl).not.toHaveClass("blocks-drop-target");
+    dragging.cancel(); // edited: end the drag
   });
 
   it("should not change the document when dropped onto a node that can't be dropped onto", () => {
@@ -78,47 +80,46 @@ describe("when dragging a node onto a node that can't be dropped onto", () => {
 });
 
 describe("when dragging a node over a drop target", () => {
-  let subDropTargets: NodeListOf<Element>;
-  let addDropTargets: NodeListOf<Element>;
+  let subDropTargets: Element[];
+  let addDropTargets: Element[];
   beforeEach(() => {
     cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
-    subDropTargets = screen
-      .getByRole("treeitem", { name: /call to sub / })
-      .querySelectorAll(".blocks-drop-target");
-    addDropTargets = screen
-      .getByRole("treeitem", { name: /call to add / })
-      .querySelectorAll(".blocks-drop-target");
+    // edited: the old `.blocks-drop-target` elements are this editor's gaps
+    subDropTargets = dropTargets(
+      screen.getByRole("treeitem", { name: /call to sub / })
+    );
+    addDropTargets = dropTargets(
+      screen.getByRole("treeitem", { name: /call to add / })
+    );
   });
 
   // SKIPPED (D): drops go on gaps, holes and root edges, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
 
-  it.skip("should add the blocks-over-target css class to the drop target", () => {
-    expect(subDropTargets[0]).not.toHaveClass("blocks-over-target");
-    drag(getNodeLabeled(/firstVar/)).dragOver(subDropTargets[0]);
-    expect(subDropTargets[0]).toHaveClass("blocks-over-target");
+  it("should add the blocks-over-target css class to the drop target", () => {
+    // edited: the class is `blocks-drop-target` here
+    expect(subDropTargets[0]).not.toHaveClass("blocks-drop-target");
+    const dragging = drag(getNodeLabeled(/firstVar/));
+    dragging.dragOver(subDropTargets[0]);
+    expect(subDropTargets[0]).toHaveClass("blocks-drop-target");
+    dragging.cancel(); // edited: end the drag, or the editor is left mid-drag for the teardown check
   });
 
-  // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
-
-  it.skip("should remove the blocks-over-target css class when leaving the drop target", () => {
-    drag(getNodeLabeled(/firstVar/))
-      .dragOver(subDropTargets[0])
-      .dragLeave();
-    expect(subDropTargets[0]).not.toHaveClass("blocks-over-target");
+  it("should remove the blocks-over-target css class when leaving the drop target", () => {
+    const dragging = drag(getNodeLabeled(/firstVar/));
+    dragging.dragOver(subDropTargets[0]).dragLeave();
+    // edited: the class is `blocks-drop-target` here
+    expect(subDropTargets[0]).not.toHaveClass("blocks-drop-target");
+    dragging.cancel(); // edited: end the drag
   });
 
-  // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
-
-  it.skip("should insert the node where the drop target was (lower down in the file)", () => {
+  it("should insert the node where the drop target was (lower down in the file)", () => {
     drag(getNodeLabeled(/firstVar/)).dropOnto(subDropTargets[0]);
     expect(cmb.getValue()).toEqual(
       `(add secondVar) (sub firstVar fourthVar fifthVar)`
     );
   });
 
-  // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
-
-  it.skip("should insert the node where the drop target was (higher up in the file)", () => {
+  it("should insert the node where the drop target was (higher up in the file)", () => {
     drag(getNodeLabeled(/fifthVar/)).dropOnto(addDropTargets[0]);
     expect(cmb.getValue()).toEqual(
       `(add fifthVar firstVar secondVar) (sub fourthVar)`
@@ -128,6 +129,7 @@ describe("when dragging a node over a drop target", () => {
 
 // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
 
+// SKIPPED (U): the dropped collapsed root arrives expanded (aria-expanded stays "true"); collapsed state is not carried through a move
 it.skip("saves collapsed state when dragging a root node to be the last child of the next root node", async () => {
   cmb.setValue("(collapse me)\n(add 1 2)");
   const firstRootEl = getNodeLabeled(/call to collapse /);
@@ -135,7 +137,7 @@ it.skip("saves collapsed state when dragging a root node to be the last child of
   keyDown("ArrowLeft", {}, firstRootEl); // collapse it
   expect(firstRootEl).toHaveAttribute("aria-expanded", "false");
   drag(firstRootEl).dropOnto(
-    document.querySelectorAll(".blocks-drop-target")[4]
+    dropTargets()[4] // edited: gaps for drop targets
   );
 
   expect(cmb.getValue()).toBe("\n(add 1 2 (collapse me))");
@@ -160,19 +162,15 @@ describe("corner cases", () => {
   beforeEach(() => {
     cmb.setValue(";comment\n(a)\n(c)\n(define-struct e ())\ng");
     source = cmb.getAst().rootNodes[0];
-    target1 = document.querySelectorAll(".blocks-drop-target")[1];
-    target2 = document.querySelectorAll(".blocks-drop-target")[2];
+    target1 = dropTargets()[1]; // edited: gaps for drop targets
+    target2 = dropTargets()[2];
   });
 
-  // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
-
-  it.skip("regression test for unstable block IDs", () => {
+  it("regression test for unstable block IDs", () => {
     drag(source.element!).dropOnto(target1);
   });
 
-  // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
-
-  it.skip("regression test for empty identifierLists returning a null location", () => {
+  it("regression test for empty identifierLists returning a null location", () => {
     drag(source.element!).dropOnto(target2); // drag to the last droptarget
   });
 });

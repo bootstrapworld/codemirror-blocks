@@ -2359,3 +2359,10 @@ The compat layer's CM5 passthroughs (`setValue`, `getValue`, `replaceRange`, sel
 ### Checks
 
 Jest `npx jest packages/cm6-blocks` at default seeds: 1277 passed, 340 skipped, 0 failed. Chromium suite: not run (see above).
+
+### Fourteenth round: the two documented differences, unblocked in the compat layer
+
+- Edit box (input, not contenteditable): `insertText` now replaces the selected part of the input (the box opens with its text selected); `setEditableText` already handled inputs. Ten tests un-skipped (activation, focus, new-blocks, api-edit-focus, edge-cases); their contenteditable/textContent expectations became `isNodeEditable`/`toHaveValue`/`input.blocks-edit` checks, each marked `// edited:`. One (Ctrl-] in the first arg position of `(+)`) stays skipped as U: no insertion opens there.
+- Drop targets: `dropTargets(within?)` in `spec/compat/dnd.ts` maps the old `.blocks-drop-target` elements to `.blocks-gap` in document order. The old over-class `blocks-over-target` is `blocks-drop-target` here (`// edited:`); tests that start a drag and do not finish it now call `cancel()`. Seven un-skipped in `drag.test.ts`. The saved-collapsed-state drop stays skipped (U: the dropped root arrives expanded). Drops onto a non-blank node, the drag preview, the trash can and whitespace stay skipped (D/M).
+- Ported jest: 347 passed, 334 skipped before; 364 passed, 317 skipped after (+17). Far fewer than the ~40 measured: the rest of the "D" skips also need a node drop, a toolbar or a trash can.
+- Movable: 376 + 17 = 393 of 828 eligible = **47.5 percent**.

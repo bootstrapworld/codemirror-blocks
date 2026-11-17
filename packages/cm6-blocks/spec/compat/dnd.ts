@@ -96,3 +96,9 @@ export const drag = (srcNode: Element, mode: DragMode = "mouse") => {
 };
 export const getNodeLabeled = (label: string | RegExp) =>
   screen.getByRole("treeitem", { name: label });
+
+/** the old drop targets (`.blocks-drop-target` elements, parent + field + index) are this editor's gaps (`.blocks-gap`, with `data-slot` and `data-index`), in document order */
+export const dropTargets = (within: ParentNode = document): Element[] =>
+  [...within.querySelectorAll(".blocks-gap")].filter(
+    (el) => !el.closest(".toolbar-pane")
+  );
