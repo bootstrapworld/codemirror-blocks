@@ -154,9 +154,21 @@ export class CompatAPI {
     const o = offsetOf(this.ed, p);
     this.ed.view.dispatch({ selection: EditorSelection.cursor(o) });
   }
-  getCursor(which: "head" | "anchor" | "from" | "to" = "head"): Pos {
+  /**
+   * The old API's rule (CodeMirror-api.tsx `getCursor`, run in Chromium in the thirteenth round): while a BLOCK has the DOM focus the answer is the
+   * focused block's start (`from`, the default) or end (`"to"`; any other `which` throws); otherwise it is CodeMirror's own cursor. The text cursor
+   * itself does not move with the focus (in the old editor, in a real browser, `getCM().getCursor()` stays where it was).
+   */
+  getCursor(which?: "head" | "anchor" | "from" | "to"): Pos {
+    const node = this.ed.focusedNode();
+    const el = document.activeElement;
+    if (node && el && /block-node/.test(el.id) && this.ed.view.dom.contains(el)) {
+      if (which === undefined || which === "from") return posOf(this.ed, node.from);
+      if (which === "to") return posOf(this.ed, node.to);
+      throw new Error(`getCursor() with ${which} is not supported on a focused block`);
+    }
     const r = this.ed.view.state.selection.main;
-    return posOf(this.ed, which === "anchor" ? r.anchor : which === "from" ? r.from : which === "to" ? r.to : r.head);
+    return posOf(this.ed, which === "anchor" ? r.anchor : which === "to" ? r.to : which === "from" ? r.from : r.head);
   }
   setSelection(anchor: Pos, head: Pos = anchor): void {
     this.ed.view.dispatch({ selection: EditorSelection.range(offsetOf(this.ed, anchor), offsetOf(this.ed, head)) });

@@ -179,8 +179,8 @@ describe("switching to block mode", () => {
 });
 
 describe("deleting a node", () => {
-  // SKIPPED (U): after the delete the old editor's text cursor is on the line of the block that has the focus (line 1); here the text cursor does not follow block focus (new finding 13)
-  it.skip("should focus on the previous node when a top-level node is deleted", () => {
+  // (finding 13, thirteenth round: the old `getCursor()` answers the focused block's start while a block has the DOM focus; the compat layer does the same)
+  it("should focus on the previous node when a top-level node is deleted", () => {
     cmb.setValue("firstLiteral\nsecondLiteral\nthirdLiteral");
     mouseDown(screen.getByRole("treeitem", { name: /thirdLiteral/ }));
     keyDown(" ");
