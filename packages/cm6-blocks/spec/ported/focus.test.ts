@@ -75,9 +75,7 @@ describe("focusing,", () => {
     expect(cmb.getFocusedNode()!.id).toBe(literal1.id);
   });
 
-  // SKIPPED (U): deleting two blocks of a call leaves `(+ 1 )` here, `(+ 1)` in the old editor (a blank is left before the bracket)
-
-  it.skip("deleting multiple nodes should shift focus to the one before", async () => {
+  it("deleting multiple nodes should shift focus to the one before", async () => {
     mouseDown(literal2);
     keyDown(" ");
     keyDown("ArrowDown");

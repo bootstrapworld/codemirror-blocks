@@ -561,25 +561,76 @@ export function rootRemovals(roots: BNode[], text?: string): Map<BNode, TextChan
 
 /** The text change that removes a list element and one separator. */
 export function removeChange(node: BNode, text?: string): TextChange {
-  // a top-level block (a root): see rootRemovals
-  if (node.slot!.owner.kind === "program") return rootRemovals([node], text).get(node)!;
-  const ns = node.slot!.nodes;
-  const i = ns.indexOf(node);
-  if (i + 1 < ns.length) return { from: node.from, to: ns[i + 1].from, insert: "" };
-  if (i > 0) {
-    // the last of a list whose previous element ends with its own newline (a statement): take the node's newline too
-    const prevEnd = ns[i - 1].to;
-    const lastLine = !!text && text[node.to] === "\n" && (prevEnd === 0 || text[prevEnd - 1] === "\n");
-    return { from: prevEnd, to: node.to + (lastLine ? 1 : 0), insert: "" };
+  return removeChanges([node], text)[0] ?? { from: node.from, to: node.from, insert: "" };
+}
+
+/**
+ * The text changes that remove several blocks (none inside another) from their lists, all against the text they were parsed from.
+ * Roots: see rootRemovals. In any other list the blocks to go are taken in runs of neighbours, and each run is one change, so
+ * that the separators come out as if the blocks had been removed one at a time and the list printed again (what the old editor
+ * does: it removes the child from a copy of the tree and prints the parent): a run that has a kept block after it goes with
+ * the separator up to that block (`f(a, b, c)` minus `a`: `f(b, c)`; minus `a` and `b`: `f(c)`); a run at the end goes with the
+ * separator before it, from the end of the kept block before it (`f(a)` from minus `b` and `c`; never `(+ 1 )` or `f(a, )`); a
+ * run that is the whole list goes with the blanks before it on its line (`(h 4)` minus `4`: `(h)`).
+ */
+export function removeChanges(nodes: BNode[], text?: string): TextChange[] {
+  const out: TextChange[] = [];
+  const roots = nodes.filter((n) => n.slot!.owner.kind === "program");
+  if (roots.length) out.push(...rootRemovals(roots, text).values());
+  const rest = nodes.filter((n) => n.slot!.owner.kind !== "program");
+  const slots = new Set(rest.map((n) => n.slot!));
+  for (const slot of slots) {
+    const ns = slot.nodes;
+    const go = new Set(rest.filter((n) => n.slot === slot));
+    // only blanks and commas may lie between two blocks that go together or between a block and its separator: anything else
+    // (a bracket the grammar does not make a block of, a stray token) is not ours to take
+    const sepOnly = (a: number, b: number): boolean => !text || /^[\s,]*$/.test(text.slice(a, b));
+    const others = slot.owner.slots.filter((q) => q !== slot).flatMap((q) => q.nodes);
+    for (let i = 0; i < ns.length; i++) {
+      if (!go.has(ns[i])) continue;
+      let j = i;
+      while (j + 1 < ns.length && go.has(ns[j + 1]) && sepOnly(ns[j].to, ns[j + 1].from)) j++;
+      const first = ns[i];
+      const last = ns[j];
+      if (j + 1 < ns.length) {
+        // up to the next block of the list, but not over another block of the owner (a comment before the operator) or a stray token
+        let to = ns[j + 1].from;
+        for (const o of others) if (o.from >= last.to && o.from < to) to = o.from;
+        if (text) {
+          const gap = text.slice(last.to, to);
+          const k = gap.search(/[^\s,]/);
+          if (k >= 0) to = last.to + k;
+        }
+        // (a block that sat right against what is before it (a comment after a block: `7; c`) must not end up against the next one)
+        const prevCh = text ? text[first.from - 1] : undefined;
+        const nextCh = text ? text[to] : undefined;
+        const glue = prevCh !== undefined && nextCh !== undefined && to === ns[j + 1].from && !/[\s([{]/.test(prevCh) && !/[\s)\]}]/.test(nextCh) && prevCh !== "," && prevCh !== ";";
+        out.push({ from: first.from, to, insert: glue ? " " : "" });
+      } else if (i > 0) {
+        // the last of a list whose previous element ends with its own newline (a statement): take the node's newline too
+        let from = ns[i - 1].to;
+        for (const o of others) if (o.to <= first.from && o.to > from) from = o.to;
+        if (text) {
+          const gap = text.slice(from, first.from);
+          const k = gap.search(/[^\s,][\s,]*$/);
+          if (k >= 0) from += k + 1;
+        }
+        const lastLine = !!text && text[last.to] === "\n" && (from === 0 || text[from - 1] === "\n");
+        out.push({ from, to: last.to + (lastLine ? 1 : 0), insert: "" });
+      } else {
+        // the whole list: also the blanks before it on the same line (`(h 4)` -> `(h)`)
+        let from = first.from;
+        if (text) {
+          let a = from;
+          while (a > 0 && (text[a - 1] === " " || text[a - 1] === "\t")) a--;
+          if (a > 0 && text[a - 1] !== "\n") from = a;
+        }
+        out.push({ from, to: last.to, insert: "" });
+      }
+      i = j;
+    }
   }
-  // the only element: also the blanks before it on the same line (`(h 4)` -> `(h)`)
-  let from = node.from;
-  if (text) {
-    let a = from;
-    while (a > 0 && (text[a - 1] === " " || text[a - 1] === "\t")) a--;
-    if (a > 0 && text[a - 1] !== "\n") from = a;
-  }
-  return { from, to: node.to, insert: "" };
+  return out;
 }
 
 /**

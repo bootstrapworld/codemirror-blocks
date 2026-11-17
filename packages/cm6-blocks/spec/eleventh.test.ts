@@ -160,3 +160,72 @@ describe("4. undo and redo put focus where the old history does", () => {
     ok(ed);
   });
 });
+
+describe("7. removing several arguments leaves tidy separators", () => {
+  /** every block of the document with its source text, in document order */
+  const all = (ed: LezerBlockEditor) => {
+    const out: { n: ReturnType<LezerBlockEditor["roots"]>[number]; t: string }[] = [];
+    const go = (n: ReturnType<LezerBlockEditor["roots"]>[number]) => {
+      out.push({ n, t: textOf(ed).slice(n.from, n.to) });
+      n.slots.forEach((s) => s.nodes.forEach(go));
+    };
+    ed.roots().forEach(go);
+    return out;
+  };
+  /** remove the blocks whose source is each of `what` (first one found inside a list), together, as Delete on a selection does */
+  const remove = (lang: string, text: string, what: string[]) => {
+    const ed = make(lang, text);
+    const nodes = what.map((w) => all(ed).find((x) => x.t === w && x.n.slot && x.n.slot.kind === "list" && x.n.slot.owner.kind !== "program")!.n);
+    ed.removeNodes(nodes);
+    ok(ed);
+    const out = textOf(ed);
+    undo(ed.view);
+    expect(textOf(ed)).toBe(text); // one undo step
+    return out;
+  };
+  test.each([
+    ["scheme", "(+ 1 2 3)", ["2", "3"], "(+ 1)"],
+    ["scheme", "(+ 1 2 3)", ["1", "2"], "(+ 3)"],
+    ["scheme", "(+ 1 2 3)", ["1", "3"], "(+ 2)"],
+    ["scheme", "(+ 1 2 3)", ["1", "2", "3"], "(+)"],
+    ["scheme", "(+ 1 2 3)", ["3"], "(+ 1 2)"],
+    ["scheme", "(+ 1 2 3)", ["1"], "(+ 2 3)"],
+    ["scheme", "(+ 1)", ["1"], "(+)"],
+    ["scheme", "(define (f x y z) (+ x y))", ["y", "z"], "(define (f x) (+ x y))"],
+    ["scheme", "(define (f x y z) (+ x y))", ["x", "y", "z"], "(define (f) (+ x y))"],
+    ["scheme", "(f (g 1 2) (h 3 4))", ["2", "4"], "(f (g 1) (h 3))"],
+    ["scheme", "(f (g 1 2) 5)", ["(g 1 2)", "5"], "(f)"],
+    ["javascript", "f(a, b, c);", ["b", "c"], "f(a);"],
+    ["javascript", "f(a, b, c);", ["a", "b"], "f(c);"],
+    ["javascript", "f(a, b, c);", ["a", "c"], "f(b);"],
+    ["javascript", "f(a, b, c);", ["a", "b", "c"], "f();"],
+    ["javascript", "f(a, b, c);", ["c"], "f(a, b);"],
+    ["javascript", "f(a, b, c);", ["b"], "f(a, c);"],
+    ["javascript", "[1, 2, 3, 4]", ["2", "3"], "[1, 4]"],
+    ["javascript", "[1, 2, 3, 4]", ["3", "4"], "[1, 2]"],
+    ["javascript", "function g(a, b, c) { return a; }", ["b", "c"], "function g(a) { return a; }"],
+    ["javascript", "f(g(1, 2), h(3, 4));", ["2", "4"], "f(g(1), h(3));"],
+    ["python", "f(a, b, c)", ["b", "c"], "f(a)"],
+    ["python", "f(a, b, c)", ["a", "b", "c"], "f()"],
+    ["python", "f(a, b, c)", ["a", "c"], "f(b)"],
+    ["python", "x = [1, 2, 3]", ["2", "3"], "x = [1]"],
+    ["python", "def g(a, b, c):\n    return a", ["b", "c"], "def g(a):\n    return a"],
+    ["python", "f(g(1, 2), h(3, 4))", ["2", "4"], "f(g(1), h(3))"],
+  ] as [string, string, string[], string][])("%s: %s minus %j", (lang, text, what, expected) => {
+    expect(remove(lang, text, what)).toBe(expected);
+  });
+  test("a comment that sits against the block before it does not glue the next block to it", () => {
+    const ed = make("scheme", "(a b 7; c\nc)");
+    const c = all(ed).find((x) => x.n.kind === "comment")!.n;
+    ed.removeNode(c);
+    expect(textOf(ed)).toBe("(a b 7 c)");
+    ok(ed);
+  });
+  test("a comment before the operator goes alone", () => {
+    const ed = make("scheme", "(; c\n 1 7)");
+    const c = all(ed).find((x) => x.n.kind === "comment")!.n;
+    ed.removeNode(c);
+    expect(textOf(ed)).toBe("(1 7)");
+    ok(ed);
+  });
+});

@@ -27,7 +27,7 @@ import { defaultKeymap, history, historyKeymap, isolateHistory, redoDepth, undoD
 import { Tree, TreeFragment } from "@lezer/common";
 import type { Parser } from "@lezer/common";
 import { walk } from "./doc";
-import { InnerCand, BlockTable, fillTemplate, insertChange, insertEmptyChange, LezerLanguage, lezerLanguage, removeChange, rootRemovals, separatorFor, keyOfNode, hasError } from "./lezer";
+import { InnerCand, BlockTable, fillTemplate, insertChange, insertEmptyChange, LezerLanguage, lezerLanguage, removeChanges, separatorFor, keyOfNode, hasError } from "./lezer";
 import { Renderer } from "./render";
 import { RootWidget } from "./view";
 import { attachInteraction } from "./interact";
@@ -950,8 +950,6 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     view.dispatch({ changes: cs, annotations: [isolateHistory.of("full")], userEvent: "input.block" });
   }
   /** changes sorted, and those that overlap made one (every one must only delete: two blanks cannot be merged) */
-  /** a top-level block in the roots' list (its line stays, blank, when it goes: see rootRemovals) */
-  const isRootBlock = (n: BNode): boolean => !!n.slot && n.slot.kind === "list" && !n.slot.pieces && n.slot.owner.kind === "program";
   function mergeChanges(cs: TextChange[]): TextChange[] {
     const sorted = [...cs].sort((a, b) => a.from - b.from || a.to - b.to);
     const out: TextChange[] = [];
@@ -1148,11 +1146,11 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       for (let c: BNode | null = f; c; c = c.parent) if (sorted.includes(c)) inside = true;
       const place = placeOf(node);
       const t = currentText();
-      const rr = rootRemovals(sorted.filter(isRootBlock), t);
-      const cs = sorted.map((n): TextChange => {
-        if (!n.slot) return strayRemoval(n);
-        return n.slot.kind === "one" || n.slot.pieces ? { from: n.from, to: n.to, insert: table.blank ?? "..." } : rr.get(n) ?? removeChange(n, t);
-      });
+      const inList = (n: BNode): boolean => !!n.slot && n.slot.kind !== "one" && !n.slot.pieces;
+      const cs: TextChange[] = [
+        ...sorted.filter((n) => !inList(n)).map((n): TextChange => (!n.slot ? strayRemoval(n) : { from: n.from, to: n.to, insert: table.blank ?? "..." })),
+        ...removeChanges(sorted.filter(inList), t),
+      ];
       holdFocus = inside;
       // (the old editor beeps when a delete leaves a hole where a block has to be)
       const leaves = sorted.some((n) => n.slot && (n.slot.kind === "one" || n.slot.pieces));
@@ -1340,8 +1338,11 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       }
       const t = currentText();
       const snippets = sorted.map((n) => dedent(t.slice(n.from, n.to), indentAt(n.from)).replace(/\s+$/, ""));
-      const rr = rootRemovals(sorted.filter(isRootBlock), t);
-      const gone = mergeChanges(sorted.map((n): TextChange => (n.slot!.kind === "one" || n.slot!.pieces ? { from: n.from, to: n.to, insert: table.blank ?? "..." } : rr.get(n) ?? removeChange(n, t))));
+      const inList = (n: BNode): boolean => n.slot!.kind !== "one" && !n.slot!.pieces;
+      const gone = mergeChanges([
+        ...sorted.filter((n) => !inList(n)).map((n): TextChange => ({ from: n.from, to: n.to, insert: table.blank ?? "..." })),
+        ...removeChanges(sorted.filter(inList), t),
+      ]);
       let put: TextChange;
       if ("blank" in target) put = replaceChange(target.blank, snippets[0].replace(/\n/g, "\n" + indentAt(target.blank.from)));
       else {

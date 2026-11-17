@@ -40,6 +40,56 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
+/** a block and what is in it as plain data (kind, text, slots), leaving out the blocks in `skip` */
+function shape(n: BNode, skip: Set<BNode>): unknown {
+  return [n.kind, n.value ?? null, n.slots.map((sl) => [sl.name, sl.nodes.filter((c) => !skip.has(c)).map((c) => shape(c, skip))])];
+}
+const clean = (ed: LezerBlockEditor): boolean => {
+  let bad = false;
+  for (const r of ed.roots()) walk(r, (n) => { if (n.kind === "error") bad = true; });
+  return !bad;
+};
+/**
+ * The oracle for removals: when the tree was free of errors and only blocks of lists go, the text after the removal must parse to
+ * the old tree minus the removed blocks (no stray separator may change what the text means). The tree comparison is not done for
+ * Scheme: its grammar reads `(> (define y 2) 1)` as another structure than `(> 7 (define y 2) 1)` minus `7` (a call whose head is a call),
+ * which is the language and not the separators; Scheme gets the text comparison and the bracket checks.
+ */
+// (lists of arguments, parameters, elements, statements: not the operands and operators of an expression, which are not a list of things)
+const REMOVABLE = ["args", "params", "elements", "properties"];
+function removeOracle(ed: LezerBlockEditor, gone: BNode[], log: string[], shapes: boolean, run: () => void): void {
+  const check = clean(ed) && gone.every((n) => n.slot && n.slot.kind === "list" && !n.slot.pieces && REMOVABLE.includes(n.slot.name));
+  const before = check && shapes ? ed.roots().map((r) => shape(r, new Set(gone))) : null;
+  const text = ed.view.state.doc.toString();
+  // the text, whatever the blocks: only the removed blocks and the blanks and commas between blocks may be different
+  const norm = (x: string): string => x.replace(/[\s,]+/g, " ").replace(/ ?([()[\]{};:]) ?/g, "$1").trim();
+  const lists = check && gone.length > 0 && gone.every((n) => n.slot && n.slot.kind === "list" && !n.slot.pieces && n.slot.owner.kind !== "program");
+  let expected = "";
+  if (lists) {
+    let at = 0;
+    for (const n of [...gone].sort((a, b) => a.from - b.from)) {
+      expected += text.slice(at, n.from) + " ";
+      at = n.to;
+    }
+    expected += text.slice(at);
+  }
+  run();
+  if (lists && norm(ed.view.state.doc.toString()) !== norm(expected)) {
+    throw new Error(`a removal changed more than the removed blocks and the separators\nbefore: ${JSON.stringify(text)}\nafter: ${JSON.stringify(ed.view.state.doc.toString())}\nlog: ${log.join(" | ")}`);
+  }
+  if (!before) return;
+  if (!clean(ed)) return; // (the text no longer parses: a removal can break a statement, nothing to compare)
+  const after = ed.roots().map((r) => shape(r, new Set()));
+  if (JSON.stringify(before) !== JSON.stringify(after)) {
+    throw new Error(`a removal changed more than the removed blocks\nbefore: ${JSON.stringify(text)}\nafter: ${JSON.stringify(ed.view.state.doc.toString())}\nlog: ${log.join(" | ")}`);
+  }
+  const t = ed.view.state.doc.toString();
+  const count = (re: RegExp, x: string): number => (x.match(re) ?? []).length;
+  for (const [what, re] of [["a blank before a closing bracket", / [)\]}]/g], ["a comma before a closing bracket", /,\s*[)\]}]/g], ["two commas", /,\s*,/g]] as [string, RegExp][]) {
+    if (count(re, t) > count(re, text)) throw new Error(`a removal left ${what}: ${JSON.stringify(t)} (was ${JSON.stringify(text)})`);
+  }
+}
+
 /** one random step on `ed` (a text edit, an insert, a remove, a selection, a removal of the selection, undo, redo); `log` gets a line saying which */
 export function randomStep(ed: LezerBlockEditor, L: Lang, rnd: () => number, log: string[]): void {
   const pick = <T,>(a: T[]): T => a[Math.floor(rnd() * a.length)];
@@ -63,7 +113,7 @@ export function randomStep(ed: LezerBlockEditor, L: Lang, rnd: () => number, log
         const s = pick(lists);
         const n = pick(s.nodes);
         log.push(`remove ${n.kind} [${n.from},${n.to})`);
-        ed.removeNode(n);
+        removeOracle(ed, [n], log, L !== LANGS.scheme, () => ed.removeNode(n));
       } else if (r < 0.81) {
         const every = ed.roots().flatMap((root) => { const o: BNode[] = []; walk(root, (n) => o.push(n)); return o; }).filter((n) => n.kind !== "error");
         if (every.length) {
@@ -76,7 +126,7 @@ export function randomStep(ed: LezerBlockEditor, L: Lang, rnd: () => number, log
         log.push(`remove the selection (${sel.map((n) => `${n.kind} [${n.from},${n.to})`).join(", ")})`);
         if (sel.length) {
           try {
-            ed.removeNodes(sel);
+            removeOracle(ed, sel, log, L !== LANGS.scheme, () => ed.removeNodes(sel));
           } catch (e) {
             if (!/overlap/.test((e as Error).message)) throw e; // two removals that cannot be one change
           }
