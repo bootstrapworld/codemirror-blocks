@@ -827,6 +827,9 @@ export function attachInteraction(ed: LezerBlockEditor): {
   /* ---- drag and drop (pointer events: mouse, finger, pen) */
 
   type Target = { slot: Slot; index: number } | { blank: BNode };
+  /** the trash can: an element of the page (class `TrashCan`, outside the editor) that takes the dragged blocks away */
+  type Trash = { trash: Element };
+  type AnyTarget = Target | Trash;
   interface Drag {
     node: BNode;
     /** what moves: the selected blocks when the dragged one is selected, else just it */
@@ -834,7 +837,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     x: number;
     y: number;
     on: boolean;
-    target: Target | null;
+    target: AnyTarget | null;
     mark: Element | null;
     /** a finger: the drag starts after a long press (a quick swipe scrolls the page) */
     touch: boolean;
@@ -856,8 +859,10 @@ export function attachInteraction(ed: LezerBlockEditor): {
     x: number,
     y: number,
     node: BNode | null
-  ): { target: Target; mark: Element } | null {
+  ): { target: AnyTarget; mark: Element } | null {
     const el = doc.elementFromPoint(x, y);
+    const can = el?.closest(".TrashCan");
+    if (can) return { target: { trash: can }, mark: can };
     if (!el || !dom.contains(el)) return null;
     const gap = renderer.gapOf(el);
     if (gap && gap.slot.pieces) return null;
@@ -891,14 +896,16 @@ export function attachInteraction(ed: LezerBlockEditor): {
     return false;
   };
   /** where a drop went, for the log: a gap (the slot and index) or a hole (its place) */
-  const describeTarget = (t: Target): Record<string, unknown> =>
-    "blank" in t
-      ? { blank: { from: t.blank.from, to: t.blank.to } }
-      : {
-          slot: t.slot.name,
-          owner: { kind: t.slot.owner.kind, from: t.slot.owner.from },
-          index: t.index,
-        };
+  const describeTarget = (t: AnyTarget): Record<string, unknown> =>
+    "trash" in t
+      ? { trash: true }
+      : "blank" in t
+        ? { blank: { from: t.blank.from, to: t.blank.to } }
+        : {
+            slot: t.slot.name,
+            owner: { kind: t.slot.owner.kind, from: t.slot.owner.from },
+            index: t.index,
+          };
   /** a drag let go over the editor but not over a place that takes it (the old editor beeps there; let go elsewhere, it does nothing) */
   const overEditor = (e: PointerEvent): boolean => {
     const el = doc.elementFromPoint(e.clientX, e.clientY);
@@ -968,7 +975,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     },
   });
   function retarget(
-    d: { mark: Element | null; target?: Target | null },
+    d: { mark: Element | null; target?: AnyTarget | null },
     x: number,
     y: number
   ): void {
@@ -1073,9 +1080,12 @@ export function attachInteraction(ed: LezerBlockEditor): {
           touch: d.touch,
         },
         () => {
-          if (hit) {
+          const to = hit?.target;
+          if (to && "trash" in to) {
+            // nothing made yet, nothing to throw away
+          } else if (to) {
             try {
-              ed.insertTemplateAt(d.name, hit.target);
+              ed.insertTemplateAt(d.name, to);
             } catch (err) {
               ed.lastError = (err as Error).message;
               ed.say((err as Error).message);
@@ -1247,9 +1257,20 @@ export function attachInteraction(ed: LezerBlockEditor): {
           touch: d.touch,
         },
         () => {
-          if (hit) {
+          const to = hit?.target;
+          if (to && "trash" in to) {
+            // the blocks go (with their comments) in one step, as a cut does
+            const typing = doc.activeElement;
+            if (typing instanceof HTMLElement && typing.matches(".blocks-edit"))
+              typing.blur();
+            ed.clearSelection();
+            ed.removeNodes(
+              d.group.filter((n) => renderer.has(n)),
+              true
+            );
+          } else if (to) {
             try {
-              ed.moveNodes(d.group, hit.target);
+              ed.moveNodes(d.group, to);
             } catch (err) {
               ed.lastError = (err as Error).message;
               beep("drop-refused");

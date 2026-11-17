@@ -25,3 +25,28 @@ describe("a drop on a block inside a top-level block replaces it", () => {
     expect(cmb.getValue()).toBe("(f (g x) y)");
   });
 });
+
+describe("the trash can (an element with the class TrashCan)", () => {
+  it("deletes the dragged block", () => {
+    const { cmb } = mountCMB(wescheme);
+    cmb.setValue(`(f x y)\n(g z)`);
+    drag(getNodeLabeled(/call to f /)).dropOnto(
+      document.querySelector(".TrashCan")!
+    );
+    expect(cmb.getValue().trim()).toBe("(g z)");
+  });
+  it("deletes a block inside another", () => {
+    const { cmb } = mountCMB(wescheme);
+    cmb.setValue(`(f x y)`);
+    drag(getNodeLabeled(/^x\b/)).dropOnto(document.querySelector(".TrashCan")!);
+    expect(cmb.getValue()).toBe("(f y)");
+  });
+  it("deletes nothing when the drag is cancelled over it", () => {
+    const { cmb } = mountCMB(wescheme);
+    cmb.setValue(`(f x y)`);
+    const dragging = drag(getNodeLabeled(/^x\b/));
+    dragging.dragOver(document.querySelector(".TrashCan")!);
+    dragging.cancel();
+    expect(cmb.getValue()).toBe("(f x y)");
+  });
+});

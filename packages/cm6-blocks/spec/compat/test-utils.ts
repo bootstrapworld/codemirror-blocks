@@ -43,7 +43,7 @@ afterEach(() => {
   expect(checkLezerEditor(mounted.ed)).toEqual([]);
 });
 
-const fixture = `<div id="root"><div id="cm6-editor" class="editor-container"></div></div>`;
+const fixture = `<div id="root"><div id="cm6-editor" class="editor-container"></div><div class="TrashCan" aria-hidden="true">🗑️</div></div>`;
 
 /** the language argument is ignored: the Scheme table is what the old tests' WeScheme documents need */
 export function mountCMB(
