@@ -66,5 +66,22 @@ export default tseslint.config(
       "@typescript-eslint/no-empty-function": 0,
       "@typescript-eslint/no-explicit-any": 0,
     },
+  },
+  {
+    // packages/cm6-blocks: tests copied near-verbatim from the old editor (only
+    // their imports changed, so that they can be compared line by line with the
+    // originals), which keep the originals' `@ts-nocheck`, `any` and `({}, use)`
+    // fixture patterns; and the probes that drive the OLD editor's page
+    // (`window.cmb`, CodeMirror 5), which has no types here
+    files: [
+      "packages/cm6-blocks/spec/ported/**",
+      "packages/cm6-blocks/e2e/ported/**",
+      "packages/cm6-blocks/e2e/*.cm5.ts",
+    ],
+    rules: {
+      "@typescript-eslint/ban-ts-comment": 0,
+      "@typescript-eslint/no-explicit-any": 0,
+      "no-empty-pattern": 0,
+    },
   }
 );
