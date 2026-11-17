@@ -31,6 +31,7 @@ import { InnerCand, BlockTable, fillTemplate, insertChange, insertEmptyChange, L
 import { Renderer } from "./render";
 import { RootWidget } from "./view";
 import { attachInteraction } from "./interact";
+import { browserPlayer, SoundEvent, SoundName, SoundPlayer } from "./sound";
 import { makeNode } from "./node";
 import { Bail, compatible, reconcile, ReconcileEnv } from "./reconcile";
 import type { BNode, Doc, Slot, TextChange } from "./types";
@@ -48,6 +49,10 @@ export interface LezerOptions {
   skipRoots?: boolean;
   /** Shift-Tab on a block calls this (the old editor moves the focus to its toolbar); without it the key does what the browser does */
   focusToolbar?: () => void;
+  /** sounds (the old editor's beep and wrap sound) are played; false: none (also `ed.setSounds`). Default true */
+  sounds?: boolean;
+  /** what plays a sound; the default is the browser's Audio (sound.ts). A test passes one that records what was asked for which event */
+  playSound?: SoundPlayer;
 }
 
 export interface LezerStats {
@@ -133,6 +138,10 @@ export interface LezerBlockEditor {
   collapseAll(on: boolean): void;
   /** collapse / expand a root and everything inside it */
   collapseRoot(root: BNode, on: boolean): void;
+  /** ask for a sound for an event (nothing happens while sounds are off); the player is the option `playSound` */
+  sound(name: SoundName, event: SoundEvent): void;
+  setSounds(on: boolean): void;
+  soundsOn(): boolean;
   /** announce `text` to a screen reader (a live region next to the editor); also kept in `said` */
   say(text: string): void;
   /** what was announced, newest last (the last 50) */
@@ -849,6 +858,9 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     return { slot, index, indent: ref ? indentAt(ref.from) : "" };
   }
 
+  let soundOn = options.sounds !== false;
+  const player: SoundPlayer = options.playSound ?? browserPlayer();
+
   /* ---- announcements: a live region beside the editor (the old editor's announcer: assertive, atomic) */
   const said: string[] = [];
   const region = parent.ownerDocument.createElement("div");
@@ -1017,8 +1029,11 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         return n.slot.kind === "one" || n.slot.pieces ? { from: n.from, to: n.to, insert: table.blank ?? "..." } : removeChange(n, t);
       });
       holdFocus = inside;
+      // (the old editor beeps when a delete leaves a hole where a block has to be)
+      const leaves = sorted.some((n) => n.slot && (n.slot.kind === "one" || n.slot.pieces));
       try {
         dispatchAll(mergeChanges(cs));
+        if (leaves) ed.sound("beep", "left-blank");
       } finally {
         holdFocus = false;
       }
@@ -1028,6 +1043,13 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     },
     said,
     say,
+    sound(name, event) {
+      if (soundOn) player(name, event);
+    },
+    setSounds(on) {
+      soundOn = on;
+    },
+    soundsOn: () => soundOn,
     selection: () => sortedNodes(renderer.selected()),
     selectedBlocks() {
       const sel = new Set(renderer.selected());

@@ -19,10 +19,10 @@ export const TEXT: Record<string, string> = {
   python: "f(1, g(2), 3)\nh(4)\nk(5)",
 };
 const made: LezerBlockEditor[] = [];
-export function make(l: string, text?: string): LezerBlockEditor {
+export function make(l: string, text?: string, extra: Partial<LezerOptions> = {}): LezerBlockEditor {
   const parent = document.createElement("div");
   document.body.appendChild(parent);
-  const ed = createLezerBlockEditor(parent, text ?? TEXT[l], OPTS[l]);
+  const ed = createLezerBlockEditor(parent, text ?? TEXT[l], { ...OPTS[l], ...extra });
   made.push(ed);
   return ed;
 }

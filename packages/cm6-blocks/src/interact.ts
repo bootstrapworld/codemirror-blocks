@@ -27,6 +27,7 @@ import { plainComment } from "./render";
 import { Command, commandOf } from "./keys";
 import { Help, openHelp } from "./help";
 import type { BNode, Slot } from "./types";
+import type { SoundEvent } from "./sound";
 
 const kids = (n: BNode): BNode[] => n.slots.flatMap((s) => s.nodes);
 const drawable = (n: BNode): boolean => n.kind !== "error" && n.kind !== "program";
@@ -223,7 +224,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   function editComment(node: BNode): void {
     if (node.kind === "comment") {
       ed.say("Press Enter to edit a comment block");
-      beep();
+      beep("comment-of-comment");
       return;
     }
     const host = ed.commentHost(node);
@@ -316,6 +317,8 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     },
     collapseRoot: (n, _e, handled) => {
       handled();
+      // (the old editor: a top-level block that is collapsed already or has nothing in it only beeps)
+      if (n.parent && n.parent.kind === "program" && (renderer.isCollapsed(n) || n.slots.length === 0)) return beep("collapse-root");
       ed.collapseRoot(rootsOf(n), true);
       focusSoon(rootsOf(n));
     },
@@ -365,14 +368,14 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     },
     toggleSelection: (n, _e, handled) => {
       handled();
-      if (ed.toggleSelect(n) === "refused") beep();
+      if (ed.toggleSelect(n) === "refused") beep("select-refused");
     },
     readAncestors: (n, _e, handled) => {
       handled();
       const parts = [ed.language.describe(n)];
       for (let p = n.parent; p && p.kind !== "program"; p = p.parent) parts.push(ed.language.describe(p) + ", at level " + level(p));
       if (parts.length > 1) ed.say(parts.join(", inside "));
-      else beep();
+      else beep("no-ancestors");
     },
     first: (_n, _e, handled) => {
       handled();
@@ -388,11 +391,13 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       handled();
       const x = nextBlock(n, isClosed);
       if (x) focusSoon(x);
+      else beep("no-next");
     },
     previous: (n, _e, handled) => {
       handled();
       const x = prevBlock(n, isClosed);
       if (x) focusSoon(x);
+      else beep("no-previous");
     },
     expandOrChild: (n, _e, handled) => {
       handled();
@@ -400,12 +405,14 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       else {
         const c = kids(n)[0];
         if (c) focusSoon(c);
+        else beep("no-child");
       }
     },
     collapseOrParent: (n, _e, handled) => {
       handled();
       if (n.slots.length > 0 && !renderer.isCollapsed(n)) ed.collapse(n, true);
       else if (n.parent && n.parent.kind !== "program") focusSoon(n.parent);
+      else beep("no-parent");
     },
     delete: (_n, _e, handled) => {
       handled();
@@ -417,7 +424,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       } else {
         // (the old editor: "Nothing selected", and nothing is deleted; Cut and Copy do take the focused block)
         ed.say("Nothing selected");
-        beep();
+        beep("delete-nothing");
       }
     },
     enter: (n, _e, handled) => {
@@ -445,8 +452,8 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     });
   }
 
-  /** a short sound is the old editor's way to say "no": here, only the words said already */
-  const beep = (): void => undefined;
+  /** a short sound is the old editor's way to say "no" (sound.ts lists the events) */
+  const beep = (event: SoundEvent): void => ed.sound("beep", event);
   let pasteBefore = false;
   const level = (n: BNode): number => {
     let c = 0;
@@ -501,6 +508,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     } catch (err) {
       ed.lastError = (err as Error).message;
       ed.say(`Cannot paste ${before ? "before" : "after"} this node.`);
+      beep("paste-refused");
     }
   }
   const onCopyEv = (e: Event) => onCopy(e as ClipboardEvent, false);
@@ -553,6 +561,11 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     }
     return null;
   }
+  /** a drag let go over the editor but not over a place that takes it (the old editor beeps there; let go elsewhere, it does nothing) */
+  const overEditor = (e: PointerEvent): boolean => {
+    const el = doc.elementFromPoint(e.clientX, e.clientY);
+    return !!el && dom.contains(el);
+  };
   /* a template dragged out of the toolbar: the same targets (gaps, blanks, the edges of top-level blocks), the same marks; the block is made where it is let go */
   interface TDrag { name: string; x: number; y: number; on: boolean; mark: Element | null; id: number }
   let tdrag: TDrag | null = null;
@@ -599,8 +612,9 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
         } catch (err) {
           ed.lastError = (err as Error).message;
           ed.say((err as Error).message);
+          beep("drop-refused");
         }
-      }
+      } else if (overEditor(e)) beep("drop-nowhere");
     } else tdone();
   }
   function beginTemplateDrag(e: PointerEvent, name: string): void {
@@ -692,8 +706,9 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
           ed.moveNodes(d.group, hit.target);
         } catch (err) {
           ed.lastError = (err as Error).message;
+          beep("drop-refused");
         }
-      }
+      } else if (overEditor(e)) beep("drop-nowhere");
     } else clearDrag();
   }
   function onCancel(): void {
