@@ -78,7 +78,7 @@ LED = {
   ("deleting multiple nodes should shift focus to the one before", "U", "deleting two blocks of a call leaves `(+ 1 )` here, `(+ 1)` in the old editor (a blank is left before the bracket)"),
   ("inserting a node should put focus on the new node", "M", "the test inserts through the CM5 passthrough `replaceRange` and reads `getFocusedNode().value`: a text change from outside does not focus the new block here"),
   ("inserting multiple nodes should put focus on the last", "M", "as above"),
-  ("the block that was edited is the one on the page", *BOX), ("cancelling a top-level edit hands focus back", "U", "block element ids are `cmb6-node-<id>`, the old `block-node-<id>`"),
+  ("the block that was edited is the one on the page", *BOX), ("cancelling a top-level edit hands focus back", "U", "block element ids are `block-node-<id>`, the old `block-node-<id>`"),
  ],
  "edit-errors": [
   ("does nothing if the value is emptied", "U", "an emptied box committed with Enter deletes the block here; the old editor does nothing"),

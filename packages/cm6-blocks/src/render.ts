@@ -343,7 +343,7 @@ export class Renderer {
     );
     this.els.set(node, el);
     this.byId.set(node.id, node);
-    el.id = `cmb6-node-${node.id}`;
+    el.id = `block-node-${node.id}`;
     el.setAttribute("role", "treeitem");
     el.setAttribute("tabindex", "-1");
     el.setAttribute("contenteditable", "false");

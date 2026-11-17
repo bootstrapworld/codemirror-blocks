@@ -1995,3 +1995,14 @@ The cheapest next step to raise the number: the undocumented differences 1 to 3,
 - `npx jest packages/cm6-blocks`: 1023 passed, 222 skipped (the ported files' skips: 216 of them in the 11 ported jest files, 6 earlier ones), 2 suites skipped whole (comment, and one all-skip file); `tsc --noEmit -p packages/cm6-blocks` clean.
 - The whole Chromium suite (port 8177, server stopped afterwards): **106 passed, 4 skipped** (the 4 `test.fixme` of the ported Playwright files), 0 failed; the 15 new auto-scroll tests and the 5 passing ported tests are in it.
 - Not done: auto-scroll was checked in Chromium emulation only (no real touch device, no WebKit; the iOS rule for the extra `touchmove` listener is read, not tested); the CM5 passthrough API (`getSelections` and the rest of the 53 uses), the toolbar-of-primitives helper, the quarantine, and the other 13 old Playwright behaviour files were not ported; `undo-redo-test` (4), `drag-test` (13) and `nodes-test` (42) are estimated, not run; `clearHistory` in the compat layer only forgets the depth.
+
+## Tenth round (2026-11-17)
+
+The owner's words: "do 1 to 3, 5, and 6" of the twelve undocumented differences (ninth round, 2d). Order: 1, 2, 3, 5, 6 (the list's numbers; "4 in this round's order" below is difference 5). Each is its own commit.
+
+### Difference 1: active descendant and ids (2026-11-17)
+
+- Old editor: `scrollToElement` in `packages/codemirror-blocks/src/editor.ts` writes `aria-activedescendent` (sic) on `getScrollerElement()` with the block element's id (`block-node-<id>`); it never clears it.
+- Here: ids are now `block-node-<id>` (`src/render.ts`; nothing else used the `cmb6-node-` prefix except two snapshots, a ported test, the ledger script; the renderer registry looks blocks up by `data-id`, CSS and gaps and edit boxes do not use ids). Node ids come from one module-wide counter (`nextId` in `src/node.ts`), so they are unique across several editors on one page (tested with two editors).
+- Active descendant: `lezer-view.ts` sets `aria-activedescendant` (the real attribute) on `view.contentDOM` (the element with `role="tree"`) on every `focusin` in a block (also from an edit box inside a block: the block's id) and removes it on `focusout` when the focus does not go to another block. ALSO sets the misspelled `aria-activedescendent` on `view.scrollDOM` so the old tests hold; commented as a shim a screen reader ignores. Difference from the old: the shim is cleared with the real one (the old never clears it).
+- Un-skipped: 8 ported tests (activation 7, focus 1). New tests in `spec/tenth.test.ts`.

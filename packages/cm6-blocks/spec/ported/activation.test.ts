@@ -46,9 +46,7 @@ describe("when dealing with node activation,", () => {
     expect(cmb.getFocusedNode()).toBe(literal2);
   });
 
-  // SKIPPED (U): the old editor sets aria-activedescendent (spelled so) on the scroller; this one moves real DOM focus and sets nothing there
-
-  it.skip("should put focus on the active node", async () => {
+  it("should put focus on the active node", async () => {
     mouseDown(literal1);
     expect(document.activeElement).toBe(literal1.element);
     expect(activeAriaId(cmb)).toBe(literal1.element!.id);
@@ -63,9 +61,7 @@ describe("when dealing with node activation,", () => {
     expect(cmb.getValue()).toBe("11\n54");
   });
 
-  // SKIPPED (U): the old editor sets aria-activedescendent (spelled so) on the scroller; this one moves real DOM focus and sets nothing there
-
-  it.skip("should activate the first node when down is pressed", async () => {
+  it("should activate the first node when down is pressed", async () => {
     mouseDown(literal1.element!);
     keyDown("[", { ctrlKey: true }, literal1.element!); // set cursor to the left
     keyDown("ArrowDown");
@@ -75,9 +71,7 @@ describe("when dealing with node activation,", () => {
     );
   });
 
-  // SKIPPED (U): the old editor sets aria-activedescendent (spelled so) on the scroller; this one moves real DOM focus and sets nothing there
-
-  it.skip("should activate the next node when down is pressed", async () => {
+  it("should activate the next node when down is pressed", async () => {
     mouseDown(literal1.element!);
     keyDown("ArrowDown");
     expect(cmb.getFocusedNode()).not.toBe(literal1);
@@ -294,9 +288,7 @@ describe("tree navigation", () => {
     lastNode = nestedExpr.fields.args[1];
   });
 
-  // SKIPPED (U): the old editor sets aria-activedescendent (spelled so) on the scroller; this one moves real DOM focus and sets nothing there
-
-  it.skip("up-arrow should navigate to the previous visible node, but not beyond the tree", async () => {
+  it("up-arrow should navigate to the previous visible node, but not beyond the tree", async () => {
     mouseDown(firstRoot);
     keyDown("ArrowLeft", {}, firstRoot); // collapse that root
     mouseDown(secondRoot);
@@ -312,9 +304,7 @@ describe("tree navigation", () => {
     expect(activeAriaId(cmb)).toBe(firstRoot.element!.id);
   });
 
-  // SKIPPED (U): the old editor sets aria-activedescendent (spelled so) on the scroller; this one moves real DOM focus and sets nothing there
-
-  it.skip("down-arrow should navigate to the next sibling, but not beyond the tree", async () => {
+  it("down-arrow should navigate to the next sibling, but not beyond the tree", async () => {
     mouseDown(firstRoot);
     keyDown("ArrowLeft", {}, firstRoot); // collapse that root
     mouseDown(nestedExpr.fields.args[0]);
@@ -404,9 +394,7 @@ describe("tree navigation", () => {
     expect(firstRoot.element!.getAttribute("aria-expanded")).toBe("true");
   });
 
-  // SKIPPED (U): the old editor sets aria-activedescendent (spelled so) on the scroller; this one moves real DOM focus and sets nothing there
-
-  it.skip("home should activate the first visible node", async () => {
+  it("home should activate the first visible node", async () => {
     mouseDown(firstRoot);
     keyDown("ArrowLeft", {}, firstRoot);
     mouseDown(secondRoot);
@@ -416,8 +404,7 @@ describe("tree navigation", () => {
   });
 
   // TODO: this test legitimately fails
-  // SKIPPED (U): the old editor sets aria-activedescendent (spelled so) on the scroller; this one moves real DOM focus and sets nothing there
-  it.skip("end should activate the last visible node", async () => {
+  it("end should activate the last visible node", async () => {
     mouseDown(secondRoot);
     keyDown("End");
     expect(cmb.getFocusedNode()).toBe(lastNode);

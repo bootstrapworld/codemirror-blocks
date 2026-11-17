@@ -1359,9 +1359,25 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   named("moveNode", () => "moveNodes", ((n: BNode) => n) as never);
   named("setComment", () => "setComment", ((n: BNode) => n) as never);
   const interaction = attachInteraction(ed);
+  // the active block, for assistive technology: the real attribute on the element with role="tree"
+  // (cleared when the focus leaves the blocks), and the old editor's misspelling on the scroller
+  const setActive = (id: string | null): void => {
+    if (id) view.contentDOM.setAttribute("aria-activedescendant", id);
+    else view.contentDOM.removeAttribute("aria-activedescendant");
+    // COMPATIBILITY SHIM: `aria-activedescendent` (sic) is not an ARIA attribute and a screen reader ignores it;
+    // the old editor writes it on CodeMirror's scroller and its tests read it back. Kept in step with the real one.
+    if (id) view.scrollDOM.setAttribute("aria-activedescendent", id);
+    else view.scrollDOM.removeAttribute("aria-activedescendent");
+  };
+  view.dom.addEventListener("focusout", (e) => {
+    const to = (e as FocusEvent).relatedTarget as Element | null;
+    if (!to || !renderer.nodeOf(to) || !view.contentDOM.contains(to)) setActive(null);
+  });
   view.dom.addEventListener("focusin", (e) => {
     const n = renderer.nodeOf(e.target as Element);
     if (n) lastNode = n;
+    const block = (e.target as Element).closest?.(".blocks-node[data-id]");
+    setActive(n && block && view.contentDOM.contains(block) ? block.id : null);
     unqueue();
     // the old editor: a block that can be edited in place says so, after a moment, unless something else is said or the focus moves
     if (n && blockMode && n.slots.length === 0 && (n.kind === "literal" || n.kind === "blank") && !renderer.isCollapsed(n) && !(e.target as Element).closest(".blocks-edit")) sayLater("Use enter to edit", 1250);

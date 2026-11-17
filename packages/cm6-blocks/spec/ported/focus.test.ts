@@ -139,9 +139,7 @@ describe("after a node has been edited in place,", () => {
     expect(edited.element).not.toBeNull();
   });
 
-  // SKIPPED (U): block element ids are `cmb6-node-<id>`, the old `block-node-<id>`
-
-  it.skip("cancelling a top-level edit hands focus back to a block, not to the placeholder", () => {
+  it("cancelling a top-level edit hands focus back to a block, not to the placeholder", () => {
     cmb.setCursor({ line: 0, ch: 5 });
     typeChar(cmb, "a");
     keyDown("Escape");

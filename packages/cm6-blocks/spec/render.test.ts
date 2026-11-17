@@ -97,7 +97,7 @@ describe("structure", () => {
     program(c);
     const r = new Renderer(language);
     const el = r.element(c);
-    expect(el.id).toBe(`cmb6-node-${c.id}`);
+    expect(el.id).toBe(`block-node-${c.id}`);
     expect(el.className).toBe("blocks-node blocks-call blocks-compound");
     expect(attr(el, "role")).toBe("treeitem");
     expect(attr(el, "tabindex")).toBe("-1");
