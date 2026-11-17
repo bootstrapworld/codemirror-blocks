@@ -53,7 +53,7 @@ describe("dropping a node onto bare editor whitespace", () => {
   // SKIPPED (M): a drop on bare editor whitespace moves the block to that line in the old editor; here a drop over the editor where nothing takes it beeps and does nothing
   it.skip("moves a root to that spot", () => {
     cmb.setValue("a\n\n\nb");
-    dropOnWhitespace(getNodeLabeled(/^a\b|symbol a/), { line: 2, ch: 0 });
+    dropOnWhitespace(getNodeLabeled(/^a\b|symbol a$/), { line: 2, ch: 0 });
     expect(cmb.getAst().rootNodes.map((n) => n.toString())).toEqual(["a", "b"]);
     expect(cmb.getValue()).toBe("\n\na\nb");
   });
@@ -62,7 +62,7 @@ describe("dropping a node onto bare editor whitespace", () => {
 
   it.skip("moves a child out of its parent to the top level", () => {
     cmb.setValue("(f x y)\n\n");
-    dropOnWhitespace(getNodeLabeled(/^x\b|symbol x/), { line: 2, ch: 0 });
+    dropOnWhitespace(getNodeLabeled(/^x\b|symbol x$/), { line: 2, ch: 0 });
     expect(cmb.getAst().rootNodes.map((n) => n.toString())).toEqual([
       "(f y)",
       "x",
@@ -73,7 +73,7 @@ describe("dropping a node onto bare editor whitespace", () => {
 
   it.skip("can be undone", () => {
     cmb.setValue("a\n\n\nb");
-    dropOnWhitespace(getNodeLabeled(/^a\b|symbol a/), { line: 2, ch: 0 });
+    dropOnWhitespace(getNodeLabeled(/^a\b|symbol a$/), { line: 2, ch: 0 });
     undo();
     expect(cmb.getValue()).toBe("a\n\n\nb");
   });
@@ -83,8 +83,8 @@ describe("dropping a node onto bare editor whitespace", () => {
     const wrapper = cmb.getCM().getWrapperElement();
     // the point under the pointer is inside the widget that holds `b`, but not
     // on a drop target (that would replace `b`)
-    const onB = getNodeLabeled(/^b\b|symbol b/).parentElement!;
-    drag(getNodeLabeled(/^a\b|symbol a/)).dropOnto(wrapper, { x: 20, y: 20 }, onB);
+    const onB = getNodeLabeled(/^b\b|symbol b$/).parentElement!;
+    drag(getNodeLabeled(/^a\b|symbol a$/)).dropOnto(wrapper, { x: 20, y: 20 }, onB);
     expect(cmb.getValue()).toBe("a\n\n\nb");
   });
 });
@@ -93,7 +93,7 @@ describe("dragging from the toolbar", () => {
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
   it.skip("replaces the node it's dropped onto", () => {
     cmb.setValue("(f x y)");
-    drag(toolbarPrimitive("sqrt")).dropOnto(getNodeLabeled(/^x\b|symbol x/));
+    drag(toolbarPrimitive("sqrt")).dropOnto(getNodeLabeled(/^x\b|symbol x$/));
     expect(cmb.getValue()).toBe("(f sqrt y)");
   });
 
@@ -130,7 +130,7 @@ describe("dragging from the toolbar", () => {
 
   it.skip("can be undone", () => {
     cmb.setValue("(f x y)");
-    drag(toolbarPrimitive("sqrt")).dropOnto(getNodeLabeled(/^x\b|symbol x/));
+    drag(toolbarPrimitive("sqrt")).dropOnto(getNodeLabeled(/^x\b|symbol x$/));
     undo();
     expect(cmb.getValue()).toBe("(f x y)");
   });
@@ -157,14 +157,14 @@ describe("drops that should do nothing", () => {
   });
 
   it("a node dropped onto one of its own descendants", () => {
-    drag(getNodeLabeled(/call to f /)).dropOnto(getNodeLabeled(/^x\b|symbol x/));
+    drag(getNodeLabeled(/call to f /)).dropOnto(getNodeLabeled(/^x\b|symbol x$/));
     expect(cmb.getValue()).toBe("(f (g x) y)");
   });
 
   it("a drag that is released without dropping", () => {
-    const x = getNodeLabeled(/^x\b|symbol x/);
+    const x = getNodeLabeled(/^x\b|symbol x$/);
     const d = drag(x);
-    d.dragOver(getNodeLabeled(/^y\b|symbol y/));
+    d.dragOver(getNodeLabeled(/^y\b|symbol y$/));
     d.cancel();
     expect(cmb.getValue()).toBe("(f (g x) y)");
     expect(document.querySelector(".blocks-over-target")).toBeNull();
@@ -188,7 +188,7 @@ describe("dragging nodes that carry extra state", () => {
   it("keeps focus on a block after a drop", () => {
     cmb.setValue("(f x y)");
     mouseDown(cmb.getAst().rootNodes[0]);
-    drag(getNodeLabeled(/^x\b|symbol x/)).dropOnto(getNodeLabeled(/^y\b|symbol y/));
+    drag(getNodeLabeled(/^x\b|symbol x$/)).dropOnto(getNodeLabeled(/^y\b|symbol y$/));
     expect(document.activeElement).toHaveAttribute("role", "treeitem");
   });
 });

@@ -111,7 +111,10 @@ export const clipboardSlot: { text?: string; pasteCount?: number } = { text: "",
 export function keyDown(key: string, props: Record<string, unknown> = {}, node: ElementLike = active()) {
   const el = toElement(node);
   const code = getKeyCode(key);
-  const proceed = fireEvent.keyDown(el, { which: code, keyCode: code, key, code: codeOf(key), ...props });
+  // (a browser reports a letter pressed with Ctrl or Cmd, and not Shift, in lower case; the old tests write `"Z"`, `"Y"`)
+  const p0 = props as { ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean };
+  const sent = /^[A-Z]$/.test(key) && (p0.ctrlKey || p0.metaKey) && !p0.shiftKey ? key.toLowerCase() : key;
+  const proceed = fireEvent.keyDown(el, { which: code, keyCode: code, key: sent, code: codeOf(key), ...props });
   // the browser's default action for Ctrl/Cmd-C, X and V is a copy, cut or paste event (the old editor handled the keys itself; this one handles the events)
   const p = props as { ctrlKey?: boolean; metaKey?: boolean };
   const clip = clipboardSlot as { text: string; pasteCount: number };

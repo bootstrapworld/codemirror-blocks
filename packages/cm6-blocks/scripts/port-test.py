@@ -21,6 +21,6 @@ rules = [
 for a, b in rules:
     s = re.sub(a, b, s)
 header = "// PORTED from packages/codemirror-blocks/spec/%s: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.\n" % name
-dst = os.path.join(os.path.dirname(__file__), "..", "spec", "ported", name.replace("-test.", ".test."))
+dst = os.path.join(os.path.dirname(__file__), "..", "spec", os.environ.get("PORT_DIR", "ported"), name.replace("-test.", ".test."))
 open(dst, "w").write("/** @jest-environment jsdom */\n// @ts-nocheck\n" + header + s)
 print(dst)
