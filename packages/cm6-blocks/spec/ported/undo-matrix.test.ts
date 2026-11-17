@@ -209,9 +209,9 @@ const variants = [false, true].flatMap((afterModeSwitch) =>
   }))
 );
 
-// SKIPPED variants (the whole block of each is skipped): toolbar (M: no toolbar of primitives), typing and pasting at the top level
+// SKIPPED variants (the whole block of each is skipped): typing and pasting at the top level
 // (M: no quarantine), a drop onto bare whitespace (M: not built). (A drop onto a node replaces it now.)
-const SKIPPED_VARIANTS = /toolbar|top level|onto whitespace/;
+const SKIPPED_VARIANTS = /top level|onto whitespace/;
 const eachVariant = (
   _name: string,
   fn: (v: (typeof variants)[number]) => void

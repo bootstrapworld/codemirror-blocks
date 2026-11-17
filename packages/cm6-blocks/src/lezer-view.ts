@@ -1532,8 +1532,17 @@ export function createLezerBlockEditor(
       let hole: number;
       if ("blank" in target) {
         live(target.blank);
-        if (!isBlank(target.blank))
-          throw new Error("a block goes onto a hole only");
+        // (any block: a drop on a block replaces it; a statement goes only where statements do)
+        if (
+          !isBlank(target.blank) &&
+          t.stmt &&
+          table.statementSlots &&
+          !(
+            target.blank.slot &&
+            table.statementSlots.includes(target.blank.slot.name)
+          )
+        )
+          throw new Error("a statement does not go there");
         const f = fillTemplate(table, name, indentAt(target.blank.from));
         snippet = f.text;
         hole = f.hole;

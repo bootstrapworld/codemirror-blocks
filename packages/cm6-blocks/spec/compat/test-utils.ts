@@ -70,6 +70,7 @@ export function mountCMB(
   return { cmb, store: mounted.store };
 }
 export function teardown() {
+  document.querySelectorAll(".Primitive").forEach((e) => e.remove());
   clipboardSlot.text = "";
   clipboardSlot.pasteCount = 0;
   mounted?.ed.destroy();

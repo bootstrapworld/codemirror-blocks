@@ -48,10 +48,20 @@ test("a template onto a blank replaces it; into a gap it goes there; its first h
   expect(checkLezerEditor(ed)).toEqual([]);
 });
 
-test("a template does not go where it cannot: onto a block that is not a hole, into a one slot, a statement into an expression list", () => {
+test("a template does not go where it cannot: onto a block of the wrong kind, into a one slot, a statement into an expression list", () => {
   const ed = make("scheme", "(f 1 2)\n");
   const one = find(ed, (n) => n.kind === "literal");
-  expect(() => ed.insertTemplateAt("number", { blank: one })).toThrow(/hole/);
+  // (a block is replaced by a template dropped on it)
+  ed.insertTemplateAt("number", { blank: one });
+  expect(ed.view.state.doc.toString()).toBe("(0 1 2)\n");
+  (
+    ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement
+  ).dispatchEvent(
+    new KeyboardEvent("keydown", { key: "Escape", bubbles: true })
+  );
+  ed.view.dispatch({
+    changes: { from: 0, to: ed.view.state.doc.length, insert: "(f 1 2)\n" },
+  });
   const def = make("scheme", "(define x 5)\n");
   const d = find(def, (n) => n.kind === "define");
   expect(() =>

@@ -11,6 +11,7 @@ import {
 import { API } from "../compat/test-utils";
 import { ASTNode } from "../compat/test-utils";
 import { drag, getNodeLabeled } from "../compat/dnd";
+import { toolbarPrimitive } from "../compat/gestures";
 
 let cmb: API;
 beforeEach(() => {
@@ -26,15 +27,6 @@ const dropTargets = (within?: Element) =>
     (el) => !el.closest(".toolbar-pane")
   );
 const trashCan = () => document.querySelector(".TrashCan")!;
-const toolbarPrimitive = (name: string) => {
-  const el = [...document.querySelectorAll(".Primitive")].find(
-    (e) => e.textContent === name
-  );
-  if (!el) {
-    throw new Error(`no toolbar primitive named ${name}`);
-  }
-  return el;
-};
 const undo = () => keyDown("Z", cmd_ctrl);
 
 /**
@@ -94,7 +86,7 @@ describe("dropping a node onto bare editor whitespace", () => {
 
 describe("dragging from the toolbar", () => {
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
-  it.skip("replaces the node it's dropped onto", () => {
+  it("replaces the node it's dropped onto", () => {
     cmb.setValue("(f x y)");
     drag(toolbarPrimitive("sqrt")).dropOnto(getNodeLabeled(/^x\b|symbol x$/));
     expect(cmb.getValue()).toBe("(f sqrt y)");
@@ -102,7 +94,7 @@ describe("dragging from the toolbar", () => {
 
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
 
-  it.skip("inserts into the field at a drop target", () => {
+  it("inserts into the field at a drop target", () => {
     cmb.setValue("(f x y)");
     const target = dropTargets(getNodeLabeled(/call to f /))[0];
     drag(toolbarPrimitive("sqrt")).dropOnto(target);
@@ -123,7 +115,7 @@ describe("dragging from the toolbar", () => {
 
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
 
-  it.skip("does nothing when dropped on the trash can", () => {
+  it("does nothing when dropped on the trash can", () => {
     cmb.setValue("(f x y)");
     drag(toolbarPrimitive("sqrt")).dropOnto(trashCan());
     expect(cmb.getValue()).toBe("(f x y)");
@@ -131,7 +123,7 @@ describe("dragging from the toolbar", () => {
 
   // SKIPPED (M): drop on bare whitespace (as above)
 
-  it.skip("can be undone", () => {
+  it("can be undone", () => {
     cmb.setValue("(f x y)");
     drag(toolbarPrimitive("sqrt")).dropOnto(getNodeLabeled(/^x\b|symbol x$/));
     undo();

@@ -1,5 +1,6 @@
 import { fireEvent } from "@testing-library/dom";
-import { keyDown, mouseDown, ASTNode, API } from "./test-utils";
+import { keyDown, mouseDown, getMountedCMB, ASTNode, API } from "./test-utils";
+import { schemeTable } from "../../src/lang-scheme";
 import { drag, type DragMode } from "./dnd";
 
 export const kids = (node: ASTNode) => [...node.children()];
@@ -12,11 +13,37 @@ export const select = (node: ASTNode) => {
 export const dropTargets = (within: Element) => [
   ...within.querySelectorAll(".blocks-gap"),
 ];
-/** An entry in the toolbar, by its name: this editor draws no toolbar of its own (the page does), so there is none to find */
-export const toolbarPrimitive = (name: string) =>
-  [...document.querySelectorAll(".Primitive, .blocks-toolbar-item")].find(
-    (el) => el.textContent === name
-  )!;
+/**
+ * An entry in the old toolbar of primitives, by its name. This editor's toolbar lists templates (a page draws it), so the entry is a button that
+ * a pointer press turns into a template drag; the template is the primitive's name as a symbol, added to the Scheme table for the test.
+ */
+export const toolbarPrimitive = (name: string): Element => {
+  const mounted = getMountedCMB();
+  if (!mounted)
+    throw new Error("mount an editor before asking for a toolbar entry");
+  const { ed } = mounted;
+  const templates = (schemeTable.templates ??= {});
+  templates[name] ??= { text: name, kind: "literal" };
+  const button = document.createElement("button");
+  button.className = "Primitive blocks-toolbar-item";
+  button.textContent = name;
+  button.addEventListener("pointerdown", (e) => {
+    ed.beginTemplateDrag(e as PointerEvent, name);
+    // (the old drop just puts the block in; here a dropped template opens its first hole for typing: close that box, as Escape does)
+    document.addEventListener(
+      "pointerup",
+      () =>
+        ed.view.dom
+          .querySelector("input.blocks-edit")
+          ?.dispatchEvent(
+            new KeyboardEvent("keydown", { key: "Escape", bubbles: true })
+          ),
+      { once: true }
+    );
+  });
+  document.body.appendChild(button);
+  return button;
+};
 export const typeChar = (cmb: API, char: string) =>
   fireEvent.keyPress(cmb.getCM().getInputField(), {
     key: char,
