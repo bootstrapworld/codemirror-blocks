@@ -1721,7 +1721,7 @@ How to serve the demo to a phone on the same network (the page is static):
 cd <worktree>
 npm run build -w @bootstrapworld/cm6-blocks          # builds packages/cm6-blocks/demo/demo.js
 HOST=0.0.0.0 node packages/cm6-blocks/e2e/serve.js   # port 8177 on every interface (Ctrl-C stops it)
-ipconfig getifaddr en0                               # the Mac's address on the Wi-Fi, e.g. 192.168.86.156
+ipconfig getifaddr en0                               # the Mac's address on the Wi-Fi (a private address such as 192.168.x.x)
 ```
 then open `http://<that address>:8177/index.html?lang=javascript` in the phone's browser (also `?lang=scheme`, `?lang=python`; `&constructs=1` for a bigger program). The Mac and the phone must be on the same network and the Mac's firewall must allow node.
 
