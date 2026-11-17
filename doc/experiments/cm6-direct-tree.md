@@ -1657,3 +1657,29 @@ Skipped on purpose: profiling, bundle sizes, the Scheme grammar's tagged-list bu
 - **Events here** (all tested in `spec/sound.test.ts`, 3 languages): `no-previous`, `no-next` (Up / Down), `no-parent`, `no-child` (Left / Right), `collapse-root`, `no-ancestors`, `select-refused`, `delete-nothing`, `paste-refused`, `comment-of-comment`, `left-blank` (any removal that puts a hole in a "one" slot; also Cut), `drop-nowhere` (a block or template let go over the editor where nothing takes it; let go outside the editor: silent), `drop-refused` (the drop throws), plus `no-match` and `wrapped` (search, tested in `spec/search.test.ts`).
 - **Different from the old editor**: (1) Delete with nothing selected beeps here (the old one says "Nothing selected" and is silent; judgement: the same refusal as the others). (2) Enter on a block that cannot be edited or collapsed (old 464) has no event here: every block here is a leaf (edits) or has slots (collapses). (3) "language has no comments" (old 218): all three tables have comments. (4) `select-refused` cannot be reached from the keyboard here (selecting a block selects what is inside it, so Space on a child unselects it): it is in the code for the same case as the old one and tested by selecting the parent alone through the renderer. (5) The old drop beep is for a drop on "not whitespace"; here it is a drop over the editor with no target.
 - Jest 616 passed, tsc clean.
+
+### 1. Search (2026-11-16)
+
+Read: `Search.tsx`, `searchers/ByString.tsx`, `ByBlock.tsx`, the search keys and `goToMatch` in `keymap.tsx`, `spec/search-test.tsx`, `spec/searchers-test.tsx`. What the old editor does, and what is built here (`src/search.ts`, no React; the keys are in `src/keys.ts`, so the help dialog lists them):
+
+| | old editor | here |
+|---|---|---|
+| open the dialog | F3, Ctrl-F (Cmd-F too on a Mac), with a block focused | same (F3, Ctrl-F, Cmd-F) |
+| dialog | react-modal "Search Settings", tabs "Search by string" / "Search by block"; Left / Right change the tab; Enter (keyup) closes and goes to the first match; Escape or Close closes and goes nowhere | plain DOM, `role="dialog"`, `aria-modal`, `aria-label="Search Settings"`, real `role="tab"` buttons with a roving tab stop, Tab kept inside, same keys (on keydown, not keyup); focus goes back to the block that had it |
+| by string | text, "Ignore case", "Exact match" (whole word), "Regex"; matched in the whole text of the program with CodeMirror 5's search cursor; the match is the innermost block holding its start; an unfinished regex finds nothing; empty text steps through the blocks | same options and words; a JS regex (flags `gm` + `i`) over the whole text; same innermost block; same empty-text rule |
+| by block | `<select>` of the node TYPES in the document (sorted), option text is the label | `<select>` of the table LABELS in the document (sorted): "call", "definition", "number", ... (two table rows with one label, such as the three call forms, are one type: it is what is read aloud) |
+| PageDown / PageUp | next / previous match from the focused block (never the focused block itself); at the end go on from the other end with the wrap sound; none: beep. No search chosen yet: beep and "No search settings have been selected" | same, and the same sounds; `ed.sound("wrap", "wrapped")` and `("beep", "no-match")` |
+| rotor Ctrl-F3 / Shift-Ctrl-F3 | cycles the types in the document then the last text searched for (a text closed with Enter), with a wrap, saying "Searching by <label>, 2 of 5" / "Searching for text 'xy', 3 of 3" / "No search types available" | same words and order |
+| collapsed blocks | a match inside a collapsed block is SKIPPED (not expanded); the collapsed block's own text can match | same: skipped, not expanded |
+| the tests | 2 files, React Testing Library | `spec/search.test.ts` (76 jsdom tests, 3 languages: dialog, text options, empty text, wrap, beep, collapsed, block types, rotor, API, keys in the help) and `e2e/search.e2e.ts` (real key presses in Chromium, 3 languages: F3, type, Enter, PageDown x3, wrap with its sound, PageUp, Escape and the focus is the block, no match, Ctrl-F, Tab inside, Right to the block tab, Ctrl-F3) |
+
+API: `ed.search` (`open`, `close(go)`, `next`, `previous`, `rotor(forward)`, `settings`, `set`, `types`, `find`), so a page or a test can search without the dialog.
+
+Differs from the old editor (all deliberate or noted):
+- No Ctrl/Cmd-G (the task asked to check: the old editor has none; F3 opens the dialog there and is not "next").
+- A match that is in NO block (between top-level blocks, in text that does not parse) is skipped; the old editor's `getNodeContainingBiased` returns nothing there and the search then reports no match. Comments are blocks here, so a match in a comment finds the comment block.
+- "No match found" is also said (the old one only beeps); "Searching for next match..." after Enter is said as there.
+- The dialog opens on the tab of the search that is current (the old one always on "Search by string"); choosing the "Search by block" tab with no type chosen picks the first type (the old one keeps "" and so finds nothing until a type is picked).
+- The search rotor and the dialog work only where a block has the focus (as the old keymap).
+- Order of a block-type search is the pre-order of the blocks (parent before children), a text search is by position; the old one does the same in effect (`getNodeAfter` and the search cursor).
+- Jest 692 passed, tsc clean, `e2e/search.e2e.ts` 6 passed in Chromium.

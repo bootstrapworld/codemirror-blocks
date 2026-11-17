@@ -514,3 +514,11 @@
 .blocks-help kbd { font-family: monospace; border: 1px solid #aaa; border-radius: 4px; padding: 0 5px; }
 .blocks-help kbd + kbd { margin-left: 10px; }
 .blocks-help .closeDialog { display: block; margin: 20px auto 0; width: 150px; background: #000; color: #fff; border: 3px double #fff; font-size: 18px; cursor: pointer; }
+/* the search dialog (search.ts) shares the help dialog's box */
+.blocks-search [role="tab"] { background: #000; color: #fff; border: 1px solid #fff; padding: 8px 14px; font-size: 16px; min-height: 44px; cursor: pointer; }
+.blocks-search [role="tab"][aria-selected="true"] { background: #fff; color: #000; }
+.blocks-search [role="tabpanel"] { margin: 12px 0; }
+.blocks-search input[type="text"], .blocks-search select { font-size: 16px; min-height: 44px; width: 100%; box-sizing: border-box; }
+.blocks-search .search-options { margin-top: 10px; display: flex; gap: 18px; flex-wrap: wrap; }
+.blocks-search .search-options label { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+.blocks-search .blocks-search-foot { display: block; margin-top: 8px; }

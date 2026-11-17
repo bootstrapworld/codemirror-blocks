@@ -26,6 +26,7 @@ import type { LezerBlockEditor } from "./lezer-view";
 import { plainComment } from "./render";
 import { Command, commandOf } from "./keys";
 import { Help, openHelp } from "./help";
+import { createSearch, Search } from "./search";
 import type { BNode, Slot } from "./types";
 import type { SoundEvent } from "./sound";
 
@@ -80,7 +81,7 @@ export function prevBlock(n: BNode, closed: (n: BNode) => boolean = () => false)
 
 type Field = HTMLInputElement | HTMLTextAreaElement;
 
-export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(node: BNode, typed?: string): void; beginTemplateDrag(e: PointerEvent, name: string): void } {
+export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(node: BNode, typed?: string): void; beginTemplateDrag(e: PointerEvent, name: string): void; search: Search } {
   const { view, renderer } = ed;
   const dom = view.dom;
   let open: { cancel(): void } | null = null;
@@ -97,6 +98,8 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     };
     setTimeout(again(5), 0);
   }
+
+  const search = createSearch(ed, { focus: focusSoon, host: () => view.dom.parentElement ?? view.dom });
 
   /** a text box, placed by `put`; Enter or blur calls `commit(text)` (an empty text on blur does not), Escape or Alt-Q cancels */
   function box(initial: string, put: (input: Field) => void, done: () => void, commit: (text: string) => void, select = true, multiline = false): void {
@@ -348,6 +351,26 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     },
     copy: () => undefined,
     cut: () => undefined,
+    search: (_n, _e, handled) => {
+      handled();
+      search.open();
+    },
+    searchNext: (_n, _e, handled) => {
+      handled();
+      search.next();
+    },
+    searchPrevious: (_n, _e, handled) => {
+      handled();
+      search.previous();
+    },
+    nextSearchType: (_n, _e, handled) => {
+      handled();
+      search.rotor(true);
+    },
+    previousSearchType: (_n, _e, handled) => {
+      handled();
+      search.rotor(false);
+    },
     insertBefore: (n, _e, handled) => {
       handled();
       siblingBox(n, false);
@@ -769,8 +792,10 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   return {
     edit: editLeaf,
     beginTemplateDrag,
+    search,
     detach() {
       open?.cancel();
+      search.close();
       dom.removeEventListener("keydown", onKey, true);
       dom.removeEventListener("click", onClick, true);
       dom.removeEventListener("dblclick", onDblClick, true);

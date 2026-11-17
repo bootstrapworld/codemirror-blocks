@@ -31,6 +31,7 @@ import { InnerCand, BlockTable, fillTemplate, insertChange, insertEmptyChange, L
 import { Renderer } from "./render";
 import { RootWidget } from "./view";
 import { attachInteraction } from "./interact";
+import type { Search } from "./search";
 import { browserPlayer, SoundEvent, SoundName, SoundPlayer } from "./sound";
 import { makeNode } from "./node";
 import { Bail, compatible, reconcile, ReconcileEnv } from "./reconcile";
@@ -138,6 +139,8 @@ export interface LezerBlockEditor {
   collapseAll(on: boolean): void;
   /** collapse / expand a root and everything inside it */
   collapseRoot(root: BNode, on: boolean): void;
+  /** search: the dialog (F3, Ctrl-F, Cmd-F), PageDown / PageUp, the rotor; see search.ts */
+  readonly search: Search;
   /** ask for a sound for an event (nothing happens while sounds are off); the player is the option `playSound` */
   sound(name: SoundName, event: SoundEvent): void;
   setSounds(on: boolean): void;
@@ -859,7 +862,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
   }
 
   let soundOn = options.sounds !== false;
-  const player: SoundPlayer = options.playSound ?? browserPlayer();
+  const defaultPlayer: SoundPlayer = browserPlayer();
 
   /* ---- announcements: a live region beside the editor (the old editor's announcer: assertive, atomic) */
   const said: string[] = [];
@@ -1041,10 +1044,13 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       const target = nearestDrawn(resolvePlace(place).node);
       if (target && target.kind !== "program") ed.focusNode(target);
     },
+    get search() {
+      return interaction.search;
+    },
     said,
     say,
     sound(name, event) {
-      if (soundOn) player(name, event);
+      if (soundOn) (options.playSound ?? defaultPlayer)(name, event); // (the option is read each time: a page may set it later)
     },
     setSounds(on) {
       soundOn = on;

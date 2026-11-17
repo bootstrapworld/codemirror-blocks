@@ -18,6 +18,7 @@ test("every command in the table that can be pressed is found by commandOf from 
     "Shift-,": { key: "<", shiftKey: true }, "Shift-\\": { key: "|", shiftKey: true }, Space: { key: " " }, "\\": { key: "\\" }, Home: { key: "Home" }, End: { key: "End" },
     Down: { key: "ArrowDown" }, Up: { key: "ArrowUp" }, Right: { key: "ArrowRight" }, Left: { key: "ArrowLeft" }, Delete: { key: "Delete" }, Backspace: { key: "Backspace" },
     Enter: { key: "Enter" }, "any character": { key: "x" },
+    F3: { key: "F3" }, "Mod-F": { key: "f", ctrlKey: true }, PageDown: { key: "PageDown" }, PageUp: { key: "PageUp" }, "Ctrl-F3": { key: "F3", ctrlKey: true }, "Shift-Ctrl-F3": { key: "F3", ctrlKey: true, shiftKey: true },
   };
   for (const k of KEYS) {
     if (k.command === "copy" || k.command === "cut") continue; // (the browser's own events)

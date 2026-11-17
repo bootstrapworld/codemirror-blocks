@@ -12,7 +12,8 @@ export type Command =
   | "jumpToRoot" | "readChildren"
   | "toggleSelection" | "readAncestors" | "first" | "last" | "next" | "previous" | "expandOrChild" | "collapseOrParent"
   | "delete" | "enter" | "typeIntoHole"
-  | "copy" | "cut";
+  | "copy" | "cut"
+  | "search" | "searchNext" | "searchPrevious" | "nextSearchType" | "previousSearchType";
 
 export interface KeySpec {
   command: Command;
@@ -39,6 +40,11 @@ export const KEYS: KeySpec[] = [
   { command: "expandRoot", description: "Expand the current top-level block and what is in it", keys: ["Shift-Alt-Right"], test: (e) => !mod(e) && e.shiftKey && e.altKey && e.key === "ArrowRight" },
   { command: "collapseAll", description: "Collapse all blocks", keys: ["Shift-Left"], test: (e) => !mod(e) && e.shiftKey && !e.altKey && e.key === "ArrowLeft" },
   { command: "expandAll", description: "Expand all blocks", keys: ["Shift-Right"], test: (e) => !mod(e) && e.shiftKey && !e.altKey && e.key === "ArrowRight" },
+  { command: "previousSearchType", description: "Search: use the previous kind of search (a block type, or the last text)", keys: ["Shift-Ctrl-F3"], test: (e) => e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey && e.key === "F3" },
+  { command: "nextSearchType", description: "Search: use the next kind of search (a block type, or the last text)", keys: ["Ctrl-F3"], test: (e) => e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && e.key === "F3" },
+  { command: "search", description: "Open the search settings (Enter closes them and finds the first match)", keys: ["F3", "Mod-F"], test: (e) => (plain(e) && e.key === "F3") || (pmod(e) && !e.shiftKey && (e.key === "f" || e.key === "F")) },
+  { command: "searchNext", description: "Go to the next match of the search", keys: ["PageDown"], test: (e) => plain(e) && e.key === "PageDown" },
+  { command: "searchPrevious", description: "Go to the previous match of the search", keys: ["PageUp"], test: (e) => plain(e) && e.key === "PageUp" },
   { command: "editAll", description: "Edit the whole block as text (Enter saves, Shift-Enter is a new line)", keys: ["Mod-Enter"], test: (e, mac) => pmod(e) && e.key === "Enter" && (mac ? e.metaKey && !e.ctrlKey : e.ctrlKey) },
   { command: "undo", description: "Undo", keys: ["Mod-Z"], test: (e) => pmod(e) && !e.shiftKey && (e.key === "z" || e.key === "Z") },
   { command: "redo", description: "Redo", keys: ["Shift-Mod-Z", "Mod-Y"], test: (e) => pmod(e) && ((e.shiftKey && (e.key === "z" || e.key === "Z")) || e.key === "y") },
