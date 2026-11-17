@@ -59,7 +59,7 @@ test("Enter goes to the first match, and PageDown and PageUp step through them",
   page,
 }) => {
   await searchFor(page, "x");
-  expect(await focusedLabel(page)).toBe("symbol x");
+  expect(await focusedLabel(page)).toBe("x, a symbol"); // edited: a value is spoken value first
   const lines: number[] = [await focusedTop(page)];
   await page.keyboard.press("PageDown");
   lines.push(await focusedTop(page));
@@ -113,7 +113,7 @@ test("Control+F3 picks the block type PageDown searches for", async ({
 
 test("the editor still works after a search", async ({ page }) => {
   await searchFor(page, "xy");
-  expect(await focusedLabel(page)).toBe("symbol xy");
+  expect(await focusedLabel(page)).toBe("xy, a symbol"); // edited: a value is spoken value first
   await page.keyboard.press("Space");
   await page.keyboard.press("Delete");
   const s = await expectConsistent(page);

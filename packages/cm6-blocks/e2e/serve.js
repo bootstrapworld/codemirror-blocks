@@ -1,4 +1,4 @@
-// A tiny static server for the demo (port 8177). Started and stopped by playwright.config.ts.
+// A tiny static server for the demo (port 8177, or CMB6_PORT). Started and stopped by playwright.config.ts.
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -22,4 +22,7 @@ http
     });
     fs.createReadStream(file).pipe(res);
   })
-  .listen(8177, process.env.HOST || "127.0.0.1"); // HOST=0.0.0.0 to let a phone on the same network open the page (see the notes, eighth round, step 4)
+  .listen(
+    Number(process.env.CMB6_PORT || 8177),
+    process.env.HOST || "127.0.0.1"
+  ); // HOST=0.0.0.0 to let a phone on the same network open the page (see the notes, eighth round, step 4)
