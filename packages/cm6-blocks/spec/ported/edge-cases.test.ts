@@ -54,10 +54,9 @@ describe("dragging while a top-level quarantine is open", () => {
     expect(texts()).toEqual(["(add b)", "(sub c a)", "9"]);
   });
 
-  // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
-
-  it.skip("leaves no quarantine behind", () => {
-    expect(document.querySelector('[contenteditable="true"]')).toBeNull();
+  it("leaves no quarantine behind", () => {
+    // edited: the edit box is an input.blocks-edit (the editor's own content is contenteditable)
+    expect(document.querySelector("input.blocks-edit")).toBeNull();
   });
 
   // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
@@ -184,7 +183,8 @@ describe("unmounting the editor", () => {
     expect(document.querySelector('[contenteditable="true"]')).not.toBeNull();
     expect(() => teardown()).not.toThrow();
     expect(document.querySelector(".CodeMirror")).toBeNull();
-    expect(document.querySelector('[contenteditable="true"]')).toBeNull();
+    // edited: the edit box is an input.blocks-edit (the editor's own content is contenteditable)
+    expect(document.querySelector("input.blocks-edit")).toBeNull();
     // (the afterEach hook calls teardown again, so put the fixture back)
     document.body.insertAdjacentHTML("afterbegin", '<div id="root"></div>');
   });
@@ -201,7 +201,8 @@ describe("unmounting the editor", () => {
       "true"
     );
     expect(() => teardown()).not.toThrow();
-    expect(document.querySelector('[contenteditable="true"]')).toBeNull();
+    // edited: the edit box is an input.blocks-edit (the editor's own content is contenteditable)
+    expect(document.querySelector("input.blocks-edit")).toBeNull();
     document.body.insertAdjacentHTML("afterbegin", '<div id="root"></div>');
   });
 });

@@ -240,11 +240,16 @@ export function keyPress(
 export function insertText(text: string) {
   const el = active();
   const tag = el.tagName.toLowerCase();
-  if (tag === "textarea" || tag === "input")
-    fireEvent.input(el, {
-      target: { value: (el as HTMLInputElement).value + text },
+  if (tag === "textarea" || tag === "input") {
+    // typing replaces the selected part of the edit box (it opens with its text selected)
+    const box = el as HTMLInputElement;
+    const from = box.selectionStart ?? box.value.length;
+    const to = box.selectionEnd ?? box.value.length;
+    fireEvent.input(box, {
+      target: { value: box.value.slice(0, from) + text + box.value.slice(to) },
     });
-  else fireEvent.input(el, { target: { innerHTML: el.innerHTML + text } });
+    box.setSelectionRange(from + text.length, from + text.length);
+  } else fireEvent.input(el, { target: { innerHTML: el.innerHTML + text } });
 }
 export const elementForNode = (node: ASTNode) => node.element;
 /** (the old editor edits in a contenteditable; this one in an `input.blocks-edit` placed in the block) */

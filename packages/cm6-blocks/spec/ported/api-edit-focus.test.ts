@@ -98,7 +98,8 @@ describe("a change through the API while an edit box is open on another root", (
     ).fields.args[1];
     mouseDown(literal);
     keyDown("Enter", {}, literal);
-    expect(document.activeElement).toHaveAttribute("contenteditable", "true");
+    // edited: the edit box is an input, not a contenteditable
+    expect(document.activeElement).toBeInstanceOf(HTMLInputElement);
     setEditableText(value);
   };
   const expectEditedBlockFocused = () => {
@@ -107,9 +108,7 @@ describe("a change through the API while an edit box is open on another root", (
     expect(document.activeElement).toBe(elementForNode(focused!));
   };
 
-  // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
-
-  it.skip("commits to the block's new place when the change adds a line and a length", async () => {
+  it("commits to the block's new place when the change adds a line and a length", async () => {
     editSecondRootLiteral("7");
     cmb.replaceRange("(a bb\nc)", { line: 0, ch: 0 }, { line: 0, ch: 5 });
     keyDown("Enter");
@@ -118,9 +117,7 @@ describe("a change through the API while an edit box is open on another root", (
     expectEditedBlockFocused();
   });
 
-  // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
-
-  it.skip("commits to the block's new place when the change is before it on its line", async () => {
+  it("commits to the block's new place when the change is before it on its line", async () => {
     cmb.setValue("(a b) (+ 1 2 3)");
     editSecondRootLiteral("7");
     cmb.replaceRange("(a bbbb)", { line: 0, ch: 0 }, { line: 0, ch: 5 });

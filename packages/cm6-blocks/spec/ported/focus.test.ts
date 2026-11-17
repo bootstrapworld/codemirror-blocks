@@ -127,9 +127,7 @@ describe("after a node has been edited in place,", () => {
   });
   afterEach(teardown);
 
-  // SKIPPED (D): the edit box is an input/textarea placed in the block, the old one a contenteditable: assertions on contenteditable, textContent or innerHTML of the box differ
-
-  it.skip("the block that was edited is the one on the page, so focus can be sent to it", () => {
+  it("the block that was edited is the one on the page, so focus can be sent to it", () => {
     const edited = cmb.getAst().rootNodes[0];
     expect(edited.element).toBe(
       document.getElementById(`block-node-${edited.id}`)

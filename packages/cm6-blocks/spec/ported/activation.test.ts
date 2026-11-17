@@ -105,24 +105,22 @@ describe("when dealing with node activation,", () => {
     expect(isNodeEditable(literal1)).toBe(true);
   });
 
-  // SKIPPED (D): the edit box is an input/textarea placed in the block, the old one a contenteditable: assertions on contenteditable, textContent or innerHTML of the box differ
-
-  it.skip("should cancel the editability of activated node when Esc is pressed", async () => {
+  it("should cancel the editability of activated node when Esc is pressed", async () => {
     mouseDown(literal1);
     expect(cmb.getFocusedNode()).toBe(literal1);
 
     keyDown("Enter");
-    expect(document.activeElement).toBe(elementForNode(literal1));
-    expect(elementForNode(literal1)).toHaveAttribute("contenteditable", "true");
+    // edited: the edit box is an input in the block, not a contenteditable
+    expect(document.activeElement).toBe(
+      elementForNode(literal1).querySelector("input.blocks-edit")
+    );
+    expect(isNodeEditable(literal1)).toBe(true);
 
     insertText("sugarPlums");
-    expect(elementForNode(literal1)).toHaveTextContent("sugarPlums");
+    expect(document.activeElement).toHaveValue("sugarPlums");
 
     keyDown("Escape");
-    expect(elementForNode(literal1)).not.toHaveAttribute(
-      "contenteditable",
-      "true"
-    );
+    expect(isNodeEditable(literal1)).toBe(false);
     expect(cmb.getValue()).toBe("11\n54");
   });
 
@@ -207,15 +205,14 @@ describe("deleting a node", () => {
 });
 
 describe("Editing a node", () => {
-  // SKIPPED (D): the edit box is an input/textarea placed in the block, the old one a contenteditable: assertions on contenteditable, textContent or innerHTML of the box differ
-  it.skip("should restore focus to the node after its edited", async () => {
+  it("should restore focus to the node after its edited", async () => {
     cmb.setValue("firstLiteral secondLiteral thirdLiteral");
     await userEvent.click(
       screen.getByRole("treeitem", { name: /secondLiteral/ })
     );
     // the box opens with the old text selected, so typing replaces it
-    expect(document.activeElement?.textContent).toBe("secondLiteral");
-    (document.activeElement as HTMLElement).innerHTML = "";
+    // edited: an input has a value, not textContent
+    expect(document.activeElement).toHaveValue("secondLiteral");
     insertText("newLiteral");
     keyDown("Enter");
     expect(cmb.getValue()).toBe("firstLiteral newLiteral thirdLiteral");

@@ -189,34 +189,27 @@ describe("The CodeMirrorBlocks Class", function () {
 
       /** type into whatever editable element the key or click just opened */
       const typeAndSave = (text: string) => {
-        expect(document.activeElement).toHaveAttribute(
-          "contenteditable",
-          "true"
-        );
+        // edited: the edit box is an input/textarea, not a contenteditable
+        expect(document.activeElement).toBeInstanceOf(HTMLInputElement);
         setEditableText(text);
         keyDown("Enter");
       };
 
-      // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
-
-      it.skip("Ctrl-[ should open an insertion to the left of an argument", async function () {
+      it("Ctrl-[ should open an insertion to the left of an argument", async function () {
         mouseDown(firstArg.element!);
         keyDown("[", { ctrlKey: true });
         typeAndSave("9");
         expect(cmb.getValue()).toBe("(+ 9 1 2) (+)");
       });
 
-      // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
-
-      it.skip("Ctrl-] should open an insertion to the right of an argument", async function () {
+      it("Ctrl-] should open an insertion to the right of an argument", async function () {
         mouseDown(firstArg.element!);
         keyDown("]", { ctrlKey: true }, firstArg.element!);
         typeAndSave("9");
         expect(cmb.getValue()).toBe("(+ 1 9 2) (+)");
       });
 
-      // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
-
+      // SKIPPED (U): in `(+)` Ctrl-] on the function name opens no insertion here (focus stays on the name)
       it.skip("Ctrl-] should open an insertion in the first arg position", async function () {
         mouseDown(blank.fields.func.element!);
         keyDown("]", { ctrlKey: true }, blank.fields.func.element!);
@@ -224,9 +217,7 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cmb.getValue()).toBe("(+ 1 2) (+ 9)");
       });
 
-      // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
-
-      it.skip("should open an insertion when the whitespace between arguments is clicked", async function () {
+      it("should open an insertion when the whitespace between arguments is clicked", async function () {
         click(whiteSpaceEl);
         typeAndSave("9");
         expect(cmb.getValue()).toBe("(+ 1 9 2) (+)");
@@ -243,9 +234,7 @@ describe("The CodeMirrorBlocks Class", function () {
               .firstChild!;
         });
 
-        // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
-
-        it.skip("should allow editing the argument whitespace", async function () {
+        it("should allow editing the argument whitespace", async function () {
           click(argWS);
           typeAndSave("9");
           expect(cmb.getValue()).toBe("(f 9)");
