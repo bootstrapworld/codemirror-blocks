@@ -299,9 +299,7 @@ describe("commands pressed with no block focused (at the top level)", () => {
     });
   });
 
-  // SKIPPED (U): ArrowDown with focus in the text input and no block focused: the old editor activates the block after the cursor, this one does nothing
-
-  it.skip("Down activates the next block", () => {
+  it("Down activates the next block", () => {
     cmb.setCursor({ line: 1, ch: 0 });
     cmb.getCM().getInputField().focus();
     keyDown("ArrowDown", {}, cmb.getCM().getInputField());

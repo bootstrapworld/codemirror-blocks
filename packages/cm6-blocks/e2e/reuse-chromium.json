@@ -6,16 +6,16 @@
    "rootsInDom": 9,
    "rootInView": true,
    "typedSpace": {
-    "syncWithLayoutMs": 32.5,
-    "toPaintMs": 36.2,
+    "syncWithLayoutMs": 30.2,
+    "toPaintMs": 33.7,
     "nodesRebuiltPerEdit": 2636,
     "nodesComparedPerEdit": 0,
     "nodesAnchoredPerEdit": 0,
     "anchorBails": 0
    },
    "typedCharInLeaf": {
-    "syncWithLayoutMs": 31.8,
-    "toPaintMs": 35.9,
+    "syncWithLayoutMs": 30.5,
+    "toPaintMs": 34,
     "nodesRebuiltPerEdit": 2636,
     "nodesComparedPerEdit": 0,
     "nodesAnchoredPerEdit": 0,
@@ -32,16 +32,16 @@
    "rootsInDom": 9,
    "rootInView": true,
    "typedSpace": {
-    "syncWithLayoutMs": 4.1,
-    "toPaintMs": 16.7,
+    "syncWithLayoutMs": 4.7,
+    "toPaintMs": 16.6,
     "nodesRebuiltPerEdit": 0,
     "nodesComparedPerEdit": 2636,
     "nodesAnchoredPerEdit": 0,
     "anchorBails": 0
    },
    "typedCharInLeaf": {
-    "syncWithLayoutMs": 4.3,
-    "toPaintMs": 16.7,
+    "syncWithLayoutMs": 4.5,
+    "toPaintMs": 16.5,
     "nodesRebuiltPerEdit": 1,
     "nodesComparedPerEdit": 2636,
     "nodesAnchoredPerEdit": 0,
@@ -58,7 +58,7 @@
    "rootsInDom": 9,
    "rootInView": true,
    "typedSpace": {
-    "syncWithLayoutMs": 1.6,
+    "syncWithLayoutMs": 2,
     "toPaintMs": 16.7,
     "nodesRebuiltPerEdit": 0,
     "nodesComparedPerEdit": 16,
@@ -66,8 +66,8 @@
     "anchorBails": 0
    },
    "typedCharInLeaf": {
-    "syncWithLayoutMs": 1.9,
-    "toPaintMs": 16.2,
+    "syncWithLayoutMs": 3,
+    "toPaintMs": 16.7,
     "nodesRebuiltPerEdit": 1,
     "nodesComparedPerEdit": 19,
     "nodesAnchoredPerEdit": 44,
@@ -87,16 +87,16 @@
    "rootsInDom": 7,
    "rootInView": true,
    "typedSpace": {
-    "syncWithLayoutMs": 56.9,
-    "toPaintMs": 61.8,
+    "syncWithLayoutMs": 59.5,
+    "toPaintMs": 65.2,
     "nodesRebuiltPerEdit": 4968,
     "nodesComparedPerEdit": 0,
     "nodesAnchoredPerEdit": 0,
     "anchorBails": 0
    },
    "typedCharInLeaf": {
-    "syncWithLayoutMs": 55,
-    "toPaintMs": 60.5,
+    "syncWithLayoutMs": 59.3,
+    "toPaintMs": 68.1,
     "nodesRebuiltPerEdit": 4968,
     "nodesComparedPerEdit": 0,
     "nodesAnchoredPerEdit": 0,
@@ -113,16 +113,16 @@
    "rootsInDom": 7,
    "rootInView": true,
    "typedSpace": {
-    "syncWithLayoutMs": 7.1,
-    "toPaintMs": 16.5,
+    "syncWithLayoutMs": 6.8,
+    "toPaintMs": 16.7,
     "nodesRebuiltPerEdit": 0,
     "nodesComparedPerEdit": 4968,
     "nodesAnchoredPerEdit": 0,
     "anchorBails": 0
    },
    "typedCharInLeaf": {
-    "syncWithLayoutMs": 7,
-    "toPaintMs": 16.7,
+    "syncWithLayoutMs": 8.2,
+    "toPaintMs": 16.6,
     "nodesRebuiltPerEdit": 1,
     "nodesComparedPerEdit": 4968,
     "nodesAnchoredPerEdit": 0,
@@ -139,8 +139,8 @@
    "rootsInDom": 7,
    "rootInView": true,
    "typedSpace": {
-    "syncWithLayoutMs": 2.7,
-    "toPaintMs": 16.3,
+    "syncWithLayoutMs": 3.5,
+    "toPaintMs": 16.4,
     "nodesRebuiltPerEdit": 0,
     "nodesComparedPerEdit": 9,
     "nodesAnchoredPerEdit": 189,

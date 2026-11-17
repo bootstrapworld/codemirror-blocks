@@ -36,6 +36,30 @@ const drawable = (n: BNode): boolean => n.kind !== "error" && n.kind !== "progra
 /** the platform of the old editor's key map: Cmd-Enter on a Mac, Ctrl-Enter elsewhere */
 const isMac = (): boolean => typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || "");
 
+/**
+ * The block after (or before) the text cursor, by the old editor's rule (`getNodeAfterCur` / `getNodeBeforeCur` in `ast.ts`).
+ * After: the first block that ends after the cursor, if it also starts at or after it; if the cursor is inside it, the same rule
+ * among its children, falling back to the block itself. Before: the last block that starts before the cursor, drilled into its
+ * last such child (even when the cursor is past its end). Null when there is none.
+ */
+export function blockNearCursor(roots: BNode[], cur: number, forward: boolean): BNode | null {
+  const loop = (nodes: BNode[], fallback: BNode | null): BNode | null => {
+    const ns = nodes.filter(drawable);
+    if (forward) {
+      const n = ns.find((x) => x.to > cur);
+      if (!n) return fallback;
+      if (n.from >= cur) return n;
+      const k = kids(n).filter(drawable);
+      return k.length === 0 ? n : loop(k, n);
+    }
+    const n = [...ns].reverse().find((x) => x.from < cur);
+    if (!n) return fallback;
+    const k = kids(n).filter(drawable);
+    return k.length === 0 ? n : loop(k, n);
+  };
+  return loop(roots, null);
+}
+
 export function lastBlock(roots: BNode[], closed: (n: BNode) => boolean = () => false): BNode | null {
   let n: BNode | null = [...roots].reverse().find(drawable) ?? null;
   for (let k = n && !closed(n) ? kids(n) : []; k.length; k = closed(n) ? [] : kids(n)) n = k[k.length - 1];
@@ -471,7 +495,21 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     const t = e.target as Element;
     if (t.closest?.(".blocks-edit")) return;
     const node = renderer.nodeOf(t);
-    if (!node) return;
+    if (!node) {
+      // no block has the focus, the text does: Down and Up activate the block after / before the cursor, as in the old editor
+      // (in block mode; it keeps the key from moving the text cursor, as there, and beeps when there is no such block)
+      if (!ed.isBlockMode() || !view.contentDOM.contains(t) || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
+      if (commandOf(e, isMac()) !== (e.key === "ArrowDown" ? "next" : "previous")) return;
+      const forward = e.key === "ArrowDown";
+      const found = blockNearCursor(ed.roots(), view.state.selection.main.head, forward);
+      ed.act(forward ? "next" : "previous", found, { key: e.key, mods: "", fromCursor: true }, () => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (found) focusSoon(found);
+        else beep(forward ? "no-next" : "no-previous");
+      });
+      return;
+    }
     const cmd = commandOf(e, isMac());
     if (!cmd) return;
     // (logged when the key did something; the character that starts a box is not recorded: the box's text is, when it is committed)

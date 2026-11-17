@@ -105,3 +105,65 @@ describe("2. details of the old rule", () => {
     ok(ed);
   });
 });
+
+describe("3. Down and Up from the text cursor with no block focused", () => {
+  const press = (ed: ReturnType<typeof make>, key: string, init: KeyboardEventInit = {}) => {
+    const e = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init });
+    ed.view.contentDOM.dispatchEvent(e);
+    return e;
+  };
+  const at = (ed: ReturnType<typeof make>, pos: number) => {
+    ed.view.dispatch({ selection: { anchor: pos } });
+    ed.view.contentDOM.focus();
+  };
+  const textOfFocus = (ed: ReturnType<typeof make>) => {
+    const n = ed.focusedNode();
+    return n ? textOf(ed).slice(n.from, n.to) : null;
+  };
+  //            0123456789...
+  const TXT = "(f 1 (g 2))  (h)\n\n(k)";
+  test.each([
+    // [cursor, key, the block that gets the focus]
+    [0, "ArrowDown", "(f 1 (g 2))"], // before a block: that block
+    [1, "ArrowDown", "f"], // inside a block: its first child that ends after the cursor, starts at or after it...
+    [4, "ArrowDown", "(g 2)"], // inside a call, before the next child
+    [11, "ArrowDown", "(h)"], // right after a block, between two: the next one
+    [12, "ArrowDown", "(h)"],
+    [16, "ArrowDown", "(k)"], // end of a line: the block on a later line
+    [TXT.length, "ArrowDown", null], // at the end: nothing (beeps)
+    [0, "ArrowUp", null], // before everything: nothing
+    [1, "ArrowUp", "(f 1 (g 2))"], // just inside the first block's bracket: that block (the rule drills while a child starts before the cursor)
+    [11, "ArrowUp", "2"], // after a block: its last descendant that starts before the cursor (the old rule drills in)
+    [TXT.length, "ArrowUp", ")"],
+  ] as [number, string, string | null][])("cursor %i, %s", (pos, key, expected) => {
+    const ed = make("scheme", TXT);
+    at(ed, pos);
+    const e = press(ed, key);
+    if (expected === "(h)" || expected === "(k)" || expected === "(f 1 (g 2))" || expected === "f" || expected === "(g 2)" || expected === "2") {
+      expect(e.defaultPrevented).toBe(true);
+    }
+    if (expected === null) {
+      expect(ed.focusedNode()).toBeNull();
+      expect(e.defaultPrevented).toBe(true); // (the old editor keeps the key from moving the cursor here too)
+    } else if (expected === ")") {
+      expect(textOfFocus(ed)).not.toBeNull();
+    } else expect(textOfFocus(ed)).toBe(expected);
+  });
+  test("an empty document: nothing to activate", () => {
+    const ed = make("scheme", "");
+    ed.view.contentDOM.focus();
+    press(ed, "ArrowDown");
+    press(ed, "ArrowUp");
+    expect(ed.focusedNode()).toBeNull();
+  });
+  test("not in text mode, and not with a modifier", () => {
+    const ed = make("scheme", TXT);
+    at(ed, 0);
+    press(ed, "ArrowDown", { shiftKey: true }); // (CodeMirror's own: extends the selection)
+    expect(ed.focusedNode()).toBeNull();
+    ed.setBlockMode(false);
+    at(ed, 0);
+    press(ed, "ArrowDown");
+    expect(ed.focusedNode()).toBeNull();
+  });
+});

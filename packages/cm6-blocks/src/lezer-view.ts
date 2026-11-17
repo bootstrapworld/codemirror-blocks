@@ -187,6 +187,8 @@ export interface LezerBlockEditor {
   focusNode(node: BNode): void;
   focusedNode(): BNode | null;
   setBlockMode(on: boolean): void;
+  /** are the blocks showing (not the text mode) */
+  isBlockMode(): boolean;
   stats(): LezerStats;
   destroy(): void;
 }
@@ -1270,6 +1272,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       if (!active || !view.contentDOM.contains(active)) return null;
       return renderer.nodeOf(active);
     },
+    isBlockMode: () => blockMode,
     setBlockMode(on) {
       if (blockMode === on) return;
       blockMode = on;

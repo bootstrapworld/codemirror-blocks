@@ -44,6 +44,8 @@ export function mountCMB(_language?: unknown, _options: Record<string, unknown> 
     say(text);
     announcer.say(text);
   };
+  // (the old editor's input is the focused element after it mounts; tests send their first key to document.activeElement)
+  ed.view.contentDOM.focus();
   const cmb = makeAPI(ed) as unknown as API;
   mounted = { cmb, store: {}, ed };
   return { cmb, store: mounted.store };

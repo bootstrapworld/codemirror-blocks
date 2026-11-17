@@ -79,9 +79,7 @@ describe("when dealing with node activation,", () => {
     expect(activeAriaId(cmb)).toBe(literal2.element!.id);
   });
 
-  // SKIPPED (U): ArrowDown with focus in the text input and no block focused: the old editor activates the block after the cursor, this one does nothing
-
-  it.skip("should activate the node after the cursor when down is pressed", async () => {
+  it("should activate the node after the cursor when down is pressed", async () => {
     cmb.setCursor({ line: 0, ch: 2 });
     cmb.focus();
     keyDown("ArrowDown");
@@ -90,9 +88,7 @@ describe("when dealing with node activation,", () => {
     expect(activeAriaId(cmb)).toBe(literal2.element!.id);
   });
 
-  // SKIPPED (U): ArrowDown with focus in the text input and no block focused: the old editor activates the block after the cursor, this one does nothing
-
-  it.skip("should activate the node before the cursor when up is pressed", async () => {
+  it("should activate the node before the cursor when up is pressed", async () => {
     cmb.setCursor({ line: 0, ch: 2 });
     keyDown("ArrowUp");
     expect(cmb.getFocusedNode()).not.toBe(literal2);
