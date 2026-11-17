@@ -309,31 +309,51 @@
 .blocks-lang-scheme .blocks-drop-target { background: lightblue !important; outline: 0; border-radius: 5px; }
 .blocks-lang-scheme .blocks-piece { min-width: 0; }
 
-/* a function definition and a lambda: the names are in the strip, in a black pill of their own */
+/* a definition and a lambda: the names are in the strip, in a black pill of their own */
 .blocks-lang-scheme .blocks-define,
 .blocks-lang-scheme .blocks-lambda {
   display: inline-grid;
-  grid-template-columns: 1fr auto auto 1fr;
   align-items: stretch;
   background: linear-gradient(#000, #000) 0 -2px / 100% 22px no-repeat, #eee;
 }
+.blocks-lang-scheme .blocks-lambda { grid-template-columns: 1fr auto auto 1fr; }
+/* (a define: the word, the name, the parameters of a function definition, then the value or the body under all of them) */
+.blocks-lang-scheme .blocks-define { grid-template-columns: 1fr auto auto auto 1fr; }
 .blocks-lang-scheme .blocks-define > .blocks-operator,
 .blocks-lang-scheme .blocks-lambda > .blocks-operator { grid-column: 2; grid-row: 1; background: none; border-radius: 0; padding-right: 0; }
 .blocks-lang-scheme .blocks-define > .blocks-slot[data-slot="name"],
+.blocks-lang-scheme .blocks-define > .blocks-slot[data-slot="params"],
 .blocks-lang-scheme .blocks-lambda > .blocks-slot[data-slot="params"] {
   grid-column: 3; grid-row: 1; display: flex; align-items: center; padding: 1px 5px 1px 0; flex-grow: 0; background: none; transform: translate(0, -2px);
 }
+.blocks-lang-scheme .blocks-define > .blocks-slot[data-slot="params"] { grid-column: 4; padding-left: 0; }
 .blocks-lang-scheme .blocks-define > .blocks-slot[data-slot="value"],
+.blocks-lang-scheme .blocks-define > .blocks-slot[data-slot="body"] { grid-column: 1 / 6; grid-row: 2; }
 .blocks-lang-scheme .blocks-lambda > .blocks-slot[data-slot="body"] { grid-column: 1 / 5; grid-row: 2; }
 .blocks-lang-scheme .blocks-lambda > .blocks-operator { font-size: 0; }
 .blocks-lang-scheme .blocks-lambda > .blocks-operator::before { content: "\03BB\00A0("; font-size: 14px; white-space: pre; word-spacing: 4px; }
-.blocks-lang-scheme .blocks-define:has(> .blocks-slot[data-slot="name"] > .blocks-call) > .blocks-operator::after { content: " ("; white-space: pre; }
-.blocks-lang-scheme .blocks-define > .blocks-slot[data-slot="name"] > .blocks-call::after,
+.blocks-lang-scheme .blocks-define:not(.blocks-collapsed):has(> .blocks-slot[data-slot="params"]) > .blocks-operator::after { content: " ("; white-space: pre; }
 .blocks-lang-scheme .blocks-lambda > .blocks-slot[data-slot="params"] > .blocks-call::after { content: ")"; color: #fff; font-weight: bold; align-self: center; }
 .blocks-lang-scheme .blocks-define > .blocks-slot[data-slot="name"] > .blocks-literal { background: transparent; border: 2px inset #000; font-weight: bold; }
 .blocks-lang-scheme .blocks-lambda > .blocks-slot[data-slot="params"] > .blocks-literal { background: #fff; border: 2px inset #d3d3d3; }
-/* the name and parameters of `(define (f x) ...)`, a call that is not a block of its own here */
-.blocks-lang-scheme .blocks-slot[data-slot="name"] > .blocks-call,
+/* the parameters of a function definition: a block of their own, drawn flat inside the strip, with the closing bracket after them */
+.blocks-lang-scheme .blocks-define > .blocks-slot[data-slot="params"] > .blocks-params {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  border: 0;
+  border-radius: 15px;
+  margin: 0;
+  background: transparent;
+  cursor: default;
+}
+.blocks-lang-scheme .blocks-define > .blocks-slot[data-slot="params"] > .blocks-params::after { content: ")"; color: #fff; font-weight: bold; align-self: center; }
+.blocks-lang-scheme .blocks-define > .blocks-slot[data-slot="params"] > .blocks-params > .blocks-args {
+  display: inline-flex; flex-wrap: wrap; flex-grow: 0; padding: 1px 1px 1px 0; background: transparent; border-radius: 15px; color: #fff; font-weight: bold; align-items: center;
+}
+.blocks-lang-scheme .blocks-define > .blocks-slot[data-slot="params"] > .blocks-params > .blocks-args > .blocks-gap { min-width: 10px; border-width: 1px; width: 10px; }
+.blocks-lang-scheme .blocks-define > .blocks-slot[data-slot="params"] > .blocks-params > .blocks-args > .blocks-literal { background: #fff; border: 2px inset #d3d3d3; font-weight: normal; }
+/* the name and parameters of a lambda, a call that is not a block of its own here */
 .blocks-lang-scheme .blocks-slot[data-slot="params"] > .blocks-call {
   display: inline-flex;
   flex-direction: row;
@@ -344,15 +364,12 @@
   background: transparent;
   cursor: default;
 }
-.blocks-lang-scheme .blocks-slot[data-slot="name"] > .blocks-call > .blocks-operator,
 .blocks-lang-scheme .blocks-slot[data-slot="params"] > .blocks-call > .blocks-operator {
   display: inline-flex; background: none; padding: 0; transform: none; border-radius: 0;
 }
-.blocks-lang-scheme .blocks-slot[data-slot="name"] > .blocks-call > .blocks-args,
 .blocks-lang-scheme .blocks-slot[data-slot="params"] > .blocks-call > .blocks-args {
   display: inline-flex; flex-wrap: wrap; flex-grow: 0; padding: 1px 1px 1px 0; background: transparent; border-radius: 15px; color: #fff; font-weight: bold; align-items: center;
 }
-.blocks-lang-scheme .blocks-slot[data-slot="name"] > .blocks-call > .blocks-args > .blocks-gap,
 .blocks-lang-scheme .blocks-slot[data-slot="params"] > .blocks-call > .blocks-args > .blocks-gap { min-width: 10px; border-width: 1px; width: 10px; }
 .blocks-lang-scheme .blocks-slot[data-slot="params"] > .blocks-call::before { content: ""; display: inline-block; width: 10px; height: 20px; margin: 0 5px; border: 1px dotted #d3d3d3; border-radius: 5px; }
 .blocks-lang-scheme .blocks-slot[data-slot="params"] > .blocks-call > .blocks-operator > .blocks-literal { background: #fff; border: 2px inset #d3d3d3; font-weight: normal; }

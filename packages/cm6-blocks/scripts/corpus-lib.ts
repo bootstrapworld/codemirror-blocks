@@ -191,6 +191,13 @@ export function measure(language: string, parser: Parser, table: BlockTable, tex
       const g = b.slots.map((q) => q.glue?.trim()).filter(Boolean) as string[];
       if (g.length) glue.set(b.from + ":" + b.to, new Set(g));
     }
+    // the head `(f a b)` of a function definition is no block (its name and its parameters are the define's own slots): it encloses them
+    const nm = b.slots.find((q) => q.name === "name" && q.nodes[0]);
+    if (b.kind === "define" && nm && b.slots.some((q) => q.name === "params")) {
+      let id = byRange.get(nm.nodes[0].from + ":" + nm.nodes[0].to);
+      while (id !== undefined && id >= 0 && !/^(ParenList|BracketList)$/.test(names[id])) id = parent[id];
+      if (id !== undefined && id >= 0) compound.add(range[id]);
+    }
     for (const s of b.slots) for (const c of s.nodes) collectC(c);
   };
   roots.forEach(collectC);

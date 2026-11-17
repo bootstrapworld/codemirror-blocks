@@ -2,6 +2,7 @@
 // Thirteenth round: difference 11 (content hash), cut with nothing selected, finding 13, paste over a selection, the define shape
 import { undo } from "@codemirror/commands";
 import { contentHash } from "../src/hash";
+import { keyOfNode } from "../src/lezer";
 import { walk } from "../src/doc";
 import { checkLezerEditor } from "../src/lezer-view";
 import { LANGS, mulberry32, randomStep } from "./steps";
@@ -212,5 +213,99 @@ describe("4. paste over a selection replaces the focused block (the old editor's
     select(e2, find(e2, "a"));
     pasteOn(e2, find(e2, "a"), "  ");
     expect(text(e2)).toBe("a b");
+  });
+});
+
+describe("5. the Scheme define has the old editor's shapes: name / params / body, and name / value", () => {
+  const find = (ed: LezerBlockEditor, pred: (n: BNode) => boolean): BNode => {
+    let o: BNode | undefined;
+    ed.roots().forEach((r) => walk(r, (n) => { if (!o && pred(n)) o = n; }));
+    return o as BNode;
+  };
+  const slot = (n: BNode, name: string) => n.slots.find((s) => s.name === name)!;
+  const ok = (ed: LezerBlockEditor) => expect(checkLezerEditor(ed)).toEqual([]);
+
+  test("the tree: a function definition has name, params (a list block of the identifiers) and body; a value definition has name and value", () => {
+    const ed = make("scheme", "(define (f a b) (g a))\n(define (h) 1)\n(define x 5)\n(define [k z] 2)");
+    const [fd, hd, vd, kd] = ed.roots();
+    expect(fd.slots.map((s) => s.name)).toEqual(["name", "params", "body"]);
+    const params = slot(fd, "params").nodes[0];
+    expect(params.kind).toBe("params");
+    expect(slot(params, "items").nodes.map((n) => n.value)).toEqual(["a", "b"]);
+    expect(slot(fd, "name").nodes[0].value).toBe("f");
+    expect(slot(hd, "params").nodes[0].slots[0].nodes).toEqual([]); // `(define (f) body)`: an empty list, not a missing one
+    expect(vd.slots.map((s) => s.name)).toEqual(["name", "value"]);
+    expect(kd.slots.map((s) => s.name)).toEqual(["name", "params", "body"]);
+    expect(kd.brackets).toBe("()");
+    ok(ed);
+  });
+
+  test("the wrong shapes are calls to `define` (the old parser refuses them)", () => {
+    const ed = make("scheme", "(define)\n(define x)\n(define x 1 2)\n(define (f 1) x)\n(define () 1)\n(define 5 6)\n(define ((f a) b) c)");
+    expect(ed.roots().map((r) => r.kind)).toEqual(Array(7).fill("call"));
+    ok(ed);
+  });
+
+  test("spoken labels are the old editor's words", () => {
+    const ed = make("scheme", "(define (area w h) (* w h))\n(define x 5)\n(define (g) 1)\n(define (one n) n)");
+    const [a, v, g, o] = ed.roots();
+    expect(ed.language.describe(a)).toBe("area: function definition with 2 arguments: w and h");
+    expect(ed.language.describe(slot(a, "params").nodes[0])).toBe("2 arguments: w and h");
+    expect(ed.language.describe(v)).toBe("x: value definition");
+    expect(ed.language.describe(g)).toBe("g: function definition with 0 arguments");
+    expect(ed.language.describe(o)).toBe("one: function definition with 1 argument: n");
+    expect(ed.renderer.element(a).getAttribute("aria-label")).toBe("area: function definition with 2 arguments: w and h");
+  });
+
+  test("search types: value definition, function definition and arguments are block types", () => {
+    const ed = make("scheme", "(define (f a) a)\n(define x 5)");
+    const types = new Set<string>();
+    ed.roots().forEach((r) => walk(r, (n) => types.add(ed.options.table.nodes[keyOfNode(n) ?? ""]?.label ?? n.kind)));
+    expect([...types].sort()).toEqual(["arguments", "function definition", "symbol", "number", "value definition"].sort());
+  });
+
+  test("edits keep the tree and the text in step (and equal to a fresh parse): insert into an empty and a non-empty params, remove all, delete the list, the name, the body", () => {
+    const ed = make("scheme", "(define (f) body)");
+    const items = () => slot(find(ed, (n) => n.kind === "params"), "items");
+    ed.insertText(items(), 0, "x");
+    expect(text(ed)).toBe("(define (f x) body)");
+    ok(ed);
+    ed.insertText(items(), 1, "z");
+    expect(text(ed)).toBe("(define (f x z) body)");
+    ed.insertText(items(), 0, "w");
+    expect(text(ed)).toBe("(define (f w x z) body)");
+    ok(ed);
+    ed.removeNodes([...items().nodes]);
+    expect(text(ed)).toBe("(define (f) body)");
+    ok(ed);
+    expect(items().nodes).toEqual([]);
+    ed.insertText(items(), 0, "q");
+    expect(text(ed)).toBe("(define (f q) body)");
+    ok(ed);
+    // the list itself: a hole in its place
+    ed.removeNode(find(ed, (n) => n.kind === "params"));
+    expect(text(ed)).toBe("(define (f ...) body)");
+    ok(ed);
+    ed.removeNode(slot(ed.roots()[0], "name").nodes[0]);
+    expect(text(ed)).toBe("(define (... ...) body)");
+    ok(ed);
+    ed.removeNode(slot(ed.roots()[0], "body").nodes[0]);
+    expect(text(ed)).toBe("(define (... ...) ...)");
+    ok(ed);
+    undo(ed.view);
+    undo(ed.view);
+    expect(text(ed)).toBe("(define (f ...) body)");
+    ok(ed);
+  });
+
+  test("a function template: a define with a hole for the name, one for a parameter and one for the body", () => {
+    const ed = make("scheme", "(f 1)");
+    ed.insertTemplate("function", ed.roots()[0]);
+    // (the first hole is open for typing: cancel it to compare the page with a fresh drawing)
+    (ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement).dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    ok(ed);
+    const d = find(ed, (n) => n.kind === "define");
+    expect(text(ed).slice(d.from, d.to)).toBe("(define (... ...) ...)");
+    expect(slot(slot(d, "params").nodes[0], "items").nodes).toHaveLength(1);
   });
 });

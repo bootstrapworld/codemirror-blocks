@@ -125,9 +125,8 @@ describe("Delete and Backspace", () => {
       ]);
     });
 
-    // SKIPPED (D): the old define has its name and its parameter LIST as separate children (children()[1] is the list, deleting it leaves `(f ...)`); here the header `(f a b)` is one call block (the table's slots), so children()[1] is the body and the delete leaves `(define (f a b) ...)`. A difference of the language table, not of the editor
-
-    it.skip("can be a parameter list, which leaves a placeholder", () => {
+    // (thirteenth round: the Scheme table gives `define` the old shape, name / params / body, so this one is comparable again)
+    it("can be a parameter list, which leaves a placeholder", () => {
       cmb.setValue("(define (f a b) a)");
       const params = [...root().children()][1];
       mouseDown(params);

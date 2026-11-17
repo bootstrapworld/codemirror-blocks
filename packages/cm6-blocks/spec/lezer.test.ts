@@ -236,12 +236,12 @@ describe("outlines", () => {
      == "(define (f x) (* x 2))"
      define [0,22)
        name
-         call [8,13)
-           func
-             literal "f" [9,10)
-           args*
+         literal "f" [9,10)
+       params
+         params [11,12)
+           items*
              literal "x" [11,12)
-       value
+       body
          call [14,21)
            func
              literal "*" [15,16)
@@ -315,12 +315,12 @@ describe("outlines", () => {
      == "(define (f x) (if (> x 1) \\"a\\" (cond [(= x 2) 3] [else 4])))"
      define [0,59)
        name
-         call [8,13)
-           func
-             literal "f" [9,10)
-           args*
+         literal "f" [9,10)
+       params
+         params [11,12)
+           items*
              literal "x" [11,12)
-       value
+       body
          if [14,58)
            test
              call [18,25)
@@ -649,7 +649,13 @@ describe("Scheme: against the hand-written wescheme", () => {
       if (a !== b) diffs.push(`${p}\n  wescheme: ${a}\n  lezer:    ${b}`);
     }
     expect(diffs.join("\n")).toMatchInlineSnapshot(`
-     "(if 1 2)
+     "(define (f x) (* x 2))
+       wescheme: define[0,22]{name:one(call[8,13]{func:one(literal[9,10]f{}) args:list(literal[11,12]x{})}) value:one(call[14,21]{func:one(literal[15,16]*{}) args:list(literal[17,18]x{} literal[19,20]2{})})}
+       lezer:    define[0,22]{name:one(literal[9,10]f{}) params:one(params[11,12]{items:list(literal[11,12]x{})}) body:one(call[14,21]{func:one(literal[15,16]*{}) args:list(literal[17,18]x{} literal[19,20]2{})})}
+     (define (f x) (if (> x 1) "a" (cond [(= x 2) 3] [else 4])))
+       wescheme: define[0,59]{name:one(call[8,13]{func:one(literal[9,10]f{}) args:list(literal[11,12]x{})}) value:one(if[14,58]{test:one(call[18,25]{func:one(literal[19,20]>{}) args:list(literal[21,22]x{} literal[23,24]1{})}) then:one(literal[26,29]"a"{}) else:one(cond[30,57]{clauses:list(clause[36,47]{test:one(call[37,44]{func:one(literal[38,39]={}) args:list(literal[40,41]x{} literal[42,43]2{})}) body:list(literal[45,46]3{})} clause[48,56]{test:one(literal[49,53]else{}) body:list(literal[54,55]4{})})})})}
+       lezer:    define[0,59]{name:one(literal[9,10]f{}) params:one(params[11,12]{items:list(literal[11,12]x{})}) body:one(if[14,58]{test:one(call[18,25]{func:one(literal[19,20]>{}) args:list(literal[21,22]x{} literal[23,24]1{})}) then:one(literal[26,29]"a"{}) else:one(cond[30,57]{clauses:list(clause[36,47]{test:one(call[37,44]{func:one(literal[38,39]={}) args:list(literal[40,41]x{} literal[42,43]2{})}) body:list(literal[45,46]3{})} clause[48,56]{test:one(literal[49,53]else{}) body:list(literal[54,55]4{})})})})}
+     (if 1 2)
        wescheme: unknown[0,8]{elts:list(literal[1,3]if{} literal[4,5]1{} literal[6,7]2{})}
        lezer:    call[0,8]{func:one(literal[1,3]if{}) args:list(literal[4,5]1{} literal[6,7]2{})}"
     `);

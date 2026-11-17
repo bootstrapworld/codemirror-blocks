@@ -9956,5 +9956,131 @@
     "typedEditMedianMs": 1.08
    }
   }
+ },
+ "round13": {
+  "scheme-repo-files": {
+   "note": "every .rkt/.scm/.ss tracked in this repository",
+   "language": "scheme",
+   "files": 11,
+   "lines": 1931,
+   "chars": 36546,
+   "coverage": {
+    "real": 100,
+    "opaque": 0,
+    "fallback": 0
+   },
+   "topStatements": {
+    "fully": 339,
+    "partly": 0,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 339,
+    "partly": 0,
+    "none": 0
+   },
+   "errorNodes": 0,
+   "filesWithErrors": 0,
+   "parseBuildMsPer1000Lines": 21.3,
+   "tableLines": {
+    "file": 99,
+    "nodes": 23,
+    "rules": 36
+   },
+   "missingTop25": [],
+   "opaqueTop10": [],
+   "correctness": {
+    "files": 11,
+    "edits": 220,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "packages/codemirror-blocks/example/huge-code.rkt",
+    "lines": 776,
+    "typedEditMedianMs": 0.5
+   }
+  },
+  "scheme-test-literals": {
+   "note": "string literals in the repo's own tests that look like programs (what students' programs look like)",
+   "language": "scheme",
+   "files": 582,
+   "lines": 1014,
+   "chars": 9064,
+   "coverage": {
+    "real": 99.8,
+    "opaque": 0,
+    "fallback": 0.2
+   },
+   "topStatements": {
+    "fully": 788,
+    "partly": 3,
+    "none": 0
+   },
+   "allStatements": {
+    "fully": 788,
+    "partly": 3,
+    "none": 0
+   },
+   "errorNodes": 27,
+   "filesWithErrors": 27,
+   "parseBuildMsPer1000Lines": 14.5,
+   "tableLines": {
+    "file": 99,
+    "nodes": 23,
+    "rules": 36
+   },
+   "missingTop25": [
+    {
+     "type": "BraceList",
+     "chars": 9,
+     "n": 3,
+     "examples": [
+      "\"[{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\" @ token String",
+      "\"[{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token String",
+      "\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token String"
+     ]
+    },
+    {
+     "type": "TaggedParenList>Keyword",
+     "chars": 3,
+     "n": 1,
+     "examples": [
+      "\"le=\\\"treeitem\\\"]:not([aria-expanded=\\\"false\" @ token Keyword"
+     ]
+    },
+    {
+     "type": "BracketList>ListContent",
+     "chars": 2,
+     "n": 2,
+     "examples": [
+      "\"[{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token Keyword",
+      "\"{\\\"a\\\":1}]\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token Keyword"
+     ]
+    },
+    {
+     "type": "UnquoteForm>Datum",
+     "chars": 1,
+     "n": 1,
+     "examples": [
+      "\"\\n[{\\\"a\\\":2},{\\\"a\\\":3}]\\n[]\" @ token Keyword"
+     ]
+    }
+   ],
+   "opaqueTop10": [],
+   "correctness": {
+    "files": 30,
+    "edits": 600,
+    "refusedByTheApi": 0,
+    "oracleFailures": 0,
+    "examples": []
+   },
+   "largestFile": {
+    "name": "packages/codemirror-blocks/spec/random-sequences-test.ts:1157",
+    "lines": 11,
+    "typedEditMedianMs": 0.22
+   }
+  }
  }
 }

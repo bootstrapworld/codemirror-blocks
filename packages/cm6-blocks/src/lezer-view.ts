@@ -899,7 +899,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     if (slot.pieces) throw new Error(`nothing can be inserted into the ${slot.name} of a ${slot.owner.kind}: it is text with blocks in it`);
     if (slot.nodes.length === 0) {
       if (slot.owner === program) return { from: 0, to: 0, insert: snippet + (view.state.doc.length ? "\n" : "") };
-      return insertEmptyChange(currentText(), slot, snippet);
+      return insertEmptyChange(currentText(), slot, snippet, table);
     }
     return insertChange(table, currentText(), slot, index, snippet);
   }

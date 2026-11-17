@@ -44,6 +44,18 @@ export interface BlockRow {
    * its value. A slot can take a chunk by the delimiter that precedes it (`@prev:as`, `@prev:from`; the start of the node is no delimiter).
    */
   chunks?: { delims: string[]; row: string };
+  /**
+   * The node is NOT a block: it is spread into its parent's candidates (thirteenth round, the head of a Scheme `define`: `(f a b)`).
+   * Its first child (comments aside) goes to the parent as itself, marked "SplitHead"; the children after it are wrapped in ONE block of
+   * table row `rest` (marked "SplitRest"), whose range is from the first of them to the end of the last (zero width at the end of the first
+   * child when there are none), and which is not written with brackets of its own.
+   */
+  split?: { rest: string };
+  /**
+   * The list of this block has no brackets of its own (the `rest` of a `split`): an empty one is written right after the block's (zero
+   * width) place, after a space.
+   */
+  openList?: boolean;
 }
 
 export interface BlockTable {
@@ -119,6 +131,8 @@ interface Cand {
   path: string[];
   /** set while an `inner` keeper is given: the block before's start to the block after's end (or the owner's own ends) */
   win?: [number, number];
+  /** a block made of candidates that Lezer has no node for (the `rest` of a `split`): its members, comments included */
+  members?: Cand[];
 }
 
 /** the exact source of every node this adapter built (to print it again) */
@@ -174,6 +188,10 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       }
       const key = keyOf(c, text);
       const row = table.nodes[key];
+      if (row?.split) {
+        splitCands(c, row.split.rest, path, out, text);
+        continue;
+      }
       if (row && (!row.topLevelOnly || top)) out.push({ node: c, key, path: [...path, c.name, key] });
       else if (row) {
         // a comment inside a block: a candidate that no slot numbers or takes; build1 files it into a list
@@ -183,6 +201,20 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       else if (table.opaque?.includes(c.name)) out.push({ node: c, key: "@opaque", path });
       else if (c.firstChild) collect(c, [...path, c.name], out, text);
     }
+  }
+
+  /** a node of a row with `split`: its first child goes to the parent, the others make one block (see `BlockRow.split`) */
+  function splitCands(n: SyntaxNode, restRow: string, path: string[], out: Cand[], text: string): void {
+    const sub: Cand[] = [];
+    collect(n, [], sub, text);
+    const isCom = (cd: Cand): boolean => table.nodes[cd.key]?.kind === "comment";
+    const head = sub.find((cd) => !isCom(cd));
+    if (!head) return;
+    out.push({ ...head, path: [...path, "SplitHead", ...head.path] });
+    const members = sub.filter((cd) => cd !== head && cd.node.from >= head.node.to);
+    const from = members.length ? members[0].node.from : head.node.to;
+    const to = members.length ? members[members.length - 1].node.to : head.node.to;
+    out.push({ node: { from, to, name: "Split" } as unknown as SyntaxNode, key: restRow, path: [...path, "SplitRest"], members });
   }
 
   /** the candidates of a node that is a flat run of tokens: one leaf per chunk between delimiters (see `BlockRow.chunks`), and its comments and errors */
@@ -262,7 +294,8 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     });
     sources.set(b, text.slice(n.from, n.to));
     const all: Cand[] = [];
-    if (row.chunks) chunkCands(n, row.chunks, all, text);
+    if (c.members) all.push(...c.members);
+    else if (row.chunks) chunkCands(n, row.chunks, all, text);
     else collect(n, [], all, text);
     if (innerKeep) all.forEach((cd, i) => (cd.win = [all[i - 1]?.node.from ?? n.from, all[i + 1]?.node.to ?? n.to]));
     const isComment = (cd: Cand): boolean => table.nodes[cd.key]?.kind === "comment";
@@ -458,13 +491,16 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
         return t.length > 28 ? t.slice(0, 27) + "..." : t;
       };
       if (row?.describe) {
-        return row.describe.replace(/\$\{(\w+)(\.length)?(?:\|([^|}]*)\|([^}]*))?\}/g, (_m, name: string, len?: string, one?: string, many?: string) => {
+        return row.describe.replace(/\$\{(\w+)(\.length|\.describe|\.and)?(?:\|([^|}]*)\|([^}]*))?\}/g, (_m, name: string, len?: string, one?: string, many?: string) => {
           const sl = node.slots.find((q) => q.name === name);
           if (!sl) return name === "value" ? node.value ?? "" : name === "keyword" ? node.keyword ?? "" : "";
           const nodes = sl.nodes.filter((q) => q.kind !== "comment");
-          if (len) return nodes.length + (one !== undefined ? " " + (nodes.length === 1 ? one : many) : "");
+          if (len === ".length") return nodes.length + (one !== undefined ? " " + (nodes.length === 1 ? one : many) : "");
+          // `.describe`: what each block says of itself (a block inside a block); `.and`: "a, b and c", as the old editor lists identifiers
+          if (len === ".describe") return nodes.map((q) => lang.describe(q)).join(", ");
+          if (len === ".and") return nodes.length < 2 ? nodes.map(short).join("") : nodes.slice(0, -1).map(short).join(", ") + " and " + short(nodes[nodes.length - 1]);
           return nodes.map(short).join(", ");
-        });
+        }).replace(/:\s*$/, "");
       }
       if (node.slots.length === 0) return node.value ? `${label} ${node.value}` : label;
       return `${label} with ${node.slots.map((s) => `${s.nodes.length} ${s.name}`).join(", ")}`;
@@ -638,8 +674,10 @@ export function removeChanges(nodes: BNode[], text?: string): TextChange[] {
  * bracket of its owner (`f()`, `(f)`, `{}`, `[]`). One generic rule, no per-language
  * lines. An owner with no closing bracket (a Python body) cannot be done.
  */
-export function insertEmptyChange(text: string, slot: Slot, snippet: string): TextChange {
+export function insertEmptyChange(text: string, slot: Slot, snippet: string, table?: BlockTable): TextChange {
   const o = slot.owner;
+  // a list with no brackets of its own (a `split`'s rest): right after its place, after a space
+  if (table && table.nodes[keys.get(o) ?? ""]?.openList) return { from: o.to, to: o.to, insert: " " + snippet };
   const close = text[o.to - 1];
   if (!close || !")]}".includes(close)) throw new Error(`insert into an empty ${slot.name}: ${o.kind} has no closing bracket to go before`);
   const prev = text[o.to - 2] ?? "";
