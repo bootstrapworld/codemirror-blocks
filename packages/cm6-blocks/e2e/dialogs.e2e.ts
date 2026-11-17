@@ -26,7 +26,14 @@ for (const lang of Object.keys(SRC)) {
         .first()
         .click({ modifiers: ["Shift"] });
     });
-    const tree = (page: any) => page.locator("body").ariaSnapshot();
+    // (the first-open summary is spoken through a live region at a moment that
+    // depends on timing, and shows in the snapshot when it is: it is not part of
+    // what a dialog hides or restores)
+    const tree = async (page: any): Promise<string> =>
+      (await page.locator("body").ariaSnapshot())
+        .split("\n")
+        .filter((line: string) => !/^\s*- text: At the top level/.test(line))
+        .join("\n");
     const attrs = (page: any) =>
       page.evaluate(() =>
         [...document.querySelectorAll("body *")]
