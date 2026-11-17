@@ -257,16 +257,16 @@ describe("before anything is chosen", () => {
   });
 });
 
-// SKIPPED (U): the dialog does not hide the rest of the page from screenreaders (aria-hidden)
-
-it.skip("leaves the rest of the page alone while the dialog is open", () => {
+it("leaves the rest of the page alone while the dialog is open", () => {
   press("F3");
-  // the editor is hidden from screenreaders behind the dialog
+  // the editor is hidden from screenreaders behind the dialog (edited: the editor element is `.cm-editor`; getByRole skips what is hidden)
+  expect(document.querySelector(".cm-editor")!.getAttribute("aria-hidden")).toBe("true");
   expect(screen.getByRole("dialog")).toBeTruthy();
   act(() => {
     fireEvent.keyDown(searchInput(), { key: "Escape" });
   });
   expect(screen.queryByRole("dialog")).toBeNull();
+  expect(document.querySelector(".cm-editor")!.hasAttribute("aria-hidden")).toBe(false);
   expect(block("x")).toBeTruthy();
 });
 

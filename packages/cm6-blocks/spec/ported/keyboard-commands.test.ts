@@ -228,19 +228,16 @@ describe("Help (Shift-Ctrl-/)", () => {
     }
   });
 
-  // SKIPPED (U): the help dialog does not set aria-hidden on the editor
-
-  it.skip("hides the editor from screenreaders while it is open", () => {
-    const editor = document.querySelector(".Editor")!;
+  // (edited: the old editor's app element is `.Editor`, this one's is the CodeMirror 6 editor element)
+  it("hides the editor from screenreaders while it is open", () => {
+    const editor = document.querySelector(".cm-editor")!;
     expect(editor).not.toHaveAttribute("aria-hidden");
     openHelp();
     expect(editor).toHaveAttribute("aria-hidden", "true");
   });
 
-  // SKIPPED (U): the help dialog does not set aria-hidden on the editor
-
-  it.skip("closes on Escape and shows the editor again", () => {
-    const editor = document.querySelector(".Editor")!;
+  it("closes on Escape and shows the editor again", () => {
+    const editor = document.querySelector(".cm-editor")!;
     openHelp();
     keyDown("Escape", {}, screen.getByText("Keyboard Shortcuts"));
     expect(screen.queryByText("Keyboard Shortcuts")).toBeNull();

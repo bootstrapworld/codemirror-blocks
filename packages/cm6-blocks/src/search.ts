@@ -14,6 +14,7 @@
  */
 import type { LezerBlockEditor } from "./lezer-view";
 import { keyOfNode } from "./lezer";
+import { modalOpen } from "./modal";
 import type { BNode } from "./types";
 
 export interface TextSetting {
@@ -328,6 +329,7 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     select.addEventListener("change", () => set({ blockType: select.value, mode: "block" }));
 
     let closed = false;
+    let release = (): void => {};
     const finish = (go: boolean): void => {
       if (closed) return;
       ed.act("search.close", null, { how: go ? "enter" : "escape" }, () => finish1(go));
@@ -335,6 +337,7 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     const finish1 = (go: boolean): void => {
       closed = true;
       dialog = null;
+      release(); // (the page is shown again before the focus goes back to it)
       el.remove();
       if (back && ed.doc.byId.get(back.id) === back) ed.focusNode(back);
       else ed.focusEditor();
@@ -368,6 +371,7 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     });
     closeBtn.addEventListener("click", () => finish(false));
     host.appendChild(el);
+    release = modalOpen(el);
     dialog = { el, close: finish };
     (tab === 1 ? select : input).focus();
     if (tab === 0) input.select();

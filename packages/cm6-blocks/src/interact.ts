@@ -1000,6 +1000,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     detach() {
       open?.cancel();
       search.close();
+      help?.close();
       doc.removeEventListener("touchmove", holdScroll, true);
       doc.removeEventListener("keydown", onEscape, true);
       auto.stop();

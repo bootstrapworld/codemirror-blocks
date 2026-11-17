@@ -3,6 +3,7 @@
  * closes it and the focus goes back to where it was. The old editor's dialog is the same list ("Keyboard Shortcuts").
  */
 import { KEYS, writeKey } from "./keys";
+import { modalOpen, trapTab } from "./modal";
 
 export interface Help {
   close(): void;
@@ -42,21 +43,25 @@ export function openHelp(host: HTMLElement, mac: boolean, done: () => void): Hel
   close.className = "closeDialog";
   box.appendChild(close);
   let open = true;
+  let release = (): void => {};
   const finish = (): void => {
     if (!open) return;
     open = false;
+    release(); // (the page is shown again before the focus goes back to it)
     box.remove();
     done();
   };
   close.addEventListener("click", finish);
   box.addEventListener("keydown", (e) => {
     e.stopPropagation();
+    trapTab(box, e);
     if (e.key === "Escape") {
       e.preventDefault();
       finish();
     }
   });
   host.appendChild(box);
+  release = modalOpen(box);
   close.focus();
   return { close: finish };
 }

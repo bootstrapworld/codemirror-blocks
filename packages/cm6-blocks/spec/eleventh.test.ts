@@ -229,3 +229,95 @@ describe("7. removing several arguments leaves tidy separators", () => {
     ok(ed);
   });
 });
+
+describe("9. dialogs hide the rest of the page", () => {
+  const key = (el: Element, k: string, mods: KeyboardEventInit = {}) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
+  const setup = () => {
+    const before = document.createElement("nav");
+    before.setAttribute("aria-hidden", "false"); // (a value the page chose: it must come back as it was)
+    const after = document.createElement("footer");
+    const hiddenAlready = document.createElement("aside");
+    hiddenAlready.setAttribute("aria-hidden", "true");
+    document.body.append(before, after, hiddenAlready);
+    const ed = make("scheme", "(f x)\n(g y)");
+    const f = ed.roots()[0];
+    ed.focusNode(f);
+    const snapshot = () => [...document.body.querySelectorAll("*")].map((e) => `${e.tagName}:${e.getAttribute("aria-hidden")}:${e.getAttribute("inert")}`).join("|");
+    return { ed, f, before, after, hiddenAlready, snapshot, cleanup: () => [before, after, hiddenAlready].forEach((e) => e.remove()) };
+  };
+  test.each([
+    ["search", (ed: LezerBlockEditor) => key(ed.renderer.element(ed.focusedNode()!), "F3")],
+    ["help", (ed: LezerBlockEditor) => key(ed.renderer.element(ed.focusedNode()!), "?", { ctrlKey: true, shiftKey: true, code: "Slash" })],
+  ])("%s: every other part of the page is hidden and inert, the dialog is not, and Escape puts it all back exactly", (_n, open) => {
+    const s = setup();
+    const snap0 = s.snapshot();
+    open(s.ed);
+    const dlg = document.querySelector("[role=dialog]")!;
+    expect(dlg.getAttribute("aria-modal")).toBe("true");
+    expect(dlg.getAttribute("aria-hidden")).toBeNull();
+    expect(dlg.hasAttribute("inert")).toBe(false);
+    for (const e of [s.before, s.after, s.hiddenAlready, s.ed.view.dom]) {
+      expect(e.getAttribute("aria-hidden")).toBe("true");
+      expect(e.hasAttribute("inert")).toBe(true);
+    }
+    expect(document.body.getAttribute("aria-hidden")).toBeNull();
+    // the editor's announcer goes on being heard
+    expect(document.querySelector("[aria-live]")!.getAttribute("aria-hidden")).toBeNull();
+    // the focus is inside, and Tab stays inside
+    expect(dlg.contains(document.activeElement)).toBe(true);
+    for (let i = 0; i < 7; i++) {
+      key(document.activeElement!, "Tab");
+      expect(dlg.contains(document.activeElement)).toBe(true);
+    }
+    key(document.activeElement!, "Escape");
+    expect(document.querySelector("[role=dialog]")).toBeNull();
+    expect(s.snapshot()).toBe(snap0);
+    expect(s.before.getAttribute("aria-hidden")).toBe("false");
+    expect(s.hiddenAlready.getAttribute("aria-hidden")).toBe("true");
+    expect(s.ed.focusedNode()).toBe(s.f);
+    s.cleanup();
+  });
+  test("opened twice in a row, closed by the code's own routes (search.close, the Close button, destroy of the editor)", () => {
+    const s = setup();
+    const snap0 = s.snapshot();
+    for (let i = 0; i < 2; i++) {
+      s.ed.search.open();
+      expect(s.ed.view.dom.getAttribute("aria-hidden")).toBe("true");
+      s.ed.search.close();
+      expect(s.snapshot()).toBe(snap0);
+    }
+    s.ed.search.open();
+    (document.querySelector(".closeDialog") as HTMLElement).click();
+    expect(s.snapshot()).toBe(snap0);
+    s.ed.search.open();
+    s.ed.destroy();
+    expect(s.before.getAttribute("aria-hidden")).toBe("false");
+    expect(s.after.hasAttribute("aria-hidden")).toBe(false);
+    expect(s.hiddenAlready.getAttribute("aria-hidden")).toBe("true");
+    s.cleanup();
+  });
+  test("two dialogs open at once: the page comes back only when both are closed", () => {
+    const s = setup();
+    const snap0 = s.snapshot();
+    key(s.ed.renderer.element(s.f), "?", { ctrlKey: true, shiftKey: true, code: "Slash" });
+    s.ed.search.open();
+    s.ed.search.close();
+    expect(s.after.getAttribute("aria-hidden")).toBe("true"); // (the help is still open)
+    key(document.activeElement!, "Escape");
+    expect(s.snapshot()).toBe(snap0);
+    s.cleanup();
+  });
+  test("focus that is sent out of the dialog is brought back, and returns to the focused block on close", () => {
+    const s = setup();
+    const outside = document.createElement("button");
+    document.body.appendChild(outside);
+    s.ed.search.open();
+    const dlg = document.querySelector("[role=dialog]")!;
+    outside.focus();
+    expect(dlg.contains(document.activeElement)).toBe(true);
+    s.ed.search.close();
+    expect(s.ed.focusedNode()).toBe(s.f);
+    outside.remove();
+    s.cleanup();
+  });
+});
