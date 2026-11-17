@@ -51,7 +51,7 @@ export const KEYS: KeySpec[] = [
   { command: "pasteBefore", description: "Paste before the block", keys: ["Shift-Mod-V"], test: (e) => pmod(e) && e.shiftKey && (e.key === "v" || e.key === "V") },
   { command: "paste", description: "Paste after the block (over a hole)", keys: ["Mod-V"], test: (e) => pmod(e) && !e.shiftKey && (e.key === "v" || e.key === "V") },
   { command: "copy", description: "Copy the selected blocks, or the block (with its comment)", keys: ["Mod-C"], test: () => false },
-  { command: "cut", description: "Cut the selected blocks, or the block (with its comment)", keys: ["Mod-X"], test: () => false },
+  { command: "cut", description: "Cut the selected blocks (none selected: says so and beeps)", keys: ["Mod-X"], test: () => false },
   { command: "insertBefore", description: "Insert a new block before", keys: ["Ctrl-["], test: (e) => pmod(e) && e.key === "[" },
   { command: "insertAfter", description: "Insert a new block after", keys: ["Ctrl-]"], test: (e) => pmod(e) && e.key === "]" },
   { command: "jumpToRoot", description: "Jump to the top-level block", keys: ["Shift-,"], test: (e) => !mod(e) && !e.altKey && e.shiftKey && (e.key === "<" || e.key === ",") },

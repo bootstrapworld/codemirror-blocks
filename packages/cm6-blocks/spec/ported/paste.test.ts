@@ -244,9 +244,9 @@ describe("cut", () => {
     expect(cmb.getValue()).toBe("(f y x)");
   });
 
-  // SKIPPED (D): cut takes the focused block when nothing is selected (notes, parity table: Cmd/Ctrl-X)
+  // (thirteenth round: cut takes only the selected blocks, as here; the old editor said "Nothing selected", this one also beeps)
 
-  it.skip("does nothing when nothing is selected", () => {
+  it("does nothing when nothing is selected", () => {
     cmb.setValue("(f x y)");
     const x = argsOf(root(0))[0];
     mouseDown(x);

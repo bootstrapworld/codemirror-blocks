@@ -4,7 +4,27 @@ import { contentHash } from "../src/hash";
 import { walk } from "../src/doc";
 import { checkLezerEditor } from "../src/lezer-view";
 import { LANGS, mulberry32, randomStep } from "./steps";
-import { make } from "./helpers";
+import { make, TEXT } from "./helpers";
+import { undoDepth } from "@codemirror/commands";
+import type { SoundEvent, SoundName } from "../src/sound";
+import type { LezerBlockEditor } from "../src/lezer-view";
+import type { BNode } from "../src/types";
+
+const text = (ed: LezerBlockEditor) => ed.view.state.doc.toString();
+const lits = (ed: LezerBlockEditor): BNode[] => {
+  const o: BNode[] = [];
+  ed.roots().forEach((r) => walk(r, (n) => o.push(n)));
+  return o.filter((n) => n.kind === "literal");
+};
+const clipEvent = (type: string, data: { v: string }): Event => {
+  const e = new Event(type, { bubbles: true, cancelable: true });
+  Object.defineProperty(e, "clipboardData", { value: { setData: (_t: string, v: string) => (data.v = v), getData: () => data.v } });
+  return e;
+};
+const rig = (l: string, src?: string) => {
+  const heard: [SoundName, SoundEvent][] = [];
+  return { ed: make(l, src, { playSound: (s, e) => heard.push([s, e]) }), heard };
+};
 
 describe("11. the content hash", () => {
   const h = (ed: ReturnType<typeof make>, n: Parameters<typeof contentHash>[0]) => contentHash(n, ed.view.state.doc);
@@ -53,5 +73,40 @@ describe("11. the content hash", () => {
         roots.forEach((r, k) => expect(h(ed, r)).toBe(contentHash(fresh[k], v)));
       }
     }
+  });
+});
+
+describe("2. cut with nothing selected beeps (CHANGED from the old editor, which only says it)", () => {
+  test.each(["scheme", "javascript", "python"])("%s: says Nothing selected, beeps, cuts nothing: text, clipboard, history and focus stay", (l) => {
+    const { ed, heard } = rig(l);
+    const n = lits(ed)[1];
+    ed.focusNode(n);
+    const before = text(ed);
+    const depth = undoDepth(ed.view.state);
+    const data = { v: "kept" };
+    const ev = clipEvent("cut", data);
+    ed.renderer.element(n).dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(true); // (the browser's own cut must not run either)
+    expect(heard).toEqual([["beep", "cut-nothing"]]);
+    expect(ed.said[ed.said.length - 1]).toBe("Nothing selected");
+    expect(data.v).toBe("kept");
+    expect(text(ed)).toBe(before);
+    expect(undoDepth(ed.view.state)).toBe(depth);
+    expect(ed.focusedNode()).toBe(n);
+    expect(checkLezerEditor(ed)).toEqual([]);
+  });
+
+  test.each(["scheme", "javascript", "python"])("%s: copy with nothing selected still takes the focused block (as the old editor does), silently; cut of a selection works", (l) => {
+    const { ed, heard } = rig(l);
+    const n = lits(ed)[1];
+    ed.focusNode(n);
+    const data = { v: "" };
+    ed.renderer.element(n).dispatchEvent(clipEvent("copy", data));
+    expect(data.v).toBe(text(ed).slice(n.from, n.to));
+    expect(heard).toEqual([]);
+    ed.renderer.setSelected(n, true);
+    ed.renderer.element(n).dispatchEvent(clipEvent("cut", data));
+    expect(heard).toEqual([]);
+    expect(text(ed)).not.toBe(TEXT[l]);
   });
 });

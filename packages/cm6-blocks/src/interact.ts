@@ -11,7 +11,7 @@
  *   Ctrl/Cmd-C / X / V    copy / cut / paste the block's source text (the browser's copy, cut and paste events, so the
  *                         system clipboard works); paste goes after the focused block, or replaces a focused blank
  *   Space                 select / unselect the block (aria-selected); Escape, Ctrl-Escape or Alt-Q clear the selection;
- *                         Delete, cut, copy and a drag then use the selected blocks (none selected: the focused one)
+ *                         Delete, cut, copy and a drag then use the selected blocks (none selected: copy and a drag take the focused one; Delete and cut say "Nothing selected" and beep)
  *   Cmd-Enter (Mac) / Ctrl-Enter (elsewhere)   edit the whole block as text in a box (Enter commits, Shift-Enter is a newline,
  *                         Escape cancels); text that does not parse is accepted
  *   Shift-Ctrl-]          edit the comment of the block (a comment block directly above it or after it on its line; none: written above)
@@ -574,6 +574,15 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   function onCopy(e: ClipboardEvent, cut: boolean, d: Record<string, unknown>): void {
     const node = active(e);
     if (!node) return;
+    if (cut && !ed.selectedBlocks().length) {
+      // CHANGED from the old editor, which says "Nothing selected" without a sound (thirteenth round, the owner): cut takes only the
+      // selected blocks, and with none it says so, beeps, and does nothing (the clipboard and the text stay as they are, no history entry)
+      e.preventDefault();
+      e.stopPropagation();
+      ed.say("Nothing selected");
+      beep("cut-nothing");
+      return;
+    }
     const nodes = takes(node);
     if (!nodes.length) return;
     clipItems = ed.copyTexts(nodes);

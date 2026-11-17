@@ -19,6 +19,7 @@ export type SoundName = "beep" | "wrap";
  *  - "no-ancestors": `\` on a top-level block
  *  - "select-refused": Space on a block inside a selected one, or on one that holds selected ones twice
  *  - "delete-nothing": Delete or Backspace with nothing selected (here only: the old editor says "Nothing selected" without a sound)
+ *  - "cut-nothing": Ctrl/Cmd-X with no block selected (CHANGED from the old editor, which only says "Nothing selected")
  *  - "paste-refused": a paste where the block's list cannot take it ("Cannot paste after this node.")
  *  - "comment-of-comment": Shift-Ctrl-] on a comment block
  *  - "left-blank": an edit that deletes a block that has to be there (a "one" slot) and leaves a hole
@@ -27,7 +28,7 @@ export type SoundName = "beep" | "wrap";
  *  - "wrapped": search went on from the other end of the document (the one use of the "wrap" sound)
  */
 export type SoundEvent =
-  | "no-previous" | "no-next" | "no-parent" | "no-child" | "collapse-root" | "no-ancestors" | "select-refused" | "delete-nothing"
+  | "no-previous" | "no-next" | "no-parent" | "no-child" | "collapse-root" | "no-ancestors" | "select-refused" | "delete-nothing" | "cut-nothing"
   | "paste-refused" | "comment-of-comment" | "left-blank" | "drop-nowhere" | "drop-refused" | "no-match" | "wrapped";
 
 /** what plays a sound: the default is `browserPlayer()`; tests pass one that records */

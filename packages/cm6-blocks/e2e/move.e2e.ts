@@ -32,7 +32,11 @@ for (const lang of Object.keys(SMALL)) {
       await page.keyboard.press("ControlOrMeta+c");
       expect(await text(page)).toBe(SMALL[lang]); // copy changes nothing
       expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("3");
-      // cut it, then paste after the 1
+      // cut with nothing selected does nothing (thirteenth round: it beeps and says so)
+      await page.keyboard.press("ControlOrMeta+x");
+      expect(await text(page)).toBe(SMALL[lang]);
+      // select it (Space), cut it, then paste after the 1
+      await page.keyboard.press("Space");
       await page.keyboard.press("ControlOrMeta+x");
       expect(await text(page)).not.toMatch(/3/);
       await page.locator(".cm-content .blocks-literal", { hasText: /^1$/ }).first().click({ modifiers: ["Shift"] });

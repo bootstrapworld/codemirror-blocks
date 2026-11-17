@@ -38,6 +38,7 @@ describe.each(LANGS)("cut and copy take the comment: %s", (l) => {
     const ed = make(l, TEXTS[l]);
     const data = { v: "" };
     ed.focusNode(root(ed, "f"));
+    ed.renderer.setSelected(root(ed, "f"), true); // (cut takes only what is selected)
     ed.renderer.element(root(ed, "f")).dispatchEvent(clip("cut", data));
     expect(text(ed)).not.toContain("about f");
     expect(text(ed)).not.toMatch(/f\(?\s?1/);
@@ -56,6 +57,7 @@ describe.each(LANGS)("cut and copy take the comment: %s", (l) => {
     const ed = make(l, TEXTS[l]);
     const data = { v: "" };
     ed.focusNode(root(ed, "h"));
+    ed.renderer.setSelected(root(ed, "h"), true); // (cut takes only what is selected)
     ed.renderer.element(root(ed, "h")).dispatchEvent(clip("cut", data));
     expect(text(ed)).not.toContain("about h");
     ok(ed);
@@ -131,6 +133,7 @@ describe("comments inside a block that has no list (a Scheme define)", () => {
     ed.focusNode(body);
     ed.renderer.element(body).dispatchEvent(clip("copy", data));
     expect(data.v).toBe("; about the body\n(* a a)");
+    ed.renderer.setSelected(body, true); // (cut takes only what is selected)
     ed.renderer.element(body).dispatchEvent(clip("cut", data));
     expect(text(ed)).not.toContain("about the body");
     expect(text(ed)).toContain("(define (f a)");

@@ -44,6 +44,7 @@ describe.each(LANGS)("moving blocks: %s", (l) => {
     const data = { v: "" };
     const three = lit(ed, "3");
     ed.focusNode(three);
+    ed.renderer.setSelected(three, true); // (cut takes only what is selected)
     ed.renderer.element(three).dispatchEvent(clipboardEvent("cut", data));
     expect(data.v).toBe("3");
     expect(text(ed)).not.toMatch(/3/);
