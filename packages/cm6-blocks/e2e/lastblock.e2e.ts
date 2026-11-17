@@ -3,28 +3,43 @@
 import { test, expect } from "@playwright/test";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const ONE: Record<string, string> = { scheme: "42", javascript: "f(1);", python: "f(1)" };
+const ONE: Record<string, string> = {
+  scheme: "42",
+  javascript: "f(1);",
+  python: "f(1)",
+};
 
 for (const lang of Object.keys(ONE)) {
   test.describe(`the last block goes: ${lang}`, () => {
     test.beforeEach(async ({ page, context }) => {
-      await context.grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => {});
+      await context
+        .grantPermissions(["clipboard-read", "clipboard-write"])
+        .catch(() => {});
       await page.goto(`/index.html?lang=${lang}`);
       await page.waitForSelector(".cm-content .blocks-node");
       await page.evaluate((t) => {
         const d = (window as any).demo;
-        d.ed.view.dispatch({ changes: { from: 0, to: d.ed.view.state.doc.length, insert: t } });
+        d.ed.view.dispatch({
+          changes: { from: 0, to: d.ed.view.state.doc.length, insert: t },
+        });
         // everything that could show a moment without focus: events, mutations of the editor, frames
         const w = window as any;
         w.__bodyMoments = [];
         const check = (where: string) => {
-          if (document.activeElement === document.body || !document.activeElement) w.__bodyMoments.push(where);
+          if (
+            document.activeElement === document.body ||
+            !document.activeElement
+          )
+            w.__bodyMoments.push(where);
         };
         w.__lastCheck = check;
         // (a focusout while a block is being removed: the body is active only when the browser has nothing else to give it, so the
         // events that matter are the ones after the edit: focusin, mutations, frames)
         document.addEventListener("focusin", () => check("focusin"), true);
-        new MutationObserver(() => check("mutation")).observe(d.ed.view.dom, { childList: true, subtree: true });
+        new MutationObserver(() => check("mutation")).observe(d.ed.view.dom, {
+          childList: true,
+          subtree: true,
+        });
         const tick = () => {
           check("frame");
           requestAnimationFrame(tick);
@@ -33,12 +48,15 @@ for (const lang of Object.keys(ONE)) {
         w.__watch = false;
       }, ONE[lang]);
     });
-    const text = (page: any) => page.evaluate(() => (window as any).demo.ed.view.state.doc.toString());
+    const text = (page: any) =>
+      page.evaluate(() => (window as any).demo.ed.view.state.doc.toString());
     const noBody = async (page: any) => {
       await page.waitForTimeout(200);
       const r = await page.evaluate(() => ({
         moments: (window as any).__bodyMoments as string[],
-        inEditor: !!document.activeElement && (window as any).demo.ed.view.dom.contains(document.activeElement),
+        inEditor:
+          !!document.activeElement &&
+          (window as any).demo.ed.view.dom.contains(document.activeElement),
         active: document.activeElement?.tagName,
       }));
       expect(r.active).not.toBe("BODY");
@@ -46,7 +64,10 @@ for (const lang of Object.keys(ONE)) {
       return r.moments;
     };
     // (the top-level block gets the focus the way a key does it; what follows is real keys)
-    const focusBlock = (page: any) => page.evaluate(() => (window as any).demo.ed.focusNode((window as any).demo.ed.roots()[0]));
+    const focusBlock = (page: any) =>
+      page.evaluate(() =>
+        (window as any).demo.ed.focusNode((window as any).demo.ed.roots()[0])
+      );
 
     test("Delete", async ({ page }) => {
       await focusBlock(page);
@@ -67,7 +88,9 @@ for (const lang of Object.keys(ONE)) {
     test("undo of an insert into an empty document", async ({ page }) => {
       await page.evaluate(() => {
         const d = (window as any).demo;
-        d.ed.view.dispatch({ changes: { from: 0, to: d.ed.view.state.doc.length, insert: "" } });
+        d.ed.view.dispatch({
+          changes: { from: 0, to: d.ed.view.state.doc.length, insert: "" },
+        });
       });
       await page.evaluate((t) => {
         const d = (window as any).demo;
@@ -79,12 +102,16 @@ for (const lang of Object.keys(ONE)) {
       expect((await text(page)).trim()).toBe("");
       expect(await noBody(page)).toEqual([]);
     });
-    test("a text change that empties the document under a focused block", async ({ page }) => {
+    test("a text change that empties the document under a focused block", async ({
+      page,
+    }) => {
       await focusBlock(page);
       await page.evaluate(() => ((window as any).__bodyMoments = []));
       await page.evaluate(() => {
         const d = (window as any).demo;
-        d.ed.view.dispatch({ changes: { from: 0, to: d.ed.view.state.doc.length, insert: "" } });
+        d.ed.view.dispatch({
+          changes: { from: 0, to: d.ed.view.state.doc.length, insert: "" },
+        });
       });
       expect(await noBody(page)).toEqual([]);
     });

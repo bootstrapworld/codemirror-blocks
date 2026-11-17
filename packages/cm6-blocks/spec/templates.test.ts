@@ -5,10 +5,25 @@ import { hasError } from "../src/lezer";
 import { make, OPTS } from "./helpers";
 import type { BNode } from "../src/types";
 
-const CONTEXTS: Record<string, { top: string; fn: [string, string]; iff: [string, string] }> = {
-  scheme: { top: "(f 1)\n(g 2)", fn: ["(define (f x) (g 1 2))", "1"], iff: ["(if (> x 1) (g 1 2) 0)", "1"] },
-  javascript: { top: "f(1);\ng(2);", fn: ["function f(a) {\n  return a;\n}", "return a;"], iff: ["if (x) {\n  y();\n}", "y();"] },
-  python: { top: "f(1)\ng(2)", fn: ["def f(a):\n    return a\n", "return a"], iff: ["if x:\n    y()\n", "y()"] },
+const CONTEXTS: Record<
+  string,
+  { top: string; fn: [string, string]; iff: [string, string] }
+> = {
+  scheme: {
+    top: "(f 1)\n(g 2)",
+    fn: ["(define (f x) (g 1 2))", "1"],
+    iff: ["(if (> x 1) (g 1 2) 0)", "1"],
+  },
+  javascript: {
+    top: "f(1);\ng(2);",
+    fn: ["function f(a) {\n  return a;\n}", "return a;"],
+    iff: ["if (x) {\n  y();\n}", "y();"],
+  },
+  python: {
+    top: "f(1)\ng(2)",
+    fn: ["def f(a):\n    return a\n", "return a"],
+    iff: ["if x:\n    y()\n", "y()"],
+  },
 };
 const all = (ed: LezerBlockEditor): BNode[] => {
   const o: BNode[] = [];
@@ -19,7 +34,8 @@ const textOf = (ed: LezerBlockEditor) => ed.view.state.doc.toString();
 
 describe.each(Object.keys(CONTEXTS))("templates: %s", (l) => {
   const names = Object.keys(OPTS[l].table.templates ?? {});
-  test("there are templates", () => expect(names.length).toBeGreaterThanOrEqual(8));
+  test("there are templates", () =>
+    expect(names.length).toBeGreaterThanOrEqual(8));
   const where: [string, string, string | null][] = [
     ["top level", CONTEXTS[l].top, null],
     ["a function body", CONTEXTS[l].fn[0], CONTEXTS[l].fn[1]],
@@ -30,26 +46,57 @@ describe.each(Object.keys(CONTEXTS))("templates: %s", (l) => {
       const ed = make(l, text);
       const t = OPTS[l].table.templates![name];
       const before = all(ed).filter((n) => n.kind === t.kind).length;
-      const anchor = anchorText ? all(ed).find((n) => textOf(ed).slice(n.from, n.to) === anchorText) ?? null : null;
+      const anchor = anchorText
+        ? (all(ed).find((n) => textOf(ed).slice(n.from, n.to) === anchorText) ??
+          null)
+        : null;
       expect(anchorText ? anchor : true).toBeTruthy();
       const hole = ed.insertTemplate(name, anchor);
-      expect(ed.roots().filter((r) => r.kind === "error" || hasError(r))).toEqual([]);
-      expect(all(ed).filter((n) => n.kind === t.kind).length).toBeGreaterThan(before);
+      expect(
+        ed.roots().filter((r) => r.kind === "error" || hasError(r))
+      ).toEqual([]);
+      expect(all(ed).filter((n) => n.kind === t.kind).length).toBeGreaterThan(
+        before
+      );
       expect(hole).not.toBeNull();
       // the first hole is focused with its edit box open; cancel it to compare the page with a fresh drawing
-      let input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+      let input = ed.view.dom.querySelector(
+        "input.blocks-edit"
+      ) as HTMLInputElement;
       expect(input).not.toBeNull();
-      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Escape",
+          bubbles: true,
+          cancelable: true,
+        })
+      );
       expect(checkLezerEditor(ed)).toEqual([]);
       if (t.text.includes("${")) {
         // typing into the hole replaces it
         ed.focusNode(hole!);
         const isBlank = hole!.value === (OPTS[l].table.blank ?? "...");
-        ed.renderer.element(hole!).dispatchEvent(new KeyboardEvent("keydown", { key: isBlank ? "z" : "Enter", bubbles: true, cancelable: true }));
-        input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+        ed.renderer
+          .element(hole!)
+          .dispatchEvent(
+            new KeyboardEvent("keydown", {
+              key: isBlank ? "z" : "Enter",
+              bubbles: true,
+              cancelable: true,
+            })
+          );
+        input = ed.view.dom.querySelector(
+          "input.blocks-edit"
+        ) as HTMLInputElement;
         expect(input.value).toBe(isBlank ? "z" : hole!.value);
         input.value = "zz";
-        input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        input.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: "Enter",
+            bubbles: true,
+            cancelable: true,
+          })
+        );
         expect(textOf(ed)).toContain("zz");
         expect(checkLezerEditor(ed)).toEqual([]);
       }
@@ -66,7 +113,9 @@ describe.each(Object.keys(CONTEXTS))("templates: %s", (l) => {
 test("a template inserted outside the viewport leaves no edit box behind", () => {
   const text = Array.from({ length: 600 }, (_, i) => `(f ${i} 2)`).join("\n");
   const ed = make("scheme", text);
-  const lit = all(ed).filter((n) => n.kind === "literal").pop()!;
+  const lit = all(ed)
+    .filter((n) => n.kind === "literal")
+    .pop()!;
   const found = ed.insertTemplate("boolean", lit)!;
   expect(found).not.toBeNull();
   expect(ed.renderer.element(found).querySelector("input")).toBeNull();

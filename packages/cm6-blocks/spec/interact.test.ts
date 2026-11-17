@@ -1,27 +1,66 @@
 /** @jest-environment jsdom */
 import { walk } from "../src/doc";
-import { createLezerBlockEditor, checkLezerEditor, LezerBlockEditor, LezerOptions } from "../src/lezer-view";
+import {
+  createLezerBlockEditor,
+  checkLezerEditor,
+  LezerBlockEditor,
+  LezerOptions,
+} from "../src/lezer-view";
 import { nextBlock, prevBlock } from "../src/interact";
 import { schemeParser, schemeTable } from "../src/lang-scheme";
 import { javascriptParser, javascriptTable } from "../src/lang-javascript";
 import { pythonParser, pythonTable } from "../src/lang-python";
 import type { BNode } from "../src/types";
 
-const zeroRect = { x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0, toJSON: () => ({}) };
-if (!Range.prototype.getClientRects) Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
-if (!Range.prototype.getBoundingClientRect) Range.prototype.getBoundingClientRect = () => zeroRect as DOMRect;
+const zeroRect = {
+  x: 0,
+  y: 0,
+  width: 0,
+  height: 0,
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  toJSON: () => ({}),
+};
+if (!Range.prototype.getClientRects)
+  Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+if (!Range.prototype.getBoundingClientRect)
+  Range.prototype.getBoundingClientRect = () => zeroRect as DOMRect;
 
-const LANGS: Record<string, { opts: LezerOptions; text: string; blank: string; sib: string }> = {
-  scheme: { opts: { parser: schemeParser as never, table: schemeTable }, text: "(f 1 (g 2) 3)\n(h 4)", blank: "...", sib: "9" },
-  javascript: { opts: { parser: javascriptParser as never, table: javascriptTable }, text: "f(1, g(2), 3);\nh(4);", blank: "undefined", sib: "9" },
-  python: { opts: { parser: pythonParser as never, table: pythonTable }, text: "f(1, g(2), 3)\nh(4)", blank: "...", sib: "9" },
+const LANGS: Record<
+  string,
+  { opts: LezerOptions; text: string; blank: string; sib: string }
+> = {
+  scheme: {
+    opts: { parser: schemeParser as never, table: schemeTable },
+    text: "(f 1 (g 2) 3)\n(h 4)",
+    blank: "...",
+    sib: "9",
+  },
+  javascript: {
+    opts: { parser: javascriptParser as never, table: javascriptTable },
+    text: "f(1, g(2), 3);\nh(4);",
+    blank: "undefined",
+    sib: "9",
+  },
+  python: {
+    opts: { parser: pythonParser as never, table: pythonTable },
+    text: "f(1, g(2), 3)\nh(4)",
+    blank: "...",
+    sib: "9",
+  },
 };
 
 const made: LezerBlockEditor[] = [];
 function make(l: string, text?: string): LezerBlockEditor {
   const parent = document.createElement("div");
   document.body.appendChild(parent);
-  const ed = createLezerBlockEditor(parent, text ?? LANGS[l].text, LANGS[l].opts);
+  const ed = createLezerBlockEditor(
+    parent,
+    text ?? LANGS[l].text,
+    LANGS[l].opts
+  );
   made.push(ed);
   return ed;
 }
@@ -40,12 +79,21 @@ const all = (ed: LezerBlockEditor): BNode[] => {
   return o;
 };
 const withText = (ed: LezerBlockEditor, t: string, nth = 0): BNode => {
-  const m = all(ed).filter((n) => textOf(ed).slice(n.from, n.to) === t && n.kind !== "statement");
+  const m = all(ed).filter(
+    (n) => textOf(ed).slice(n.from, n.to) === t && n.kind !== "statement"
+  );
   if (!m[nth]) throw new Error(`no node ${t}`);
   return m[nth];
 };
 const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) =>
-  el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
+  el.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: k,
+      bubbles: true,
+      cancelable: true,
+      ...mods,
+    })
+  );
 /** select the block (Space), then Delete: the old editor deletes only what is selected */
 const del = (el: Element, k = "Delete") => {
   key(el, " ");
@@ -62,16 +110,21 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
   test("click focuses a block", () => {
     const ed = make(l);
     const n = withText(ed, "2");
-    ed.renderer.element(n).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    ed.renderer
+      .element(n)
+      .dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(ed.focusedNode()).toBe(n);
   });
 
   test("ArrowDown / ArrowUp walk the blocks in document order", () => {
     const ed = make(l);
     const order: BNode[] = [];
-    for (let n: BNode | null = ed.roots()[0]; n; n = nextBlock(n)) order.push(n);
+    for (let n: BNode | null = ed.roots()[0]; n; n = nextBlock(n))
+      order.push(n);
     expect(order.length).toBeGreaterThan(8);
-    expect(order.map((n) => n.from)).toEqual([...order.map((n) => n.from)].sort((a, b) => a - b));
+    expect(order.map((n) => n.from)).toEqual(
+      [...order.map((n) => n.from)].sort((a, b) => a - b)
+    );
     let el = focusOn(ed, order[0]);
     for (let i = 1; i < order.length; i++) {
       key(el, "ArrowDown");
@@ -122,13 +175,20 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
   test("Delete in a 'one' slot puts the language's blank there", () => {
     const ed = make(l);
     // a node that is in a "one" slot and is a leaf
-    const leaf = all(ed).find((n) => n.slot?.kind === "one" && n.slots.length === 0 && n.parent?.kind !== "program")!;
+    const leaf = all(ed).find(
+      (n) =>
+        n.slot?.kind === "one" &&
+        n.slots.length === 0 &&
+        n.parent?.kind !== "program"
+    )!;
     expect(leaf).toBeDefined();
     const src = textOf(ed).slice(leaf.from, leaf.to);
     const el = focusOn(ed, leaf);
     del(el, "Delete");
     expect(textOf(ed)).toContain(LANGS[l].blank);
-    expect(textOf(ed).slice(leaf.from, leaf.from + LANGS[l].blank.length)).toBe(LANGS[l].blank);
+    expect(textOf(ed).slice(leaf.from, leaf.from + LANGS[l].blank.length)).toBe(
+      LANGS[l].blank
+    );
     expect(src).not.toBe(LANGS[l].blank);
     ok(ed);
   });
@@ -138,7 +198,9 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
     const n = withText(ed, "2");
     const el = focusOn(ed, n);
     key(el, "Enter");
-    let input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+    let input = ed.view.dom.querySelector(
+      "input.blocks-edit"
+    ) as HTMLInputElement;
     expect(input).not.toBeNull();
     expect(input.value).toBe("2");
     input.value = "27";
@@ -162,7 +224,9 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
     const ed = make(l);
     const n = withText(ed, "2");
     key(focusOn(ed, n), "Enter");
-    const input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+    const input = ed.view.dom.querySelector(
+      "input.blocks-edit"
+    ) as HTMLInputElement;
     input.value = l === "scheme" ? "(((" : "2 +* (";
     key(input, "Enter");
     expect(textOf(ed)).toContain(input.value);
@@ -173,7 +237,9 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
     const ed = make(l);
     const two = withText(ed, "2");
     key(focusOn(ed, two), "]", { ctrlKey: true });
-    let input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+    let input = ed.view.dom.querySelector(
+      "input.blocks-edit"
+    ) as HTMLInputElement;
     expect(input).not.toBeNull();
     input.value = "88";
     key(input, "Enter");
@@ -191,10 +257,16 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
   test("a click on a gap opens a box there", () => {
     const ed = make(l);
     const g = all(ed).find((n) => n.kind === "call")!;
-    const gaps = Array.from(ed.renderer.element(g).querySelectorAll(":scope > .blocks-args > .blocks-gap"));
+    const gaps = Array.from(
+      ed.renderer
+        .element(g)
+        .querySelectorAll(":scope > .blocks-args > .blocks-gap")
+    );
     const gap = gaps[1] as HTMLElement; // between the first and second argument
     gap.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    const input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+    const input = ed.view.dom.querySelector(
+      "input.blocks-edit"
+    ) as HTMLInputElement;
     expect(input).not.toBeNull();
     input.value = "55";
     key(input, "Enter");
@@ -235,16 +307,29 @@ describe("insert into an empty list", () => {
   ];
   test.each(cases)("%s %j", (l, text, expected, kind) => {
     const ed = make(l, text);
-    const node = all(ed).find((n) => n.kind === kind && n.slots.some((s) => s.kind === "list" && s.nodes.length === 0))!;
+    const node = all(ed).find(
+      (n) =>
+        n.kind === kind &&
+        n.slots.some((s) => s.kind === "list" && s.nodes.length === 0)
+    )!;
     expect(node).toBeDefined();
-    ed.insertText(node.slots.find((s) => s.kind === "list" && s.nodes.length === 0)!, 0, "5");
+    ed.insertText(
+      node.slots.find((s) => s.kind === "list" && s.nodes.length === 0)!,
+      0,
+      "5"
+    );
     expect(textOf(ed).split("\n")[0]).toBe(expected);
     ok(ed);
   });
   test("an empty Python body is impossible", () => {
     const ed = make("python", "def f():\n    pass\n");
     // (`pass` is a block now: only a body with nothing in it counts, and Lezer may not give one at all)
-    const body = all(ed).find((n) => n.kind === "body" && n.slots[0].nodes.length === 0);
-    if (body) expect(() => ed.insertText(body.slots[0], 0, "x = 1")).toThrow(/closing bracket/);
+    const body = all(ed).find(
+      (n) => n.kind === "body" && n.slots[0].nodes.length === 0
+    );
+    if (body)
+      expect(() => ed.insertText(body.slots[0], 0, "x = 1")).toThrow(
+        /closing bracket/
+      );
   });
 });

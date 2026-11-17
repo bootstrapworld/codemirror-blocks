@@ -13,8 +13,19 @@ const all = (ed: LezerBlockEditor): BNode[] => {
   ed.roots().forEach((r) => walk(r, (n) => o.push(n)));
   return o;
 };
-const lit = (ed: LezerBlockEditor, src: string, nth = 0): BNode => all(ed).filter((n) => n.kind === "literal" && text(ed).slice(n.from, n.to) === src)[nth];
-const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
+const lit = (ed: LezerBlockEditor, src: string, nth = 0): BNode =>
+  all(ed).filter(
+    (n) => n.kind === "literal" && text(ed).slice(n.from, n.to) === src
+  )[nth];
+const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) =>
+  el.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: k,
+      bubbles: true,
+      cancelable: true,
+      ...mods,
+    })
+  );
 /** select the block (Space), then Delete: the old editor deletes only what is selected */
 const del = (el: Element, k = "Delete") => {
   key(el, " ");
@@ -24,14 +35,25 @@ const space = (ed: LezerBlockEditor, n: BNode) => {
   ed.focusNode(n);
   key(ed.renderer.element(n), " ");
 };
-const sel = (ed: LezerBlockEditor, n: BNode) => ed.renderer.element(n).getAttribute("aria-selected");
+const sel = (ed: LezerBlockEditor, n: BNode) =>
+  ed.renderer.element(n).getAttribute("aria-selected");
 /** the first call (a block with an `args` list) */
-const firstCall = (ed: LezerBlockEditor): BNode => all(ed).find((n) => n.slots.some((q) => q.name === "args"))!;
-const g = (ed: LezerBlockEditor): BNode => all(ed).filter((n) => n.slots.length > 0 && /^[(]?g[( ]2/.test(text(ed).slice(n.from, n.to)))[0];
+const firstCall = (ed: LezerBlockEditor): BNode =>
+  all(ed).find((n) => n.slots.some((q) => q.name === "args"))!;
+const g = (ed: LezerBlockEditor): BNode =>
+  all(ed).filter(
+    (n) =>
+      n.slots.length > 0 && /^[(]?g[( ]2/.test(text(ed).slice(n.from, n.to))
+  )[0];
 
 function clipboardEvent(type: string, data: { v: string }): Event {
   const e = new Event(type, { bubbles: true, cancelable: true });
-  Object.defineProperty(e, "clipboardData", { value: { setData: (_t: string, v: string) => (data.v = v), getData: () => data.v } });
+  Object.defineProperty(e, "clipboardData", {
+    value: {
+      setData: (_t: string, v: string) => (data.v = v),
+      getData: () => data.v,
+    },
+  });
   return e;
 }
 
@@ -39,20 +61,28 @@ describe.each(LANGS)("selection: %s", (l) => {
   test("every block says aria-selected=false, the tree is multiselectable; Space toggles aria-selected and the class", () => {
     const ed = make(l);
     const said0 = [...ed.said]; // (the summary of the program, said when it was first drawn)
-    expect(ed.view.contentDOM.getAttribute("aria-multiselectable")).toBe("true");
+    expect(ed.view.contentDOM.getAttribute("aria-multiselectable")).toBe(
+      "true"
+    );
     const els = Array.from(ed.view.dom.querySelectorAll(".blocks-node"));
     expect(els.length).toBeGreaterThan(8);
-    expect(els.every((e) => e.getAttribute("aria-selected") === "false")).toBe(true);
+    expect(els.every((e) => e.getAttribute("aria-selected") === "false")).toBe(
+      true
+    );
     const two = lit(ed, "2");
     space(ed, two);
     expect(sel(ed, two)).toBe("true");
-    expect(ed.renderer.element(two).classList.contains("blocks-selected")).toBe(true);
+    expect(ed.renderer.element(two).classList.contains("blocks-selected")).toBe(
+      true
+    );
     expect(ed.selectedBlocks()).toEqual([two]);
     expect(ed.said).toEqual(said0); // (like the old editor: the state is announced through aria-selected, nothing is said)
     ok(ed);
     space(ed, two);
     expect(sel(ed, two)).toBe("false");
-    expect(ed.renderer.element(two).classList.contains("blocks-selected")).toBe(false);
+    expect(ed.renderer.element(two).classList.contains("blocks-selected")).toBe(
+      false
+    );
     ok(ed);
   });
 
@@ -83,7 +113,9 @@ describe.each(LANGS)("selection: %s", (l) => {
     const one = lit(ed, "1");
     ed.renderer.setSelected(one, false);
     expect(ed.toggleSelect(one)).toBe("refused");
-    expect(ed.said[ed.said.length - 1]).toBe("This node already has a selected ancestor");
+    expect(ed.said[ed.said.length - 1]).toBe(
+      "This node already has a selected ancestor"
+    );
     expect(sel(ed, one)).toBe("false");
   });
 
@@ -103,13 +135,19 @@ describe.each(LANGS)("selection: %s", (l) => {
 
   test("Escape, Ctrl-Escape and Alt-Q clear the selection", () => {
     const ed = make(l);
-    for (const how of [{ k: "Escape" }, { k: "Escape", m: { ctrlKey: true } }, { k: "q", m: { altKey: true, code: "KeyQ" } }]) {
+    for (const how of [
+      { k: "Escape" },
+      { k: "Escape", m: { ctrlKey: true } },
+      { k: "q", m: { altKey: true, code: "KeyQ" } },
+    ]) {
       space(ed, lit(ed, "1"));
       space(ed, lit(ed, "3"));
       expect(ed.selection().length).toBe(2);
       key(ed.renderer.element(lit(ed, "3")), how.k, how.m);
       expect(ed.selection()).toEqual([]);
-      expect(ed.view.dom.querySelectorAll('[aria-selected="true"]').length).toBe(0);
+      expect(
+        ed.view.dom.querySelectorAll('[aria-selected="true"]').length
+      ).toBe(0);
     }
     ok(ed);
   });
@@ -117,7 +155,9 @@ describe.each(LANGS)("selection: %s", (l) => {
   test("a click does not change the selection; focus can move on", () => {
     const ed = make(l);
     space(ed, lit(ed, "1"));
-    ed.renderer.element(g(ed)).dispatchEvent(new MouseEvent("click", { bubbles: true })); // (a literal would open its edit box, which clears the selection)
+    ed.renderer
+      .element(g(ed))
+      .dispatchEvent(new MouseEvent("click", { bubbles: true })); // (a literal would open its edit box, which clears the selection)
     expect(ed.focusedNode()).toBe(g(ed));
     expect(ed.selectedBlocks()).toEqual([lit(ed, "1")]);
   });
@@ -156,7 +196,9 @@ describe.each(LANGS)("selection: %s", (l) => {
     for (const a of args.nodes) space(ed, a);
     expect(ed.selectedBlocks().length).toBe(3);
     key(ed.renderer.element(args.nodes[0]), "Backspace");
-    expect(text(ed).split("\n")[0].replace(/\s/g, "")).toMatch(l === "scheme" ? /^\(f\)$/ : l === "javascript" ? /^f\(\);$/ : /^f\(\)$/);
+    expect(text(ed).split("\n")[0].replace(/\s/g, "")).toMatch(
+      l === "scheme" ? /^\(f\)$/ : l === "javascript" ? /^f\(\);$/ : /^f\(\)$/
+    );
     ok(ed);
   });
 
@@ -209,7 +251,10 @@ describe.each(LANGS)("selection: %s", (l) => {
     expect(ed.selection().length).toBe(1);
     ok(ed);
     // its parent edited as text: everything inside is new, nothing stale stays
-    ed.replaceText(ed.roots()[0], l === "scheme" ? "(q 1)" : l === "javascript" ? "q(1);" : "q(1)");
+    ed.replaceText(
+      ed.roots()[0],
+      l === "scheme" ? "(q 1)" : l === "javascript" ? "q(1);" : "q(1)"
+    );
     ok(ed);
     for (const n of ed.selection()) expect(ed.doc.byId.get(n.id)).toBe(n);
   });
@@ -235,15 +280,33 @@ describe.each(LANGS)("selection: %s", (l) => {
     space(ed, three);
     // drop onto the gap before the 4's call: the gap after `h`'s arguments, i.e. into h(4) at index 1
     const h = ed.roots()[1];
-    const gap = ed.renderer.element(h).querySelector(`.blocks-args[data-slot="args"] > .blocks-gap[data-index="1"]`) as HTMLElement;
+    const gap = ed.renderer
+      .element(h)
+      .querySelector(
+        `.blocks-args[data-slot="args"] > .blocks-gap[data-index="1"]`
+      ) as HTMLElement;
     const at = { x: 0 };
-    document.elementFromPoint = () => (at.x === 100 ? gap : ed.renderer.element(three));
-    const fire = (el: Element, type: string, x: number) => el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX: x, clientY: 10 }));
+    document.elementFromPoint = () =>
+      at.x === 100 ? gap : ed.renderer.element(three);
+    const fire = (el: Element, type: string, x: number) =>
+      el.dispatchEvent(
+        new MouseEvent(type, {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          clientX: x,
+          clientY: 10,
+        })
+      );
     fire(ed.renderer.element(three), "pointerdown", 10);
     at.x = 100;
     fire(document.body, "pointermove", 100);
-    expect(ed.renderer.element(one).classList.contains("blocks-drag-source")).toBe(true); // all of them
-    expect(ed.renderer.element(three).classList.contains("blocks-drag-source")).toBe(true);
+    expect(
+      ed.renderer.element(one).classList.contains("blocks-drag-source")
+    ).toBe(true); // all of them
+    expect(
+      ed.renderer.element(three).classList.contains("blocks-drag-source")
+    ).toBe(true);
     fire(document.body, "pointerup", 100);
     expect(ed.lastError).toBeNull();
     const t = text(ed).split("\n");
@@ -262,10 +325,16 @@ describe.each(LANGS)("selection: %s", (l) => {
     const call = ed.roots()[0];
     const gg = g(ed);
     const two = lit(ed, "2");
-    expect(() => ed.moveNodes([gg, lit(ed, "1")], { blank: two })).toThrow(/inside itself|one block/);
-    expect(() => ed.moveNodes([gg], { slot: gg.slots.find((s) => s.name === "args")!, index: 0 })).toThrow(/inside itself/);
+    expect(() => ed.moveNodes([gg, lit(ed, "1")], { blank: two })).toThrow(
+      /inside itself|one block/
+    );
+    expect(() =>
+      ed.moveNodes([gg], {
+        slot: gg.slots.find((s) => s.name === "args")!,
+        index: 0,
+      })
+    ).toThrow(/inside itself/);
     expect(call).toBeDefined();
     expect(text(ed)).toBe(TEXT[l]);
   });
 });
-

@@ -15,7 +15,12 @@ export interface ScrollerLike {
   scrollWidth: number;
   clientHeight: number;
   clientWidth: number;
-  getBoundingClientRect(): { left: number; top: number; right: number; bottom: number };
+  getBoundingClientRect(): {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+  };
 }
 export interface AutoScrollOptions {
   scroller: () => ScrollerLike;
@@ -37,7 +42,12 @@ export interface AutoScroll {
 }
 
 /** how far into a zone: magnitude 0 at the zone's inner border, 1 at the edge; negative near the low edge (scroll back), positive near the high edge (scroll on); null outside the zone */
-export function edgeDepth(pos: number, lo: number, hi: number, zone: number): number | null {
+export function edgeDepth(
+  pos: number,
+  lo: number,
+  hi: number,
+  zone: number
+): number | null {
   if (pos < lo || pos > hi) return null;
   const fromLo = pos - lo;
   const fromHi = hi - pos;
@@ -59,7 +69,9 @@ export function createAutoScroll(o: AutoScrollOptions): AutoScroll {
   let last = -1;
   let carryX = 0;
   let carryY = 0;
-  const speed = (depth: number): number => Math.sign(depth) * (minSpeed + (maxSpeed - minSpeed) * Math.abs(depth) ** 1.5);
+  const speed = (depth: number): number =>
+    Math.sign(depth) *
+    (minSpeed + (maxSpeed - minSpeed) * Math.abs(depth) ** 1.5);
   /** (the direction and depth of the pointer in each axis; 0 when it is not in a zone, or the editor cannot scroll that way) */
   function depths(): { dx: number; dy: number } {
     const s = o.scroller();
@@ -69,8 +81,10 @@ export function createAutoScroll(o: AutoScrollOptions): AutoScroll {
     let dy = 0;
     let dx = 0;
     if (inX && inY) {
-      if (s.scrollHeight > s.clientHeight) dy = edgeDepth(py, r.top, r.bottom, zone) ?? 0;
-      if (s.scrollWidth > s.clientWidth) dx = edgeDepth(px, r.left, r.right, zone) ?? 0;
+      if (s.scrollHeight > s.clientHeight)
+        dy = edgeDepth(py, r.top, r.bottom, zone) ?? 0;
+      if (s.scrollWidth > s.clientWidth)
+        dx = edgeDepth(px, r.left, r.right, zone) ?? 0;
     }
     return { dx, dy };
   }

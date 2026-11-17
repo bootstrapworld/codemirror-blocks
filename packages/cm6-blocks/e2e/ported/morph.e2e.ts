@@ -252,8 +252,19 @@ test.describe("with reduced motion", () => {
 test.fixme(true, "M: the animated morph between text and blocks is not built");
 
 // FIXME-BEGIN (thirteenth round: M: the animated morph between text and blocks is not built)
-const FIXME = new Set<string>(["with motion › the words of the text float into the blocks, and back", "with motion › the words really move: a word ends up away from where it began", "with motion › the words can be seen: the layer they are on has a size, and they are in what it shows", "with motion › the toolbar opens first, then the words float; going back the words float, then it closes", "with motion › a click while the toolbar is opening makes the switch at once", "with motion › a key pressed in the middle of it ends it at once", "with reduced motion › nothing floats: the switch is made at once"]);
+const FIXME = new Set<string>([
+  "with motion › the words of the text float into the blocks, and back",
+  "with motion › the words really move: a word ends up away from where it began",
+  "with motion › the words can be seen: the layer they are on has a size, and they are in what it shows",
+  "with motion › the toolbar opens first, then the words float; going back the words float, then it closes",
+  "with motion › a click while the toolbar is opening makes the switch at once",
+  "with motion › a key pressed in the middle of it ends it at once",
+  "with reduced motion › nothing floats: the switch is made at once",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "M: the animated morph between text and blocks is not built");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "M: the animated morph between text and blocks is not built"
+  );
 });
 // FIXME-END

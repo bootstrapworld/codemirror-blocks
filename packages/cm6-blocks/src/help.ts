@@ -9,7 +9,11 @@ export interface Help {
   close(): void;
 }
 
-export function openHelp(host: HTMLElement, mac: boolean, done: () => void): Help {
+export function openHelp(
+  host: HTMLElement,
+  mac: boolean,
+  done: () => void
+): Help {
   const doc = host.ownerDocument;
   const box = doc.createElement("div");
   box.className = "blocks-help";

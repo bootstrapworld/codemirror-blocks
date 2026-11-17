@@ -48,7 +48,9 @@ function lexMessage(e: unknown): string {
     const obj = JSON.parse(raw);
     walk(obj["dom-message"]);
     const text = parts
-      .filter((p) => p !== "span" && p !== "class" && p !== "Error" && p !== "Message")
+      .filter(
+        (p) => p !== "span" && p !== "class" && p !== "Error" && p !== "Message"
+      )
       .join("");
     if (text) return text;
   } catch {
@@ -131,10 +133,7 @@ function convert(s: Sexp, text: string, offset: number): BNode {
   const headTo =
     headText === null ? 0 : hloc.startChar + headText.length + offset;
   const conv = (x: Sexp) => convert(x, text, offset);
-  const keyworded = (
-    kind: string,
-    slots: [string, "one" | "list"][]
-  ): BNode =>
+  const keyworded = (kind: string, slots: [string, "one" | "list"][]): BNode =>
     makeNode(kind, slots, {
       from,
       to,

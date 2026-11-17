@@ -13,7 +13,15 @@ import {
   shift,
   walk,
 } from "../src/doc";
-import { BNode, Doc, OpResult, ParseError, Slot, TextChange, TreeChange } from "../src/types";
+import {
+  BNode,
+  Doc,
+  OpResult,
+  ParseError,
+  Slot,
+  TextChange,
+  TreeChange,
+} from "../src/types";
 
 const L = wescheme;
 
@@ -29,7 +37,9 @@ function clauseOf(text: string): BNode {
 function shape(n: BNode, text: string): unknown {
   const t = text.slice(n.from, n.to);
   const kids = children(n);
-  return kids.length === 0 ? [n.kind, t] : [n.kind, t, kids.map((k) => shape(k, text))];
+  return kids.length === 0
+    ? [n.kind, t]
+    : [n.kind, t, kids.map((k) => shape(k, text))];
 }
 
 function slotOf(node: BNode, name: string): Slot {
@@ -52,14 +62,21 @@ class Harness {
   find(t: string, kind?: string): BNode {
     let found: BNode | null = null;
     walk(this.doc.program, (n) => {
-      if (!found && n.kind !== "program" && this.text.slice(n.from, n.to) === t && (!kind || n.kind === kind)) {
+      if (
+        !found &&
+        n.kind !== "program" &&
+        this.text.slice(n.from, n.to) === t &&
+        (!kind || n.kind === kind)
+      ) {
         found = n;
       }
     });
     if (!found) throw new Error(`no node with text ${t}`);
     return found;
   }
-  private done(r: { text: { from: number; to: number; insert: string } }): string {
+  private done(r: {
+    text: { from: number; to: number; insert: string };
+  }): string {
     this.text = applyText(this.text, r.text);
     expect(checkDoc(this.doc, this.text)).toEqual([]);
     return this.text;
@@ -85,7 +102,7 @@ class Harness {
 
 describe("parse", () => {
   it("atoms and calls", () => {
-    const t = "(f 1 \"a b\" #t #\\a x)";
+    const t = '(f 1 "a b" #t #\\a x)';
     const [n] = L.parse(t);
     expect(n.kind).toBe("call");
     expect(shape(n, t)).toEqual([
@@ -101,7 +118,14 @@ describe("parse", () => {
       ],
     ]);
     const types = children(n).map((c) => c.dataType);
-    expect(types).toEqual(["symbol", "number", "string", "boolean", "char", "symbol"]);
+    expect(types).toEqual([
+      "symbol",
+      "number",
+      "string",
+      "boolean",
+      "char",
+      "symbol",
+    ]);
   });
 
   it("define, lambda, if, brackets, keywords", () => {
@@ -133,7 +157,9 @@ describe("parse", () => {
     const [c] = L.parse(t);
     expect(c.kind).toBe("cond");
     const clauses = slotOf(c, "clauses").nodes;
-    expect(clauses.map((x) => [x.kind, t.slice(x.from, x.to), x.brackets])).toEqual([
+    expect(
+      clauses.map((x) => [x.kind, t.slice(x.from, x.to), x.brackets])
+    ).toEqual([
       ["clause", "[(a) 1 2]", "[]"],
       ["clause", "(else (cond [b c]))", "()"],
       ["clause", "[d]", "[]"],
@@ -145,7 +171,14 @@ describe("parse", () => {
   });
 
   it("a cond with a bad clause, and special forms of the wrong size, are unknown", () => {
-    for (const t of ["(cond 5)", "(cond [])", "(define x)", "(lambda (x))", "(if a b)", "(define a b c)"]) {
+    for (const t of [
+      "(cond 5)",
+      "(cond [])",
+      "(define x)",
+      "(lambda (x))",
+      "(if a b)",
+      "(define a b c)",
+    ]) {
       const [n] = L.parse(t);
       expect([t, n.kind]).toEqual([t, "unknown"]);
       expect(slotOf(n, "elts")).toBeDefined();
@@ -157,7 +190,9 @@ describe("parse", () => {
   it("empty list, quote forms, vectors and the like", () => {
     const t = "() 'x '(a b) `(a ,b ,@c) #(1 2) (f 'x)";
     const nodes = L.parse(t);
-    expect(nodes.map((n) => [n.kind, t.slice(n.from, n.to), n.slots.length, n.value])).toEqual([
+    expect(
+      nodes.map((n) => [n.kind, t.slice(n.from, n.to), n.slots.length, n.value])
+    ).toEqual([
       ["unknown", "()", 1, undefined],
       ["unknown", "'x", 0, "'x"],
       ["unknown", "'(a b)", 0, "'(a b)"],
@@ -180,7 +215,7 @@ describe("parse", () => {
       "(define (f x) ; trailing",
       "\t(+ x 1)) #| block | still |# (g",
       "  #; (skipped form)",
-      "  \"two  spaces\\\" ; not a comment\"",
+      '  "two  spaces\\" ; not a comment"',
       "  ; last",
       ")",
       "; end",
@@ -188,12 +223,17 @@ describe("parse", () => {
     const nodes = L.parse(t);
     expect(nodes.map((n) => [n.kind, t.slice(n.from, n.to)])).toEqual([
       ["define", "(define (f x) ; trailing\n\t(+ x 1))"],
-      ["call", "(g\n  #; (skipped form)\n  \"two  spaces\\\" ; not a comment\"\n  ; last\n)"],
+      [
+        "call",
+        '(g\n  #; (skipped form)\n  "two  spaces\\" ; not a comment"\n  ; last\n)',
+      ],
     ]);
     const g = nodes[1];
     const args = slotOf(g, "args").nodes;
     expect(args.length).toBe(1);
-    expect(t.slice(args[0].from, args[0].to)).toBe('"two  spaces\\" ; not a comment"');
+    expect(t.slice(args[0].from, args[0].to)).toBe(
+      '"two  spaces\\" ; not a comment"'
+    );
     expect(args[0].dataType).toBe("string");
   });
 
@@ -289,10 +329,14 @@ describe("insertNode", () => {
 
   it("into an empty list with no earlier child: after the keyword", () => {
     const h = new Harness("(cond)");
-    expect(h.insert(slotOf(h.roots()[0], "clauses"), 0, clauseOf("[a 1]"))).toBe("(cond [a 1])");
+    expect(
+      h.insert(slotOf(h.roots()[0], "clauses"), 0, clauseOf("[a 1]"))
+    ).toBe("(cond [a 1])");
     // the keyword is found even with space and a comment before it
     const h2 = new Harness("(  cond ; c\n )");
-    expect(h2.insert(slotOf(h2.roots()[0], "clauses"), 0, clauseOf("[a 1]"))).toBe("(  cond [a 1] ; c\n )");
+    expect(
+      h2.insert(slotOf(h2.roots()[0], "clauses"), 0, clauseOf("[a 1]"))
+    ).toBe("(  cond [a 1] ; c\n )");
   });
 
   it("into an empty list with no earlier child and no keyword: after the open bracket", () => {
@@ -307,15 +351,19 @@ describe("insertNode", () => {
     expect(h.insert(h.doc.program.slots[0], 0, "(f a)")).toBe("(f a)");
     expect(h.doc.program.to).toBe(5);
     const h2 = new Harness("; just a comment");
-    expect(h2.insert(h2.doc.program.slots[0], 0, "x")).toBe("x\n; just a comment");
+    expect(h2.insert(h2.doc.program.slots[0], 0, "x")).toBe(
+      "x\n; just a comment"
+    );
   });
 
   it("a blank can be inserted, and a node of another doc's kind placed correctly", () => {
     const h = new Harness("(f a)");
-    expect(h.insert(slotOf(h.roots()[0], "args"), 1, L.blank())).toBe("(f a ...)");
-    expect(h.insert(slotOf(h.roots()[0], "args"), 0, "(define (k p) (+ p 1))")).toBe(
-      "(f (define (k p) (+ p 1)) a ...)"
+    expect(h.insert(slotOf(h.roots()[0], "args"), 1, L.blank())).toBe(
+      "(f a ...)"
     );
+    expect(
+      h.insert(slotOf(h.roots()[0], "args"), 0, "(define (k p) (+ p 1))")
+    ).toBe("(f (define (k p) (+ p 1)) a ...)");
   });
 
   it("returns what changed", () => {
@@ -332,7 +380,9 @@ describe("insertNode", () => {
 
   it("rejects a slot that is not a list", () => {
     const h = new Harness("(if a b c)");
-    expect(() => insertNode(h.doc, slotOf(h.roots()[0], "test"), 0, L.blank())).toThrow();
+    expect(() =>
+      insertNode(h.doc, slotOf(h.roots()[0], "test"), 0, L.blank())
+    ).toThrow();
   });
 });
 
@@ -419,12 +469,16 @@ describe("replaceNode", () => {
 
   it("is written on one line, whatever the old text was", () => {
     const h = new Harness("(f ; c\n  (g\n    1)\n  c)");
-    expect(h.replace(h.find("(g\n    1)"), "(k  1   2)")).toBe("(f ; c\n  (k 1 2)\n  c)");
+    expect(h.replace(h.find("(g\n    1)"), "(k  1   2)")).toBe(
+      "(f ; c\n  (k 1 2)\n  c)"
+    );
   });
 
   it("keeps the comments around it", () => {
     const h = new Harness("; top\n(a) ; side\n#| b |# (b)");
-    expect(h.replace(h.roots()[0], "(z 1)")).toBe("; top\n(z 1) ; side\n#| b |# (b)");
+    expect(h.replace(h.roots()[0], "(z 1)")).toBe(
+      "; top\n(z 1) ; side\n#| b |# (b)"
+    );
   });
 
   it("an atom does not run into an atom that touched the old node", () => {
@@ -438,7 +492,13 @@ describe("replaceNode", () => {
     const node = L.parse("(g)")[0];
     const r = replaceNode(h.doc, old, node);
     expect(r.text).toEqual({ from: 5, to: 6, insert: "(g)" });
-    expect(r.tree).toEqual({ type: "replace", old, node, slot: old.slot, index: 1 });
+    expect(r.tree).toEqual({
+      type: "replace",
+      old,
+      node,
+      slot: old.slot,
+      index: 1,
+    });
     expect(h.doc.byId.has(old.id)).toBe(false);
     expect(h.doc.byId.get(node.id)).toBe(node);
     h.text = applyText(h.text, r.text);
@@ -527,7 +587,10 @@ const EXPR_SNIPPETS = [
 ];
 const CLAUSE_SNIPPETS = ["[a 1]", "[else 2 3]", "[(p q) r]", "[b]"];
 
-function snippet(rnd: () => number, clause: boolean): { text: string; node: BNode } {
+function snippet(
+  rnd: () => number,
+  clause: boolean
+): { text: string; node: BNode } {
   const list = clause ? CLAUSE_SNIPPETS : EXPR_SNIPPETS;
   const text = list[Math.floor(rnd() * list.length)];
   if (clause) {
@@ -541,7 +604,10 @@ function snippet(rnd: () => number, clause: boolean): { text: string; node: BNod
  * that include keyword atoms (`define`, `if`, ...). The caller runs `settle`
  * after it.
  */
-function randomOp(doc: Doc, rnd: () => number): { log: string; run: () => OpResult } {
+function randomOp(
+  doc: Doc,
+  rnd: () => number
+): { log: string; run: () => OpResult } {
   const nodes: BNode[] = [];
   const slots: Slot[] = [];
   walk(doc.program, (n) => {
@@ -549,7 +615,7 @@ function randomOp(doc: Doc, rnd: () => number): { log: string; run: () => OpResu
     if (n.kind !== "program") nodes.push(n);
     for (const s of n.slots) if (s.kind === "list") slots.push(s);
   });
-  const pick = <T,>(xs: T[]): T => xs[Math.floor(rnd() * xs.length)];
+  const pick = <T>(xs: T[]): T => xs[Math.floor(rnd() * xs.length)];
   const r = rnd();
   if (r < 0.3 && nodes.length > 0) {
     const n = pick(nodes);
@@ -576,7 +642,11 @@ function randomOp(doc: Doc, rnd: () => number): { log: string; run: () => OpResu
 }
 
 /** run the operation, then settle; returns the new text and the settle changes */
-function runOp(doc: Doc, text: string, op: { run: () => OpResult }): { text: string; settled: TreeChange[] } {
+function runOp(
+  doc: Doc,
+  text: string,
+  op: { run: () => OpResult }
+): { text: string; settled: TreeChange[] } {
   const result = op.run();
   const after = applyText(text, result.text);
   return { text: after, settled: settle(doc, after, result.tree.slot.owner) };
@@ -606,7 +676,9 @@ describe("fuzzer", () => {
         try {
           op = randomOp(doc, rnd);
         } catch (e) {
-          throw new Error(`seed ${seed}: cannot choose an operation after: ${log.join("; ")}\n${e}`);
+          throw new Error(
+            `seed ${seed}: cannot choose an operation after: ${log.join("; ")}\n${e}`
+          );
         }
         log.push(op.log);
         tally[op.log.split(" ")[0]]++;
@@ -615,10 +687,14 @@ describe("fuzzer", () => {
           const r = runOp(doc, text, op);
           text = r.text;
           settled += r.settled.length;
-          rereadAtRoot += r.settled.filter((c) => c.slot.owner.kind === "program").length;
+          rereadAtRoot += r.settled.filter(
+            (c) => c.slot.owner.kind === "program"
+          ).length;
           problems = checkDoc(doc, text);
         } catch (e) {
-          throw new Error(`seed ${seed} step ${i}: ${e}\nops: ${log.join("\n     ")}`);
+          throw new Error(
+            `seed ${seed} step ${i}: ${e}\nops: ${log.join("\n     ")}`
+          );
         }
         if (problems.length > 0) {
           throw new Error(
@@ -631,7 +707,9 @@ describe("fuzzer", () => {
     // the cases settle exists for did happen
     expect(settled).toBeGreaterThan(300);
     expect(rereadAtRoot).toBeGreaterThan(30);
-    console.info(`fuzzer: ${Date.now() - start} ms, operations ${JSON.stringify(tally)}, settle replaced ${settled} nodes (${rereadAtRoot} roots)`);
+    console.info(
+      `fuzzer: ${Date.now() - start} ms, operations ${JSON.stringify(tally)}, settle replaced ${settled} nodes (${rereadAtRoot} roots)`
+    );
   });
 });
 
@@ -681,7 +759,12 @@ describe("timing (logged, never fails on time)", () => {
 
 describe("settle", () => {
   /** insert `snippet` into the list slot, then settle at the owner */
-  function insertSettle(h: Harness, slot: Slot, index: number, snippet: string | BNode): TreeChange[] {
+  function insertSettle(
+    h: Harness,
+    slot: Slot,
+    index: number,
+    snippet: string | BNode
+  ): TreeChange[] {
     const node = typeof snippet === "string" ? L.parse(snippet)[0] : snippet;
     const r = insertNode(h.doc, slot, index, node);
     h.text = applyText(h.text, r.text);
@@ -797,7 +880,9 @@ class TextHarness extends Harness {
     // removes come first, from the end; then inserts, from the first
     const kinds = changes.map((c) => c.type).join(",");
     expect(/^(remove,)*(insert,)*$/.test(kinds ? kinds + "," : "")).toBe(true);
-    const removes = changes.filter((c) => c.type === "remove").map((c) => c.index);
+    const removes = changes
+      .filter((c) => c.type === "remove")
+      .map((c) => c.index);
     expect(removes).toEqual(removes.slice().sort((a, b) => b - a));
     return changes;
   }
@@ -829,7 +914,10 @@ describe("reparseChange", () => {
     expect(h.type(0, 0, "\n")).toEqual([]);
     expect(h.type(h.text.length, h.text.length, "\n")).toEqual([]);
     expect(h.roots()).toEqual([r0, r1]);
-    expect([r1.from, r1.to]).toEqual([h.text.indexOf("(g"), h.text.indexOf("(g") + 5]);
+    expect([r1.from, r1.to]).toEqual([
+      h.text.indexOf("(g"),
+      h.text.indexOf("(g") + 5,
+    ]);
   });
 
   it("an atom that grows by typing next to it is one atom, not two", () => {
@@ -967,7 +1055,10 @@ describe("reparseChange", () => {
     const h = new TextHarness("(a)\n(b)");
     const change: TextChange = { from: 3, to: 3, insert: "\n(c)" };
     const after = applyText(h.text, change);
-    const rope = { length: after.length, slice: (x: number, y: number) => after.slice(x, y) };
+    const rope = {
+      length: after.length,
+      slice: (x: number, y: number) => after.slice(x, y),
+    };
     reparseChange(h.doc, rope, change);
     expect(checkDoc(h.doc, after)).toEqual([]);
     expect(h.roots().length).toBe(3);
@@ -976,7 +1067,9 @@ describe("reparseChange", () => {
 
 /** a few cases the model refuses to keep in step: operations next to error roots read the lexer's state, so the fuzzer keeps to benign ones */
 function benign(doc: Doc): boolean {
-  return doc.program.slots[0].nodes.every((r) => r.kind !== "error" || !/["#;'`,&]/.test(r.value ?? ""));
+  return doc.program.slots[0].nodes.every(
+    (r) => r.kind !== "error" || !/["#;'`,&]/.test(r.value ?? "")
+  );
 }
 
 /** every run of dots is exactly `...` (the blank): other runs hang the vendored reader, see below */
@@ -990,8 +1083,30 @@ function dotsOk(text: string): boolean {
 // texts with a `|` in them (a symbol with bars is matched by a regular expression with nested repetition): for instance
 // parse("x|") and then parse("(a #|") does not finish. That is not this package's to fix; see the report.
 const PIECES = [
-  "(", ")", "[", "]", '"', "a", "x1", " ", "\n", "(f 1)", "'", " ;c\n", "define",
-  "...", "()", "[]", '""', "(define (g y) y)", "\n\n", "1 2", "#t", "cond", "lambda", "(cond [a 1])",
+  "(",
+  ")",
+  "[",
+  "]",
+  '"',
+  "a",
+  "x1",
+  " ",
+  "\n",
+  "(f 1)",
+  "'",
+  " ;c\n",
+  "define",
+  "...",
+  "()",
+  "[]",
+  '""',
+  "(define (g y) y)",
+  "\n\n",
+  "1 2",
+  "#t",
+  "cond",
+  "lambda",
+  "(cond [a 1])",
 ];
 
 describe("reparseChange fuzzer", () => {
@@ -1012,32 +1127,57 @@ describe("reparseChange fuzzer", () => {
     const seeds = Number(process.env.CMB_SEEDS) || 200; // more seeds: CMB_SEEDS=5000 npx jest ...
     for (let seed = 1; seed <= seeds; seed++) {
       const rnd = mulberry32(seed * 7919);
-      let text = START_PROGRAMS[seed % START_PROGRAMS.length].replace("#| block |#", "; block");
+      let text = START_PROGRAMS[seed % START_PROGRAMS.length].replace(
+        "#| block |#",
+        "; block"
+      );
       const doc = createDoc(L, text);
       const log: string[] = [];
       const history: string[] = [];
       for (let i = 0; i < 30; i++) {
         const fail = (msg: string): never => {
-          throw new Error(`seed ${seed} step ${i}: ${msg}\ntext: ${JSON.stringify(text)} roots ${JSON.stringify(doc.program.slots[0].nodes.map((n) => [n.kind, n.from, n.to]))} (text before ${JSON.stringify(prevText)})\nlast states: ${history.slice(-3).join("\n   ")}\nlog: ${log.join("\n     ")}`);
+          throw new Error(
+            `seed ${seed} step ${i}: ${msg}\ntext: ${JSON.stringify(text)} roots ${JSON.stringify(doc.program.slots[0].nodes.map((n) => [n.kind, n.from, n.to]))} (text before ${JSON.stringify(prevText)})\nlast states: ${history.slice(-3).join("\n   ")}\nlog: ${log.join("\n     ")}`
+          );
         };
         const prevText = text;
-        history.push(`${JSON.stringify(text)} ${JSON.stringify(doc.program.slots[0].nodes.map((n) => [n.kind, n.from, n.to]))}`);
+        history.push(
+          `${JSON.stringify(text)} ${JSON.stringify(doc.program.slots[0].nodes.map((n) => [n.kind, n.from, n.to]))}`
+        );
         try {
           if (rnd() < 0.7 || !benign(doc)) {
             // a text edit
             const len = text.length;
             const roots0 = doc.program.slots[0].nodes;
             // a third of the edits are made at the edge of a root, and some deletions take a whole root: they keep the text balanced
-            const edge = roots0.length > 0 && rnd() < 0.35 ? roots0[Math.floor(rnd() * roots0.length)] : null;
-            const p = edge ? (rnd() < 0.5 ? edge.from : edge.to) : Math.floor(rnd() * (len + 1));
+            const edge =
+              roots0.length > 0 && rnd() < 0.35
+                ? roots0[Math.floor(rnd() * roots0.length)]
+                : null;
+            const p = edge
+              ? rnd() < 0.5
+                ? edge.from
+                : edge.to
+              : Math.floor(rnd() * (len + 1));
             const del = rnd() < 0.45;
             const change: TextChange = del
               ? edge && rnd() < 0.6
                 ? { from: edge.from, to: edge.to, insert: "" }
-                : { from: p, to: Math.min(len, p + 1 + Math.floor(rnd() * 5)), insert: "" }
-              : { from: p, to: p, insert: PIECES[Math.floor(rnd() * PIECES.length)] };
-            if (!del && rnd() < 0.15) change.to = Math.min(len, p + 1 + Math.floor(rnd() * 3));
-            log.push(`edit [${change.from},${change.to}) -> ${JSON.stringify(change.insert)}`);
+                : {
+                    from: p,
+                    to: Math.min(len, p + 1 + Math.floor(rnd() * 5)),
+                    insert: "",
+                  }
+              : {
+                  from: p,
+                  to: p,
+                  insert: PIECES[Math.floor(rnd() * PIECES.length)],
+                };
+            if (!del && rnd() < 0.15)
+              change.to = Math.min(len, p + 1 + Math.floor(rnd() * 3));
+            log.push(
+              `edit [${change.from},${change.to}) -> ${JSON.stringify(change.insert)}`
+            );
             if (!dotsOk(applyText(text, change))) continue;
             const before = doc.program.slots[0].nodes.slice();
             const ranges = before.map((n) => ({ n, from: n.from, to: n.to }));
@@ -1047,7 +1187,10 @@ describe("reparseChange fuzzer", () => {
             edits++;
             const roots = doc.program.slots[0].nodes;
             const replayed = replay(before, changes);
-            if (replayed.length !== roots.length || replayed.some((r, k) => r !== roots[k])) {
+            if (
+              replayed.length !== roots.length ||
+              replayed.some((r, k) => r !== roots[k])
+            ) {
               fail("the TreeChanges do not give the list of roots");
             }
             // the roots that do not touch the change, and are again a root at their range, are the same objects
@@ -1055,10 +1198,15 @@ describe("reparseChange fuzzer", () => {
               if (o.kind === "error") continue;
               if (!(to < change.from || from > change.to)) continue;
               const nf = from >= change.to ? from + delta : from;
-              const same = roots.find((r) => r.from === nf && r.to === nf + (to - from));
-              const show = (ns: BNode[]) => JSON.stringify(ns.map((n) => [n.kind, n.from, n.to]));
+              const same = roots.find(
+                (r) => r.from === nf && r.to === nf + (to - from)
+              );
+              const show = (ns: BNode[]) =>
+                JSON.stringify(ns.map((n) => [n.kind, n.from, n.to]));
               if (same && same !== o) {
-                fail(`root #${o.id} at ${from} lost its identity; before ${JSON.stringify(ranges.map((r) => [r.n.kind, r.from, r.to]))} after ${show(roots)} change ${JSON.stringify(change)}`);
+                fail(
+                  `root #${o.id} at ${from} lost its identity; before ${JSON.stringify(ranges.map((r) => [r.n.kind, r.from, r.to]))} after ${show(roots)} change ${JSON.stringify(change)}`
+                );
               }
               if (same === o) kept++;
             }
@@ -1075,7 +1223,8 @@ describe("reparseChange fuzzer", () => {
         }
         const problems = checkDoc(doc, text);
         if (problems.length > 0) fail(problems.slice(0, 5).join(" | "));
-        if (doc.program.slots[0].nodes.some((r) => r.kind === "error")) withErrors++;
+        if (doc.program.slots[0].nodes.some((r) => r.kind === "error"))
+          withErrors++;
         else strictSteps++;
       }
     }

@@ -248,8 +248,20 @@ test.describe("editing with a finger", () => {
 });
 
 // FIXME-BEGIN (thirteenth round: M: needs the trash can, the old page's `.CodeMirror` and `.blocks-if-else` selectors, or the old insertion box: not built here (touch drags have their own tests: e2e/touch*.e2e.ts))
-const FIXME = new Set<string>(["dragging with a finger › a long press then a drag moves a block to the trash can", "dragging with a finger › a long press then a drag moves a block onto an insertion gap", "dragging with a finger › moving before the long press ends scrolls instead of dragging", "dragging with a finger › a quick tap still activates a block, as a click does", "editing with a finger › a tap on an insertion gap opens it for typing, and Enter adds the block", "editing with a finger › a tap on the faded else of a lambda if opens it for typing", "editing with a finger › a tap on a gap far down a long program opens it, without the page jumping", "editing with a finger › a tap on a leaf opens it for typing, and Enter replaces it"]);
+const FIXME = new Set<string>([
+  "dragging with a finger › a long press then a drag moves a block to the trash can",
+  "dragging with a finger › a long press then a drag moves a block onto an insertion gap",
+  "dragging with a finger › moving before the long press ends scrolls instead of dragging",
+  "dragging with a finger › a quick tap still activates a block, as a click does",
+  "editing with a finger › a tap on an insertion gap opens it for typing, and Enter adds the block",
+  "editing with a finger › a tap on the faded else of a lambda if opens it for typing",
+  "editing with a finger › a tap on a gap far down a long program opens it, without the page jumping",
+  "editing with a finger › a tap on a leaf opens it for typing, and Enter replaces it",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "M: needs the trash can, the old page's `.CodeMirror` and `.blocks-if-else` selectors, or the old insertion box: not built here (touch drags have their own tests: e2e/touch*.e2e.ts)");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "M: needs the trash can, the old page's `.CodeMirror` and `.blocks-if-else` selectors, or the old insertion box: not built here (touch drags have their own tests: e2e/touch*.e2e.ts)"
+  );
 });
 // FIXME-END

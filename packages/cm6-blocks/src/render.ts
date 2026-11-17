@@ -68,10 +68,12 @@ export class Renderer {
   refreshComments(): void {
     const todo = new Set<BNode>(this.marked);
     for (const n of this.els.keys()) {
-      if (n.slots.length && this.mayHaveStrays(n)) for (const s of n.slots) for (const c of s.nodes) todo.add(c);
+      if (n.slots.length && this.mayHaveStrays(n))
+        for (const s of n.slots) for (const c of s.nodes) todo.add(c);
       if (n.kind !== "comment" || !n.slot) continue;
       const i = n.slot.nodes.indexOf(n);
-      for (const m of [n.slot.nodes[i - 1], n.slot.nodes[i + 1]]) if (m) todo.add(m);
+      for (const m of [n.slot.nodes[i - 1], n.slot.nodes[i + 1]])
+        if (m) todo.add(m);
     }
     for (const n of todo) if (this.els.has(n)) this.relabel(n);
   }
@@ -105,7 +107,8 @@ export class Renderer {
   constructor(private language: Language) {}
 
   element(node: BNode): HTMLElement {
-    if (node.kind === "program") throw new Error("the program node is not drawn");
+    if (node.kind === "program")
+      throw new Error("the program node is not drawn");
     const have = this.els.get(node);
     if (have) return have;
     return this.build(node);
@@ -192,7 +195,9 @@ export class Renderer {
     if (!gap) return null;
     const owner = this.nodeOf(gap);
     if (!owner) return null;
-    const slot = owner.slots.find((s) => s.name === gap.getAttribute("data-slot"));
+    const slot = owner.slots.find(
+      (s) => s.name === gap.getAttribute("data-slot")
+    );
     if (!slot) return null;
     return { slot, index: Number(gap.getAttribute("data-index")) };
   }
@@ -285,7 +290,10 @@ export class Renderer {
       if (!gap) break;
       const a = i === 0 ? owner.from : kids[i - 1].to;
       const b = i < kids.length ? kids[i].from : owner.to;
-      const t = src.slice(Math.max(0, a - owner.from), Math.max(0, b - owner.from));
+      const t = src.slice(
+        Math.max(0, a - owner.from),
+        Math.max(0, b - owner.from)
+      );
       if (gap.textContent !== t) {
         gap.textContent = t;
         this.stats.attrWrites++;
@@ -304,7 +312,8 @@ export class Renderer {
       this.paintComment(el, node);
       this.repaintPieces(node);
     }
-    if (node.kind === "comment" && node.slot) this.relabelAround(node.slot, node.slot.nodes.indexOf(node));
+    if (node.kind === "comment" && node.slot)
+      this.relabelAround(node.slot, node.slot.nodes.indexOf(node));
   }
 
   /** aria-setsize / aria-posinset of every drawn node of a slot (after nodes were added or removed around them) */
@@ -331,7 +340,8 @@ export class Renderer {
 
   private level(node: BNode): number {
     let n = 0;
-    for (let p: BNode | null = node; p && p.kind !== "program"; p = p.parent) n++;
+    for (let p: BNode | null = node; p && p.kind !== "program"; p = p.parent)
+      n++;
     return n;
   }
 
@@ -350,12 +360,18 @@ export class Renderer {
     el.setAttribute("data-id", String(node.id));
     el.setAttribute("aria-label", this.labelOf(node));
     this.paintComment(el, node);
-    el.setAttribute("aria-selected", this.selection.has(node) ? "true" : "false");
+    el.setAttribute(
+      "aria-selected",
+      this.selection.has(node) ? "true" : "false"
+    );
     if (this.selection.has(node)) flagClass(el, "blocks-selected", true);
     el.setAttribute("aria-level", String(this.level(node)));
     const siblings = node.slot ? node.slot.nodes : [node];
     el.setAttribute("aria-setsize", String(siblings.length));
-    el.setAttribute("aria-posinset", String(Math.max(0, siblings.indexOf(node)) + 1));
+    el.setAttribute(
+      "aria-posinset",
+      String(Math.max(0, siblings.indexOf(node)) + 1)
+    );
     if (!compound) {
       const text = this.create(
         "span",
@@ -389,7 +405,9 @@ export class Renderer {
       if (slot.kind === "one") {
         const wrap = this.create(
           "span",
-          node.kind === "call" && slot.name === "func" ? "blocks-slot blocks-operator" : "blocks-slot"
+          node.kind === "call" && slot.name === "func"
+            ? "blocks-slot blocks-operator"
+            : "blocks-slot"
         );
         wrap.setAttribute("data-slot", slot.name);
         for (const c of slot.nodes) wrap.appendChild(this.element(c));

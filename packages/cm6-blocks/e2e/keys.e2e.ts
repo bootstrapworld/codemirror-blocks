@@ -17,14 +17,25 @@ for (const lang of Object.keys(SMALL)) {
     await page.waitForSelector(".cm-content .blocks-node");
     await page.evaluate((t) => {
       const d = (window as any).demo;
-      d.ed.view.dispatch({ changes: { from: 0, to: d.ed.view.state.doc.length, insert: t } });
+      d.ed.view.dispatch({
+        changes: { from: 0, to: d.ed.view.state.doc.length, insert: t },
+      });
     }, SMALL[lang]);
-    const text = () => page.evaluate(() => (window as any).demo.ed.view.state.doc.toString());
+    const text = () =>
+      page.evaluate(() => (window as any).demo.ed.view.state.doc.toString());
     const active = () =>
       page.evaluate(() => {
         const a = document.activeElement as HTMLElement | null;
         const n = (window as any).demo.ed.renderer.nodeOf(a);
-        return n ? { kind: n.kind, text: (window as any).demo.ed.view.state.doc.sliceString(n.from, n.to) } : null;
+        return n
+          ? {
+              kind: n.kind,
+              text: (window as any).demo.ed.view.state.doc.sliceString(
+                n.from,
+                n.to
+              ),
+            }
+          : null;
       });
     const r: Record<string, any> = {};
     const step = async (name: string, f: () => Promise<any>) => {
@@ -35,23 +46,49 @@ for (const lang of Object.keys(SMALL)) {
       }
     };
     await step("click_focuses_block", async () => {
-      await page.locator(".cm-content .blocks-literal", { hasText: /^1$/ }).first().click({ modifiers: ["Shift"] });
+      await page
+        .locator(".cm-content .blocks-literal", { hasText: /^1$/ })
+        .first()
+        .click({ modifiers: ["Shift"] });
       return { focused: await active() };
     });
-    await step("ArrowDown", async () => { await page.keyboard.press("ArrowDown"); return await active(); });
-    await step("ArrowUp", async () => { await page.keyboard.press("ArrowUp"); return await active(); });
-    await step("ArrowLeft_to_parent", async () => { await page.keyboard.press("ArrowLeft"); return await active(); });
-    await step("ArrowRight_to_first_child", async () => { await page.keyboard.press("ArrowRight"); return await active(); });
+    await step("ArrowDown", async () => {
+      await page.keyboard.press("ArrowDown");
+      return await active();
+    });
+    await step("ArrowUp", async () => {
+      await page.keyboard.press("ArrowUp");
+      return await active();
+    });
+    await step("ArrowLeft_to_parent", async () => {
+      await page.keyboard.press("ArrowLeft");
+      return await active();
+    });
+    await step("ArrowRight_to_first_child", async () => {
+      await page.keyboard.press("ArrowRight");
+      return await active();
+    });
     await step("Enter_edit_leaf_commit", async () => {
-      await page.locator(".cm-content .blocks-literal", { hasText: /^1$/ }).first().click({ modifiers: ["Shift"] });
+      await page
+        .locator(".cm-content .blocks-literal", { hasText: /^1$/ })
+        .first()
+        .click({ modifiers: ["Shift"] });
       await page.keyboard.press("Enter");
       const box = await page.locator("input.blocks-edit").count();
       await page.keyboard.type("77");
       await page.keyboard.press("Enter");
-      return { boxShown: box, text: await text(), boxGone: (await page.locator("input.blocks-edit").count()) === 0, focused: await active() };
+      return {
+        boxShown: box,
+        text: await text(),
+        boxGone: (await page.locator("input.blocks-edit").count()) === 0,
+        focused: await active(),
+      };
     });
     await step("Escape_cancels", async () => {
-      await page.locator(".cm-content .blocks-literal", { hasText: /^77$/ }).first().click({ modifiers: ["Shift"] });
+      await page
+        .locator(".cm-content .blocks-literal", { hasText: /^77$/ })
+        .first()
+        .click({ modifiers: ["Shift"] });
       await page.keyboard.press("Enter");
       await page.keyboard.type("zz");
       await page.keyboard.press("Escape");
@@ -59,7 +96,10 @@ for (const lang of Object.keys(SMALL)) {
       return { unchanged: !t.includes("zz"), focused: await active() };
     });
     await step("CtrlBracket_sibling_after", async () => {
-      await page.locator(".cm-content .blocks-literal", { hasText: /^77$/ }).first().click({ modifiers: ["Shift"] });
+      await page
+        .locator(".cm-content .blocks-literal", { hasText: /^77$/ })
+        .first()
+        .click({ modifiers: ["Shift"] });
       await page.keyboard.press("Control+]");
       const box = await page.locator("input.blocks-edit").count();
       await page.keyboard.type("55");
@@ -68,44 +108,80 @@ for (const lang of Object.keys(SMALL)) {
     });
     await step("Delete", async () => {
       const before = await text();
-      await page.locator(".cm-content .blocks-literal", { hasText: /^55$/ }).first().click({ modifiers: ["Shift"] });
+      await page
+        .locator(".cm-content .blocks-literal", { hasText: /^55$/ })
+        .first()
+        .click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
       await page.keyboard.press("Delete");
       const t = await text();
-      return { shorter: t.length < before.length, text: t, focused: await active() };
+      return {
+        shorter: t.length < before.length,
+        text: t,
+        focused: await active(),
+      };
     });
     await step("Backspace", async () => {
       const before = await text();
-      await page.locator(".cm-content .blocks-literal", { hasText: /^77$/ }).first().click({ modifiers: ["Shift"] });
+      await page
+        .locator(".cm-content .blocks-literal", { hasText: /^77$/ })
+        .first()
+        .click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
       await page.keyboard.press("Backspace");
-      return { shorter: (await text()).length < before.length, text: await text() };
+      return {
+        shorter: (await text()).length < before.length,
+        text: await text(),
+      };
     });
     await step("Undo_Ctrl-Z", async () => {
       const before = await text();
       await page.keyboard.press("Control+z");
       const t1 = await text();
       await page.keyboard.press("Control+Shift+z");
-      return { undoChanged: t1 !== before, redoRestored: (await text()) === before, focused: await active() };
+      return {
+        undoChanged: t1 !== before,
+        redoRestored: (await text()) === before,
+        focused: await active(),
+      };
     });
     await step("template_if_else_then_type_into_hole", async () => {
-      await page.locator(".cm-content .blocks-literal", { hasText: /^f$/ }).first().click({ modifiers: ["Shift"] });
+      await page
+        .locator(".cm-content .blocks-literal", { hasText: /^f$/ })
+        .first()
+        .click({ modifiers: ["Shift"] });
       await page.locator('button[data-template="if-else"]').click();
       const box = await page.locator("input.blocks-edit").count();
       await page.keyboard.type("cond1");
       await page.keyboard.press("Enter");
       const t = await text();
-      return { boxShown: box, hasCond1: t.includes("cond1"), text: t.slice(-80), roots: await page.evaluate(() => (window as any).demo.ed.roots().map((r: any) => r.kind).join(",")) };
+      return {
+        boxShown: box,
+        hasCond1: t.includes("cond1"),
+        text: t.slice(-80),
+        roots: await page.evaluate(() =>
+          (window as any).demo.ed
+            .roots()
+            .map((r: any) => r.kind)
+            .join(",")
+        ),
+      };
     });
     await step("gap_click_box", async () => {
-      await page.locator(".cm-content .blocks-gap").nth(1).click({ force: true });
+      await page
+        .locator(".cm-content .blocks-gap")
+        .nth(1)
+        .click({ force: true });
       const box = await page.locator("input.blocks-edit").count();
       await page.keyboard.type("88");
       await page.keyboard.press("Enter");
       return { boxShown: box, has88: (await text()).includes("88") };
     });
     results[lang] = r;
-    fs.writeFileSync(path.join(__dirname, "keys-results.json"), JSON.stringify(results, null, 2));
+    fs.writeFileSync(
+      path.join(__dirname, "keys-results.json"),
+      JSON.stringify(results, null, 2)
+    );
     // eslint-disable-next-line no-console
     console.log(lang, JSON.stringify(r));
   });

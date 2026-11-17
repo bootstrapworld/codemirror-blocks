@@ -144,7 +144,9 @@ const operations: Operation[] = [
     name: "dragging a node onto a node",
     code: "(add a b) (sub c d)",
     run: () => {
-      drag(getNodeLabeled(/^a\b|symbol a$/)).dropOnto(getNodeLabeled(/^d\b|symbol d$/));
+      drag(getNodeLabeled(/^a\b|symbol a$/)).dropOnto(
+        getNodeLabeled(/^d\b|symbol d$/)
+      );
     },
   },
   {
@@ -158,7 +160,11 @@ const operations: Operation[] = [
   {
     name: "dragging a node onto whitespace",
     code: "a\n\n\nb",
-    run: () => dropOnWhitespace(cmb, getNodeLabeled(/^a\b|symbol a$/), { line: 2, ch: 0 }),
+    run: () =>
+      dropOnWhitespace(cmb, getNodeLabeled(/^a\b|symbol a$/), {
+        line: 2,
+        ch: 0,
+      }),
   },
   {
     name: "dragging from the toolbar onto a node",
@@ -207,9 +213,17 @@ const variants = [false, true].flatMap((afterModeSwitch) =>
 // SKIPPED variants (the whole block of each is skipped): toolbar and trash can (M: no toolbar of primitives, no trash can), typing and pasting at the top level
 // (M: no quarantine), a drop onto bare whitespace (M: not built), a drop onto an arbitrary node (D: drops go on gaps, holes and root edges, parity table 'drag a block'; 12 of
 // its 16 tests passed only because the drop did nothing).
-const SKIPPED_VARIANTS = /toolbar|trash can|top level|onto whitespace|onto a node/;
-const eachVariant = (_name: string, fn: (v: (typeof variants)[number]) => void) =>
-  variants.forEach((v) => (SKIPPED_VARIANTS.test(v.name) ? describe.skip : describe)(v.name, () => fn(v)));
+const SKIPPED_VARIANTS =
+  /toolbar|trash can|top level|onto whitespace|onto a node/;
+const eachVariant = (
+  _name: string,
+  fn: (v: (typeof variants)[number]) => void
+) =>
+  variants.forEach((v) =>
+    (SKIPPED_VARIANTS.test(v.name) ? describe.skip : describe)(v.name, () =>
+      fn(v)
+    )
+  );
 eachVariant("$name", ({ code, run, afterModeSwitch }) => {
   let before: { text: string; roots: string[] };
   let after: { text: string; roots: string[] };
@@ -322,7 +336,9 @@ describe("several different edits in a row", () => {
     states.push(cmb.getValue());
 
     // 3: drag a node onto another
-    drag(getNodeLabeled(/^z\b|symbol z$/)).dropOnto(getNodeLabeled(/^y\b|symbol y$/));
+    drag(getNodeLabeled(/^z\b|symbol z$/)).dropOnto(
+      getNodeLabeled(/^y\b|symbol y$/)
+    );
     states.push(cmb.getValue());
 
     // walk back through every state

@@ -6,4 +6,7 @@ import { schemeParser, schemeTable } from "../src/lang-scheme";
 const style = document.createElement("style");
 style.textContent = css;
 document.head.appendChild(style);
-createLezerBlockEditor(document.body, "(define (f x) (* x x))\n(f 3)\n", { parser: schemeParser as never, table: schemeTable });
+createLezerBlockEditor(document.body, "(define (f x) (* x x))\n(f 3)\n", {
+  parser: schemeParser as never,
+  table: schemeTable,
+});

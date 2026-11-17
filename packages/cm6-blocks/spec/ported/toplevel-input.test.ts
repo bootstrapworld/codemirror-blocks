@@ -3,12 +3,7 @@
 // PORTED from packages/codemirror-blocks/spec/toplevel-input-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
 import wescheme from "../compat/wescheme";
 import { fireEvent } from "../compat/testing-library";
-import {
-  keyDown,
-  mountCMB,
-  teardown,
-  cmd_ctrl,
-} from "../compat/test-utils";
+import { keyDown, mountCMB, teardown, cmd_ctrl } from "../compat/test-utils";
 import { API } from "../compat/test-utils";
 import { AppStore } from "../compat/internals";
 import { allowConsoleErrors } from "../compat/global-setup";

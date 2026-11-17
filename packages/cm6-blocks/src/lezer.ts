@@ -21,7 +21,13 @@ export interface BlockRow {
    * position "#n" among the block children, by "Type#n" (the n-th child that
    * has that type on its way), or "*" (whatever no other slot took).
    */
-  slots?: { name: string; kind: "one" | "list"; take: string[] | "*"; /** the text between the children is drawn as pieces (see `Slot.pieces`) */ pieces?: boolean; /** text put before a node written into this slot when it was missing (`" = "`) */ before?: string }[];
+  slots?: {
+    name: string;
+    kind: "one" | "list";
+    take: string[] | "*";
+    /** the text between the children is drawn as pieces (see `Slot.pieces`) */ pieces?: boolean;
+    /** text put before a node written into this slot when it was missing (`" = "`) */ before?: string;
+  }[];
   leaf?: boolean; // a value: its source text is its value
   /** only a block when it is a direct child of the tree's top (comments: not inside other blocks) */
   topLevelOnly?: boolean;
@@ -37,7 +43,13 @@ export interface BlockRow {
    *  - `sep`: groups of the blocks between bare `sep` tokens (the `,` of a dict: key and value).
    * Blocks before the first token go to the node's own slots as usual.
    */
-  groups?: { slot: string; row: string; tokens?: string[]; sep?: string; /** chunks that follow one of these tokens (`from`) stay with the node's own slots */ own?: string[] };
+  groups?: {
+    slot: string;
+    row: string;
+    tokens?: string[];
+    sep?: string;
+    /** chunks that follow one of these tokens (`from`) stay with the node's own slots */ own?: string[];
+  };
   /**
    * The node is a flat run of tokens whose parts Lezer gives no node (Python's `import a.b as c, d`): its children are cut at the
    * `delims` tokens, and what lies between two delimiters (comments aside) is ONE leaf block of table row `row`, with its source text as
@@ -155,7 +167,10 @@ export function adoptMeta(old: BNode, nw: BNode): void {
   else dirty.delete(old);
 }
 
-export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage {
+export function lezerLanguage(
+  parser: Parser,
+  table: BlockTable
+): LezerLanguage {
   let innerKeep: ((c: InnerCand) => BNode | null) | null = null;
   /** the level of the block being built (a top-level block is 1); only kept while an `inner` keeper is given */
   let level = 0;
@@ -163,8 +178,17 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
   let topSkip: ((from: number, to: number) => BNode | null) | null = null;
   /** a child block: an anchor the editor takes from the old tree, else built */
   const childOf = (cd: Cand, text: string, offset: number): BNode =>
-    (cd.win && innerKeep?.({ from: cd.node.from, to: cd.node.to, key: cd.key, win: cd.win, level: level + 1 })) || build(cd, text, offset);
-  const rule = (name: string) => table.rules?.filter((r) => r.name === name) ?? [];
+    (cd.win &&
+      innerKeep?.({
+        from: cd.node.from,
+        to: cd.node.to,
+        key: cd.key,
+        win: cd.win,
+        level: level + 1,
+      })) ||
+    build(cd, text, offset);
+  const rule = (name: string) =>
+    table.rules?.filter((r) => r.name === name) ?? [];
   const keyOf = (n: SyntaxNode, text: string): string => {
     for (const r of rule("kind")) {
       const k = r.apply(n, text);
@@ -173,7 +197,13 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     return n.name;
   };
 
-  function collect(n: SyntaxNode, path: string[], out: Cand[], text: string, top = false): void {
+  function collect(
+    n: SyntaxNode,
+    path: string[],
+    out: Cand[],
+    text: string,
+    top = false
+  ): void {
     for (let c = n.firstChild; c; c = c.nextSibling) {
       if (c.type.isError) {
         out.push({ node: c, key: "@error", path });
@@ -192,39 +222,72 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
         splitCands(c, row.split.rest, path, out, text);
         continue;
       }
-      if (row && (!row.topLevelOnly || top)) out.push({ node: c, key, path: [...path, c.name, key] });
+      if (row && (!row.topLevelOnly || top))
+        out.push({ node: c, key, path: [...path, c.name, key] });
       else if (row) {
         // a comment inside a block: a candidate that no slot numbers or takes; build1 files it into a list
-        if (row.kind === "comment") out.push({ node: c, key, path: [...path, c.name, key] });
+        if (row.kind === "comment")
+          out.push({ node: c, key, path: [...path, c.name, key] });
         continue;
-      }
-      else if (table.opaque?.includes(c.name)) out.push({ node: c, key: "@opaque", path });
+      } else if (table.opaque?.includes(c.name))
+        out.push({ node: c, key: "@opaque", path });
       else if (c.firstChild) collect(c, [...path, c.name], out, text);
     }
   }
 
   /** a node of a row with `split`: its first child goes to the parent, the others make one block (see `BlockRow.split`) */
-  function splitCands(n: SyntaxNode, restRow: string, path: string[], out: Cand[], text: string): void {
+  function splitCands(
+    n: SyntaxNode,
+    restRow: string,
+    path: string[],
+    out: Cand[],
+    text: string
+  ): void {
     const sub: Cand[] = [];
     collect(n, [], sub, text);
-    const isCom = (cd: Cand): boolean => table.nodes[cd.key]?.kind === "comment";
+    const isCom = (cd: Cand): boolean =>
+      table.nodes[cd.key]?.kind === "comment";
     const head = sub.find((cd) => !isCom(cd));
     if (!head) return;
     out.push({ ...head, path: [...path, "SplitHead", ...head.path] });
-    const members = sub.filter((cd) => cd !== head && cd.node.from >= head.node.to);
+    const members = sub.filter(
+      (cd) => cd !== head && cd.node.from >= head.node.to
+    );
     const from = members.length ? members[0].node.from : head.node.to;
-    const to = members.length ? members[members.length - 1].node.to : head.node.to;
-    out.push({ node: { from, to, name: "Split" } as unknown as SyntaxNode, key: restRow, path: [...path, "SplitRest"], members });
+    const to = members.length
+      ? members[members.length - 1].node.to
+      : head.node.to;
+    out.push({
+      node: { from, to, name: "Split" } as unknown as SyntaxNode,
+      key: restRow,
+      path: [...path, "SplitRest"],
+      members,
+    });
   }
 
   /** the candidates of a node that is a flat run of tokens: one leaf per chunk between delimiters (see `BlockRow.chunks`), and its comments and errors */
-  function chunkCands(n: SyntaxNode, ch: NonNullable<BlockRow["chunks"]>, out: Cand[], text: string): void {
+  function chunkCands(
+    n: SyntaxNode,
+    ch: NonNullable<BlockRow["chunks"]>,
+    out: Cand[],
+    text: string
+  ): void {
     let from = -1;
     let to = -1;
     let prev = "";
     let startPrev = "";
     const flush = (): void => {
-      if (from >= 0) out.push({ node: { from, to, name: "Chunk", prev: startPrev } as unknown as SyntaxNode, key: ch.row, path: ["Chunk", ch.row] });
+      if (from >= 0)
+        out.push({
+          node: {
+            from,
+            to,
+            name: "Chunk",
+            prev: startPrev,
+          } as unknown as SyntaxNode,
+          key: ch.row,
+          path: ["Chunk", ch.row],
+        });
       from = -1;
     };
     for (let c = n.firstChild; c; c = c.nextSibling) {
@@ -248,9 +311,20 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     flush();
   }
 
-  function leaf(kind: string, c: SyntaxNode, text: string, offset: number, extra: Partial<BNode> = {}): BNode {
+  function leaf(
+    kind: string,
+    c: SyntaxNode,
+    text: string,
+    offset: number,
+    extra: Partial<BNode> = {}
+  ): BNode {
     const src = text.slice(c.from, c.to);
-    const b = makeNode(kind, [], { from: c.from + offset, to: c.to + offset, value: src.trim(), ...extra });
+    const b = makeNode(kind, [], {
+      from: c.from + offset,
+      to: c.to + offset,
+      value: src.trim(),
+      ...extra,
+    });
     sources.set(b, src);
     return b;
   }
@@ -264,7 +338,11 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       level--;
     }
     keys.set(b, c.key);
-    if (b.kind === "error" || b.slots.some((s) => s.nodes.some((k) => dirty.has(k)))) dirty.add(b);
+    if (
+      b.kind === "error" ||
+      b.slots.some((s) => s.nodes.some((k) => dirty.has(k)))
+    )
+      dirty.add(b);
     return b;
   }
   function build1(c: Cand, text: string, offset: number): BNode {
@@ -272,22 +350,37 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     if (c.key === "@opaque") return leaf("unknown", c.node, text, offset);
     const row = table.nodes[c.key];
     const n = c.node;
-    if (row.leaf) return leaf(row.kind, n, text, offset, row.dataType ? { dataType: row.dataType } : {});
+    if (row.leaf)
+      return leaf(
+        row.kind,
+        n,
+        text,
+        offset,
+        row.dataType ? { dataType: row.dataType } : {}
+      );
     const extra: Partial<BNode> = { from: n.from + offset, to: n.to + offset };
     if (row.keyword) {
       // "$first": the node's own first word (`const`, `let`, `var`)
-      const kw = row.keyword === "$first" ? (/^\w+/.exec(text.slice(n.from, n.to)) ?? [row.keyword])[0] : row.keyword;
+      const kw =
+        row.keyword === "$first"
+          ? (/^\w+/.exec(text.slice(n.from, n.to)) ?? [row.keyword])[0]
+          : row.keyword;
       extra.keyword = kw;
       const at = text.indexOf(kw, n.from);
       extra.keywordTo = (at >= 0 ? at + kw.length : n.from) + offset;
     }
     if (row.modifiers) {
       const ms: string[] = [];
-      for (let c = n.firstChild; c; c = c.nextSibling) if (row.modifiers.includes(c.name)) ms.push(text.slice(c.from, c.to));
+      for (let c = n.firstChild; c; c = c.nextSibling)
+        if (row.modifiers.includes(c.name)) ms.push(text.slice(c.from, c.to));
       if (ms.length) extra.modifier = ms.join(" ");
     }
     if (row.brackets) extra.brackets = text[n.from] === "[" ? "[]" : "()";
-    const b = makeNode(row.kind, (row.slots ?? []).map((s) => [s.name, s.kind]), extra);
+    const b = makeNode(
+      row.kind,
+      (row.slots ?? []).map((s) => [s.name, s.kind]),
+      extra
+    );
     (row.slots ?? []).forEach((sp, i) => {
       if (sp.before?.trim()) b.slots[i].glue = sp.before.trim();
       if (sp.pieces) b.slots[i].pieces = true;
@@ -297,8 +390,16 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     if (c.members) all.push(...c.members);
     else if (row.chunks) chunkCands(n, row.chunks, all, text);
     else collect(n, [], all, text);
-    if (innerKeep) all.forEach((cd, i) => (cd.win = [all[i - 1]?.node.from ?? n.from, all[i + 1]?.node.to ?? n.to]));
-    const isComment = (cd: Cand): boolean => table.nodes[cd.key]?.kind === "comment";
+    if (innerKeep)
+      all.forEach(
+        (cd, i) =>
+          (cd.win = [
+            all[i - 1]?.node.from ?? n.from,
+            all[i + 1]?.node.to ?? n.to,
+          ])
+      );
+    const isComment = (cd: Cand): boolean =>
+      table.nodes[cd.key]?.kind === "comment";
     const cands = all.filter((cd) => !isComment(cd));
     // groups (clauses, entries): the blocks that belong to one are taken out of the node's own slots
     let rest = cands;
@@ -307,12 +408,18 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
     if (g) {
       rest = [];
       const toks: SyntaxNode[] = [];
-      for (let c = n.firstChild; c; c = c.nextSibling) if (g.tokens ? g.tokens.includes(c.name) : c.name === g.sep) toks.push(c);
+      for (let c = n.firstChild; c; c = c.nextSibling)
+        if (g.tokens ? g.tokens.includes(c.name) : c.name === g.sep)
+          toks.push(c);
       if (g.tokens) for (const t of toks) groups.push({ tok: t, members: [] });
       else groups.push({ members: [] });
       for (const cd of cands) {
         if (g.tokens?.includes(cd.node.name)) continue; // the token itself (a keyword block by the table's kind rule)
-        if (g.own?.includes((cd.node as unknown as { prev?: string }).prev ?? "\0")) {
+        if (
+          g.own?.includes(
+            (cd.node as unknown as { prev?: string }).prev ?? "\0"
+          )
+        ) {
           rest.push(cd);
           continue;
         }
@@ -333,8 +440,16 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       for (const gr of groups) {
         if (!g.tokens && !gr.members.length) continue;
         const first = gr.tok ? gr.tok.from : gr.members[0].node.from;
-        const last = gr.members.length ? gr.members[gr.members.length - 1].node.to : (gr.tok as SyntaxNode).to;
-        const gb = makeNode(grow.kind, (grow.slots ?? []).map((q) => [q.name, q.kind] as [string, "one" | "list"]), { from: first + offset, to: last + offset });
+        const last = gr.members.length
+          ? gr.members[gr.members.length - 1].node.to
+          : (gr.tok as SyntaxNode).to;
+        const gb = makeNode(
+          grow.kind,
+          (grow.slots ?? []).map(
+            (q) => [q.name, q.kind] as [string, "one" | "list"]
+          ),
+          { from: first + offset, to: last + offset }
+        );
         if (gr.tok) {
           gb.keyword = text.slice(gr.tok.from, gr.tok.to);
           gb.keywordTo = gr.tok.to + offset;
@@ -348,7 +463,8 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
         fill(gb, grow, gr.members, n, text, offset);
         level--;
         blanks(gb, grow);
-        if (gb.slots.some((q) => q.nodes.some((k) => dirty.has(k)))) dirty.add(gb);
+        if (gb.slots.some((q) => q.nodes.some((k) => dirty.has(k))))
+          dirty.add(gb);
         gb.parent = b;
         gb.slot = gs;
         gs.nodes.push(gb);
@@ -360,7 +476,15 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       let best = Infinity;
       for (const s of b.slots) {
         if (s.kind !== "list" || s.glue) continue;
-        const d = s.nodes.length ? Math.max(s.nodes[0].from - (cd.node.to + offset), cd.node.from + offset - s.nodes[s.nodes.length - 1].to, 0) : table.statementSlots?.includes(s.name) ? 1e9 : Infinity;
+        const d = s.nodes.length
+          ? Math.max(
+              s.nodes[0].from - (cd.node.to + offset),
+              cd.node.from + offset - s.nodes[s.nodes.length - 1].to,
+              0
+            )
+          : table.statementSlots?.includes(s.name)
+            ? 1e9
+            : Infinity;
         if (d < best) {
           best = d;
           target = s;
@@ -378,7 +502,14 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
   }
 
   /** the candidates go into the slots of `b` (a block of `row`) that take them */
-  function fill(b: BNode, row: BlockRow, cands: Cand[], n: SyntaxNode, text: string, offset: number): void {
+  function fill(
+    b: BNode,
+    row: BlockRow,
+    cands: Cand[],
+    n: SyntaxNode,
+    text: string,
+    offset: number
+  ): void {
     const seen: Record<string, number> = {};
     const taken: [Cand, number][] = cands.map((cd, i) => {
       const slotIx = pick(row, cd, i, seen, n);
@@ -401,7 +532,9 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       if (s.kind === "one" && !s.nodes.length) {
         // where the missing node would go: after what the earlier slots hold, else after the keyword or the opening bracket
         let at = b.keywordTo ?? b.from + (row.brackets ? 1 : 0);
-        for (let k = 0; k < si; k++) for (const c of b.slots[k].nodes) if (c.kind !== "blank") at = Math.max(at, c.to);
+        for (let k = 0; k < si; k++)
+          for (const c of b.slots[k].nodes)
+            if (c.kind !== "blank") at = Math.max(at, c.to);
         const blank = makeNode("blank", [], { value: "...", from: at, to: at });
         blank.parent = b;
         blank.slot = s;
@@ -414,19 +547,33 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
    * index of the slot taking candidate `cd` (the i-th), or -1. Takes that name a TYPE are tried before
    * positional ones (`#n`, `@before:Tok`, `@after:Tok`), so that `Body` is not mistaken for "whatever follows `in`".
    */
-  function pick(row: BlockRow, cd: Cand, i: number, seen: Record<string, number>, n: SyntaxNode): number {
+  function pick(
+    row: BlockRow,
+    cd: Cand,
+    i: number,
+    seen: Record<string, number>,
+    n: SyntaxNode
+  ): number {
     const slots = row.slots ?? [];
     const occ: Record<string, number> = {};
     for (const p of new Set(cd.path)) occ[p] = seen[p] = (seen[p] ?? -1) + 1;
     const matches = (t: string): boolean => {
-      if (t.startsWith("@prev:")) return (cd.node as unknown as { prev?: string }).prev === t.slice(6);
+      if (t.startsWith("@prev:"))
+        return (cd.node as unknown as { prev?: string }).prev === t.slice(6);
       if (t.startsWith("@")) {
         const [kind, tok] = t.slice(1).split(":");
         const at = n.getChild(tok);
-        return !!at && (kind === "before" ? cd.node.to <= at.from : cd.node.from >= at.to);
+        return (
+          !!at &&
+          (kind === "before" ? cd.node.to <= at.from : cd.node.from >= at.to)
+        );
       }
       const [ty, nth] = t.split("#");
-      return nth === undefined ? cd.path.includes(ty) : ty === "" ? i === +nth : occ[ty] === +nth;
+      return nth === undefined
+        ? cd.path.includes(ty)
+        : ty === ""
+          ? i === +nth
+          : occ[ty] === +nth;
     };
     let star = -1;
     for (const pass of [0, 1]) {
@@ -437,7 +584,10 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
           continue;
         }
         for (const t of take) {
-          const typed = !t.startsWith("@") && !t.startsWith("#") && !/^[^#]+#/.test(t) ? true : false;
+          const typed =
+            !t.startsWith("@") && !t.startsWith("#") && !/^[^#]+#/.test(t)
+              ? true
+              : false;
           if ((pass === 0) === typed && matches(t)) return s;
         }
       }
@@ -479,30 +629,58 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       const s = sources.get(node);
       if (s !== undefined) return s;
       if (node.value !== undefined) return node.value;
-      throw new Error("print of a node that was never parsed needs a template (not in the table)");
+      throw new Error(
+        "print of a node that was never parsed needs a template (not in the table)"
+      );
     },
     blank: () => makeNode("blank", [], { value: "..." }),
     describe(node) {
       const key = keys.get(node);
       const row = key ? table.nodes[key] : undefined;
-      const label = row?.label ?? (node.kind === "error" ? "unparsed text" : node.kind);
+      const label =
+        row?.label ?? (node.kind === "error" ? "unparsed text" : node.kind);
       const short = (c: BNode): string => {
-        const t = (c.value ?? sources.get(c) ?? c.kind).replace(/\s+/g, " ").trim();
+        const t = (c.value ?? sources.get(c) ?? c.kind)
+          .replace(/\s+/g, " ")
+          .trim();
         return t.length > 28 ? t.slice(0, 27) + "..." : t;
       };
       if (row?.describe) {
-        return row.describe.replace(/\$\{(\w+)(\.length|\.describe|\.and)?(?:\|([^|}]*)\|([^}]*))?\}/g, (_m, name: string, len?: string, one?: string, many?: string) => {
-          const sl = node.slots.find((q) => q.name === name);
-          if (!sl) return name === "value" ? node.value ?? "" : name === "keyword" ? node.keyword ?? "" : "";
-          const nodes = sl.nodes.filter((q) => q.kind !== "comment");
-          if (len === ".length") return nodes.length + (one !== undefined ? " " + (nodes.length === 1 ? one : many) : "");
-          // `.describe`: what each block says of itself (a block inside a block); `.and`: "a, b and c", as the old editor lists identifiers
-          if (len === ".describe") return nodes.map((q) => lang.describe(q)).join(", ");
-          if (len === ".and") return nodes.length < 2 ? nodes.map(short).join("") : nodes.slice(0, -1).map(short).join(", ") + " and " + short(nodes[nodes.length - 1]);
-          return nodes.map(short).join(", ");
-        }).replace(/:\s*$/, "");
+        return row.describe
+          .replace(
+            /\$\{(\w+)(\.length|\.describe|\.and)?(?:\|([^|}]*)\|([^}]*))?\}/g,
+            (_m, name: string, len?: string, one?: string, many?: string) => {
+              const sl = node.slots.find((q) => q.name === name);
+              if (!sl)
+                return name === "value"
+                  ? (node.value ?? "")
+                  : name === "keyword"
+                    ? (node.keyword ?? "")
+                    : "";
+              const nodes = sl.nodes.filter((q) => q.kind !== "comment");
+              if (len === ".length")
+                return (
+                  nodes.length +
+                  (one !== undefined
+                    ? " " + (nodes.length === 1 ? one : many)
+                    : "")
+                );
+              // `.describe`: what each block says of itself (a block inside a block); `.and`: "a, b and c", as the old editor lists identifiers
+              if (len === ".describe")
+                return nodes.map((q) => lang.describe(q)).join(", ");
+              if (len === ".and")
+                return nodes.length < 2
+                  ? nodes.map(short).join("")
+                  : nodes.slice(0, -1).map(short).join(", ") +
+                      " and " +
+                      short(nodes[nodes.length - 1]);
+              return nodes.map(short).join(", ");
+            }
+          )
+          .replace(/:\s*$/, "");
       }
-      if (node.slots.length === 0) return node.value ? `${label} ${node.value}` : label;
+      if (node.slots.length === 0)
+        return node.value ? `${label} ${node.value}` : label;
       return `${label} with ${node.slots.map((s) => `${s.nodes.length} ${s.name}`).join(", ")}`;
     },
   };
@@ -511,28 +689,50 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
 
 /* ---------------------------------------------------------------- writing */
 
-export function separatorFor(table: BlockTable, text: string, slot: Slot): string {
+export function separatorFor(
+  table: BlockTable,
+  text: string,
+  slot: Slot
+): string {
   for (const r of table.rules ?? []) {
     if (r.name !== "separator") continue;
     const s = r.apply(slot, text);
     if (s !== undefined) return s;
   }
-  return table.separators?.[slot.name] ?? table.separators?.[slot.owner.kind] ?? " ";
+  return (
+    table.separators?.[slot.name] ?? table.separators?.[slot.owner.kind] ?? " "
+  );
 }
 
 /** The text change that inserts `snippet` at `index` of a non-empty list slot (positions of the text it was parsed from). */
-export function insertChange(table: BlockTable, text: string, slot: Slot, index: number, snippet: string): TextChange {
+export function insertChange(
+  table: BlockTable,
+  text: string,
+  slot: Slot,
+  index: number,
+  snippet: string
+): TextChange {
   const sep = separatorFor(table, text, slot);
   const ns = slot.nodes;
-  if (!ns.length) throw new Error("insert into an empty list: where it goes needs a rule per language");
+  if (!ns.length)
+    throw new Error(
+      "insert into an empty list: where it goes needs a rule per language"
+    );
   if (index >= ns.length) {
     // after the last block that is not a comment (text after a line comment would be part of it)
     let last = ns.length - 1;
     while (last > 0 && ns[last].kind === "comment") last--;
-    if (ns[last].kind === "comment") return { from: ns[last].to, to: ns[last].to, insert: "\n" + snippet };
+    if (ns[last].kind === "comment")
+      return { from: ns[last].to, to: ns[last].to, insert: "\n" + snippet };
     // the last block already ends with its newline (a Python statement): no second one
     const end = ns[last].to;
-    return { from: end, to: end, insert: (sep.startsWith("\n") && text[end - 1] === "\n" ? sep.slice(1) : sep) + snippet };
+    return {
+      from: end,
+      to: end,
+      insert:
+        (sep.startsWith("\n") && text[end - 1] === "\n" ? sep.slice(1) : sep) +
+        snippet,
+    };
   }
   return { from: ns[index].from, to: ns[index].from, insert: snippet + sep };
 }
@@ -545,7 +745,10 @@ export function insertChange(table: BlockTable, text: string, slot: Slot, index:
  * taken too when a space or the end of the line follows it, and a space after it when it is first on its line.
  * A comment right before a block that goes as well (cut takes the comment with the block) goes in one piece with it.
  */
-export function rootRemovals(roots: BNode[], text?: string): Map<BNode, TextChange> {
+export function rootRemovals(
+  roots: BNode[],
+  text?: string
+): Map<BNode, TextChange> {
   const sorted = [...roots].sort((a, b) => a.from - b.from || a.to - b.to);
   const out = new Map<BNode, TextChange>();
   if (!text) {
@@ -562,7 +765,9 @@ export function rootRemovals(roots: BNode[], text?: string): Map<BNode, TextChan
   const after = (pos: number): string => {
     let i = pos;
     while (i < text.length && isGone(i)) i++;
-    return i >= text.length || text[i] === "\n" || text[i] === "\r" ? "" : text[i];
+    return i >= text.length || text[i] === "\n" || text[i] === "\r"
+      ? ""
+      : text[i];
   };
   for (let k = 0; k < sorted.length; k++) {
     const n = sorted[k];
@@ -577,7 +782,12 @@ export function rootRemovals(roots: BNode[], text?: string): Map<BNode, TextChan
       continue;
     }
     const prev = sorted[k - 1];
-    if (prev && prev.kind === "comment" && !/\S/.test(text.slice(prev.to, n.from))) from = prev.from;
+    if (
+      prev &&
+      prev.kind === "comment" &&
+      !/\S/.test(text.slice(prev.to, n.from))
+    )
+      from = prev.from;
     const p = before(from);
     const q = after(to);
     if (p === " " && (q === " " || q === "")) {
@@ -597,7 +807,13 @@ export function rootRemovals(roots: BNode[], text?: string): Map<BNode, TextChan
 
 /** The text change that removes a list element and one separator. */
 export function removeChange(node: BNode, text?: string): TextChange {
-  return removeChanges([node], text)[0] ?? { from: node.from, to: node.from, insert: "" };
+  return (
+    removeChanges([node], text)[0] ?? {
+      from: node.from,
+      to: node.from,
+      insert: "",
+    }
+  );
 }
 
 /**
@@ -620,18 +836,27 @@ export function removeChanges(nodes: BNode[], text?: string): TextChange[] {
     const go = new Set(rest.filter((n) => n.slot === slot));
     // only blanks and commas may lie between two blocks that go together or between a block and its separator: anything else
     // (a bracket the grammar does not make a block of, a stray token) is not ours to take
-    const sepOnly = (a: number, b: number): boolean => !text || /^[\s,]*$/.test(text.slice(a, b));
-    const others = slot.owner.slots.filter((q) => q !== slot).flatMap((q) => q.nodes);
+    const sepOnly = (a: number, b: number): boolean =>
+      !text || /^[\s,]*$/.test(text.slice(a, b));
+    const others = slot.owner.slots
+      .filter((q) => q !== slot)
+      .flatMap((q) => q.nodes);
     for (let i = 0; i < ns.length; i++) {
       if (!go.has(ns[i])) continue;
       let j = i;
-      while (j + 1 < ns.length && go.has(ns[j + 1]) && sepOnly(ns[j].to, ns[j + 1].from)) j++;
+      while (
+        j + 1 < ns.length &&
+        go.has(ns[j + 1]) &&
+        sepOnly(ns[j].to, ns[j + 1].from)
+      )
+        j++;
       const first = ns[i];
       const last = ns[j];
       if (j + 1 < ns.length) {
         // up to the next block of the list, but not over another block of the owner (a comment before the operator) or a stray token
         let to = ns[j + 1].from;
-        for (const o of others) if (o.from >= last.to && o.from < to) to = o.from;
+        for (const o of others)
+          if (o.from >= last.to && o.from < to) to = o.from;
         if (text) {
           const gap = text.slice(last.to, to);
           const k = gap.search(/[^\s,]/);
@@ -640,18 +865,29 @@ export function removeChanges(nodes: BNode[], text?: string): TextChange[] {
         // (a block that sat right against what is before it (a comment after a block: `7; c`) must not end up against the next one)
         const prevCh = text ? text[first.from - 1] : undefined;
         const nextCh = text ? text[to] : undefined;
-        const glue = prevCh !== undefined && nextCh !== undefined && to === ns[j + 1].from && !/[\s([{]/.test(prevCh) && !/[\s)\]}]/.test(nextCh) && prevCh !== "," && prevCh !== ";";
+        const glue =
+          prevCh !== undefined &&
+          nextCh !== undefined &&
+          to === ns[j + 1].from &&
+          !/[\s([{]/.test(prevCh) &&
+          !/[\s)\]}]/.test(nextCh) &&
+          prevCh !== "," &&
+          prevCh !== ";";
         out.push({ from: first.from, to, insert: glue ? " " : "" });
       } else if (i > 0) {
         // the last of a list whose previous element ends with its own newline (a statement): take the node's newline too
         let from = ns[i - 1].to;
-        for (const o of others) if (o.to <= first.from && o.to > from) from = o.to;
+        for (const o of others)
+          if (o.to <= first.from && o.to > from) from = o.to;
         if (text) {
           const gap = text.slice(from, first.from);
           const k = gap.search(/[^\s,][\s,]*$/);
           if (k >= 0) from += k + 1;
         }
-        const lastLine = !!text && text[last.to] === "\n" && (from === 0 || text[from - 1] === "\n");
+        const lastLine =
+          !!text &&
+          text[last.to] === "\n" &&
+          (from === 0 || text[from - 1] === "\n");
         out.push({ from, to: last.to + (lastLine ? 1 : 0), insert: "" });
       } else {
         // the whole list: also the blanks before it on the same line (`(h 4)` -> `(h)`)
@@ -674,12 +910,21 @@ export function removeChanges(nodes: BNode[], text?: string): TextChange[] {
  * bracket of its owner (`f()`, `(f)`, `{}`, `[]`). One generic rule, no per-language
  * lines. An owner with no closing bracket (a Python body) cannot be done.
  */
-export function insertEmptyChange(text: string, slot: Slot, snippet: string, table?: BlockTable): TextChange {
+export function insertEmptyChange(
+  text: string,
+  slot: Slot,
+  snippet: string,
+  table?: BlockTable
+): TextChange {
   const o = slot.owner;
   // a list with no brackets of its own (a `split`'s rest): right after its place, after a space
-  if (table && table.nodes[keys.get(o) ?? ""]?.openList) return { from: o.to, to: o.to, insert: " " + snippet };
+  if (table && table.nodes[keys.get(o) ?? ""]?.openList)
+    return { from: o.to, to: o.to, insert: " " + snippet };
   const close = text[o.to - 1];
-  if (!close || !")]}".includes(close)) throw new Error(`insert into an empty ${slot.name}: ${o.kind} has no closing bracket to go before`);
+  if (!close || !")]}".includes(close))
+    throw new Error(
+      `insert into an empty ${slot.name}: ${o.kind} has no closing bracket to go before`
+    );
   const prev = text[o.to - 2] ?? "";
   const pad = prev === "" || /[\s([{]/.test(prev) ? "" : " ";
   const at = o.to - 1;
@@ -696,12 +941,18 @@ export const lineSeparator = (inline?: string) => ({
     if (slot.name !== "body" || !slot.nodes.length) return undefined;
     const at = slot.nodes[0].from;
     const before = text.slice(text.lastIndexOf("\n", at - 1) + 1, at);
-    return inline !== undefined && /\S/.test(before) ? inline : "\n" + before.replace(/\S.*$/, "");
+    return inline !== undefined && /\S/.test(before)
+      ? inline
+      : "\n" + before.replace(/\S.*$/, "");
   },
 });
 
 /** the source of template `name`: holes become the table's blank; also the offset of the first hole (-1: none) */
-export function fillTemplate(table: BlockTable, name: string, indent = ""): { text: string; hole: number; kind: string; stmt: boolean } {
+export function fillTemplate(
+  table: BlockTable,
+  name: string,
+  indent = ""
+): { text: string; hole: number; kind: string; stmt: boolean } {
   const t = table.templates?.[name];
   if (!t) throw new Error(`no template ${name}`);
   const blank = table.blank ?? "...";

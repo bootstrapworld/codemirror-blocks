@@ -88,8 +88,13 @@ test("a popup does not take the pointer from what it is over, and a comment bloc
 });
 
 // FIXME-BEGIN (thirteenth round: D: a comment is its own block here: the popup's page rules differ (notes, sixth round 4))
-const FIXME = new Set<string>(["a popup does not take the pointer from what it is over, and a comment block of its own does take it"]);
+const FIXME = new Set<string>([
+  "a popup does not take the pointer from what it is over, and a comment block of its own does take it",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "D: a comment is its own block here: the popup's page rules differ (notes, sixth round 4)");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "D: a comment is its own block here: the popup's page rules differ (notes, sixth round 4)"
+  );
 });
 // FIXME-END

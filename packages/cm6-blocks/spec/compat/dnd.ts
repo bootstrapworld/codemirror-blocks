@@ -4,10 +4,22 @@ type Point = { x: number; y: number };
 export const LONG_PRESS_MS = 350;
 
 /** a pointer event; jsdom has no layout, so what is under the pointer is whatever `under` says */
-export const firePointer = (type: "pointerDown" | "pointerMove" | "pointerUp" | "pointerCancel", el: Element, point: Point, under: Element = el, pointerType: "mouse" | "touch" = "mouse"): void => {
+export const firePointer = (
+  type: "pointerDown" | "pointerMove" | "pointerUp" | "pointerCancel",
+  el: Element,
+  point: Point,
+  under: Element = el,
+  pointerType: "mouse" | "touch" = "mouse"
+): void => {
   document.elementFromPoint = jest.fn(() => under);
   const event = createEvent[type](el);
-  Object.defineProperties(event, { clientX: { value: point.x }, clientY: { value: point.y }, pointerId: { value: 1 }, pointerType: { value: pointerType }, button: { value: 0 } });
+  Object.defineProperties(event, {
+    clientX: { value: point.x },
+    clientY: { value: point.y },
+    pointerId: { value: 1 },
+    pointerType: { value: pointerType },
+    button: { value: 0 },
+  });
   fireEvent(el, event);
 };
 export type DragMode = "mouse" | "touch" | "early-touch";
@@ -16,20 +28,35 @@ const AWAY: Point = { x: 30, y: 30 };
 
 export const pressFocus = (el: Element) => {
   let t: Element | null = el;
-  while (t && !t.hasAttribute("tabindex") && !t.matches("a[href], button, input, textarea, select")) t = t.parentElement;
+  while (
+    t &&
+    !t.hasAttribute("tabindex") &&
+    !t.matches("a[href], button, input, textarea, select")
+  )
+    t = t.parentElement;
   if (t instanceof HTMLElement) t.focus();
-  else if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  else if (document.activeElement instanceof HTMLElement)
+    document.activeElement.blur();
 };
 
 /** the old helper, unchanged in how it is used: `drag(src).dropOnto(target, point)` */
 export const drag = (srcNode: Element, mode: DragMode = "mouse") => {
   const touch = mode !== "mouse";
   const kind = touch ? "touch" : "mouse";
-  const fire = (type: Parameters<typeof firePointer>[0], el: Element, point: Point, under?: Element) => firePointer(type, el, point, under, kind);
+  const fire = (
+    type: Parameters<typeof firePointer>[0],
+    el: Element,
+    point: Point,
+    under?: Element
+  ) => firePointer(type, el, point, under, kind);
   const held: (() => void)[] = [];
   if (touch) {
     const real = global.setTimeout;
-    jest.spyOn(global, "setTimeout").mockImplementation(((fn: () => void, ms?: number, ...args: unknown[]) => {
+    jest.spyOn(global, "setTimeout").mockImplementation(((
+      fn: () => void,
+      ms?: number,
+      ...args: unknown[]
+    ) => {
       if (ms === LONG_PRESS_MS) {
         held.push(fn);
         return 0;
@@ -67,4 +94,5 @@ export const drag = (srcNode: Element, mode: DragMode = "mouse") => {
   };
   return next;
 };
-export const getNodeLabeled = (label: string | RegExp) => screen.getByRole("treeitem", { name: label });
+export const getNodeLabeled = (label: string | RegExp) =>
+  screen.getByRole("treeitem", { name: label });

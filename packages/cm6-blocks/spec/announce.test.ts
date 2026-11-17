@@ -9,10 +9,27 @@ import type { BNode } from "../src/types";
 const LANGS = ["scheme", "javascript", "python"];
 const find = (ed: LezerBlockEditor, src: string): BNode => {
   let f: BNode | null = null;
-  ed.roots().forEach((r) => walk(r, (n) => !f && n.slots.length === 0 && ed.view.state.doc.sliceString(n.from, n.to) === src && (f = n)));
+  ed.roots().forEach((r) =>
+    walk(
+      r,
+      (n) =>
+        !f &&
+        n.slots.length === 0 &&
+        ed.view.state.doc.sliceString(n.from, n.to) === src &&
+        (f = n)
+    )
+  );
   return f!;
 };
-const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
+const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) =>
+  el.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: k,
+      bubbles: true,
+      cancelable: true,
+      ...mods,
+    })
+  );
 
 describe.each(LANGS)("announcements: %s", (l) => {
   beforeEach(() => jest.useFakeTimers());
@@ -20,13 +37,17 @@ describe.each(LANGS)("announcements: %s", (l) => {
 
   test("the first drawing says what is at the top level", () => {
     const ed = make(l);
-    expect(ed.said[0]).toMatch(/^At the top level, this program contains 3 (calls|statements)\./);
+    expect(ed.said[0]).toMatch(
+      /^At the top level, this program contains 3 (calls|statements)\./
+    );
   });
   test("an edit commit says what was changed or inserted; undo and redo say what they undid and redid", () => {
     const ed = make(l);
     ed.focusNode(find(ed, "4"));
     key(ed.renderer.element(find(ed, "4")), "Enter");
-    const box = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+    const box = ed.view.dom.querySelector(
+      "input.blocks-edit"
+    ) as HTMLInputElement;
     box.value = "44";
     key(box, "Enter");
     expect(ed.said).toContain("changed 44");
@@ -37,7 +58,9 @@ describe.each(LANGS)("announcements: %s", (l) => {
     // an insertion through the gap box
     ed.focusNode(find(ed, "44"));
     key(ed.renderer.element(find(ed, "44")), "]", { ctrlKey: true });
-    const b2 = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+    const b2 = ed.view.dom.querySelector(
+      "input.blocks-edit"
+    ) as HTMLInputElement;
     b2.value = "7";
     key(b2, "Enter");
     expect(ed.said).toContain("inserted 7");

@@ -13,7 +13,9 @@ import type { BNode } from "../../src/types";
 export type Pos = { line: number; ch: number };
 
 const posOf = (ed: LezerBlockEditor, offset: number): Pos => {
-  const l = ed.view.state.doc.lineAt(Math.max(0, Math.min(offset, ed.view.state.doc.length)));
+  const l = ed.view.state.doc.lineAt(
+    Math.max(0, Math.min(offset, ed.view.state.doc.length))
+  );
   return { line: l.number - 1, ch: offset - l.from };
 };
 const offsetOf = (ed: LezerBlockEditor, p: Pos): number => {
@@ -42,7 +44,9 @@ export class ASTNode {
     return contentHash(this.b, this.api.ed.view.state.doc);
   }
   get element(): HTMLElement | null {
-    return this.api.ed.renderer.has(this.b) ? this.api.ed.renderer.element(this.b) : null;
+    return this.api.ed.renderer.has(this.b)
+      ? this.api.ed.renderer.element(this.b)
+      : null;
   }
   get from(): Pos {
     return posOf(this.api.ed, this.b.from);
@@ -64,14 +68,21 @@ export class ASTNode {
   /** the old nodes' `fields`: each of the table's slots by name (a "one" slot: the node, a list: an array); the old names (`func`, `args`, ...) are the table's for calls */
   get fields(): Record<string, ASTNode | ASTNode[]> {
     const o: Record<string, ASTNode | ASTNode[]> = {};
-    for (const s of this.b.slots) o[s.name] = s.kind === "one" ? this.api.wrap(s.nodes[0]) : s.nodes.map((n) => this.api.wrap(n));
+    for (const s of this.b.slots)
+      o[s.name] =
+        s.kind === "one"
+          ? this.api.wrap(s.nodes[0])
+          : s.nodes.map((n) => this.api.wrap(n));
     return o;
   }
   get parent(): ASTNode | null {
-    return this.b.parent && this.b.parent.kind !== "program" ? this.api.wrap(this.b.parent) : null;
+    return this.b.parent && this.b.parent.kind !== "program"
+      ? this.api.wrap(this.b.parent)
+      : null;
   }
   *children(): Generator<ASTNode> {
-    for (const s of this.b.slots) for (const n of s.nodes) yield this.api.wrap(n);
+    for (const s of this.b.slots)
+      for (const n of s.nodes) yield this.api.wrap(n);
   }
   toString(): string {
     return this.api.ed.copyText(this.b);
@@ -81,7 +92,10 @@ export class ASTNode {
 export class AST {
   constructor(private readonly api: CompatAPI) {}
   get rootNodes(): ASTNode[] {
-    return this.api.ed.roots().filter((r) => r.kind !== "error").map((r) => this.api.wrap(r));
+    return this.api.ed
+      .roots()
+      .filter((r) => r.kind !== "error")
+      .map((r) => this.api.wrap(r));
   }
   toString(): string {
     return this.rootNodes.map((r) => r.toString()).join("\n");
@@ -104,7 +118,8 @@ export class AST {
       yield api.wrap(n);
       for (const s of n.slots) for (const c of s.nodes) yield* go(api, c);
     };
-    for (const r of this.api.ed.roots()) if (r.kind !== "error") yield* go(this.api, r);
+    for (const r of this.api.ed.roots())
+      if (r.kind !== "error") yield* go(this.api, r);
   }
 }
 
@@ -125,7 +140,11 @@ export class CompatAPI {
     return this.ed.view.state.doc.toString();
   }
   setValue(text: string): void {
-    this.ed.change({ from: 0, to: this.ed.view.state.doc.length, insert: text });
+    this.ed.change({
+      from: 0,
+      to: this.ed.view.state.doc.length,
+      insert: text,
+    });
   }
   lastLine(): number {
     return this.ed.view.state.doc.lines - 1;
@@ -134,7 +153,11 @@ export class CompatAPI {
     return this.ed.view.state.doc.line(n + 1).text;
   }
   replaceRange(text: string, from: Pos, to: Pos = from): void {
-    this.ed.change({ from: offsetOf(this.ed, from), to: offsetOf(this.ed, to), insert: text });
+    this.ed.change({
+      from: offsetOf(this.ed, from),
+      to: offsetOf(this.ed, to),
+      insert: text,
+    });
   }
   // ---- the tree
   getAst(): AST {
@@ -168,13 +191,30 @@ export class CompatAPI {
   getCursor(which?: "head" | "anchor" | "from" | "to"): Pos {
     const node = this.ed.focusedNode();
     const el = document.activeElement;
-    if (node && el && /block-node/.test(el.id) && this.ed.view.dom.contains(el)) {
-      if (which === undefined || which === "from") return posOf(this.ed, node.from);
+    if (
+      node &&
+      el &&
+      /block-node/.test(el.id) &&
+      this.ed.view.dom.contains(el)
+    ) {
+      if (which === undefined || which === "from")
+        return posOf(this.ed, node.from);
       if (which === "to") return posOf(this.ed, node.to);
-      throw new Error(`getCursor() with ${which} is not supported on a focused block`);
+      throw new Error(
+        `getCursor() with ${which} is not supported on a focused block`
+      );
     }
     const r = this.ed.view.state.selection.main;
-    return posOf(this.ed, which === "anchor" ? r.anchor : which === "to" ? r.to : which === "from" ? r.from : r.head);
+    return posOf(
+      this.ed,
+      which === "anchor"
+        ? r.anchor
+        : which === "to"
+          ? r.to
+          : which === "from"
+            ? r.from
+            : r.head
+    );
   }
   // ---- selections (thirteenth round): the old API's block-aware ranges. A range that is exactly one block SELECTS the block (the editor's own
   // selection by node); any other range must lie between blocks (outside every block, or on a root's edge) and stays a text selection; a range that
@@ -189,17 +229,28 @@ export class CompatAPI {
     return o;
   }
   private blockAt(a: number, b: number): BNode | undefined {
-    return this.allNodes().find((n) => n.from === a && n.to === b && b > a && n.kind !== "comment");
+    return this.allNodes().find(
+      (n) => n.from === a && n.to === b && b > a && n.kind !== "comment"
+    );
   }
   private validateRange(a: number, b: number): void {
     if (this.blockAt(a, b)) return;
     const roots = this.ed.roots();
-    const topLevel = (o: number) => !this.allNodes().some((n) => n.from < o && o < n.to && n.kind !== "program") || roots.some((r) => r.from === o || r.to === o);
+    const topLevel = (o: number) =>
+      !this.allNodes().some(
+        (n) => n.from < o && o < n.to && n.kind !== "program"
+      ) || roots.some((r) => r.from === o || r.to === o);
     if (topLevel(a) && topLevel(b)) return;
     const p = (o: number) => posOf(this.ed, o);
-    throw new Error(`The range {line:${p(a).line}, ch:${p(a).ch}}, {line:${p(b).line}, ch:${p(b).ch}} partially covers a node, which is not allowed`);
+    throw new Error(
+      `The range {line:${p(a).line}, ch:${p(a).ch}}, {line:${p(b).line}, ch:${p(b).ch}} partially covers a node, which is not allowed`
+    );
   }
-  setSelections(ranges: { anchor: Pos; head?: Pos }[], _primary?: number, _opts?: unknown): void {
+  setSelections(
+    ranges: { anchor: Pos; head?: Pos }[],
+    _primary?: number,
+    _opts?: unknown
+  ): void {
     const rs = ranges.map((r) => {
       const a = offsetOf(this.ed, r.anchor);
       const h = offsetOf(this.ed, r.head ?? r.anchor);
@@ -215,7 +266,9 @@ export class CompatAPI {
     }
     this.ed.clearSelection();
     for (const n of nodes) this.ed.renderer.setSelected(n, true); // (only the node: the old API selects its id alone, not what is inside)
-    const sel = text.length ? EditorSelection.create(text.map((r) => EditorSelection.range(r.a, r.h))) : this.ed.view.state.selection;
+    const sel = text.length
+      ? EditorSelection.create(text.map((r) => EditorSelection.range(r.a, r.h)))
+      : this.ed.view.state.selection;
     this.ed.view.dispatch({ selection: sel });
   }
   setSelection(anchor: Pos, head: Pos = anchor, opts?: unknown): void {
@@ -227,10 +280,20 @@ export class CompatAPI {
   listSelections(): { anchor: Pos; head: Pos }[] {
     const nodes = this.ed.selectedBlocks();
     // (with blocks selected the cursor is not a selection: only text that is really selected stays)
-    const text = this.ed.view.state.selection.ranges.filter((r) => !nodes.length || !r.empty);
+    const text = this.ed.view.state.selection.ranges.filter(
+      (r) => !nodes.length || !r.empty
+    );
     const all = [
-      ...nodes.map((n) => ({ anchor: posOf(this.ed, n.from), head: posOf(this.ed, n.to), at: n.from })),
-      ...text.map((r) => ({ anchor: posOf(this.ed, r.anchor), head: posOf(this.ed, r.head), at: r.from })),
+      ...nodes.map((n) => ({
+        anchor: posOf(this.ed, n.from),
+        head: posOf(this.ed, n.to),
+        at: n.from,
+      })),
+      ...text.map((r) => ({
+        anchor: posOf(this.ed, r.anchor),
+        head: posOf(this.ed, r.head),
+        at: r.from,
+      })),
     ].sort((x, y) => x.at - y.at);
     return all.map(({ anchor, head }) => ({ anchor, head }));
   }
@@ -247,15 +310,26 @@ export class CompatAPI {
   }
   /** each selected block (and text range) is replaced; the new text must be whole blocks. `around`: the new block is selected; `start`: the cursor goes to its start */
   replaceSelections(texts: string[], select?: "around" | "start"): void {
-    const ranges = this.listSelections().map((r) => ({ a: offsetOf(this.ed, r.anchor), h: offsetOf(this.ed, r.head) }));
+    const ranges = this.listSelections().map((r) => ({
+      a: offsetOf(this.ed, r.anchor),
+      h: offsetOf(this.ed, r.head),
+    }));
     const lang = this.ed.language;
     texts.forEach((t, i) => {
       if (!ranges[i] || ranges[i].a === ranges[i].h) return;
       const parsed = lang.parse(t);
-      if (parsed.length === 0 || parsed.some((n) => n.kind === "error" || hasError(n))) throw new Error(`replaceSelection: "${t}" is not whole blocks`);
+      if (
+        parsed.length === 0 ||
+        parsed.some((n) => n.kind === "error" || hasError(n))
+      )
+        throw new Error(`replaceSelection: "${t}" is not whole blocks`);
     });
     const changes = ranges
-      .map((r, i) => ({ from: Math.min(r.a, r.h), to: Math.max(r.a, r.h), insert: texts[i] ?? texts[0] }))
+      .map((r, i) => ({
+        from: Math.min(r.a, r.h),
+        to: Math.max(r.a, r.h),
+        insert: texts[i] ?? texts[0],
+      }))
       .sort((x, y) => x.from - y.from);
     this.ed.clearSelection();
     this.ed.change(changes.length === 1 ? changes[0] : (changes as never));
@@ -264,18 +338,32 @@ export class CompatAPI {
       if (select === "around") {
         const n = this.blockAt(first.from, first.from + first.insert.length);
         if (n) this.ed.renderer.setSelected(n, true);
-      } else this.ed.view.dispatch({ selection: EditorSelection.cursor(select === "start" ? first.from : first.from + first.insert.length) });
+      } else
+        this.ed.view.dispatch({
+          selection: EditorSelection.cursor(
+            select === "start" ? first.from : first.from + first.insert.length
+          ),
+        });
     }
   }
   replaceSelection(text: string, select?: "around" | "start"): void {
-    this.replaceSelections(Array(this.listSelections().length).fill(text), select);
+    this.replaceSelections(
+      Array(this.listSelections().length).fill(text),
+      select
+    );
   }
   somethingSelected(): boolean {
-    return this.ed.selection().length > 0 || this.ed.view.state.selection.ranges.some((r) => !r.empty);
+    return (
+      this.ed.selection().length > 0 ||
+      this.ed.view.state.selection.ranges.some((r) => !r.empty)
+    );
   }
   // ---- history (CodeMirror 6's: `clearHistory` can only forget the depth it had, not drop the steps)
   historySize(): { undo: number; redo: number } {
-    return { undo: Math.max(0, undoDepth(this.ed.view.state) - this.historyBase), redo: redoDepth(this.ed.view.state) };
+    return {
+      undo: Math.max(0, undoDepth(this.ed.view.state) - this.historyBase),
+      redo: redoDepth(this.ed.view.state),
+    };
   }
   clearHistory(): void {
     this.historyBase = undoDepth(this.ed.view.state);
@@ -309,7 +397,16 @@ export class CompatAPI {
       /** CodeMirror's OWN cursor (the one that does not follow block focus) */
       getCursor: (which: "head" | "anchor" | "from" | "to" = "head") => {
         const r = ed.view.state.selection.main;
-        return posOf(ed, which === "anchor" ? r.anchor : which === "from" ? r.from : which === "to" ? r.to : r.head);
+        return posOf(
+          ed,
+          which === "anchor"
+            ? r.anchor
+            : which === "from"
+              ? r.from
+              : which === "to"
+                ? r.to
+                : r.head
+        );
       },
     };
   }
@@ -329,7 +426,9 @@ const MISSING: Record<string, string> = {
   scrollIntoView: "CM5 scrollIntoView",
   runMode: "CM5 runMode",
 };
-export function makeAPI(ed: LezerBlockEditor): CompatAPI & Record<string, never> {
+export function makeAPI(
+  ed: LezerBlockEditor
+): CompatAPI & Record<string, never> {
   const api = new CompatAPI(ed);
   return new Proxy(api, {
     get(t, k, r) {

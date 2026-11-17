@@ -13,7 +13,16 @@ const SMALL: Record<string, string> = {
 };
 const results: Record<string, any> = {};
 
-type AX = { nodeId: string; ignored?: boolean; role?: { value: string }; name?: { value: string }; properties?: { name: string; value: { value: any } }[]; childIds?: string[]; parentId?: string; backendDOMNodeId?: number };
+type AX = {
+  nodeId: string;
+  ignored?: boolean;
+  role?: { value: string };
+  name?: { value: string };
+  properties?: { name: string; value: { value: any } }[];
+  childIds?: string[];
+  parentId?: string;
+  backendDOMNodeId?: number;
+};
 
 for (const lang of Object.keys(SMALL)) {
   test(`accessibility: ${lang}`, async ({ page, context }) => {
@@ -22,26 +31,39 @@ for (const lang of Object.keys(SMALL)) {
     const load = (t: string) =>
       page.evaluate((t) => {
         const d = (window as any).demo;
-        d.ed.view.dispatch({ changes: { from: 0, to: d.ed.view.state.doc.length, insert: t } });
+        d.ed.view.dispatch({
+          changes: { from: 0, to: d.ed.view.state.doc.length, insert: t },
+        });
       }, t);
     await load(SMALL[lang]);
     const cdp = await context.newCDPSession(page);
     await cdp.send("Accessibility.enable");
 
     /** the accessibility tree under the editor's `tree`, as indented lines */
-    const outlineOf = async (cdp: any): Promise<{ lines: string[]; problems: string[]; staticText: number }> => {
-      const { nodes } = (await cdp.send("Accessibility.getFullAXTree")) as { nodes: AX[] };
+    const outlineOf = async (
+      cdp: any
+    ): Promise<{ lines: string[]; problems: string[]; staticText: number }> => {
+      const { nodes } = (await cdp.send("Accessibility.getFullAXTree")) as {
+        nodes: AX[];
+      };
       const byId = new Map(nodes.map((n) => [n.nodeId, n]));
-      const prop = (n: AX, k: string) => n.properties?.find((p) => p.name === k)?.value.value;
+      const prop = (n: AX, k: string) =>
+        n.properties?.find((p) => p.name === k)?.value.value;
       const tree = nodes.find((n) => n.role?.value === "tree");
       const lines: string[] = [];
       const problems: string[] = [];
       let staticText = 0;
-      if (!tree) return { lines, problems: ["no tree in the accessibility tree"], staticText };
+      if (!tree)
+        return {
+          lines,
+          problems: ["no tree in the accessibility tree"],
+          staticText,
+        };
       const walk = (n: AX, depth: number, itemDepth: number): void => {
         const role = n.role?.value ?? "?";
         if (n.ignored) {
-          for (const c of n.childIds ?? []) walk(byId.get(c)!, depth, itemDepth);
+          for (const c of n.childIds ?? [])
+            walk(byId.get(c)!, depth, itemDepth);
           return;
         }
         let d = depth;
@@ -51,14 +73,26 @@ for (const lang of Object.keys(SMALL)) {
           const flags = [
             prop(n, "level") !== undefined ? `level=${prop(n, "level")}` : "",
             prop(n, "selected") ? "selected" : "",
-            prop(n, "expanded") !== undefined ? `expanded=${prop(n, "expanded")}` : "",
+            prop(n, "expanded") !== undefined
+              ? `expanded=${prop(n, "expanded")}`
+              : "",
             prop(n, "focused") ? "FOCUSED" : "",
           ].filter(Boolean);
-          lines.push(`${"  ".repeat(depth)}treeitem "${n.name?.value ?? ""}" [${flags.join(", ")}]`);
+          lines.push(
+            `${"  ".repeat(depth)}treeitem "${n.name?.value ?? ""}" [${flags.join(", ")}]`
+          );
           if (!n.name?.value) problems.push("a treeitem has no name");
-          if (prop(n, "level") !== id) problems.push(`treeitem "${n.name?.value}": level ${prop(n, "level")}, nesting depth ${id}`);
+          if (prop(n, "level") !== id)
+            problems.push(
+              `treeitem "${n.name?.value}": level ${prop(n, "level")}, nesting depth ${id}`
+            );
           d = depth + 1;
-        } else if (role === "StaticText" || role === "text" || role === "InlineTextBox" || role === "LineBreak") {
+        } else if (
+          role === "StaticText" ||
+          role === "text" ||
+          role === "InlineTextBox" ||
+          role === "LineBreak"
+        ) {
           staticText++;
         } else if (role !== "generic" && role !== "none" && role !== "group") {
           lines.push(`${"  ".repeat(depth)}${role} "${n.name?.value ?? ""}"`);
@@ -66,7 +100,9 @@ for (const lang of Object.keys(SMALL)) {
         }
         for (const c of n.childIds ?? []) walk(byId.get(c)!, d, id);
       };
-      lines.push(`tree "${tree.name?.value}" [multiselectable=${prop(tree, "multiselectable")}]`);
+      lines.push(
+        `tree "${tree.name?.value}" [multiselectable=${prop(tree, "multiselectable")}]`
+      );
       for (const c of tree.childIds ?? []) walk(byId.get(c)!, 1, 0);
       return { lines, problems, staticText };
     };
@@ -77,25 +113,46 @@ for (const lang of Object.keys(SMALL)) {
     const domChecks = (): Promise<string[]> =>
       page.evaluate(() => {
         const out: string[] = [];
-        const items = Array.from(document.querySelectorAll(".cm-content [role=treeitem]")) as HTMLElement[];
+        const items = Array.from(
+          document.querySelectorAll(".cm-content [role=treeitem]")
+        ) as HTMLElement[];
         const groups = new Map<Element, HTMLElement[]>();
         for (const it of items) {
-          const parentItem = it.parentElement?.closest("[role=treeitem]") ?? null;
-          const holder = parentItem ? (it.parentElement as Element).closest("[data-slot]") ?? parentItem : document.querySelector(".cm-content")!;
-          const k = parentItem ? holder : (document.querySelector(".cm-content") as Element);
+          const parentItem =
+            it.parentElement?.closest("[role=treeitem]") ?? null;
+          const holder = parentItem
+            ? ((it.parentElement as Element).closest("[data-slot]") ??
+              parentItem)
+            : document.querySelector(".cm-content")!;
+          const k = parentItem
+            ? holder
+            : (document.querySelector(".cm-content") as Element);
           groups.set(k, [...(groups.get(k) ?? []), it]);
         }
         for (const [, g] of groups) {
           g.forEach((it, i) => {
-            if (Number(it.getAttribute("aria-posinset")) !== i + 1) out.push(`${it.getAttribute("aria-label")}: posinset ${it.getAttribute("aria-posinset")}, position ${i + 1}`);
-            if (Number(it.getAttribute("aria-setsize")) !== g.length) out.push(`${it.getAttribute("aria-label")}: setsize ${it.getAttribute("aria-setsize")}, siblings ${g.length}`);
+            if (Number(it.getAttribute("aria-posinset")) !== i + 1)
+              out.push(
+                `${it.getAttribute("aria-label")}: posinset ${it.getAttribute("aria-posinset")}, position ${i + 1}`
+              );
+            if (Number(it.getAttribute("aria-setsize")) !== g.length)
+              out.push(
+                `${it.getAttribute("aria-label")}: setsize ${it.getAttribute("aria-setsize")}, siblings ${g.length}`
+              );
           });
         }
         for (const it of items) {
           const compound = it.classList.contains("blocks-compound");
-          if (compound !== it.hasAttribute("aria-expanded")) out.push(`${it.getAttribute("aria-label")}: aria-expanded ${it.getAttribute("aria-expanded")} on a ${compound ? "compound" : "leaf"} block`);
-          if (!["true", "false"].includes(it.getAttribute("aria-selected") ?? "")) out.push(`${it.getAttribute("aria-label")}: no aria-selected`);
-          if (!it.getAttribute("aria-label")) out.push("a block has no aria-label");
+          if (compound !== it.hasAttribute("aria-expanded"))
+            out.push(
+              `${it.getAttribute("aria-label")}: aria-expanded ${it.getAttribute("aria-expanded")} on a ${compound ? "compound" : "leaf"} block`
+            );
+          if (
+            !["true", "false"].includes(it.getAttribute("aria-selected") ?? "")
+          )
+            out.push(`${it.getAttribute("aria-label")}: no aria-selected`);
+          if (!it.getAttribute("aria-label"))
+            out.push("a block has no aria-label");
         }
         return out;
       });
@@ -109,7 +166,10 @@ for (const lang of Object.keys(SMALL)) {
     const freshOutline = async (): Promise<string[]> => {
       const state = await page.evaluate(() => {
         const d = (window as any).demo;
-        return { text: d.ed.view.state.doc.toString(), sel: d.ed.selectedBlocks().map((n: any) => [n.from, n.to, n.kind]) };
+        return {
+          text: d.ed.view.state.doc.toString(),
+          sel: d.ed.selectedBlocks().map((n: any) => [n.from, n.to, n.kind]),
+        };
       });
       await page2.evaluate((s) => {
         (window as any).demo.show(s.text);
@@ -118,7 +178,8 @@ for (const lang of Object.keys(SMALL)) {
           let hit: any = null;
           d.ed.roots().forEach((r: any) => {
             const w = (n: any) => {
-              if (n.from === from && n.to === to && n.kind === kind) hit = hit ?? n;
+              if (n.from === from && n.to === to && n.kind === kind)
+                hit = hit ?? n;
               n.slots.forEach((q: any) => q.nodes.forEach(w));
             };
             w(r);
@@ -133,13 +194,31 @@ for (const lang of Object.keys(SMALL)) {
 
     // focus events, recorded in the page (target, where focus goes, and what is active when the event fires)
     await page.evaluate(() => {
-      const desc = (e: any): string => (!e ? "null" : e === document.body ? "BODY" : e === document.documentElement ? "HTML" : e.getAttribute?.("aria-label") ? `block(${e.getAttribute("aria-label")})` : e.tagName?.toLowerCase() + (e.className ? "." + String(e.className).split(" ")[0] : ""));
+      const desc = (e: any): string =>
+        !e
+          ? "null"
+          : e === document.body
+            ? "BODY"
+            : e === document.documentElement
+              ? "HTML"
+              : e.getAttribute?.("aria-label")
+                ? `block(${e.getAttribute("aria-label")})`
+                : e.tagName?.toLowerCase() +
+                  (e.className ? "." + String(e.className).split(" ")[0] : "");
       (window as any).__focus = [];
       for (const t of ["focusin", "focusout"])
-        document.addEventListener(t, (e: any) => (window as any).__focus.push(`${t} ${desc(e.target)} -> ${desc(e.relatedTarget)} (active ${desc(document.activeElement)})`), true);
+        document.addEventListener(
+          t,
+          (e: any) =>
+            (window as any).__focus.push(
+              `${t} ${desc(e.target)} -> ${desc(e.relatedTarget)} (active ${desc(document.activeElement)})`
+            ),
+          true
+        );
       (window as any).__desc = desc;
     });
-    const clearFocusLog = () => page.evaluate(() => ((window as any).__focus = []));
+    const clearFocusLog = () =>
+      page.evaluate(() => ((window as any).__focus = []));
     /** run `f`, then watch `activeElement` for 5 frames: a frame where it is the body would be a moment without focus */
     const watch = async (f: () => Promise<void>) => {
       await clearFocusLog();
@@ -147,48 +226,103 @@ for (const lang of Object.keys(SMALL)) {
         (window as any).__frames = [];
         let n = 0;
         const tick = () => {
-          (window as any).__frames.push((window as any).__desc(document.activeElement));
+          (window as any).__frames.push(
+            (window as any).__desc(document.activeElement)
+          );
           if (++n < 6) requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);
       });
       await f();
       await page.waitForTimeout(160);
-      return page.evaluate(() => ({ events: (window as any).__focus as string[], frames: (window as any).__frames as string[], restores: (window as any).demo.ed.stats().focusRestores as number }));
+      return page.evaluate(() => ({
+        events: (window as any).__focus as string[],
+        frames: (window as any).__frames as string[],
+        restores: (window as any).demo.ed.stats().focusRestores as number,
+      }));
     };
 
     const cases: Record<string, any> = {};
     const record = async (name: string, f: () => Promise<void>) => {
-      const before = await page.evaluate(() => (window as any).demo.ed.stats().focusRestores);
+      const before = await page.evaluate(
+        () => (window as any).demo.ed.stats().focusRestores
+      );
       const w = await watch(f);
       const o = await outline();
       const dom = await domChecks();
       const fresh = await freshOutline();
-      const same = JSON.stringify(fresh.map((l) => l.replace(/ FOCUSED/g, "").replace(/, *\]/, "]"))) === JSON.stringify(o.lines.map((l) => l.replace(/ FOCUSED/g, "").replace(/, *\]/, "]")));
-      cases[name] = { treeProblems: o.problems, domProblems: dom, sameAsAFreshEditor: same, staticTextNodesInTree: o.staticText, focusEvents: w.events, activeElementPerFrame: w.frames, focusRestoresDuringTheCase: w.restores - before, treeitems: o.lines.filter((l) => l.includes("treeitem")).length };
-      if (!same) cases[name].diff = o.lines.filter((l, i) => l !== fresh[i]).slice(0, 4).concat(["--- fresh"], fresh.filter((l, i) => l !== o.lines[i]).slice(0, 4));
+      const same =
+        JSON.stringify(
+          fresh.map((l) => l.replace(/ FOCUSED/g, "").replace(/, *\]/, "]"))
+        ) ===
+        JSON.stringify(
+          o.lines.map((l) => l.replace(/ FOCUSED/g, "").replace(/, *\]/, "]"))
+        );
+      cases[name] = {
+        treeProblems: o.problems,
+        domProblems: dom,
+        sameAsAFreshEditor: same,
+        staticTextNodesInTree: o.staticText,
+        focusEvents: w.events,
+        activeElementPerFrame: w.frames,
+        focusRestoresDuringTheCase: w.restores - before,
+        treeitems: o.lines.filter((l) => l.includes("treeitem")).length,
+      };
+      if (!same)
+        cases[name].diff = o.lines
+          .filter((l, i) => l !== fresh[i])
+          .slice(0, 4)
+          .concat(
+            ["--- fresh"],
+            fresh.filter((l, i) => l !== o.lines[i]).slice(0, 4)
+          );
       return o;
     };
-    const lit = (t: string) => page.locator(".cm-content .blocks-literal", { hasText: new RegExp(`^${t}$`) }).first();
+    const lit = (t: string) =>
+      page
+        .locator(".cm-content .blocks-literal", {
+          hasText: new RegExp(`^${t}$`),
+        })
+        .first();
 
     // 0: the program as loaded
     const first = await record("0 loaded", async () => {});
-    fs.writeFileSync(path.join(__dirname, `a11y-outline-${lang}.txt`), first.lines.join("\n") + "\n");
+    fs.writeFileSync(
+      path.join(__dirname, `a11y-outline-${lang}.txt`),
+      first.lines.join("\n") + "\n"
+    );
     // focus the 2 (inside g(2)), then insert a 7 into f's arguments through the editor
     await lit("2").click({ modifiers: ["Shift"] });
     await record("1 insert (a block is focused in the same call)", async () => {
       await page.evaluate(() => {
         const d = (window as any).demo;
-        const call = (() => { let hit: any = null; d.ed.roots().forEach((r: any) => { const w = (n: any) => { if (!hit && n.slots.some((s: any) => s.name === "args")) hit = n; n.slots.forEach((s: any) => s.nodes.forEach(w)); }; w(r); }); return hit; })();
-        d.ed.insertText(call.slots.find((s: any) => s.name === "args"), 1, "7");
+        const call = (() => {
+          let hit: any = null;
+          d.ed.roots().forEach((r: any) => {
+            const w = (n: any) => {
+              if (!hit && n.slots.some((s: any) => s.name === "args")) hit = n;
+              n.slots.forEach((s: any) => s.nodes.forEach(w));
+            };
+            w(r);
+          });
+          return hit;
+        })();
+        d.ed.insertText(
+          call.slots.find((s: any) => s.name === "args"),
+          1,
+          "7"
+        );
       });
     });
     // delete the 3 with the key
     await lit("3").click({ modifiers: ["Shift"] });
-    await record("2 delete (the focused block: selected with Space, then the Delete key)", async () => {
-      await page.keyboard.press("Space");
-      await page.keyboard.press("Delete");
-    });
+    await record(
+      "2 delete (the focused block: selected with Space, then the Delete key)",
+      async () => {
+        await page.keyboard.press("Space");
+        await page.keyboard.press("Delete");
+      }
+    );
     // select two blocks with Space
     await lit("1").click({ modifiers: ["Shift"] });
     await record("3 selection (Space on 1 and on 4)", async () => {
@@ -201,7 +335,10 @@ for (const lang of Object.keys(SMALL)) {
       await page.keyboard.press("ControlOrMeta+z");
     });
     results[lang] = cases;
-    fs.writeFileSync(path.join(__dirname, "a11y-results.json"), JSON.stringify(results, null, 1));
+    fs.writeFileSync(
+      path.join(__dirname, "a11y-results.json"),
+      JSON.stringify(results, null, 1)
+    );
     // the checks that must hold
     for (const [name, c] of Object.entries(cases)) {
       expect(c.treeProblems, name).toEqual([]);

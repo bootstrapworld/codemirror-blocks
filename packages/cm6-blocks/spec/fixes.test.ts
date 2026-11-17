@@ -15,9 +15,15 @@ const ok = (ed: LezerBlockEditor) => expect(checkLezerEditor(ed)).toEqual([]);
 describe.each(Object.keys(OPTS))("A1: stale nodes are refused: %s", (l) => {
   test("removeNode, replaceText, insertText throw and change nothing", () => {
     const ed = make(l);
-    const stale = all(ed).find((n) => n.kind === "literal" && ed.view.state.doc.sliceString(n.from, n.to) === "4")!;
+    const stale = all(ed).find(
+      (n) =>
+        n.kind === "literal" &&
+        ed.view.state.doc.sliceString(n.from, n.to) === "4"
+    )!;
     const slot = stale.slot!;
-    ed.view.dispatch({ changes: { from: stale.parent!.from, to: stale.parent!.to, insert: "x" } }); // the owner becomes another thing: both nodes are gone
+    ed.view.dispatch({
+      changes: { from: stale.parent!.from, to: stale.parent!.to, insert: "x" },
+    }); // the owner becomes another thing: both nodes are gone
     const before = textOf(ed);
     expect(ed.doc.byId.get(stale.id)).not.toBe(stale);
     expect(() => ed.removeNode(stale)).toThrow(/no longer in the tree/);
@@ -51,18 +57,25 @@ describe("A2: a missing 'one' slot (zero-width blank) is filled where it belongs
 });
 
 describe.each(Object.keys(OPTS))("A3: focus after Delete: %s", (l) => {
-  const key = (el: Element, k: string) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
-/** select the block (Space), then Delete: the old editor deletes only what is selected */
-const del = (el: Element, k = "Delete") => {
-  key(el, " ");
-  key(el, k);
-};
+  const key = (el: Element, k: string) =>
+    el.dispatchEvent(
+      new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true })
+    );
+  /** select the block (Space), then Delete: the old editor deletes only what is selected */
+  const del = (el: Element, k = "Delete") => {
+    key(el, " ");
+    key(el, k);
+  };
   const focusedText = (ed: LezerBlockEditor) => {
     const n = ed.focusedNode();
     return n ? ed.view.state.doc.sliceString(n.from, n.to) : null;
   };
   const withText = (ed: LezerBlockEditor, t: string) =>
-    all(ed).find((n) => ed.view.state.doc.sliceString(n.from, n.to) === t && n.kind !== "statement")!;
+    all(ed).find(
+      (n) =>
+        ed.view.state.doc.sliceString(n.from, n.to) === t &&
+        n.kind !== "statement"
+    )!;
   test("next sibling, else previous sibling, else parent", () => {
     const ed = make(l);
     ed.focusNode(withText(ed, "1"));
@@ -73,7 +86,9 @@ const del = (el: Element, k = "Delete") => {
     expect(focusedText(ed)).toBe(l === "scheme" ? "(g 2)" : "g(2)");
     ed.focusNode(withText(ed, "4"));
     del(ed.renderer.element(ed.focusedNode()!), "Delete");
-    expect(focusedText(ed)).toBe(l === "scheme" ? "(h)" : l === "python" ? "h()" : "h()");
+    expect(focusedText(ed)).toBe(
+      l === "scheme" ? "(h)" : l === "python" ? "h()" : "h()"
+    );
     ok(ed);
   });
 });

@@ -13,15 +13,27 @@ const all = (ed: LezerBlockEditor): BNode[] => {
   ed.roots().forEach((r) => walk(r, (n) => o.push(n)));
   return o;
 };
-const lit = (ed: LezerBlockEditor, src: string, nth = 0): BNode => all(ed).filter((n) => n.kind === "literal" && text(ed).slice(n.from, n.to) === src)[nth];
+const lit = (ed: LezerBlockEditor, src: string, nth = 0): BNode =>
+  all(ed).filter(
+    (n) => n.kind === "literal" && text(ed).slice(n.from, n.to) === src
+  )[nth];
 const argsOf = (ed: LezerBlockEditor, head: string) => {
-  const call = all(ed).find((n) => n.slots.some((s) => s.name === "args") && text(ed).slice(n.from, n.to).startsWith(head.replace("(", "")))!;
+  const call = all(ed).find(
+    (n) =>
+      n.slots.some((s) => s.name === "args") &&
+      text(ed).slice(n.from, n.to).startsWith(head.replace("(", ""))
+  )!;
   return call.slots.find((s) => s.name === "args")!;
 };
 
 function clipboardEvent(type: string, data: { v: string }): Event {
   const e = new Event(type, { bubbles: true, cancelable: true });
-  Object.defineProperty(e, "clipboardData", { value: { setData: (_t: string, v: string) => (data.v = v), getData: () => data.v } });
+  Object.defineProperty(e, "clipboardData", {
+    value: {
+      setData: (_t: string, v: string) => (data.v = v),
+      getData: () => data.v,
+    },
+  });
   return e;
 }
 
@@ -56,7 +68,9 @@ describe.each(LANGS)("moving blocks: %s", (l) => {
     ok(ed);
     // the pasted block has the focus
     expect(ed.focusedNode()).not.toBeNull();
-    expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe("3");
+    expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe(
+      "3"
+    );
   });
 
   test("paste on a blank replaces it", () => {
@@ -65,14 +79,20 @@ describe.each(LANGS)("moving blocks: %s", (l) => {
     const blank = all(ed).find((n) => ed.isBlank(n))!;
     expect(blank).toBeDefined();
     ed.pasteText(blank, "zz");
-    expect(text(ed)).toContain("zz(4)".replace("(4)", l === "scheme" ? " 4" : "(4)").replace(" 4", ""));
+    expect(text(ed)).toContain(
+      "zz(4)".replace("(4)", l === "scheme" ? " 4" : "(4)").replace(" 4", "")
+    );
     expect(all(ed).filter((n) => ed.isBlank(n)).length).toBe(0);
     ok(ed);
   });
 
   test("moving an argument to the front of its list is one text change and one undo step", () => {
     const ed = make(l);
-    const args = ed.roots()[0].slots.length ? all(ed).find((n) => n.slots.some((s) => s.name === "args"))!.slots.find((s) => s.name === "args")! : null!;
+    const args = ed.roots()[0].slots.length
+      ? all(ed)
+          .find((n) => n.slots.some((s) => s.name === "args"))!
+          .slots.find((s) => s.name === "args")!
+      : null!;
     const three = args.nodes[2];
     const before = text(ed);
     ed.moveNode(three, { slot: args, index: 0 });
@@ -81,7 +101,9 @@ describe.each(LANGS)("moving blocks: %s", (l) => {
     expect(after.split("\n")[0]).toMatch(/3[, ]+1[, ]+(\(?g|g)/);
     ok(ed);
     // a move onto the place it is in does nothing
-    const args2 = all(ed).find((n) => n.slots.some((s) => s.name === "args"))!.slots.find((s) => s.name === "args")!;
+    const args2 = all(ed)
+      .find((n) => n.slots.some((s) => s.name === "args"))!
+      .slots.find((s) => s.name === "args")!;
     const t = text(ed);
     ed.moveNode(args2.nodes[1], { slot: args2, index: 1 });
     ed.moveNode(args2.nodes[1], { slot: args2, index: 2 });
@@ -90,9 +112,15 @@ describe.each(LANGS)("moving blocks: %s", (l) => {
 
   test("a block cannot be moved into itself", () => {
     const ed = make(l);
-    const call = all(ed).find((n) => n.kind === "call" && n.slots.some((s) => s.name === "args" && s.nodes.length))!;
+    const call = all(ed).find(
+      (n) =>
+        n.kind === "call" &&
+        n.slots.some((s) => s.name === "args" && s.nodes.length)
+    )!;
     const inner = call.slots.find((s) => s.name === "args")!;
-    expect(() => ed.moveNode(call, { slot: inner, index: 0 })).toThrow(/inside itself/);
+    expect(() => ed.moveNode(call, { slot: inner, index: 0 })).toThrow(
+      /inside itself/
+    );
     expect(text(ed)).toBe(TEXT[l]);
   });
 
@@ -100,19 +128,39 @@ describe.each(LANGS)("moving blocks: %s", (l) => {
     const ed = make(l);
     const n = lit(ed, "4");
     const slot = n.slot!;
-    ed.view.dispatch({ changes: { from: n.parent!.from, to: n.parent!.to, insert: "x" } });
-    expect(() => ed.moveNode(n, { slot, index: 0 })).toThrow(/no longer in the tree/);
+    ed.view.dispatch({
+      changes: { from: n.parent!.from, to: n.parent!.to, insert: "x" },
+    });
+    expect(() => ed.moveNode(n, { slot, index: 0 })).toThrow(
+      /no longer in the tree/
+    );
   });
 
   test("dragging a block with the pointer onto a gap moves it; a short move is a click", () => {
     const ed = make(l);
-    const args = all(ed).find((n) => n.slots.some((s) => s.name === "args"))!.slots.find((s) => s.name === "args")!;
+    const args = all(ed)
+      .find((n) => n.slots.some((s) => s.name === "args"))!
+      .slots.find((s) => s.name === "args")!;
     const three = args.nodes[2];
-    const gap = ed.renderer.element(args.owner).querySelector(`.blocks-args[data-slot="args"] > .blocks-gap[data-index="0"]`) as HTMLElement;
+    const gap = ed.renderer
+      .element(args.owner)
+      .querySelector(
+        `.blocks-args[data-slot="args"] > .blocks-gap[data-index="0"]`
+      ) as HTMLElement;
     expect(gap).not.toBeNull();
     const at = { x: 0, y: 0 };
-    document.elementFromPoint = () => (at.x === 100 ? gap : ed.renderer.element(three));
-    const fire = (el: Element, type: string, x: number, y: number) => el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX: x, clientY: y }));
+    document.elementFromPoint = () =>
+      at.x === 100 ? gap : ed.renderer.element(three);
+    const fire = (el: Element, type: string, x: number, y: number) =>
+      el.dispatchEvent(
+        new MouseEvent(type, {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          clientX: x,
+          clientY: y,
+        })
+      );
     const el = ed.renderer.element(three);
     // a click without movement
     fire(el, "pointerdown", 10, 10);
@@ -149,10 +197,16 @@ describe("moving statements (Python): indentation follows the target", () => {
     ok(ed);
   });
   test("a block statement with a body keeps its relative indentation", () => {
-    const ed = make("python", "def f():\n    a = 1\nif x:\n    y = 1\n    z = 2\n");
-    const body = ed.roots()[0].slots.find((s) => s.name === "body")!.nodes[0].slots[0];
+    const ed = make(
+      "python",
+      "def f():\n    a = 1\nif x:\n    y = 1\n    z = 2\n"
+    );
+    const body = ed.roots()[0].slots.find((s) => s.name === "body")!.nodes[0]
+      .slots[0];
     ed.moveNode(ed.roots()[1], { slot: body, index: 1 });
-    expect(text(ed)).toBe("def f():\n    a = 1\n    if x:\n        y = 1\n        z = 2\n\n");
+    expect(text(ed)).toBe(
+      "def f():\n    a = 1\n    if x:\n        y = 1\n        z = 2\n\n"
+    );
     ok(ed);
   });
 });

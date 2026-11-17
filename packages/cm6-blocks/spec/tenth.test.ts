@@ -5,7 +5,8 @@ import { checkLezerEditor } from "../src/lezer-view";
 import { make, TEXT } from "./helpers";
 
 const textOf = (ed: ReturnType<typeof make>) => ed.view.state.doc.toString();
-const ok = (ed: ReturnType<typeof make>) => expect(checkLezerEditor(ed)).toEqual([]);
+const ok = (ed: ReturnType<typeof make>) =>
+  expect(checkLezerEditor(ed)).toEqual([]);
 
 describe("1. active descendant and ids", () => {
   test("ids are block-node-<id> and unique across two editors on one page", () => {
@@ -25,10 +26,16 @@ describe("1. active descendant and ids", () => {
     const [r0, r1] = ed.roots();
     ed.focusNode(r0);
     const tree = ed.view.dom.querySelector("[role=tree]")!;
-    expect(tree.getAttribute("aria-activedescendant")).toBe(`block-node-${r0.id}`);
-    expect(ed.view.scrollDOM.getAttribute("aria-activedescendent")).toBe(`block-node-${r0.id}`);
+    expect(tree.getAttribute("aria-activedescendant")).toBe(
+      `block-node-${r0.id}`
+    );
+    expect(ed.view.scrollDOM.getAttribute("aria-activedescendent")).toBe(
+      `block-node-${r0.id}`
+    );
     ed.focusNode(r1);
-    expect(tree.getAttribute("aria-activedescendant")).toBe(`block-node-${r1.id}`);
+    expect(tree.getAttribute("aria-activedescendant")).toBe(
+      `block-node-${r1.id}`
+    );
     outside.focus();
     expect(tree.hasAttribute("aria-activedescendant")).toBe(false);
     expect(ed.view.scrollDOM.hasAttribute("aria-activedescendent")).toBe(false);
@@ -36,41 +43,44 @@ describe("1. active descendant and ids", () => {
   });
 });
 
-describe.each(["scheme", "javascript", "python"])("2. a root that goes leaves its line: %s", (l) => {
-  test("delete: the line stays, blank lines pile up, undo restores the text exactly", () => {
-    const ed = make(l);
-    const start = textOf(ed);
-    const lines = start.split("\n");
-    ed.removeNodes([ed.roots()[1]]);
-    expect(textOf(ed).split("\n")).toEqual([lines[0], "", lines[2]]);
-    ok(ed);
-    ed.removeNodes([ed.roots()[0]]);
-    expect(textOf(ed).split("\n")).toEqual(["", "", lines[2]]);
-    ed.removeNodes([ed.roots()[0]]);
-    expect(textOf(ed)).toBe("\n\n");
-    expect(ed.roots().length).toBe(0);
-    ok(ed);
-    undo(ed.view);
-    undo(ed.view);
-    undo(ed.view);
-    expect(textOf(ed)).toBe(start);
-    ok(ed);
-  });
-  test("cut and drag-out of a root leave the line too", () => {
-    const ed = make(l);
-    const lines = textOf(ed).split("\n");
-    ed.removeNodes([ed.roots()[0]], true);
-    expect(textOf(ed).split("\n")).toEqual(["", lines[1], lines[2]]);
-    ok(ed);
-  });
-  test("several roots at once", () => {
-    const ed = make(l);
-    const lines = textOf(ed).split("\n");
-    ed.removeNodes([ed.roots()[0], ed.roots()[2]]);
-    expect(textOf(ed).split("\n")).toEqual(["", lines[1], ""]);
-    ok(ed);
-  });
-});
+describe.each(["scheme", "javascript", "python"])(
+  "2. a root that goes leaves its line: %s",
+  (l) => {
+    test("delete: the line stays, blank lines pile up, undo restores the text exactly", () => {
+      const ed = make(l);
+      const start = textOf(ed);
+      const lines = start.split("\n");
+      ed.removeNodes([ed.roots()[1]]);
+      expect(textOf(ed).split("\n")).toEqual([lines[0], "", lines[2]]);
+      ok(ed);
+      ed.removeNodes([ed.roots()[0]]);
+      expect(textOf(ed).split("\n")).toEqual(["", "", lines[2]]);
+      ed.removeNodes([ed.roots()[0]]);
+      expect(textOf(ed)).toBe("\n\n");
+      expect(ed.roots().length).toBe(0);
+      ok(ed);
+      undo(ed.view);
+      undo(ed.view);
+      undo(ed.view);
+      expect(textOf(ed)).toBe(start);
+      ok(ed);
+    });
+    test("cut and drag-out of a root leave the line too", () => {
+      const ed = make(l);
+      const lines = textOf(ed).split("\n");
+      ed.removeNodes([ed.roots()[0]], true);
+      expect(textOf(ed).split("\n")).toEqual(["", lines[1], lines[2]]);
+      ok(ed);
+    });
+    test("several roots at once", () => {
+      const ed = make(l);
+      const lines = textOf(ed).split("\n");
+      ed.removeNodes([ed.roots()[0], ed.roots()[2]]);
+      expect(textOf(ed).split("\n")).toEqual(["", lines[1], ""]);
+      ok(ed);
+    });
+  }
+);
 
 describe("2. details of the old rule", () => {
   test("within a line: one space goes with the block (old removeWhitespace)", () => {
@@ -107,8 +117,17 @@ describe("2. details of the old rule", () => {
 });
 
 describe("3. Down and Up from the text cursor with no block focused", () => {
-  const press = (ed: ReturnType<typeof make>, key: string, init: KeyboardEventInit = {}) => {
-    const e = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init });
+  const press = (
+    ed: ReturnType<typeof make>,
+    key: string,
+    init: KeyboardEventInit = {}
+  ) => {
+    const e = new KeyboardEvent("keydown", {
+      key,
+      bubbles: true,
+      cancelable: true,
+      ...init,
+    });
     ed.view.contentDOM.dispatchEvent(e);
     return e;
   };
@@ -135,20 +154,30 @@ describe("3. Down and Up from the text cursor with no block focused", () => {
     [1, "ArrowUp", "(f 1 (g 2))"], // just inside the first block's bracket: that block (the rule drills while a child starts before the cursor)
     [11, "ArrowUp", "2"], // after a block: its last descendant that starts before the cursor (the old rule drills in)
     [TXT.length, "ArrowUp", ")"],
-  ] as [number, string, string | null][])("cursor %i, %s", (pos, key, expected) => {
-    const ed = make("scheme", TXT);
-    at(ed, pos);
-    const e = press(ed, key);
-    if (expected === "(h)" || expected === "(k)" || expected === "(f 1 (g 2))" || expected === "f" || expected === "(g 2)" || expected === "2") {
-      expect(e.defaultPrevented).toBe(true);
+  ] as [number, string, string | null][])(
+    "cursor %i, %s",
+    (pos, key, expected) => {
+      const ed = make("scheme", TXT);
+      at(ed, pos);
+      const e = press(ed, key);
+      if (
+        expected === "(h)" ||
+        expected === "(k)" ||
+        expected === "(f 1 (g 2))" ||
+        expected === "f" ||
+        expected === "(g 2)" ||
+        expected === "2"
+      ) {
+        expect(e.defaultPrevented).toBe(true);
+      }
+      if (expected === null) {
+        expect(ed.focusedNode()).toBeNull();
+        expect(e.defaultPrevented).toBe(true); // (the old editor keeps the key from moving the cursor here too)
+      } else if (expected === ")") {
+        expect(textOfFocus(ed)).not.toBeNull();
+      } else expect(textOfFocus(ed)).toBe(expected);
     }
-    if (expected === null) {
-      expect(ed.focusedNode()).toBeNull();
-      expect(e.defaultPrevented).toBe(true); // (the old editor keeps the key from moving the cursor here too)
-    } else if (expected === ")") {
-      expect(textOfFocus(ed)).not.toBeNull();
-    } else expect(textOfFocus(ed)).toBe(expected);
-  });
+  );
   test("an empty document: nothing to activate", () => {
     const ed = make("scheme", "");
     ed.view.contentDOM.focus();
@@ -178,7 +207,15 @@ describe("4. the last block goes: focus goes to the editor, not to the page body
     const ed = make("scheme", "42");
     ed.focusNode(ed.roots()[0]);
     ed.toggleSelect(ed.roots()[0]);
-    ed.view.contentDOM.querySelector<HTMLElement>(".blocks-node")!.dispatchEvent(new KeyboardEvent("keydown", { key: "Delete", bubbles: true, cancelable: true }));
+    ed.view.contentDOM
+      .querySelector<HTMLElement>(".blocks-node")!
+      .dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Delete",
+          bubbles: true,
+          cancelable: true,
+        })
+      );
     expect(ed.roots().length).toBe(0);
     inEditor(ed);
   });
@@ -219,82 +256,112 @@ describe("4. the last block goes: focus goes to the editor, not to the page body
   });
 });
 
-describe.each(["scheme", "javascript", "python"])("6. a box emptied and committed with Enter does nothing: %s", (l) => {
-  const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
-  const ctrl = { ctrlKey: true, metaKey: false };
-  const pick = (ed: ReturnType<typeof make>) => {
-    // a leaf argument inside the first call
-    let leaf = ed.roots()[0];
-    const dig = (n: typeof leaf): void => {
-      if (n.slots.length === 0) return void (leaf = n);
-      const k = n.slots.flatMap((s) => s.nodes).filter((c) => c.kind !== "comment");
-      if (k.length) dig(k[k.length - 1]);
+describe.each(["scheme", "javascript", "python"])(
+  "6. a box emptied and committed with Enter does nothing: %s",
+  (l) => {
+    const key = (
+      el: Element,
+      k: string,
+      mods: Partial<KeyboardEventInit> = {}
+    ) =>
+      el.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: k,
+          bubbles: true,
+          cancelable: true,
+          ...mods,
+        })
+      );
+    const ctrl = { ctrlKey: true, metaKey: false };
+    const pick = (ed: ReturnType<typeof make>) => {
+      // a leaf argument inside the first call
+      let leaf = ed.roots()[0];
+      const dig = (n: typeof leaf): void => {
+        if (n.slots.length === 0) return void (leaf = n);
+        const k = n.slots
+          .flatMap((s) => s.nodes)
+          .filter((c) => c.kind !== "comment");
+        if (k.length) dig(k[k.length - 1]);
+      };
+      dig(leaf);
+      return leaf;
     };
-    dig(leaf);
-    return leaf;
-  };
-  test("a leaf's box: the block stays, no undo step, the box closes, focus is on the block", () => {
-    const ed = make(l);
-    const before = textOf(ed);
-    const leaf = pick(ed);
-    ed.focusNode(leaf);
-    key(ed.renderer.element(leaf), "Enter");
-    const input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
-    expect(input).not.toBeNull();
-    input.value = "";
-    key(input, "Enter");
-    expect(ed.view.dom.querySelector(".blocks-edit")).toBeNull();
-    expect(textOf(ed)).toBe(before);
-    expect(ed.focusedNode()?.id).toBe(leaf.id);
-    undo(ed.view);
-    expect(textOf(ed)).toBe(before); // (nothing was written: the undo has nothing of ours to take back)
-    ok(ed);
-  });
-  test("a leaf's box with only spaces is cancelled as the blur does", () => {
-    const ed = make(l);
-    const before = textOf(ed);
-    const leaf = pick(ed);
-    ed.focusNode(leaf);
-    key(ed.renderer.element(leaf), "Enter");
-    const input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
-    input.value = "   ";
-    key(input, "Enter");
-    expect(textOf(ed)).toBe(before);
-  });
-  test("the Ctrl-Enter text box", () => {
-    const ed = make(l);
-    const before = textOf(ed);
-    ed.focusNode(ed.roots()[0]);
-    key(ed.renderer.element(ed.roots()[0]), "Enter", ctrl);
-    const box = ed.view.dom.querySelector("textarea.blocks-edit") as HTMLTextAreaElement;
-    expect(box).not.toBeNull();
-    box.value = "";
-    key(box, "Enter");
-    expect(ed.view.dom.querySelector(".blocks-edit")).toBeNull();
-    expect(textOf(ed)).toBe(before);
-    expect(ed.roots().length).toBe(3);
-  });
-  test("an insertion box inserts nothing", () => {
-    const ed = make(l);
-    const before = textOf(ed);
-    ed.focusNode(ed.roots()[1]);
-    key(ed.renderer.element(ed.roots()[1]), "]", { ctrlKey: true, code: "BracketRight" });
-    const box = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
-    expect(box).not.toBeNull();
-    box.value = "";
-    key(box, "Enter");
-    expect(ed.view.dom.querySelector(".blocks-edit")).toBeNull();
-    expect(textOf(ed)).toBe(before);
-    expect(ed.roots().length).toBe(3);
-  });
-  test("a non-empty box still commits", () => {
-    const ed = make(l);
-    const leaf = pick(ed);
-    ed.focusNode(leaf);
-    key(ed.renderer.element(leaf), "Enter");
-    const input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
-    input.value = "77";
-    key(input, "Enter");
-    expect(textOf(ed)).toContain("77");
-  });
-});
+    test("a leaf's box: the block stays, no undo step, the box closes, focus is on the block", () => {
+      const ed = make(l);
+      const before = textOf(ed);
+      const leaf = pick(ed);
+      ed.focusNode(leaf);
+      key(ed.renderer.element(leaf), "Enter");
+      const input = ed.view.dom.querySelector(
+        "input.blocks-edit"
+      ) as HTMLInputElement;
+      expect(input).not.toBeNull();
+      input.value = "";
+      key(input, "Enter");
+      expect(ed.view.dom.querySelector(".blocks-edit")).toBeNull();
+      expect(textOf(ed)).toBe(before);
+      expect(ed.focusedNode()?.id).toBe(leaf.id);
+      undo(ed.view);
+      expect(textOf(ed)).toBe(before); // (nothing was written: the undo has nothing of ours to take back)
+      ok(ed);
+    });
+    test("a leaf's box with only spaces is cancelled as the blur does", () => {
+      const ed = make(l);
+      const before = textOf(ed);
+      const leaf = pick(ed);
+      ed.focusNode(leaf);
+      key(ed.renderer.element(leaf), "Enter");
+      const input = ed.view.dom.querySelector(
+        "input.blocks-edit"
+      ) as HTMLInputElement;
+      input.value = "   ";
+      key(input, "Enter");
+      expect(textOf(ed)).toBe(before);
+    });
+    test("the Ctrl-Enter text box", () => {
+      const ed = make(l);
+      const before = textOf(ed);
+      ed.focusNode(ed.roots()[0]);
+      key(ed.renderer.element(ed.roots()[0]), "Enter", ctrl);
+      const box = ed.view.dom.querySelector(
+        "textarea.blocks-edit"
+      ) as HTMLTextAreaElement;
+      expect(box).not.toBeNull();
+      box.value = "";
+      key(box, "Enter");
+      expect(ed.view.dom.querySelector(".blocks-edit")).toBeNull();
+      expect(textOf(ed)).toBe(before);
+      expect(ed.roots().length).toBe(3);
+    });
+    test("an insertion box inserts nothing", () => {
+      const ed = make(l);
+      const before = textOf(ed);
+      ed.focusNode(ed.roots()[1]);
+      key(ed.renderer.element(ed.roots()[1]), "]", {
+        ctrlKey: true,
+        code: "BracketRight",
+      });
+      const box = ed.view.dom.querySelector(
+        "input.blocks-edit"
+      ) as HTMLInputElement;
+      expect(box).not.toBeNull();
+      box.value = "";
+      key(box, "Enter");
+      expect(ed.view.dom.querySelector(".blocks-edit")).toBeNull();
+      expect(textOf(ed)).toBe(before);
+      expect(ed.roots().length).toBe(3);
+    });
+    test("a non-empty box still commits", () => {
+      const ed = make(l);
+      const leaf = pick(ed);
+      ed.focusNode(leaf);
+      key(ed.renderer.element(leaf), "Enter");
+      const input = ed.view.dom.querySelector(
+        "input.blocks-edit"
+      ) as HTMLInputElement;
+      input.value = "77";
+      key(input, "Enter");
+      expect(textOf(ed)).toContain("77");
+    });
+  }
+);

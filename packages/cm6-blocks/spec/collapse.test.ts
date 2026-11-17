@@ -14,9 +14,21 @@ const all = (ed: LezerBlockEditor): BNode[] => {
   return o;
 };
 const src = (ed: LezerBlockEditor, n: BNode) => text(ed).slice(n.from, n.to);
-const lit = (ed: LezerBlockEditor, s: string): BNode => all(ed).filter((n) => n.kind === "literal" && src(ed, n) === s)[0];
-const g = (ed: LezerBlockEditor): BNode => all(ed).filter((n) => n.slots.length > 0 && /^[(]?g[( ]2/.test(src(ed, n)))[0];
-const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
+const lit = (ed: LezerBlockEditor, s: string): BNode =>
+  all(ed).filter((n) => n.kind === "literal" && src(ed, n) === s)[0];
+const g = (ed: LezerBlockEditor): BNode =>
+  all(ed).filter(
+    (n) => n.slots.length > 0 && /^[(]?g[( ]2/.test(src(ed, n))
+  )[0];
+const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) =>
+  el.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: k,
+      bubbles: true,
+      cancelable: true,
+      ...mods,
+    })
+  );
 /** select the block (Space), then Delete: the old editor deletes only what is selected */
 const del = (el: Element, k = "Delete") => {
   key(el, " ");
@@ -26,7 +38,8 @@ const focusOn = (ed: LezerBlockEditor, n: BNode) => {
   ed.focusNode(n);
   return ed.renderer.element(n);
 };
-const expanded = (ed: LezerBlockEditor, n: BNode) => ed.renderer.element(n).getAttribute("aria-expanded");
+const expanded = (ed: LezerBlockEditor, n: BNode) =>
+  ed.renderer.element(n).getAttribute("aria-expanded");
 
 describe.each(LANGS)("collapse and expand: %s", (l) => {
   test("Left collapses an expanded block (its text is untouched), Left again focuses the parent; Right expands, then enters", () => {
@@ -35,7 +48,9 @@ describe.each(LANGS)("collapse and expand: %s", (l) => {
     const call = g(ed);
     key(focusOn(ed, call), "ArrowLeft");
     expect(expanded(ed, call)).toBe("false");
-    expect(ed.renderer.element(call).classList.contains("blocks-collapsed")).toBe(true);
+    expect(
+      ed.renderer.element(call).classList.contains("blocks-collapsed")
+    ).toBe(true);
     expect(text(ed)).toBe(t0);
     expect(ed.focusedNode()).toBe(call);
     key(ed.renderer.element(call), "ArrowLeft");
@@ -98,9 +113,17 @@ describe.each(LANGS)("collapse and expand: %s", (l) => {
   test("double click toggles; Enter on a compound block toggles", () => {
     const ed = make(l);
     const call = g(ed);
-    ed.renderer.element(call).dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true }));
+    ed.renderer
+      .element(call)
+      .dispatchEvent(
+        new MouseEvent("dblclick", { bubbles: true, cancelable: true })
+      );
     expect(ed.renderer.isCollapsed(call)).toBe(true);
-    ed.renderer.element(call).dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true }));
+    ed.renderer
+      .element(call)
+      .dispatchEvent(
+        new MouseEvent("dblclick", { bubbles: true, cancelable: true })
+      );
     expect(ed.renderer.isCollapsed(call)).toBe(false);
     key(focusOn(ed, call), "Enter");
     expect(ed.renderer.isCollapsed(call)).toBe(true);
@@ -126,7 +149,9 @@ describe.each(LANGS)("collapse and expand: %s", (l) => {
     expect(ed.renderer.isCollapsed(g(ed))).toBe(true);
     // removed
     del(focusOn(ed, g(ed)), "Delete");
-    expect(ed.renderer.collapsedNodes().filter((n) => ed.doc.byId.get(n.id) !== n)).toEqual([]);
+    expect(
+      ed.renderer.collapsedNodes().filter((n) => ed.doc.byId.get(n.id) !== n)
+    ).toEqual([]);
     expect(two).toBeDefined();
     ok(ed);
   });

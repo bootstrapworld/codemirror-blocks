@@ -12,7 +12,9 @@ export const fireEvent: typeof domFireEvent = Object.assign(
   domFireEvent,
   {
     change(el: Element, init?: { target?: Record<string, unknown> }) {
-      const isText = el instanceof HTMLInputElement && !["checkbox", "radio"].includes(el.type);
+      const isText =
+        el instanceof HTMLInputElement &&
+        !["checkbox", "radio"].includes(el.type);
       const r = domFireEvent.change(el, init);
       if (isText || el instanceof HTMLTextAreaElement) domFireEvent.input(el);
       return r;

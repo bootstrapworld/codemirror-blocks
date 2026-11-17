@@ -49,8 +49,14 @@ test.describe("dragging a block from the toolbar into the editor with the mouse"
 });
 
 // FIXME-BEGIN (thirteenth round: M: the toolbar of primitives is not built (a page makes one))
-const FIXME = new Set<string>(["dragging a block from the toolbar into the editor with the mouse › leaves keyboard focus in the editor, not on the toolbar", "dragging a block from the toolbar into the editor with the mouse › so that Ctrl/Cmd-Z undoes the drop"]);
+const FIXME = new Set<string>([
+  "dragging a block from the toolbar into the editor with the mouse › leaves keyboard focus in the editor, not on the toolbar",
+  "dragging a block from the toolbar into the editor with the mouse › so that Ctrl/Cmd-Z undoes the drop",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "M: the toolbar of primitives is not built (a page makes one)");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "M: the toolbar of primitives is not built (a page makes one)"
+  );
 });
 // FIXME-END

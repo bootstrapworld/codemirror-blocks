@@ -41,8 +41,13 @@ test("focus goes to the focused block once it is back on the page", async ({
 });
 
 // FIXME-BEGIN (thirteenth round: I: calls the CM5 `window.cmb.getCM()` of the old page)
-const FIXME = new Set<string>(["focus goes to the focused block once it is back on the page"]);
+const FIXME = new Set<string>([
+  "focus goes to the focused block once it is back on the page",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "I: calls the CM5 `window.cmb.getCM()` of the old page");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "I: calls the CM5 `window.cmb.getCM()` of the old page"
+  );
 });
 // FIXME-END

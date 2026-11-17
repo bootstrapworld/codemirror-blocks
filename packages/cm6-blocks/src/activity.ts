@@ -55,7 +55,8 @@ interface Ctx {
 /** a text with changes (in the offsets of the text before them) applied */
 export function applyChanges(text: string, changes: TextChange[]): string {
   let out = text;
-  for (const c of [...changes].sort((a, b) => b.from - a.from || b.to - a.to)) out = out.slice(0, c.from) + c.insert + out.slice(c.to);
+  for (const c of [...changes].sort((a, b) => b.from - a.from || b.to - a.to))
+    out = out.slice(0, c.from) + c.insert + out.slice(c.to);
   return out;
 }
 
@@ -64,7 +65,13 @@ export interface Recorder {
    * Run `fn` as one action. Text changes made inside it belong to it (one entry for each transaction); if it makes none, one entry is made when it
    * ends (unless `skip` says it did nothing worth recording). An action inside another one is part of it: only the outermost makes entries.
    */
-  act<T>(action: string, target: { kind: string; from: number; to: number } | null | undefined, detail: Record<string, unknown> | undefined, fn: () => T, skip?: () => boolean): T;
+  act<T>(
+    action: string,
+    target: { kind: string; from: number; to: number } | null | undefined,
+    detail: Record<string, unknown> | undefined,
+    fn: () => T,
+    skip?: () => boolean
+  ): T;
   /** a transaction went through: record it if it changed the text */
   transaction(tr: Transaction): void;
   entries(): LogEntry[];
@@ -91,13 +98,19 @@ export function createRecorder(initialText: string, limit: number): Recorder {
   return {
     act(action, target, detail, fn, skip) {
       if (stack.length) return fn(); // (part of the action around it)
-      const ctx: Ctx = { action, target: target ?? undefined, detail, produced: 0 };
+      const ctx: Ctx = {
+        action,
+        target: target ?? undefined,
+        detail,
+        produced: 0,
+      };
       stack.push(ctx);
       try {
         return fn();
       } finally {
         stack.pop();
-        if (!ctx.produced && !(skip && skip())) push({ action, target: ctx.target, detail });
+        if (!ctx.produced && !(skip && skip()))
+          push({ action, target: ctx.target, detail });
       }
     },
     transaction(tr) {
@@ -107,10 +120,17 @@ export function createRecorder(initialText: string, limit: number): Recorder {
         change.push({ from, to, insert: ins.toString() });
       });
       const ctx = stack[0];
-      const history = tr.isUserEvent("undo") ? "undo" : tr.isUserEvent("redo") ? "redo" : null;
+      const history = tr.isUserEvent("undo")
+        ? "undo"
+        : tr.isUserEvent("redo")
+          ? "redo"
+          : null;
       if (ctx) ctx.produced++;
       push({
-        action: history ?? ctx?.action ?? (tr.isUserEvent("input.block") ? "block-edit" : "text"),
+        action:
+          history ??
+          ctx?.action ??
+          (tr.isUserEvent("input.block") ? "block-edit" : "text"),
         target: history ? undefined : ctx?.target,
         detail: history ? ctx?.detail : ctx?.detail,
         change,
@@ -118,7 +138,12 @@ export function createRecorder(initialText: string, limit: number): Recorder {
       });
     },
     entries: () => list.map((e) => ({ ...e })),
-    export: () => ({ format: 1, base, dropped, entries: list.map((e) => ({ ...e })) }),
+    export: () => ({
+      format: 1,
+      base,
+      dropped,
+      entries: list.map((e) => ({ ...e })),
+    }),
     clear(text) {
       list = [];
       base = text;
@@ -129,7 +154,10 @@ export function createRecorder(initialText: string, limit: number): Recorder {
 
 /** minimal structure of an editor that `replay` needs (a `LezerBlockEditor`) */
 export interface ReplayTarget {
-  view: { state: { doc: { length: number; toString(): string } }; dispatch(spec: { changes: TextChange[]; userEvent?: string }): void };
+  view: {
+    state: { doc: { length: number; toString(): string } };
+    dispatch(spec: { changes: TextChange[]; userEvent?: string }): void;
+  };
 }
 
 /**
@@ -138,15 +166,23 @@ export interface ReplayTarget {
  * the rest (focus, collapse, selection, search, refusals) are context for a person reading the log. Throws if an entry's `length` is not the
  * length of the text after it, which means the log does not start from `startText`.
  */
-export function replay<E extends ReplayTarget>(log: LogEntry[] | ActivityExport, startText: string | undefined, make: (text: string) => E): E {
+export function replay<E extends ReplayTarget>(
+  log: LogEntry[] | ActivityExport,
+  startText: string | undefined,
+  make: (text: string) => E
+): E {
   const entries = Array.isArray(log) ? log : log.entries;
   const start = startText ?? (Array.isArray(log) ? undefined : log.base);
-  if (start === undefined) throw new Error("replay needs the text the log starts from");
+  if (start === undefined)
+    throw new Error("replay needs the text the log starts from");
   const ed = make(start);
   for (const e of entries) {
     if (!e.change) continue;
     ed.view.dispatch({ changes: e.change, userEvent: "input.replay" });
-    if (e.length !== undefined && ed.view.state.doc.length !== e.length) throw new Error(`replay diverged at entry ${e.seq} (${e.action}): the text is ${ed.view.state.doc.length} long, the log says ${e.length}`);
+    if (e.length !== undefined && ed.view.state.doc.length !== e.length)
+      throw new Error(
+        `replay diverged at entry ${e.seq} (${e.action}): the text is ${ed.view.state.doc.length} long, the log says ${e.length}`
+      );
   }
   return ed;
 }

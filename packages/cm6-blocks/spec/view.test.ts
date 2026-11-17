@@ -14,7 +14,14 @@ import { BNode, Slot, TextChange } from "../src/types";
 
 // ---- shims
 const zeroRect = {
-  x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0,
+  x: 0,
+  y: 0,
+  width: 0,
+  height: 0,
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
   toJSON: () => ({}),
 };
 if (!Range.prototype.getClientRects) {
@@ -54,7 +61,13 @@ function find(ed: BlockEditor, t: string, kind?: string): BNode {
   let found: BNode | null = null;
   const s = text(ed);
   walk(ed.doc.program, (n) => {
-    if (!found && n.kind !== "program" && s.slice(n.from, n.to) === t && (!kind || n.kind === kind)) found = n;
+    if (
+      !found &&
+      n.kind !== "program" &&
+      s.slice(n.from, n.to) === t &&
+      (!kind || n.kind === kind)
+    )
+      found = n;
   });
   if (!found) throw new Error(`no node with text ${t} in ${s}`);
   return found;
@@ -66,14 +79,18 @@ function expectOk(ed: BlockEditor): void {
 function elements(ed: BlockEditor): Map<BNode, HTMLElement> {
   const m = new Map<BNode, HTMLElement>();
   walk(ed.doc.program, (n) => {
-    if (n.kind !== "program" && ed.renderer.has(n)) m.set(n, ed.renderer.element(n));
+    if (n.kind !== "program" && ed.renderer.has(n))
+      m.set(n, ed.renderer.element(n));
   });
   return m;
 }
 function type(ed: BlockEditor, from: number, to: number, insert: string): void {
   ed.view.dispatch({ changes: { from, to, insert } });
 }
-const blockDom = (ed: BlockEditor) => Array.from(ed.view.contentDOM.querySelectorAll(":scope > .cm-line > .blocks-node"));
+const blockDom = (ed: BlockEditor) =>
+  Array.from(
+    ed.view.contentDOM.querySelectorAll(":scope > .cm-line > .blocks-node")
+  );
 
 describe("construction", () => {
   it("draws the roots as widgets in block mode; plain text is still the document", () => {
@@ -86,7 +103,9 @@ describe("construction", () => {
     expect(ed.view.contentDOM.getAttribute("aria-label")).toBeTruthy();
     expect(ed.stats().widgetsBuilt).toBe(3);
     // every drawn block is the renderer's element for its root
-    roots(ed).forEach((r) => expect(blockDom(ed)).toContain(ed.renderer.element(r)));
+    roots(ed).forEach((r) =>
+      expect(blockDom(ed)).toContain(ed.renderer.element(r))
+    );
   });
 
   it("a text that does not parse is error roots, shown as text", () => {
@@ -126,9 +145,15 @@ describe("operations", () => {
     expect(ed.renderer.element(r1)).toBe(before.get(r1));
     expect(ed.renderer.element(r2)).toBe(before.get(r2));
     expect(ed.renderer.element(a)).toBe(before.get(a));
-    expect(blockDom(ed)).toEqual([before.get(r0), before.get(r1), before.get(r2)]);
+    expect(blockDom(ed)).toEqual([
+      before.get(r0),
+      before.get(r1),
+      before.get(r2),
+    ]);
     // aria numbering of the siblings was patched
-    const sizes = slotOf(r0, "args").nodes.map((n) => ed.renderer.element(n).getAttribute("aria-setsize"));
+    const sizes = slotOf(r0, "args").nodes.map((n) =>
+      ed.renderer.element(n).getAttribute("aria-setsize")
+    );
     expect(sizes).toEqual(["3", "3", "3"]);
     expect(ed.stats().ops).toBe(1);
     expect(ed.stats().reparses).toBe(0);
@@ -311,8 +336,12 @@ describe("text edits and the tree", () => {
     expect(roots(ed)[0]).toBe(a);
     expect(roots(ed)[3]).toBe(d);
     // two transactions in one dispatch
-    const s1 = ed.view.state.update({ changes: { from: 0, to: 0, insert: "(z)\n" } });
-    const s2 = s1.state.update({ changes: { from: s1.state.doc.length, insert: "\n(y)" } });
+    const s1 = ed.view.state.update({
+      changes: { from: 0, to: 0, insert: "(z)\n" },
+    });
+    const s2 = s1.state.update({
+      changes: { from: s1.state.doc.length, insert: "\n(y)" },
+    });
     ed.view.dispatch([s1, s2]);
     expect(text(ed)).toBe("(z)\n(a)\n(bb)\n(cc)\n(d)\n(y)");
     expectOk(ed);
@@ -479,7 +508,9 @@ describe("focus", () => {
     // and put it in another line element; jsdom, like a browser, drops the focus of an element that moves
     const moved = ed.renderer.element(root).parentElement !== line;
     const restores = ed.stats().focusRestores;
-    console.info(`edit before the focused line: widgets built +${ed.stats().widgetsBuilt - built}, line element replaced: ${moved}, focus restores: ${restores}`);
+    console.info(
+      `edit before the focused line: widgets built +${ed.stats().widgetsBuilt - built}, line element replaced: ${moved}, focus restores: ${restores}`
+    );
     expect(ed.focusedNode()).toBe(g);
     expect(restores).toBe(moved ? 1 : 0);
     // an edit in a later line leaves it alone
@@ -516,21 +547,60 @@ function dotsOk(s: string): boolean {
   return (s.match(/\.+/g) ?? []).every((r) => r === "...");
 }
 const PIECES = [
-  "(", ")", "[", "]", '"', "a", "x1", " ", "\n", "(f 1)", "'", " ;c\n", "define", "...", "()", "[]", '""',
-  "(define (g y) y)", "\n\n", "1 2", "#t", "cond", "lambda", "(cond [a 1])",
+  "(",
+  ")",
+  "[",
+  "]",
+  '"',
+  "a",
+  "x1",
+  " ",
+  "\n",
+  "(f 1)",
+  "'",
+  " ;c\n",
+  "define",
+  "...",
+  "()",
+  "[]",
+  '""',
+  "(define (g y) y)",
+  "\n\n",
+  "1 2",
+  "#t",
+  "cond",
+  "lambda",
+  "(cond [a 1])",
 ];
-const SNIPPETS = ["x", "42", '"hi"', "...", "(f a b)", "(g)", "(h (i 1) [j 2])", "(cond [(a) 1] [else 2])",
-  "(define (k p) (+ p 1))", "(lambda (u) u)", "(if a b c)", "define", "if", "()", "(define)"];
+const SNIPPETS = [
+  "x",
+  "42",
+  '"hi"',
+  "...",
+  "(f a b)",
+  "(g)",
+  "(h (i 1) [j 2])",
+  "(cond [(a) 1] [else 2])",
+  "(define (k p) (+ p 1))",
+  "(lambda (u) u)",
+  "(if a b c)",
+  "define",
+  "if",
+  "()",
+  "(define)",
+];
 const CLAUSES = ["[a 1]", "[else 2 3]", "[b]"];
 const START = [
   "(define (f x y) (if (> x y) x y))\n(define z 5)\n(f z 3)",
-  "(cond [(= x 1) \"one\"] [else \"many\"])\n; a comment\n(lambda (a b) (+ a b))",
+  '(cond [(= x 1) "one"] [else "many"])\n; a comment\n(lambda (a b) (+ a b))',
   "(a)(b c)\n\n   [d (e)]   ; end\n",
   "",
 ];
 
 function benign(ed: BlockEditor): boolean {
-  return roots(ed).every((r) => r.kind !== "error" || !/["#;'`,&]/.test(r.value ?? ""));
+  return roots(ed).every(
+    (r) => r.kind !== "error" || !/["#;'`,&]/.test(r.value ?? "")
+  );
 }
 
 describe("fuzzer", () => {
@@ -543,18 +613,25 @@ describe("fuzzer", () => {
     let lost = 0; // steps after which a block that had the focus has none, and nothing to give it to
     for (let seed = 1; seed <= seeds; seed++) {
       const rnd = mulberry32(seed * 104729);
-      const pick = <T,>(xs: T[]): T => xs[Math.floor(rnd() * xs.length)];
+      const pick = <T>(xs: T[]): T => xs[Math.floor(rnd() * xs.length)];
       const ed = make(START[seed % START.length]);
       const log: string[] = [];
       const fail = (i: number, msg: string): never => {
-        throw new Error(`seed ${seed} step ${i}: ${msg}\ntext: ${JSON.stringify(text(ed))}\nlog:\n  ${log.join("\n  ")}`);
+        throw new Error(
+          `seed ${seed} step ${i}: ${msg}\ntext: ${JSON.stringify(text(ed))}\nlog:\n  ${log.join("\n  ")}`
+        );
       };
       for (let i = 0; i < 30; i++) {
         // sometimes give a block the focus first
         if (rnd() < 0.3) {
           const drawn: BNode[] = [];
           walk(ed.doc.program, (n) => {
-            if (n.kind !== "program" && n.kind !== "error" && ed.renderer.has(n)) drawn.push(n);
+            if (
+              n.kind !== "program" &&
+              n.kind !== "error" &&
+              ed.renderer.has(n)
+            )
+              drawn.push(n);
           });
           if (drawn.length > 0) ed.focusNode(pick(drawn));
         }
@@ -579,15 +656,31 @@ describe("fuzzer", () => {
               const s = pick(slots);
               const index = Math.floor(rnd() * (s.nodes.length + 1));
               const src = s.name === "clauses" ? pick(CLAUSES) : pick(SNIPPETS);
-              log.push(`insert ${src} into ${s.owner.kind}.${s.name} at ${index}`);
-              const node = s.name === "clauses" ? (L.parseAs as NonNullable<typeof L.parseAs>)("clause", src, 0) : L.parse(src)[0];
+              log.push(
+                `insert ${src} into ${s.owner.kind}.${s.name} at ${index}`
+              );
+              const node =
+                s.name === "clauses"
+                  ? (L.parseAs as NonNullable<typeof L.parseAs>)(
+                      "clause",
+                      src,
+                      0
+                    )
+                  : L.parse(src)[0];
               if (!node) fail(i, "cannot make a clause");
               ed.insert(s, index, node as BNode);
             } else {
               const n = pick(nodes);
               const src = n.kind === "clause" ? pick(CLAUSES) : pick(SNIPPETS);
               log.push(`replace ${n.kind} [${n.from},${n.to}) with ${src}`);
-              const node = n.kind === "clause" ? (L.parseAs as NonNullable<typeof L.parseAs>)("clause", src, 0) : L.parse(src)[0];
+              const node =
+                n.kind === "clause"
+                  ? (L.parseAs as NonNullable<typeof L.parseAs>)(
+                      "clause",
+                      src,
+                      0
+                    )
+                  : L.parse(src)[0];
               if (!node) fail(i, "cannot make a clause");
               ed.replace(n, node as BNode);
             }
@@ -595,16 +688,26 @@ describe("fuzzer", () => {
             const s = text(ed);
             const rs = roots(ed);
             const edge = rs.length > 0 && rnd() < 0.35 ? pick(rs) : null;
-            const p = edge ? (rnd() < 0.5 ? edge.from : edge.to) : Math.floor(rnd() * (s.length + 1));
+            const p = edge
+              ? rnd() < 0.5
+                ? edge.from
+                : edge.to
+              : Math.floor(rnd() * (s.length + 1));
             const del = rnd() < 0.45;
             const change: TextChange = del
               ? edge && rnd() < 0.6
                 ? { from: edge.from, to: edge.to, insert: "" }
-                : { from: p, to: Math.min(s.length, p + 1 + Math.floor(rnd() * 5)), insert: "" }
+                : {
+                    from: p,
+                    to: Math.min(s.length, p + 1 + Math.floor(rnd() * 5)),
+                    insert: "",
+                  }
               : { from: p, to: p, insert: pick(PIECES) };
             if (!dotsOk(applyText(s, change))) continue;
             tally.edit++;
-            log.push(`edit [${change.from},${change.to}) -> ${JSON.stringify(change.insert)}`);
+            log.push(
+              `edit [${change.from},${change.to}) -> ${JSON.stringify(change.insert)}`
+            );
             type(ed, change.from, change.to, change.insert);
           } else if (r < 0.9) {
             tally.undo++;
@@ -632,7 +735,9 @@ describe("fuzzer", () => {
     expect(tally.op).toBeGreaterThan(seeds * 5);
     expect(tally.edit).toBeGreaterThan(seeds * 5);
     expect(tally.undo + tally.redo).toBeGreaterThan(seeds * 2);
-    console.info(`view fuzzer: ${seeds} seeds, ${JSON.stringify(tally)}, focus restores ${restores}, steps that began with a focused block ${focusedSteps} (ended with none: ${lost}), last page ${lastPage} blocks`);
+    console.info(
+      `view fuzzer: ${seeds} seeds, ${JSON.stringify(tally)}, focus restores ${restores}, steps that began with a focused block ${focusedSteps} (ended with none: ${lost}), last page ${lastPage} blocks`
+    );
   });
 });
 
@@ -641,7 +746,14 @@ void children;
 
 describe("timing (logged, never fails on time)", () => {
   it("1500 lines in jsdom: operations and typed edits", () => {
-    const program = ["(define (area r)", "  (* 3 (* r r)))", "; a comment", '(cond [(> x 1) "big"]', '      [else "small"])', "(f 1 2 (g 3))"].join("\n");
+    const program = [
+      "(define (area r)",
+      "  (* 3 (* r r)))",
+      "; a comment",
+      '(cond [(> x 1) "big"]',
+      '      [else "small"])',
+      "(f 1 2 (g 3))",
+    ].join("\n");
     const src = Array.from({ length: 250 }, () => program).join("\n");
     let t0 = performance.now();
     const ed = make(src);
@@ -663,7 +775,13 @@ describe("timing (logged, never fails on time)", () => {
       typed.push(performance.now() - t0);
     }
     expect(checkEditor(ed)).toEqual([]);
-    const med = (a: number[]) => a.slice().sort((x, y) => x - y)[Math.floor(a.length / 2)].toFixed(2);
-    console.info(`view timing: ${roots(ed).length} roots, ${text(ed).split("\n").length} lines; create ${createMs.toFixed(0)} ms; operation median ${med(ops)} ms; typed edit between roots median ${med(typed)} ms; widgets built ${ed.stats().widgetsBuilt}`);
+    const med = (a: number[]) =>
+      a
+        .slice()
+        .sort((x, y) => x - y)
+        [Math.floor(a.length / 2)].toFixed(2);
+    console.info(
+      `view timing: ${roots(ed).length} roots, ${text(ed).split("\n").length} lines; create ${createMs.toFixed(0)} ms; operation median ${med(ops)} ms; typed edit between roots median ${med(typed)} ms; widgets built ${ed.stats().widgetsBuilt}`
+    );
   });
 });

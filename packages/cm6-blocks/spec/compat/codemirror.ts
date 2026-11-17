@@ -4,5 +4,8 @@ const CodeMirror = {
   version: "compat",
 };
 export default CodeMirror;
-export type MarkerRange = { from: { line: number; ch: number }; to: { line: number; ch: number } };
+export type MarkerRange = {
+  from: { line: number; ch: number };
+  to: { line: number; ch: number };
+};
 export type TextMarker = unknown;

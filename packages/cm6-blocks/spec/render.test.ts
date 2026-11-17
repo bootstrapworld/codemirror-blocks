@@ -3,7 +3,12 @@ import type { BNode, Language, Slot, TreeChange } from "../src/types";
 
 let nextId = 1;
 
-function mkSlot(owner: BNode, name: string, kind: "one" | "list", nodes: BNode[]): Slot {
+function mkSlot(
+  owner: BNode,
+  name: string,
+  kind: "one" | "list",
+  nodes: BNode[]
+): Slot {
   const slot: Slot = { name, kind, owner, nodes };
   nodes.forEach((n) => {
     n.parent = owner;
@@ -13,9 +18,19 @@ function mkSlot(owner: BNode, name: string, kind: "one" | "list", nodes: BNode[]
   return slot;
 }
 function raw(kind: string, extra: Partial<BNode> = {}): BNode {
-  return { id: nextId++, kind, from: 0, to: 0, parent: null, slot: null, slots: [], ...extra };
+  return {
+    id: nextId++,
+    kind,
+    from: 0,
+    to: 0,
+    parent: null,
+    slot: null,
+    slots: [],
+    ...extra,
+  };
 }
-const lit = (value: string, dataType = "number"): BNode => raw("literal", { value, dataType });
+const lit = (value: string, dataType = "number"): BNode =>
+  raw("literal", { value, dataType });
 function call(func: BNode, ...args: BNode[]): BNode {
   const n = raw("call", { brackets: "()" });
   mkSlot(n, "func", "one", [func]);
@@ -70,12 +85,14 @@ function doReplace(slot: Slot, index: number, node: BNode): TreeChange {
 }
 
 const attr = (el: Element, n: string) => el.getAttribute(n);
-const argsOf = (el: HTMLElement) => el.querySelector(":scope > .blocks-args") as HTMLElement;
+const argsOf = (el: HTMLElement) =>
+  el.querySelector(":scope > .blocks-args") as HTMLElement;
 const gapIdx = (c: Element) =>
   Array.from(c.children)
     .filter((e) => e.classList.contains("blocks-gap"))
     .map((e) => attr(e, "data-index"));
-const nodeKids = (c: Element) => Array.from(c.children).filter((e) => e.classList.contains("blocks-node"));
+const nodeKids = (c: Element) =>
+  Array.from(c.children).filter((e) => e.classList.contains("blocks-node"));
 
 function checkList(r: Renderer, c: HTMLElement, slot: Slot) {
   const n = slot.nodes.length;
@@ -122,7 +139,9 @@ describe("structure", () => {
     const b = raw("blank", { value: "..." });
     program(s, b);
     const r = new Renderer(language);
-    expect(r.element(s).className).toBe("blocks-node blocks-literal blocks-value");
+    expect(r.element(s).className).toBe(
+      "blocks-node blocks-literal blocks-value"
+    );
     const t = r.element(s).firstElementChild as HTMLElement;
     expect(t.className).toBe("blocks-literal blocks-literal-string");
     expect(t.textContent).toBe('"hi"');
@@ -138,10 +157,16 @@ describe("structure", () => {
     program(n);
     const r = new Renderer(language);
     const el = r.element(n);
-    expect((el.firstElementChild as HTMLElement).className).toBe("blocks-operator");
+    expect((el.firstElementChild as HTMLElement).className).toBe(
+      "blocks-operator"
+    );
     expect(el.firstElementChild!.textContent).toBe("if");
     const slots = Array.from(el.querySelectorAll(":scope > .blocks-slot"));
-    expect(slots.map((s) => attr(s, "data-slot"))).toEqual(["cond", "then", "else"]);
+    expect(slots.map((s) => attr(s, "data-slot"))).toEqual([
+      "cond",
+      "then",
+      "else",
+    ]);
     expect(slots[1].classList.contains("blocks-operator")).toBe(false);
     expect(attr(r.element(inner), "aria-level")).toBe("2");
     expect(attr(r.element(inner.slots[1].nodes[0]), "aria-level")).toBe("3");
@@ -251,7 +276,9 @@ describe("replace", () => {
     const el = r.element(n);
     const nn = lit("7");
     r.apply(doReplace(n.slots[1], 0, nn));
-    expect(el.querySelector('[data-slot="then"]')!.firstElementChild).toBe(r.element(nn));
+    expect(el.querySelector('[data-slot="then"]')!.firstElementChild).toBe(
+      r.element(nn)
+    );
     expect(attr(el, "aria-label")).toBe(descr(n));
   });
 });
@@ -331,12 +358,17 @@ describe("oracle", () => {
   it("patched pages equal fresh drawings (200 seeds x 30 changes)", () => {
     for (let seed = 1; seed <= 200; seed++) {
       const rnd = prng(seed);
-      const pick = <T,>(xs: T[]): T => xs[Math.floor(rnd() * xs.length)];
+      const pick = <T>(xs: T[]): T => xs[Math.floor(rnd() * xs.length)];
       const fresh = (depth = 0): BNode => {
-        if (depth > 2 || rnd() < 0.5) return lit(String(Math.floor(rnd() * 100)));
-        if (rnd() < 0.3) return iff(fresh(depth + 1), fresh(depth + 1), fresh(depth + 1));
+        if (depth > 2 || rnd() < 0.5)
+          return lit(String(Math.floor(rnd() * 100)));
+        if (rnd() < 0.3)
+          return iff(fresh(depth + 1), fresh(depth + 1), fresh(depth + 1));
         const k = Math.floor(rnd() * 4);
-        return call(lit("f", "symbol"), ...Array.from({ length: k }, () => fresh(depth + 1)));
+        return call(
+          lit("f", "symbol"),
+          ...Array.from({ length: k }, () => fresh(depth + 1))
+        );
       };
       const p = program(fresh(), fresh(), fresh());
       const live = new Renderer(language);
@@ -351,19 +383,27 @@ describe("oracle", () => {
         for (const root of p.slots[0].nodes) {
           if (!live.has(root)) live.element(root);
           if (!live.element(root).isEqualNode(f.element(root))) {
-            throw new Error(`seed ${seed} step ${step}: live page differs from a fresh drawing`);
+            throw new Error(
+              `seed ${seed} step ${step}: live page differs from a fresh drawing`
+            );
           }
         }
       };
       try {
         for (let step = 0; step < 30; step++) {
           const nodes = all(p);
-          const lists = nodes.flatMap((n) => n.slots.filter((s) => s.kind === "list"));
+          const lists = nodes.flatMap((n) =>
+            n.slots.filter((s) => s.kind === "list")
+          );
           const op = rnd();
           let change: TreeChange | null = null;
           if (op < 0.4) {
             const slot = pick(lists);
-            change = doInsert(fresh(1), slot, Math.floor(rnd() * (slot.nodes.length + 1)));
+            change = doInsert(
+              fresh(1),
+              slot,
+              Math.floor(rnd() * (slot.nodes.length + 1))
+            );
           } else if (op < 0.7) {
             const full = lists.filter((s) => s.nodes.length > 0);
             if (full.length) {

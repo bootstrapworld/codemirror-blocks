@@ -307,11 +307,11 @@ Reasoning before trying it (not yet tested when this was written):
   node that was never parsed (the adapter prints parsed nodes from their remembered
   source; a constructed node would need a template per kind).
 
-| language | grammar source | table lines | rules (count, lines) | what the table could not express | what was lost |
-|---|---|---|---|---|---|
-| Scheme | cm6-lezer-scheme-common-lang 0.1.2 | 38 | 1, 16 | head-symbol decides kind (that is the rule); wrong-arity forms as "unknown" | comments |
-| JavaScript | @lezer/javascript | 37 | 0, 0 | let/const/var; if without braces; empty-list insertion | nothing |
-| Python | @lezer/python | 39 | 1, 5 | pairing elif tests with bodies; empty-body insertion | nothing |
+| language   | grammar source                     | table lines | rules (count, lines) | what the table could not express                                            | what was lost |
+| ---------- | ---------------------------------- | ----------- | -------------------- | --------------------------------------------------------------------------- | ------------- |
+| Scheme     | cm6-lezer-scheme-common-lang 0.1.2 | 38          | 1, 16                | head-symbol decides kind (that is the rule); wrong-arity forms as "unknown" | comments      |
+| JavaScript | @lezer/javascript                  | 37          | 0, 0                 | let/const/var; if without braces; empty-list insertion                      | nothing       |
+| Python     | @lezer/python                      | 39          | 1, 5                 | pairing elif tests with bodies; empty-body insertion                        | nothing       |
 
 Answer to the owner. Evidence: for three languages, a table of 37-39 lines plus
 one 198-line generic adapter produced the expected blocks, exact ranges, nothing
@@ -360,12 +360,12 @@ the Lezer editor, a demo page, keyboard and mouse, real-browser measurements, th
 what the tables cannot do yet. Running table (evidence = a test or measurement;
 "judgement" = mine):
 
-| step | done? | lines added | what it showed | what did not work |
-|---|---|---|---|---|
-| 1 Lezer editor | yes | `src/lezer-view.ts` 464, spec 231, +25 in lezer.ts/render.ts/tables | see below | see below |
-| 2 demo page | yes | demo.ts 110, index.html 36, css +45, e2e smoke | runs in Chromium for all three languages | bundle is bigger than React's 400 KB (below) |
-| 4 real browser | yes | measure.e2e.ts 150, keys.e2e.ts 100 | numbers below; every key works in Chromium in all 3 languages | Scheme edits cost about 4x JS/Python (cause not isolated) |
-| 3 keys and mouse | yes | interact.ts 260, spec 190, +3 table lines | every key works in jsdom for all three languages with only `insertText` / `removeNode` / `replaceText` | not tried in a real browser yet; see below |
+| step             | done? | lines added                                                         | what it showed                                                                                         | what did not work                                         |
+| ---------------- | ----- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| 1 Lezer editor   | yes   | `src/lezer-view.ts` 464, spec 231, +25 in lezer.ts/render.ts/tables | see below                                                                                              | see below                                                 |
+| 2 demo page      | yes   | demo.ts 110, index.html 36, css +45, e2e smoke                      | runs in Chromium for all three languages                                                               | bundle is bigger than React's 400 KB (below)              |
+| 4 real browser   | yes   | measure.e2e.ts 150, keys.e2e.ts 100                                 | numbers below; every key works in Chromium in all 3 languages                                          | Scheme edits cost about 4x JS/Python (cause not isolated) |
+| 3 keys and mouse | yes   | interact.ts 260, spec 190, +3 table lines                           | every key works in jsdom for all three languages with only `insertText` / `removeNode` / `replaceText` | not tried in a real browser yet; see below                |
 
 ### Step 1: `createLezerBlockEditor` (`src/lezer-view.ts`)
 
@@ -393,8 +393,7 @@ what the tables cannot do yet. Running table (evidence = a test or measurement;
   removed; kept roots need `renderer.renumberSlot` (new, 3 lines in render.ts), called
   whenever the set of roots changes.
 - Size of changed roots, measured in the fuzzer (60 seeds x 25 steps, tiny programs):
-  rebuilt roots average 5.0 (Scheme), 6.5 (JS), 5.6 (Python) nodes, maximum 36, 43,
-  38. Per step 2.3 / 2.4 / 2.9 roots were rebuilt. Within a changed root everything is
+  rebuilt roots average 5.0 (Scheme), 6.5 (JS), 5.6 (Python) nodes, maximum 36, 43, 38. Per step 2.3 / 2.4 / 2.9 roots were rebuilt. Within a changed root everything is
   rebuilt (no node-level reuse), as the brief said; the focus snapshot is by node,
   falling back to the node at the mapped position.
 - Divergence between an incremental and a fresh parse: the checker counts documents
@@ -476,17 +475,17 @@ minified bundle, serves it on 8177, stops the server at the end). Raw numbers:
 `e2e/screens/`. One run each, headless Chromium, 1100x800, this laptop: treat as
 orders of magnitude, not benchmarks. All of this is measurement unless marked judgement.
 
-| | Scheme | JavaScript | Python |
-|---|---|---|---|
-| lines / roots / nodes | 2751 / 1250 / 13750 | 2821 / 940 / 11092 | 2773 / 1155 / 13398 |
-| navigation to first blocks in DOM (page clock) | 88 ms | 66 ms | 70 ms |
-| ... to after first frame | 94 ms | 72 ms | 75 ms |
-| create editor (parse + build + first draw) | 64 ms | 43 ms | 48 ms |
-| root widgets built at load / roots in DOM at once | 36 / 15 | 36 / 9 | 60 / 10 |
-| one edit (remove a block), sync incl. forced layout, near top / middle | 9.8 / 9.2 ms | 2.5 / 3.5 ms | 2.2 / 1.9 ms |
-| same, to after next frame | 16.5 / 16.8 ms | 16.5 / 16.7 ms | 16.4 / 16.8 ms |
-| undo, to after next frame | 16.6 / 16.6 ms | 16.6 / 16.8 ms | 16.9 / 16.7 ms |
-| scrolling top to bottom: widgets built / max roots in DOM at once | 1861 / 39 | 1603 / 23 | 1999 / 25 |
+|                                                                        | Scheme              | JavaScript         | Python              |
+| ---------------------------------------------------------------------- | ------------------- | ------------------ | ------------------- |
+| lines / roots / nodes                                                  | 2751 / 1250 / 13750 | 2821 / 940 / 11092 | 2773 / 1155 / 13398 |
+| navigation to first blocks in DOM (page clock)                         | 88 ms               | 66 ms              | 70 ms               |
+| ... to after first frame                                               | 94 ms               | 72 ms              | 75 ms               |
+| create editor (parse + build + first draw)                             | 64 ms               | 43 ms              | 48 ms               |
+| root widgets built at load / roots in DOM at once                      | 36 / 15             | 36 / 9             | 60 / 10             |
+| one edit (remove a block), sync incl. forced layout, near top / middle | 9.8 / 9.2 ms        | 2.5 / 3.5 ms       | 2.2 / 1.9 ms        |
+| same, to after next frame                                              | 16.5 / 16.8 ms      | 16.5 / 16.7 ms     | 16.4 / 16.8 ms      |
+| undo, to after next frame                                              | 16.6 / 16.6 ms      | 16.6 / 16.8 ms     | 16.9 / 16.7 ms      |
+| scrolling top to bottom: widgets built / max roots in DOM at once      | 1861 / 39           | 1603 / 23          | 1999 / 25           |
 
 - The "to after next frame" figures sit at one 60 Hz frame (16.6 ms): the edit fits
   inside a frame; the sync figure is the real cost. Median of 7 repetitions each.
@@ -541,11 +540,11 @@ orders of magnitude, not benchmarks. All of this is measurement unless marked ju
 A five-statement program with a closing bracket missing in the second statement
 (`(b 2` / `b(2;` / `b(2`), roots as the adapter gives them:
 
-| language | roots (good -> broken) | what became of the ones after the break |
-|---|---|---|
-| Scheme | 5 -> 2 (`call`, `call` with an error inside) | all three later forms are swallowed as children of the unclosed one: blocks after the break are lost as roots, and the whole tail is drawn inside one broken block |
-| JavaScript | 5 -> 5 (one statement has an error inside) | Lezer recovers at the `;`: all later statements stay clean blocks |
-| Python | 5 -> 4 (one with an error, one error root) | one later statement is eaten by the error, two survive |
+| language   | roots (good -> broken)                       | what became of the ones after the break                                                                                                                            |
+| ---------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Scheme     | 5 -> 2 (`call`, `call` with an error inside) | all three later forms are swallowed as children of the unclosed one: blocks after the break are lost as roots, and the whole tail is drawn inside one broken block |
+| JavaScript | 5 -> 5 (one statement has an error inside)   | Lezer recovers at the `;`: all later statements stay clean blocks                                                                                                  |
+| Python     | 5 -> 4 (one with an error, one error root)   | one later statement is eaten by the error, two survive                                                                                                             |
 
 Judgement: how much survives is Lezer's grammar and error recovery, not our code; Scheme
 (no statement terminator) is the worst case, and a per-language rule that closes an
@@ -564,17 +563,19 @@ input constantly). Lezer's incremental tree and a fresh parse agreed in every fu
 Same section style; running table at the end of this round. Evidence = test or measurement.
 
 ### A1: stale nodes are refused
+
 - `removeNode`, `replaceText` and `insertText` (checks the slot's owner) now THROW
   `node N (kind) is no longer in the tree`, decided by `doc.byId`; nothing is dispatched.
   Test first (3 failed before, `spec/fixes.test.ts`), passes now in all three languages.
   Throwing, not returning false, so a caller cannot ignore it.
 
 ### A2: a missing "one" slot is filled where it belongs
+
 - Before (test failed, 4 of 5 cases): the zero-width blank sat at the owner's END, so
   `return;` + "5" gave `return;5`. Now the blank is placed after what the earlier slots
   hold (else after the keyword, else after the opening bracket), and writing into it adds
   a space where the text would stick together. A table slot may say `before` (the
-  connector): JS `let x;` needs ` = ` before the value (1 field on 1 slot). Tests: JS
+  connector): JS `let x;` needs `=` before the value (1 field on 1 slot). Tests: JS
   `return;`, `let x;`, Python `return` (nested and top-level) now give `return 5`,
   `let x = 5;`, etc. and the oracle passes.
 - Judgement: the connector is the first thing a pure "slots and separators" table could
@@ -582,6 +583,7 @@ Same section style; running table at the end of this round. Evidence = test or m
   (JS `for (x of y)`, Python `x = `) will want one when its part is missing.
 
 ### A3: focus after Delete
+
 - Test first (3 failed): focus landed on a parent or the call's head. Now `removeNode`,
   when focus is on the node or inside it, finds the owner again by (range start, kind),
   its slot by name, and focuses the node now at the same index, else the one before,
@@ -592,6 +594,7 @@ Same section style; running table at the end of this round. Evidence = test or m
   line's indentation.
 
 ### A4: why Scheme edits cost 4x (profiled, fixed)
+
 - Measured with timers on the 3000-line Scheme document (one inserted space, mean of 20):
   incremental parse 0.6 ms; collecting the top-level candidates (`fromTree` keeping every
   root) **9.2 ms** with the table's `kind` rule, 0.39 ms with the rules removed. The
@@ -609,17 +612,18 @@ Same section style; running table at the end of this round. Evidence = test or m
   must not walk siblings; this trap is easy to fall into and invisible in small tests.
 
 ### A5: the focus cases redone with different roots (Chromium, 3000 lines)
+
 Focus is on the first argument of a call in a root in the middle of the document; "later"
 and "earlier" are the nearest roots with a list, 4 or more roots away; restores = times the
 editor gave focus back; all cases ended with focus on a block. `e2e/results.json`.
 
-| case | Scheme | JavaScript | Python |
-|---|---|---|---|
-| edit in the focused block's parent | restored, same place (1) | 1 | 1 |
-| edit in a later root | not touched (0) | 0 | 0 |
-| edit in an earlier root | 0 | 0 | 0 |
+| case                                         | Scheme                     | JavaScript   | Python       |
+| -------------------------------------------- | -------------------------- | ------------ | ------------ |
+| edit in the focused block's parent           | restored, same place (1)   | 1            | 1            |
+| edit in a later root                         | not touched (0)            | 0            | 0            |
+| edit in an earlier root                      | 0                          | 0            | 0            |
 | undo of an edit in an earlier / a later root | same block, 1 restore each | same, 1 each | same, 1 each |
-| remove the focused block | next/previous/parent, 1 | 1 | 1 |
+| remove the focused block                     | next/previous/parent, 1    | 1            | 1            |
 
 - The first version of these cases was wrong for JavaScript (only one root in view had a
   list) and, after fixing that, showed a REAL bug for Python: after undo of an edit above,
@@ -631,6 +635,7 @@ editor gave focus back; all cases ended with focus on a block. `e2e/results.json
   languages (the restore runs once per undo: the element is moved when the line is redrawn).
 
 ### B: writing blocks that were never parsed (templates)
+
 Question: does a language stay "a table and a handful of rules" once blocks must be WRITTEN?
 
 - A table gets `templates: { name: { text, kind, stmt? } }` with `${hole}` holes (each
@@ -677,11 +682,13 @@ Question: does a language stay "a table and a handful of rules" once blocks must
     block was added".
 
 ### C: the table gaps, with a larger program per language (`demo/samples.ts`)
+
 A "constructs" sample per language (comments, imports, classes, strings, nested calls,
 lambdas/arrows, list and dict/object literals, return, loops, member access, unary and
 boolean operators) was read, the characters no leaf block carried were listed, and the
 tables extended until what is left is only keywords drawn by `keyword`. Changes, in table
 lines (JS +17, Python +17, Scheme +6) and 25 lines of adapter/renderer:
+
 - generic additions (adapter): `opaque` now works for nodes with children (it only did for
   leaves): a construct we do not model is drawn as its own text, one block, not as noise;
   a slot may carry `before`, now also DRAWN as glue between slots (`=`, `of`, `in`, `.`;
@@ -716,6 +723,7 @@ lines (JS +17, Python +17, Scheme +6) and 25 lines of adapter/renderer:
   draws `=` and ids shifted); the earlier fuzzers (60 seeds x 25 steps) still pass.
 
 ### D: `describe` templates (spoken labels)
+
 - A row may carry `describe: "call to ${func} with ${args.length|argument|arguments}"`:
   `${slot}` is the slot's content (a leaf's text, else a shortened source), `${slot.length}`
   its count, `|one|many` picks singular or plural, `${value}` the node's own text. 20 lines
@@ -728,13 +736,14 @@ lines (JS +17, Python +17, Scheme +6) and 25 lines of adapter/renderer:
 - Ancestors' labels update: the editor rebuilds a changed root whole, so every label in it
   is new; the test (`spec/describe.test.ts`, 6 tests) deletes an argument and sees the call
   go from "call to g with 3 arguments" to "... 2 arguments" and the enclosing `return g(2,
-  3)` follow, in all three languages, with the oracle (DOM equals a fresh drawing) clean.
+3)` follow, in all three languages, with the oracle (DOM equals a fresh drawing) clean.
   Labels of blocks OUTSIDE the changed roots do not change, which is right for a root whose
   content did not change.
 - Not done: the spoken text is English only; `${slot}` of a compound child is its raw source,
   not its own description (a long argument is cut at 28 characters).
 
 ### E: comments
+
 - What each grammar does (evidence, from the raw trees): comments ARE nodes in all three Lezer
   trees: Scheme `LineComment` / `BlockComment` (direct children of the program, also inside
   lists), JavaScript `LineComment` / `BlockComment` (also inside blocks), Python `Comment`.
@@ -752,17 +761,17 @@ lines (JS +17, Python +17, Scheme +6) and 25 lines of adapter/renderer:
 
 ## Summary of the second round
 
-| step | done? | what it showed | what did not work |
-|---|---|---|---|
-| A1 stale nodes | yes | edits throw `no longer in the tree`, nothing dispatched (test) | callers must look nodes up again |
-| A2 zero-width blank | yes | blank sits where the node would go; `before` connector (1 field) | every punctuated construct will want a connector |
-| A3 focus after Delete | yes | next/previous/parent, one generic rule (test, all 3 languages) | |
-| A4 Scheme cost | yes | OUR rule scanned all roots per root (9.2 ms of collect -> 1.4 ms; browser edit 9.5 -> 3 ms) | the grammar's deep wrapping costs about 1 ms per 1250 forms |
-| A5 JS focus cases | yes | valid now; found and fixed: undo scrolled to the top and dropped focus | |
-| B templates | yes | 99 tests insert every template at 3 places with no error node | blank is not a valid name; empty Python body; no loop in Scheme |
-| C table gaps | yes | one larger sample per language; glue words, opaque, class, member | a long tail (try/except, switch, dict as pairs, elif pairs, arrows) |
-| D describe | yes | 27 `describe` strings; ancestors' labels follow (test) | English only; long children cut |
-| E comments | yes | comments are Lezer nodes; top-level ones are blocks for 1 to 2 lines per language | comments inside blocks hidden |
+| step                  | done? | what it showed                                                                              | what did not work                                                   |
+| --------------------- | ----- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| A1 stale nodes        | yes   | edits throw `no longer in the tree`, nothing dispatched (test)                              | callers must look nodes up again                                    |
+| A2 zero-width blank   | yes   | blank sits where the node would go; `before` connector (1 field)                            | every punctuated construct will want a connector                    |
+| A3 focus after Delete | yes   | next/previous/parent, one generic rule (test, all 3 languages)                              |                                                                     |
+| A4 Scheme cost        | yes   | OUR rule scanned all roots per root (9.2 ms of collect -> 1.4 ms; browser edit 9.5 -> 3 ms) | the grammar's deep wrapping costs about 1 ms per 1250 forms         |
+| A5 JS focus cases     | yes   | valid now; found and fixed: undo scrolled to the top and dropped focus                      |                                                                     |
+| B templates           | yes   | 99 tests insert every template at 3 places with no error node                               | blank is not a valid name; empty Python body; no loop in Scheme     |
+| C table gaps          | yes   | one larger sample per language; glue words, opaque, class, member                           | a long tail (try/except, switch, dict as pairs, elif pairs, arrows) |
+| D describe            | yes   | 27 `describe` strings; ancestors' labels follow (test)                                      | English only; long children cut                                     |
+| E comments            | yes   | comments are Lezer nodes; top-level ones are blocks for 1 to 2 lines per language           | comments inside blocks hidden                                       |
 
 Package: 305 jest tests, `tsc` clean; Chromium (`e2e/`): 9 tests pass (smoke, measurements, keys).
 Chromium after this round (3000 lines): first blocks in the DOM 80 / 68 / 74 ms (Scheme / JS /
@@ -771,11 +780,11 @@ at most 37 / 22 / 21 roots in the DOM at once. Bundle not re-measured.
 
 ### Lines per language (what a language costs now)
 
-| language | grammar | file lines | `nodes` rows | rules (lines) | templates | describe | what is still not expressible |
-|---|---|---|---|---|---|---|---|
-| Scheme | cm6-lezer-scheme-common-lang | 63 | 14 (plus quote/vector/comment rows) | 1 kind rule (about 18) | 11 | 6 | wrong-arity special forms as "unknown"; `let` pairs; comments inside forms; no statement/loop templates |
-| JavaScript | @lezer/javascript | 81 | 37 | 2 (kind rule 7, separator 1 shared) | 10 | 11 | arrow functions, template strings, `?:`, `try`, `switch`, destructuring (opaque or noise); `{}` formatting of an empty block |
-| Python | @lezer/python | 73 | 32 | 2 (kind rule 7, separator shared) | 10 | 10 | elif/else pairing, dict pairs, comprehensions, `try`, `with`, decorators; empty body; blank as a name |
+| language   | grammar                      | file lines | `nodes` rows                        | rules (lines)                       | templates | describe | what is still not expressible                                                                                                |
+| ---------- | ---------------------------- | ---------- | ----------------------------------- | ----------------------------------- | --------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Scheme     | cm6-lezer-scheme-common-lang | 63         | 14 (plus quote/vector/comment rows) | 1 kind rule (about 18)              | 11        | 6        | wrong-arity special forms as "unknown"; `let` pairs; comments inside forms; no statement/loop templates                      |
+| JavaScript | @lezer/javascript            | 81         | 37                                  | 2 (kind rule 7, separator 1 shared) | 10        | 11       | arrow functions, template strings, `?:`, `try`, `switch`, destructuring (opaque or noise); `{}` formatting of an empty block |
+| Python     | @lezer/python                | 73         | 32                                  | 2 (kind rule 7, separator shared)   | 10        | 10       | elif/else pairing, dict pairs, comprehensions, `try`, `with`, decorators; empty body; blank as a name                        |
 
 (The `nodes` figure counts the `describe` strings, which sit on the rows. The generic
 adapter, editor and keys are about 1,150 lines (`lezer.ts` 326, `lezer-view.ts` 580,
@@ -784,6 +793,7 @@ adapter, editor and keys are about 1,150 lines (`lezer.ts` 326, `lezer-view.ts` 
 ### Does a language really reduce to a table and a handful of rules? (revised answer)
 
 Evidence (tests and measurements above):
+
 - READING: yes. Three languages, 63 to 81 lines each, produce blocks with exact ranges, correct
   edits, the oracle clean in the fuzzers, and a larger sample per language drawn with only
   keywords unaccounted for. Each language needed 1 or 2 small rules (a head-symbol rule in
@@ -800,6 +810,7 @@ Evidence (tests and measurements above):
   `for(;;)`, `+=`), and a tree-walking cost trap (the Scheme rule was quadratic).
 
 Judgement (mine, not measured):
+
 - "A table and a handful of rules" is a fair summary for what I tried; the table is the easy
   70 to 80 percent, and the rest is a long tail of constructs (try/catch, switch, decorators,
   destructuring, pairs in dicts and elif chains) where each costs one row, sometimes a rule, and
@@ -820,7 +831,9 @@ to `e2e/corpus-results.json`). Files are read where they are; none are copied. O
 tables (with a few 40-character snippets) are committed.
 
 ### Step 1 and 2: corpora and the measure (baseline = the tables at the end of round two)
+
 Found locally (only inside the allowed places):
+
 - Scheme: 11 `.rkt` files in the repo (1,931 lines); 582 programs extracted as string literals
   from the repo's tests and soak generator with a script (1,014 lines: many are one-liners,
   27 contain a Lezer error node because some are intentionally broken). Small corpora.
@@ -850,29 +863,29 @@ limits). Statements = top-level statements fully blocks / partly / not at all (a
 Oracle = `checkLezerEditor` after construction and after 20 random edits (delete a block, insert a template, type text)
 in a sample of 30 files (files over 1500 lines left out of this sample; every file of the smaller corpora). Final tables.
 
-| language | corpus | files | lines | coverage real / opaque / not drawn | top-level statements fully / partly / none | oracle failures (files, edits) |
-|---|---|---|---|---|---|---|
-| Scheme | scheme-repo-files | 11 | 1931 | 100 / 0 / 0 | 100% / 0% / 0% | 0 (11, 220) |
-| Scheme | scheme-test-literals | 582 | 1014 | 99.8 / 0 / 0.2 | 100% / 0% / 0% | 0 (30, 600) |
-| JavaScript | js-repo-own | 30 | 3314 | 87.8 / 11.3 / 0.9 | 72% / 28% / 0% | 0 (30, 600) |
-| JavaScript | js-node_modules-library | 200 | 14733 | 97.7 / 1.2 / 1.1 | 85% / 15% / 0% | 0 (30, 600) |
-| JavaScript | js-node_modules-examples | 40 | 758 | 96.7 / 3.3 / 0 | 96% / 4% / 0% | 0 (30, 600) |
-| Python | py-stdlib-library | 200 | 90370 | 98.1 / 1.3 / 0.6 | 69% / 12% / 19% | 0 (30, 600) |
-| Python | py-turtledemo | 21 | 2429 | 97.2 / 2.4 / 0.4 | 73% / 8% / 19% | 0 (21, 420) |
+| language   | corpus                   | files | lines | coverage real / opaque / not drawn | top-level statements fully / partly / none | oracle failures (files, edits) |
+| ---------- | ------------------------ | ----- | ----- | ---------------------------------- | ------------------------------------------ | ------------------------------ |
+| Scheme     | scheme-repo-files        | 11    | 1931  | 100 / 0 / 0                        | 100% / 0% / 0%                             | 0 (11, 220)                    |
+| Scheme     | scheme-test-literals     | 582   | 1014  | 99.8 / 0 / 0.2                     | 100% / 0% / 0%                             | 0 (30, 600)                    |
+| JavaScript | js-repo-own              | 30    | 3314  | 87.8 / 11.3 / 0.9                  | 72% / 28% / 0%                             | 0 (30, 600)                    |
+| JavaScript | js-node_modules-library  | 200   | 14733 | 97.7 / 1.2 / 1.1                   | 85% / 15% / 0%                             | 0 (30, 600)                    |
+| JavaScript | js-node_modules-examples | 40    | 758   | 96.7 / 3.3 / 0                     | 96% / 4% / 0%                              | 0 (30, 600)                    |
+| Python     | py-stdlib-library        | 200   | 90370 | 98.1 / 1.3 / 0.6                   | 69% / 12% / 19%                            | 0 (30, 600)                    |
+| Python     | py-turtledemo            | 21    | 2429  | 97.2 / 2.4 / 0.4                   | 73% / 8% / 19%                             | 0 (21, 420)                    |
 
 Before (the tables at the end of round two, same measure, no glue-word credit):
 
-| corpus | coverage real / opaque / not drawn | top-level statements fully / partly / none |
-|---|---|---|
-| scheme-repo-files | 87.3 / 0 / 12.7 | 87% / 13% / 0% |
-| scheme-test-literals | 93.8 / 0 / 6.2 | 94% / 4% / 2% |
-| js-repo-own | 32.4 / 61.8 / 5.8 | 39% / 48% / 13% |
-| js-node_modules-library | 49.8 / 32.7 / 17.4 | 52% / 35% / 13% |
-| js-node_modules-examples | 61.4 / 32.7 / 5.9 | 60% / 40% / 0% |
-| py-stdlib-library | 75.7 / 7 / 17.3 | 39% / 40% / 21% |
-| py-turtledemo | 90.2 / 5.3 / 4.5 | 46% / 35% / 19% |
+| corpus                   | coverage real / opaque / not drawn | top-level statements fully / partly / none |
+| ------------------------ | ---------------------------------- | ------------------------------------------ |
+| scheme-repo-files        | 87.3 / 0 / 12.7                    | 87% / 13% / 0%                             |
+| scheme-test-literals     | 93.8 / 0 / 6.2                     | 94% / 4% / 2%                              |
+| js-repo-own              | 32.4 / 61.8 / 5.8                  | 39% / 48% / 13%                            |
+| js-node_modules-library  | 49.8 / 32.7 / 17.4                 | 52% / 35% / 13%                            |
+| js-node_modules-examples | 61.4 / 32.7 / 5.9                  | 60% / 40% / 0%                             |
+| py-stdlib-library        | 75.7 / 7 / 17.3                    | 39% / 40% / 21%                            |
+| py-turtledemo            | 90.2 / 5.3 / 4.5                   | 46% / 35% / 19%                            |
 
-Parse and build blocks per 1000 lines (all rows, `final`): scheme-repo-files 17.9 ms, scheme-test-literals 14.8 ms, js-repo-own 19.1 ms, js-node_modules-library 16 ms, js-node_modules-examples 15.5 ms, py-stdlib-library 13.5 ms, py-turtledemo 12.9 ms (jsdom/node, not a browser). Typed edit in the middle of the largest sampled file (jsdom, field update + CodeMirror update + building the root's DOM): scheme-repo-files: huge-code.rkt 776 lines 0.51 ms, scheme-test-literals: random-sequences-test.ts:1157 11 lines 1.03 ms, js-repo-own: soak.js 713 lines 1.53 ms, js-node_modules-library: core.js 618 lines 108.29 ms, js-node_modules-examples: stream-multiple.js 50 lines 7.82 ms, py-stdlib-library: __init__.py 4006 lines 3.22 ms, py-turtledemo: __main__.py 387 lines 3.62 ms.
+Parse and build blocks per 1000 lines (all rows, `final`): scheme-repo-files 17.9 ms, scheme-test-literals 14.8 ms, js-repo-own 19.1 ms, js-node_modules-library 16 ms, js-node_modules-examples 15.5 ms, py-stdlib-library 13.5 ms, py-turtledemo 12.9 ms (jsdom/node, not a browser). Typed edit in the middle of the largest sampled file (jsdom, field update + CodeMirror update + building the root's DOM): scheme-repo-files: huge-code.rkt 776 lines 0.51 ms, scheme-test-literals: random-sequences-test.ts:1157 11 lines 1.03 ms, js-repo-own: soak.js 713 lines 1.53 ms, js-node_modules-library: core.js 618 lines 108.29 ms, js-node_modules-examples: stream-multiple.js 50 lines 7.82 ms, py-stdlib-library: **init**.py 4006 lines 3.22 ms, py-turtledemo: **main**.py 387 lines 3.62 ms.
 
 Lezer error nodes in files the real language accepts (grammar problems, not ours): JavaScript 0 in all three corpora;
 Python 29 error nodes in 10 of the 200 standard-library files and 5 in 3 of the 21 turtledemo files (the examples
@@ -887,40 +900,40 @@ JSON that the tests keep in strings: `[contenteditable=true]`), 0 in the 11 real
 - py-stdlib-library, baseline: TryStatement 107626; DecoratedStatement 41264; RaiseStatement 35866; AssignStatement>ParenthesizedExpression 23078; WithStatement 19078; ClassDefinition>ArgList 11456; ContinuedString 7469; Body>TryStatement 7272; AssignStatement>CallExpression 6982; IfStatement>else 4184
 - py-stdlib-library, final: SetExpression 1705; ForStatement>Body 1240; YieldExpression 1091; ReturnStatement>VariableName 1015; ArrayComprehensionExpression>for 456; DictionaryComprehensionExpression 426; ComprehensionExpression 409; MemberExpression>BinaryExpression 323; ArrayComprehensionExpression>in 304; ReturnStatement>CallExpression 249
 
-
 ### The curve: table lines against coverage (strict count: glue words not credited)
 
 JavaScript, library corpus (200 node_modules files; the example and own groups follow the same path, in the JSON):
 
-| step | rows added (cumulative) | `nodes` lines | `rules` lines | coverage real / opaque / not drawn | top-level statements fully | all statements fully |
-|---|---|---|---|---|---|---|
-| baseline (round two) | 0 | 37 | 9 | 49.8 / 32.7 / 17.4 | 52% | 32% |
-| + throw, switch (5 rows) | 5 | 42 | 9 | 53.3 / 34.2 / 12.5 | 52% | 35% |
-| + arrow, function expr, ?:, new, await; braceless if/loops (5 rows, 5 edits) | 10 | 47 | 9 | 73.8 / 7.6 / 18.6 | 59% | 55% |
-| + patterns, try/catch/finally, do, for-in, regexp, sequence (10 rows) | 20 | 57 | 10 | 78.7 / 7.6 / 13.7 | 65% | 61% |
-| + labels, break/continue, class expr/fields, typeof/void (7 rows, 3 rule lines) | 27 | 64 | 12 | 88.6 / 7.9 / 3.5 | 72% | 74% |
-| + import/export, yield, x++, private names, flat binary, multi-declarators (5 rows) | 32 | 69 | 12 | 97.4 / 1.2 / 1.4 | 81% | 87% |
+| step                                                                                | rows added (cumulative) | `nodes` lines | `rules` lines | coverage real / opaque / not drawn | top-level statements fully | all statements fully |
+| ----------------------------------------------------------------------------------- | ----------------------- | ------------- | ------------- | ---------------------------------- | -------------------------- | -------------------- |
+| baseline (round two)                                                                | 0                       | 37            | 9             | 49.8 / 32.7 / 17.4                 | 52%                        | 32%                  |
+| + throw, switch (5 rows)                                                            | 5                       | 42            | 9             | 53.3 / 34.2 / 12.5                 | 52%                        | 35%                  |
+| + arrow, function expr, ?:, new, await; braceless if/loops (5 rows, 5 edits)        | 10                      | 47            | 9             | 73.8 / 7.6 / 18.6                  | 59%                        | 55%                  |
+| + patterns, try/catch/finally, do, for-in, regexp, sequence (10 rows)               | 20                      | 57            | 10            | 78.7 / 7.6 / 13.7                  | 65%                        | 61%                  |
+| + labels, break/continue, class expr/fields, typeof/void (7 rows, 3 rule lines)     | 27                      | 64            | 12            | 88.6 / 7.9 / 3.5                   | 72%                        | 74%                  |
+| + import/export, yield, x++, private names, flat binary, multi-declarators (5 rows) | 32                      | 69            | 12            | 97.4 / 1.2 / 1.4                   | 81%                        | 87%                  |
 
 Python, standard library (200 files):
 
-| step | rows added (cumulative) | `nodes` lines | `rules` lines | coverage real / opaque / not drawn | top-level statements fully | all statements fully |
-|---|---|---|---|---|---|---|
-| baseline (round two) | 0 | 32 | 8 | 75.7 / 7 / 17.3 | 39% | 58% |
-| + try, raise, with, decorators (5 rows) | 5 | 37 | 8 | 86.2 / 7.6 / 6.2 | 40% | 70% |
-| + else/elif/except keywords, assert, del, global, continued strings (5 rows, 1 rule line) | 10 | 42 | 9 | 90.5 / 7.6 / 1.9 | 54% | 77% |
-| + dict, tuple, comprehension, conditional, yield (5 rows) and `@before`/`@after` takes (adapter, 12 lines), flat binary | 15 | 47 | 9 | 98 / 1.3 / 0.7 | 64% | 89% |
+| step                                                                                                                    | rows added (cumulative) | `nodes` lines | `rules` lines | coverage real / opaque / not drawn | top-level statements fully | all statements fully |
+| ----------------------------------------------------------------------------------------------------------------------- | ----------------------- | ------------- | ------------- | ---------------------------------- | -------------------------- | -------------------- |
+| baseline (round two)                                                                                                    | 0                       | 32            | 8             | 75.7 / 7 / 17.3                    | 39%                        | 58%                  |
+| + try, raise, with, decorators (5 rows)                                                                                 | 5                       | 37            | 8             | 86.2 / 7.6 / 6.2                   | 40%                        | 70%                  |
+| + else/elif/except keywords, assert, del, global, continued strings (5 rows, 1 rule line)                               | 10                      | 42            | 9             | 90.5 / 7.6 / 1.9                   | 54%                        | 77%                  |
+| + dict, tuple, comprehension, conditional, yield (5 rows) and `@before`/`@after` takes (adapter, 12 lines), flat binary | 15                      | 47            | 9             | 98 / 1.3 / 0.7                     | 64%                        | 89%                  |
 
 Python, turtledemo (beginner-style, 21 programs):
 
-| step | rows added (cumulative) | `nodes` lines | `rules` lines | coverage real / opaque / not drawn | top-level statements fully | all statements fully |
-|---|---|---|---|---|---|---|
-| baseline | 0 | 32 | 8 | 90.2 / 5.3 / 4.5 | 46% | 78% |
-| +5 rows | 5 | 37 | 8 | 91.9 / 5.5 / 2.6 | 46% | 80% |
-| +15 rows | 15 | 47 | 9 | 96.9 / 2.4 / 0.7 | 59% | 88% |
+| step     | rows added (cumulative) | `nodes` lines | `rules` lines | coverage real / opaque / not drawn | top-level statements fully | all statements fully |
+| -------- | ----------------------- | ------------- | ------------- | ---------------------------------- | -------------------------- | -------------------- |
+| baseline | 0                       | 32            | 8             | 90.2 / 5.3 / 4.5                   | 46%                        | 78%                  |
+| +5 rows  | 5                       | 37            | 8             | 91.9 / 5.5 / 2.6                   | 46%                        | 80%                  |
+| +15 rows | 15                      | 47            | 9             | 96.9 / 2.4 / 0.7                   | 59%                        | 88%                  |
 
 Scheme (11 files and 582 literals; tiny corpora): 2 alias rows (`TaggedParenList` for lists whose head the grammar tags, `BracketList` for `[...]` outside a `cond`) took the real files from 87.3% to 100% and the literals from 93.8% to 99.8%.
 
 Reading the curve (evidence from the tables above; interpretation is mine):
+
 - Every step raised "real" coverage; the biggest single steps were turning the opaque rows into real ones (JavaScript
   arrows and functions: +20 points in the library corpus, 5 rows; Python dict/tuple/comprehension/conditional: +7.5
   points, 5 rows) and `try/raise/with/decorator` in Python (+10 points, 5 rows). After about 30 rows in each of JS and
@@ -940,6 +953,7 @@ Reading the curve (evidence from the tables above; interpretation is mine):
 ### Constructs that need more than a row (what each needs, as far as I can tell)
 
 Done with a mechanism, not a row (cost in lines of adapter or rule):
+
 - Python `a, b = f()` and `for a, b in x`: slots that take by position around a token (`@before:AssignOp`, `@after:in`),
   and type takes tried before positional ones: 12 lines in `lezer.ts`; without it the value of a tuple assignment was
   dropped (`AssignStatement>CallExpression`, 7k characters in the library corpus).
@@ -950,6 +964,7 @@ Done with a mechanism, not a row (cost in lines of adapter or rule):
   not a row), drawn by the renderer when the slot is not empty.
 
 Still not expressible, or only as text (each listed with what it would need):
+
 - Imports (`import {a as b} from "x"`, `from m import a as b`) and template strings with `${}`: kept as opaque text
   (counted as covered-as-text). A real block needs a row per node type and a way to draw a word between two blocks
   (`from`) that is a token of the parent, not a slot: the glue mechanism could do it (`before` on each slot).
@@ -973,8 +988,8 @@ Still not expressible, or only as text (each listed with what it would need):
   Needs node-level reuse inside a root (identity by range matching one level down): a design change, not a row.
 - Error recovery: the Python grammar reports errors for `6.` and `(yield)`: not ours to fix in a table.
 
-
 ### Oracle failures found and fixed
+
 - One real bug, found by the first full corpus run on `cow-game.rkt` and `ast-test.rkt` (2 of 11 Scheme files, in the
   template step of the random edits): a template inserted into a node outside the viewport opened its edit box inside a
   detached element, so a stray `<input>` showed up later and the page differed from a fresh drawing. Reduced to a
@@ -986,8 +1001,8 @@ Still not expressible, or only as text (each listed with what it would need):
   `lezer-view.test.ts` now skips the new flat `rest` lists; two inline snapshots changed (binary expressions and
   assignments are now flat or list slots).
 
-
 ### Bundle sizes (minified esbuild, `npm run build:min` and `build:min:scheme`; was 444,741 bytes before this round)
+
 - All three languages: 467,454 bytes (456 KB), 161,157 bytes gzipped. React build today 400 KB, Preact 215 KB.
 - Scheme only (a second entry, `demo/scheme-only.ts`, with the editor and the Scheme table only): 333,588 bytes (326 KB),
   109,843 bytes gzipped. By package: @codemirror/view 152 KB, state 47 KB, our own code 28 KB, @lezer/lr 27 KB,
@@ -996,9 +1011,10 @@ Still not expressible, or only as text (each listed with what it would need):
   Growth over round two for the three-language build: +22.7 KB (rows, glue, templates, describe strings, adapter and the
   edit-box and comment code of the earlier rounds; the grammar packages are unchanged).
 
-
 ### Revised answer: does a language reduce to a table and a handful of rules?
+
 Evidence (the numbers above):
+
 - On real programs, with tables of 47 to 69 `nodes` lines, 9 to 12 lines of rules, about 10 templates and 10 describe
   strings per language, 98 percent of the characters of the Python standard library sample, 97.7 percent of the
   JavaScript library sample and 100 percent of the Scheme files are in real blocks, and 85 percent of JavaScript
@@ -1010,7 +1026,7 @@ Evidence (the numbers above):
   across the final tables (and one failure, in generic code, on the way).
 - Time is linear and small (13 to 19 ms per 1000 lines to parse and build in node), except that the one-root-per-class
   shape makes a single edit rebuild a whole class (about 108 ms in jsdom for 2,000 nodes).
-Judgement (mine):
+  Judgement (mine):
 - Yes, with a correction to "a handful of rules": about 30 rows per language beyond the first dozen, 10 lines of
   `kind` rules, and four small generic mechanisms (glue words, take-by-position around a token, opaque, top-level-only
   comments). Each of those mechanisms was found by looking at a real program, not by thinking about the language; a
@@ -1032,13 +1048,13 @@ Entries: `demo/demo.ts` (editor + three languages) and `demo/scheme-only.ts`. "C
 `@codemirror/state`, `@codemirror/view`, `@codemirror/commands` marked `--external`. "grammars external" =
 also `@lezer/javascript`, `@lezer/python`, `cm6-lezer-scheme-common-lang`.
 
-| build | minified | gzipped | what is in it |
-|---|---|---|---|
-| (a) everything, 3 languages | 467,454 | 160,845 | all of it |
-| (b) CM6 external, 3 languages | 236,647 | 86,949 | our code 46 K, JS grammar 78 K, Python grammar 38 K, @lezer/lr 27 K, @lezer/common 20 K, @codemirror/language 11 K, Scheme grammar 8 K, @lezer/highlight 5.5 K, style-mod 2 K |
-| (c) CM6 external, Scheme only | 102,787 | 35,585 | our code 28 K, @lezer/lr 27 K, @lezer/common 20 K, @codemirror/language 11 K, Scheme grammar 8 K, highlight 5.5 K, style-mod 2 K |
-| (d) CM6 + all grammars external, Scheme entry | 48,215 | 17,215 | our code 28 K + @lezer/common 19.5 K only |
-| (d') same, 3-language entry | 66,113 | 21,776 | our code 46 K + @lezer/common 19.5 K |
+| build                                         | minified | gzipped | what is in it                                                                                                                                                                 |
+| --------------------------------------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| (a) everything, 3 languages                   | 467,454  | 160,845 | all of it                                                                                                                                                                     |
+| (b) CM6 external, 3 languages                 | 236,647  | 86,949  | our code 46 K, JS grammar 78 K, Python grammar 38 K, @lezer/lr 27 K, @lezer/common 20 K, @codemirror/language 11 K, Scheme grammar 8 K, @lezer/highlight 5.5 K, style-mod 2 K |
+| (c) CM6 external, Scheme only                 | 102,787  | 35,585  | our code 28 K, @lezer/lr 27 K, @lezer/common 20 K, @codemirror/language 11 K, Scheme grammar 8 K, highlight 5.5 K, style-mod 2 K                                              |
+| (d) CM6 + all grammars external, Scheme entry | 48,215   | 17,215  | our code 28 K + @lezer/common 19.5 K only                                                                                                                                     |
+| (d') same, 3-language entry                   | 66,113   | 21,776  | our code 46 K + @lezer/common 19.5 K                                                                                                                                          |
 
 (a) by package, bytes in the minified output: @codemirror/view 152,289; @lezer/javascript 77,773; @codemirror/state
 47,055; our code (src + demo + css text) 45,800; @lezer/python 37,962; @lezer/lr 26,989; @codemirror/commands
@@ -1087,6 +1103,7 @@ result equals the fresh tree by construction wherever the compared nodes come fr
 where they agree.
 
 Two things the oracle found on the way (both fixed, both with a test or a fuzzer run that fails without the fix):
+
 - The glue word of a LIST slot (`=` of a `let x = ...`) is drawn only while the list has something in it, so a list that
   gains its first element is a different shape (`compatible` says so).
 - The old rule for keeping an UNTOUCHED root was unsafe in a way the small fuzz programs never reached. On the 30-line
@@ -1107,26 +1124,26 @@ run (`CMB_CORPUS=full CMB_STEP=round4`, 182 real files, 3,640 random edits): 0 o
 Measurements. jsdom (node, no layout; `spec/reuse.test.ts`, `CMB_REUSE=1`, median of 9 typed edits; "n" = nodes new in the
 tree per edit, from the editor's `stats().nodesRebuilt`):
 
-| document (biggest root) | edit | before: ms / n | after: ms / n |
-|---|---|---|---|
-| JS 618-line class (2,028 nodes) | one space inside the class | 96.9 / 2,624 | 4.7 / 0 |
-| same | a character typed at the end of a name | 99.3 / 2,624 | 5.1 / 1 |
-| Python 4,006-line file (a 4,898-node class, not drawn in jsdom) | one space in it | 8.8 / 4,968 | 7.3 / 1,326 (an indentation change: a different shape) |
-| same | a character at the end of a name | 9.4 / 4,968 | 10.2 / 1 |
-| Scheme 3000 lines (roots of 15 nodes) | char in a name | 7.4 / 39 | 6.1 / 1 |
-| JS 3000 lines (roots of 27 nodes) | char in a name | 4.5 / 58 | 2.7 / 1 |
-| Python 3000 lines (roots of 15 to 27 nodes) | char in a name | 4.6 / 68 | 2.3 / 1 |
+| document (biggest root)                                         | edit                                   | before: ms / n | after: ms / n                                          |
+| --------------------------------------------------------------- | -------------------------------------- | -------------- | ------------------------------------------------------ |
+| JS 618-line class (2,028 nodes)                                 | one space inside the class             | 96.9 / 2,624   | 4.7 / 0                                                |
+| same                                                            | a character typed at the end of a name | 99.3 / 2,624   | 5.1 / 1                                                |
+| Python 4,006-line file (a 4,898-node class, not drawn in jsdom) | one space in it                        | 8.8 / 4,968    | 7.3 / 1,326 (an indentation change: a different shape) |
+| same                                                            | a character at the end of a name       | 9.4 / 4,968    | 10.2 / 1                                               |
+| Scheme 3000 lines (roots of 15 nodes)                           | char in a name                         | 7.4 / 39       | 6.1 / 1                                                |
+| JS 3000 lines (roots of 27 nodes)                               | char in a name                         | 4.5 / 58       | 2.7 / 1                                                |
+| Python 3000 lines (roots of 15 to 27 nodes)                     | char in a name                         | 4.6 / 68       | 2.3 / 1                                                |
 
 ("Before" is the old path; the new path also WALKS the whole touched root to compare it: 2,624 comparisons for the class.)
 Real Chromium with layout (`e2e/reuse.e2e.ts`, same documents, the biggest root scrolled into view, sync = until a forced
 layout, median of 9; `e2e/reuse-chromium.json`):
 
-| | before: sync ms (to next frame) | after: sync ms (to next frame) |
-|---|---|---|
-| JS 618-line class, space inside it | 25.8 (29.5) | 4.4 (16.6 = one frame) |
-| same, char typed at the end of a name | 26.7 (30.8) | 3.8 (16.6) |
-| Python 4,898-node class, space in it | 50.1 (54.9) | 6.5 (16.6) |
-| same, char at the end of a name | 47.5 (52.3) | 6.6 (16.6) |
+|                                       | before: sync ms (to next frame) | after: sync ms (to next frame) |
+| ------------------------------------- | ------------------------------- | ------------------------------ |
+| JS 618-line class, space inside it    | 25.8 (29.5)                     | 4.4 (16.6 = one frame)         |
+| same, char typed at the end of a name | 26.7 (30.8)                     | 3.8 (16.6)                     |
+| Python 4,898-node class, space in it  | 50.1 (54.9)                     | 6.5 (16.6)                     |
+| same, char at the end of a name       | 47.5 (52.3)                     | 6.6 (16.6)                     |
 
 Focus (Chromium, same documents): with a block focused elsewhere in the SAME root and a character typed in another leaf of
 that root: restores needed 1 -> 0, and the focused block is the same element afterwards (JS and Python). In the 3000-line
@@ -1145,27 +1162,29 @@ the 4,898-node class when a space moved a line out of its body): that is the gra
 ### 3. Constructs that needed more than a row (evidence: `spec/constructs.test.ts`, 14 tests; `spec/comments.test.ts`; the corpus run)
 
 Cheapest first, with lines (table lines are `nodes` rows; adapter lines are in `lezer.ts` unless stated):
-| item | status | cost |
-|---|---|---|
-| modifier words (`async`, `static`, `get`, `set`) | done, JS and Python | `modifiers: [...]` on a row (1 field on 8 rows); adapter 6 lines, `BNode.modifier` 1, renderer 5 (a word before the keyword), `compatible` and the checker 1 each |
-| `export default`, `export * from`, `export {..} from` | done (JS) | 2 rows + 2 `kind` rule lines |
-| named function expressions keep their name | done (JS) | 1 slot on the row (`@before:ParamList`, the take that Round 3 added); no adapter change |
-| imports as real blocks | JS done; Python NOT done | JS: 5 rows + 3 rule lines (`import a, {b as c} from "x"` is: default names, `* as ns`, the `{...}` group as one text block, the source with a `from` glue; the `{..}` group stays text because `b as c` has no Lezer node). Python: needs `x as y` pairs and dotted module paths, see below |
-| comments inside a block as blocks | done, all three | adapter 22 lines (+4 in `describe`, +5 in `insertChange`): a comment is no candidate for numbering, it goes into the nearest list slot without a glue word, in text order; writing after a trailing line comment goes before it, or on a new line |
-| paired clauses: Python `elif`/`else`, `except`/`finally`/`else`; dict entries | done (Python) | adapter 55 lines (a `groups` spec on a row: groups started by a bare token, or split by a separator token; built with the same `fill` as any node, `fill`/`blanks` were pulled out of `build1`), 3 rows (`Branch`, `Entry`, 2 `groups` fields), 6 lines of separator rule (a new branch goes on its own line at the indentation of the first one) |
-| template strings | NOT done (stopped, needs a renderer change) | needs text between children: a template string is text with `${...}` holes and Lezer has no node for the text pieces, so a compound node would have to draw `source text between its children` too (a `pieces` field, 20 to 40 lines in the renderer and in the editing code, and a way to edit a text piece). Left as one opaque block |
+
+| item                                                                          | status                                      | cost                                                                                                                                                                                                                                                                                                                                              |
+| ----------------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| modifier words (`async`, `static`, `get`, `set`)                              | done, JS and Python                         | `modifiers: [...]` on a row (1 field on 8 rows); adapter 6 lines, `BNode.modifier` 1, renderer 5 (a word before the keyword), `compatible` and the checker 1 each                                                                                                                                                                                 |
+| `export default`, `export * from`, `export {..} from`                         | done (JS)                                   | 2 rows + 2 `kind` rule lines                                                                                                                                                                                                                                                                                                                      |
+| named function expressions keep their name                                    | done (JS)                                   | 1 slot on the row (`@before:ParamList`, the take that Round 3 added); no adapter change                                                                                                                                                                                                                                                           |
+| imports as real blocks                                                        | JS done; Python NOT done                    | JS: 5 rows + 3 rule lines (`import a, {b as c} from "x"` is: default names, `* as ns`, the `{...}` group as one text block, the source with a `from` glue; the `{..}` group stays text because `b as c` has no Lezer node). Python: needs `x as y` pairs and dotted module paths, see below                                                       |
+| comments inside a block as blocks                                             | done, all three                             | adapter 22 lines (+4 in `describe`, +5 in `insertChange`): a comment is no candidate for numbering, it goes into the nearest list slot without a glue word, in text order; writing after a trailing line comment goes before it, or on a new line                                                                                                 |
+| paired clauses: Python `elif`/`else`, `except`/`finally`/`else`; dict entries | done (Python)                               | adapter 55 lines (a `groups` spec on a row: groups started by a bare token, or split by a separator token; built with the same `fill` as any node, `fill`/`blanks` were pulled out of `build1`), 3 rows (`Branch`, `Entry`, 2 `groups` fields), 6 lines of separator rule (a new branch goes on its own line at the indentation of the first one) |
+| template strings                                                              | NOT done (stopped, needs a renderer change) | needs text between children: a template string is text with `${...}` holes and Lezer has no node for the text pieces, so a compound node would have to draw `source text between its children` too (a `pieces` field, 20 to 40 lines in the renderer and in the editing code, and a way to edit a text piece). Left as one opaque block           |
 
 Not drawn right, unchanged: JS comma-grouping `let a = 1, b = 2` (flat `rest`), `with a as b`; Python `from x import y as z` and plain
 `import`, which remain opaque text (19% of Python top-level statements, 797 of 4,181 in the library sample, are imports).
 
 Corpus re-run (`CMB_CORPUS=full CMB_STEP=round4`, `e2e/corpus-results.json`, row `round4` against row `final`):
-| corpus | real / opaque / not drawn, final -> round4 | top-level statements fully, final -> round4 |
-|---|---|---|
-| js-node_modules-library | 97.7 / 1.2 / 1.1 -> 98.4 / 1.2 / 0.4 | 1425 -> 1551 of 1,682 (85% -> 92%) |
-| js-repo-own | 87.8 / 11.3 / 0.9 -> 88.0 / 11.3 / 0.8 | 245 -> 258 of 338 |
-| js-node_modules-examples | 96.7 / 3.3 / 0 (unchanged) | 188 -> 189 of 196 |
-| Python (stdlib, turtledemo), Scheme (2 corpora) | unchanged | unchanged (the Python gain is not in this measure: branches and entries were counted real before; they are structure now, not coverage) |
-Oracle: 0 failures in 3,640 edits on 182 files. Typed edit on the largest file: JS class 108.3 ms -> 5.6 ms (jsdom).
+
+| corpus                                                                                                               | real / opaque / not drawn, final -> round4 | top-level statements fully, final -> round4                                                                                             |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| js-node_modules-library                                                                                              | 97.7 / 1.2 / 1.1 -> 98.4 / 1.2 / 0.4       | 1425 -> 1551 of 1,682 (85% -> 92%)                                                                                                      |
+| js-repo-own                                                                                                          | 87.8 / 11.3 / 0.9 -> 88.0 / 11.3 / 0.8     | 245 -> 258 of 338                                                                                                                       |
+| js-node_modules-examples                                                                                             | 96.7 / 3.3 / 0 (unchanged)                 | 188 -> 189 of 196                                                                                                                       |
+| Python (stdlib, turtledemo), Scheme (2 corpora)                                                                      | unchanged                                  | unchanged (the Python gain is not in this measure: branches and entries were counted real before; they are structure now, not coverage) |
+| Oracle: 0 failures in 3,640 edits on 182 files. Typed edit on the largest file: JS class 108.3 ms -> 5.6 ms (jsdom). |
 
 ### 4. Moving blocks (evidence: `spec/move.test.ts`, 23 tests; `e2e/move.e2e.ts`, 6 Chromium tests, 2 per language)
 
@@ -1191,17 +1210,17 @@ Oracle: 0 failures in 3,640 edits on 182 files. Typed edit on the largest file: 
 
 ### 5. Chromium, round one against now (3000-line documents; `e2e/results.json` now, `e2e/results-round2.json` the end of round two; round one from the table in Step 4 above)
 
-| | Scheme | JavaScript | Python |
-|---|---|---|---|
-| first blocks in the DOM / to after first frame, round one | 88 / 94 | 66 / 72 | 70 / 75 |
-| same, now | 81 / 86 | 71 / 76 | 76 / 81 |
-| create editor (parse + build + first draw), round one / now | 64 / 58 | 43 / 49 | 48 / 54 |
-| one edit, sync with layout near top / middle: round one | 9.8 / 9.2 | 2.5 / 3.5 | 2.2 / 1.9 |
-| round two (after the Scheme fix) | 3.4 / 2.9 | 3.3 / 3.5 | 2.9 / 2.6 |
-| now | 4.3 / 3.6 | 3.0 / 3.3 | 3.1 / 2.3 |
-| roots in the DOM at load / at most while scrolling, now | 14 / 37 | 8 / 22 | 10 / 26 |
-| widgets built while scrolling the whole document, round one / now | 1861 / 1955 | 1603 / 1586 | 1999 / 1950 |
-| roots / nodes, now | 1,250 / 13,750 | 940 / 11,656 | 1,155 / 13,629 |
+|                                                                   | Scheme         | JavaScript   | Python         |
+| ----------------------------------------------------------------- | -------------- | ------------ | -------------- |
+| first blocks in the DOM / to after first frame, round one         | 88 / 94        | 66 / 72      | 70 / 75        |
+| same, now                                                         | 81 / 86        | 71 / 76      | 76 / 81        |
+| create editor (parse + build + first draw), round one / now       | 64 / 58        | 43 / 49      | 48 / 54        |
+| one edit, sync with layout near top / middle: round one           | 9.8 / 9.2      | 2.5 / 3.5    | 2.2 / 1.9      |
+| round two (after the Scheme fix)                                  | 3.4 / 2.9      | 3.3 / 3.5    | 2.9 / 2.6      |
+| now                                                               | 4.3 / 3.6      | 3.0 / 3.3    | 3.1 / 2.3      |
+| roots in the DOM at load / at most while scrolling, now           | 14 / 37        | 8 / 22       | 10 / 26        |
+| widgets built while scrolling the whole document, round one / now | 1861 / 1955    | 1603 / 1586  | 1999 / 1950    |
+| roots / nodes, now                                                | 1,250 / 13,750 | 940 / 11,656 | 1,155 / 13,629 |
 
 Judgement: nothing got slower except Scheme's edit (3.4 -> 4.3 ms near the top, 2.9 -> 3.6: the new comparison pass over the touched root,
 the error scan from the first change on, and 15-node roots, so a few tenths of a millisecond each); the numbers are single runs of a
@@ -1210,6 +1229,7 @@ laptop, so differences under a millisecond are noise. The focus cases are in Ste
 branches, entries) and `e2e/screens/toolbar-template.png` (the toolbar after the `if-else` button: the new block with its first hole in an edit box).
 
 ### What is not done, and what I would do next
+
 - Python imports (`from a.b import c as d`) are still text: needs `x as y` pairs inside a separator group, with the pair's `as`
   found relative to the pair, not to the whole node (the `@after:` takes look at the first `as` of the node), and a dotted
   module path drawn as one name. About 20 lines of adapter. Template strings: a renderer change (text between children).
@@ -1262,7 +1282,7 @@ What was built here (`src/interact.ts`, `src/lezer-view.ts`, `src/render.ts`, `s
   (an edit made one) are selected with it (a pass after each update; a few lines). Escape, Ctrl-Escape, Alt-Q (`code === "KeyQ"`, the old editor's `Alt-Q`
   is a key name) clear it; opening a box clears it; a click does not.
 - **Announcements**: a live region (`.blocks-announcer`, `aria-live="assertive"`, `aria-atomic`, visually hidden, next to the editor; written 50 ms after it is cleared
-  as the old announcer does), also kept in `ed.said`. It says what the old editor says ("deleted X and Y", "cut ...", "copied ...", the ancestor refusal, "editing X.  Use Enter
+  as the old announcer does), also kept in `ed.said`. It says what the old editor says ("deleted X and Y", "cut ...", "copied ...", the ancestor refusal, "editing X. Use Enter
   to save, and Alt-Q to cancel", "inserting...") and "deleted X" also for a single focused block. Selecting and unselecting say NOTHING, like the old editor (state through
   `aria-selected` only): a first version said "selected X", and was taken out because a screen reader that announces the changed `aria-selected` of the focused block would then say it
   twice (judgement; no screen reader was run).
@@ -1291,49 +1311,49 @@ What was built here (`src/interact.ts`, `src/lezer-view.ts`, `src/render.ts`, `s
 
 "here" = this experiment after step 1. "added" = added in this step because it was a few lines.
 
-| key or gesture | what it does in the existing editor | here |
-|---|---|---|
-| Down / Up | next / previous block, skipping the insides of collapsed blocks | yes (no collapsing here) |
-| Home | first block | yes (added) |
-| End | last visible block | yes (added; the last block in document order) |
-| Left | collapse the block, or focus its parent | different: focus the parent (nothing collapses) |
-| Right | expand, or focus the first child | different: focus the first child |
-| Shift-Left / Shift-Right | collapse all / expand all | no |
-| Shift-Alt-Left / Shift-Alt-Right | collapse / expand the current root | no |
-| Shift-, | jump to the root | yes (added) |
-| \ | read the ancestors ("X, at level n, inside Y") | yes (added; spoken through the live region) |
-| Shift-\ | read the children (a description of the subtree) | different (added): says the one-line descriptions of the children |
-| Shift-Tab | move focus to the toolbar | no (the toolbar is plain buttons; Tab order is the browser's) |
-| Enter | edit a literal or comment block in place; on other blocks collapse / expand | different: edits a leaf; nothing on other blocks |
-| Cmd-Enter (Mac) / Ctrl-Enter | "Edit Anything": the block's text in a one-line editable box | yes (step 1), different: a textarea, Enter commits, Shift-Enter newline, blur cancels |
-| Ctrl-[ / Ctrl-] | insert a new block before / after (opens a box at the drop target) | yes |
-| Shift-Ctrl-] | edit the block's comment (a comment attached to a block) | no (comments are blocks of their own here; no attached comment) |
-| Space | toggle selection | yes (step 1) |
-| Esc, Ctrl-Esc, Alt-Q | clear the selection | yes (step 1) |
-| Delete, Backspace | delete the selected blocks; "Nothing selected" when none | different: the selected blocks, else the focused block |
-| PageUp / PageDown | search previous / next | no |
-| F3, Ctrl-F, Cmd-F | open the search dialog | no |
-| Ctrl-F3 / Shift-Ctrl-F3 | next / previous search type | no |
-| Cmd/Ctrl-Z | undo | yes |
-| Cmd/Ctrl-Y, Shift-Cmd/Ctrl-Z | redo | yes |
-| Cmd/Ctrl-C | copy the selected blocks, else the focused one | yes (step 1; the text joined by newlines, not spaces) |
-| Cmd/Ctrl-X | cut the selected blocks | yes (step 1; also the focused block when nothing is selected) |
-| Cmd/Ctrl-V | paste after the focused block (or over the selection / into the drop target) | yes (after the focused block, in the nearest list; replaces a blank); over a selection: no, the selection is cleared |
-| Shift-Cmd/Ctrl-V | paste before | yes (added) |
-| Shift-Ctrl-/ | help dialog listing the keys | no |
-| any printable key on a focused blank | (not in keymap.tsx; BlockEditor.tsx line 294 starts an edit) | yes: typing replaces a hole |
-| mouse: press on a block | activates (focuses) it, records the event | yes (click focuses) |
-| mouse: click on a literal | opens its edit box (`normallyEditable`) | no: a click only focuses; Enter edits |
-| mouse: double click | collapse / expand | no |
-| mouse: click a drop target / insertion point | opens an insertion box there | yes (a click on a gap) |
-| mouse: drag a block (react-dnd) | moves ONE block onto a drop target or onto another block (replaces it) | different: pointer events, moves the selection if the block is selected; drops on gaps, blanks, and the edges of top-level blocks; not onto an arbitrary block |
-| mouse: drag from the toolbar | inserts a new block | no (toolbar buttons insert after the focused block) |
-| toolbar | blocks to drag, a focus target | different (buttons that insert templates) |
-| collapse / expand state, `aria-expanded` toggled | collapsed blocks hide their insides | no (blocks are always expanded; `aria-expanded="true"` is a constant) |
-| comments attached to a block (`with comment:` read aloud, speech-balloon badge) | yes | no |
-| search (with a rotor of search types) | yes | no |
-| sounds (BEEP) on a refused move | yes | no (words only) |
-| activity log (`recordEvent`) | records keys, mouse, edits, clipboard | no |
+| key or gesture                                                                  | what it does in the existing editor                                          | here                                                                                                                                                           |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Down / Up                                                                       | next / previous block, skipping the insides of collapsed blocks              | yes (no collapsing here)                                                                                                                                       |
+| Home                                                                            | first block                                                                  | yes (added)                                                                                                                                                    |
+| End                                                                             | last visible block                                                           | yes (added; the last block in document order)                                                                                                                  |
+| Left                                                                            | collapse the block, or focus its parent                                      | different: focus the parent (nothing collapses)                                                                                                                |
+| Right                                                                           | expand, or focus the first child                                             | different: focus the first child                                                                                                                               |
+| Shift-Left / Shift-Right                                                        | collapse all / expand all                                                    | no                                                                                                                                                             |
+| Shift-Alt-Left / Shift-Alt-Right                                                | collapse / expand the current root                                           | no                                                                                                                                                             |
+| Shift-,                                                                         | jump to the root                                                             | yes (added)                                                                                                                                                    |
+| \                                                                               | read the ancestors ("X, at level n, inside Y")                               | yes (added; spoken through the live region)                                                                                                                    |
+| Shift-\                                                                         | read the children (a description of the subtree)                             | different (added): says the one-line descriptions of the children                                                                                              |
+| Shift-Tab                                                                       | move focus to the toolbar                                                    | no (the toolbar is plain buttons; Tab order is the browser's)                                                                                                  |
+| Enter                                                                           | edit a literal or comment block in place; on other blocks collapse / expand  | different: edits a leaf; nothing on other blocks                                                                                                               |
+| Cmd-Enter (Mac) / Ctrl-Enter                                                    | "Edit Anything": the block's text in a one-line editable box                 | yes (step 1), different: a textarea, Enter commits, Shift-Enter newline, blur cancels                                                                          |
+| Ctrl-[ / Ctrl-]                                                                 | insert a new block before / after (opens a box at the drop target)           | yes                                                                                                                                                            |
+| Shift-Ctrl-]                                                                    | edit the block's comment (a comment attached to a block)                     | no (comments are blocks of their own here; no attached comment)                                                                                                |
+| Space                                                                           | toggle selection                                                             | yes (step 1)                                                                                                                                                   |
+| Esc, Ctrl-Esc, Alt-Q                                                            | clear the selection                                                          | yes (step 1)                                                                                                                                                   |
+| Delete, Backspace                                                               | delete the selected blocks; "Nothing selected" when none                     | different: the selected blocks, else the focused block                                                                                                         |
+| PageUp / PageDown                                                               | search previous / next                                                       | no                                                                                                                                                             |
+| F3, Ctrl-F, Cmd-F                                                               | open the search dialog                                                       | no                                                                                                                                                             |
+| Ctrl-F3 / Shift-Ctrl-F3                                                         | next / previous search type                                                  | no                                                                                                                                                             |
+| Cmd/Ctrl-Z                                                                      | undo                                                                         | yes                                                                                                                                                            |
+| Cmd/Ctrl-Y, Shift-Cmd/Ctrl-Z                                                    | redo                                                                         | yes                                                                                                                                                            |
+| Cmd/Ctrl-C                                                                      | copy the selected blocks, else the focused one                               | yes (step 1; the text joined by newlines, not spaces)                                                                                                          |
+| Cmd/Ctrl-X                                                                      | cut the selected blocks                                                      | yes (step 1; also the focused block when nothing is selected)                                                                                                  |
+| Cmd/Ctrl-V                                                                      | paste after the focused block (or over the selection / into the drop target) | yes (after the focused block, in the nearest list; replaces a blank); over a selection: no, the selection is cleared                                           |
+| Shift-Cmd/Ctrl-V                                                                | paste before                                                                 | yes (added)                                                                                                                                                    |
+| Shift-Ctrl-/                                                                    | help dialog listing the keys                                                 | no                                                                                                                                                             |
+| any printable key on a focused blank                                            | (not in keymap.tsx; BlockEditor.tsx line 294 starts an edit)                 | yes: typing replaces a hole                                                                                                                                    |
+| mouse: press on a block                                                         | activates (focuses) it, records the event                                    | yes (click focuses)                                                                                                                                            |
+| mouse: click on a literal                                                       | opens its edit box (`normallyEditable`)                                      | no: a click only focuses; Enter edits                                                                                                                          |
+| mouse: double click                                                             | collapse / expand                                                            | no                                                                                                                                                             |
+| mouse: click a drop target / insertion point                                    | opens an insertion box there                                                 | yes (a click on a gap)                                                                                                                                         |
+| mouse: drag a block (react-dnd)                                                 | moves ONE block onto a drop target or onto another block (replaces it)       | different: pointer events, moves the selection if the block is selected; drops on gaps, blanks, and the edges of top-level blocks; not onto an arbitrary block |
+| mouse: drag from the toolbar                                                    | inserts a new block                                                          | no (toolbar buttons insert after the focused block)                                                                                                            |
+| toolbar                                                                         | blocks to drag, a focus target                                               | different (buttons that insert templates)                                                                                                                      |
+| collapse / expand state, `aria-expanded` toggled                                | collapsed blocks hide their insides                                          | no (blocks are always expanded; `aria-expanded="true"` is a constant)                                                                                          |
+| comments attached to a block (`with comment:` read aloud, speech-balloon badge) | yes                                                                          | no                                                                                                                                                             |
+| search (with a rotor of search types)                                           | yes                                                                          | no                                                                                                                                                             |
+| sounds (BEEP) on a refused move                                                 | yes                                                                          | no (words only)                                                                                                                                                |
+| activity log (`recordEvent`)                                                    | records keys, mouse, edits, clipboard                                        | no                                                                                                                                                             |
 
 The "no" rows, in order of how much they would cost (judgement): the sound (trivial); a help dialog (small); Shift-Tab to a toolbar (small); click-to-edit a literal (a few lines but a
 decision, since a click also starts a drag); collapse and expand (needs a state per block and a renderer change, medium); drag from the toolbar (medium); search (large);
@@ -1366,24 +1386,24 @@ found and fixed on the way by the oracle: anchors keeping the new parent as thei
 byId and selection leaking for nodes in a failed reconcile; positions of a dropped root read after its reconcile had overwritten them.
 Measurement, jsdom (`spec/reuse.test.ts`, median of 9, `CMB_REUSE=1`; "built-and-compared" is nodes new in the touched root's tree, which used to be every node of the root):
 
-| document, edit | rebuild whole (round 3), ms | reconcile (round 4), ms / nodes compared | anchors (now), ms / nodes compared / anchored |
-|---|---|---|---|
-| JS 618-line class (2,028 nodes), char typed in a name | 100.9 | 5.2 / 2,624 | 2.3 / 17 / 44 |
-| same, a space typed in the biggest root | 99.7 | 4.8 / 2,624 | 2.0 / 17 / 47 |
-| Python 4,006-line file (4,898-node class), char in a name | 8.8 | 10.2 / 4,968 | 3.3 / 84 / 193 |
-| same, a space (an indentation change: 1,326 nodes are really new) | 8.1 | 7.1 / 2,613 | 3.8 / 233 / 111 |
-| Scheme 3000 lines (15-node roots), char in a name | 8.1 | 6.3 / 39 | 6.1 / 34 / 5 |
-| JS 3000 lines (27-node roots) | 4.5 | 2.7 / 58 | 2.5 / 38 / 5 |
-| Python 3000 lines | 4.4 | 2.3 / 68 | 2.1 / 48 / 5 |
+| document, edit                                                    | rebuild whole (round 3), ms | reconcile (round 4), ms / nodes compared | anchors (now), ms / nodes compared / anchored |
+| ----------------------------------------------------------------- | --------------------------- | ---------------------------------------- | --------------------------------------------- |
+| JS 618-line class (2,028 nodes), char typed in a name             | 100.9                       | 5.2 / 2,624                              | 2.3 / 17 / 44                                 |
+| same, a space typed in the biggest root                           | 99.7                        | 4.8 / 2,624                              | 2.0 / 17 / 47                                 |
+| Python 4,006-line file (4,898-node class), char in a name         | 8.8                         | 10.2 / 4,968                             | 3.3 / 84 / 193                                |
+| same, a space (an indentation change: 1,326 nodes are really new) | 8.1                         | 7.1 / 2,613                              | 3.8 / 233 / 111                               |
+| Scheme 3000 lines (15-node roots), char in a name                 | 8.1                         | 6.3 / 39                                 | 6.1 / 34 / 5                                  |
+| JS 3000 lines (27-node roots)                                     | 4.5                         | 2.7 / 58                                 | 2.5 / 38 / 5                                  |
+| Python 3000 lines                                                 | 4.4                         | 2.3 / 68                                 | 2.1 / 48 / 5                                  |
 
 Real Chromium with layout (`e2e/reuse.e2e.ts`, sync = until a forced layout, median of 9; `e2e/reuse-chromium.json`, the round-five-before run is `reuse-chromium-round5-before.json`):
 
-| | rebuild whole | reconcile (round 4) | anchors (now) |
-|---|---|---|---|
-| JS 618-line class, space inside it | 30.1 | 4.6 | 1.5 |
-| same, char at the end of a name | 28.6 | 4.7 | 2.4 |
-| Python 4,898-node class, space in it | 52.1 | 7.7 | 2.6 |
-| same, char at the end of a name | 52.9 | 7.3 | 3.3 |
+|                                      | rebuild whole | reconcile (round 4) | anchors (now) |
+| ------------------------------------ | ------------- | ------------------- | ------------- |
+| JS 618-line class, space inside it   | 30.1          | 4.6                 | 1.5           |
+| same, char at the end of a name      | 28.6          | 4.7                 | 2.4           |
+| Python 4,898-node class, space in it | 52.1          | 7.7                 | 2.6           |
+| same, char at the end of a name      | 52.9          | 7.3                 | 3.3           |
 
 On the 3000-line documents (`e2e/results.json`, round four in `results-round4.json`; one edit near the top / in the middle, sync with layout): Scheme 4.3 / 3.6 ms before, 4.6 / 3.5 now;
 JavaScript 3.0 / 3.3 before, 3.0 / 2.8 now; Python 3.1 / 2.3 before, 3.0 / 1.9 now. Unchanged within noise: those roots are 15 to 27 nodes, so nothing was being rebuilt that mattered; the
@@ -1398,6 +1418,7 @@ fuzz steps, which is evidence about those generators, not a proof).
 `import a.b as c, d` and `from x import y as z, w` (also `from . import a`, `from .a.b import (c, d as e)`, `from x import *`) are blocks: the statement (keyword `import` or
 `from`), a list of names, each a block with its name and, when there is one, its `as` alias. Lezer gives these NO nodes for the parts (all tokens are flat children of
 `ImportStatement`, a dotted path is `VariableName "." VariableName`), so the adapter got one new generic mechanism and the table 4 rows:
+
 - Adapter (`lezer.ts`, about 40 lines): `BlockRow.chunks = { delims, row }`: the node's children are cut at the delimiter tokens (`from import as , ( )`) and what lies between two delimiters is ONE leaf block (so `a.b`
   and `.a.b` are one name); a slot can take a chunk by the delimiter before it (`@prev:from`, `@prev:as`); `groups.own` keeps the chunks after a given token (`from`) out of the groups.
 - Table (`lang-python.ts`): `ImportStatement` and `FromImport` (a `kind` rule line picks it when the first token is `from`), `Alias`, `ImportName`; `separators.names`; one template (`import`); `ImportStatement` leaves the
@@ -1418,6 +1439,7 @@ drawn as text in the GAPS the renderer already puts between the children (`block
 patching (`apply`, `renumberGaps`) relies on. Cost: `render.ts` +35 lines (`paintPieces`, `repaintPieces`; called after a build, after an insert or remove, and from `refresh` and the ancestors loop of `apply`), 3 lines in
 `types.ts` and `lezer.ts`, one row per language (`TemplateString`, `FormatString`, 1 line each, taken out of `opaque`), and the guards below. The blocks inside are the expressions of the `${...}` / `{...}` parts (`Interpolation` and
 `FormatReplacement` are looked through), the pieces are `` `a ${ ``, `} b ${`, `} c` `` (JavaScript) and `f"a {`, `} b {`, `!r} c {`, `:>5}"` (Python, so `!r` and `:>5` stay text).
+
 - Guards (the text is not a list of blocks): `insertText` into such a slot throws ("nothing can be inserted into the parts of a template: it is text with blocks in it"); a click on its gaps opens no box; they are no drop
   targets; paste, Ctrl-[ / Ctrl-] and templates go after the template instead of into it; removing a block inside replaces it with the language's blank (`${undefined}`, `{...!r}`); edit-as-text (Cmd/Ctrl-Enter) works on the whole
   string and is how a piece is changed.
@@ -1433,6 +1455,7 @@ patching (`apply`, `renumberGaps`) relies on. Cost: `render.ts` +35 lines (`pain
 What it is: for each language a small program (`f(1, g(2), 3)` / `h(4)`), Chromium's own accessibility tree (CDP `Accessibility.getFullAXTree`; Playwright 1.64's `ariaSnapshot` has no levels or set sizes) after:
 0 the program as loaded, 1 an insert through the editor while a block of the same call is focused, 2 a delete with the Delete key, 3 a selection with two Space presses, 4 an undo. Evidence below is about the accessibility TREE and about
 focus EVENTS; it is not evidence about what NVDA, JAWS or VoiceOver say. Results: `e2e/a11y-results.json`; the first outline per language in `e2e/a11y-outline-<lang>.txt`.
+
 - Tree (15 snapshots = 3 languages x 5): one `tree` named "program" with `multiselectable=true`; every block is a `treeitem` with a non-empty name (the spoken label, e.g. "call to f with 3 arguments", "number 1"), `level` equal
   to its nesting depth among treeitems, `expanded=true` on blocks with children and nothing on leaves, `selected` where selected. No problem found in any of them (`treeProblems` empty).
 - Set sizes and positions (not in the CDP tree, checked on the DOM attributes Chromium computes them from): `aria-setsize` equals the number of sibling blocks and `aria-posinset` runs 1..n in every sibling group in all 15 snapshots
@@ -1449,9 +1472,9 @@ focus EVENTS; it is not evidence about what NVDA, JAWS or VoiceOver say. Results
   - selection with Space: no restore (the events there are from the clicks that move focus between the blocks).
   - undo: no events (focus was on a block that the undo did not touch).
   - In no frame after any step was `activeElement` the body (6 frames each; the first case has no focus yet by design).
-  What a screen reader would likely hear (judgement from the events, not measured): the only moment with focus on the body is inside the same JavaScript task as the focusin on the block that follows it, and browsers pass
-  focus changes to the accessibility layer after the task, so the intermediate body is probably not announced and the user hears the new block ("call to g with 1 argument"). That is an inference about Chromium's event timing; it is
-  not tested with a screen reader, and other browsers or screen readers may announce the blur.
+    What a screen reader would likely hear (judgement from the events, not measured): the only moment with focus on the body is inside the same JavaScript task as the focusin on the block that follows it, and browsers pass
+    focus changes to the accessibility layer after the task, so the intermediate body is probably not announced and the user hears the new block ("call to g with 1 argument"). That is an inference about Chromium's event timing; it is
+    not tested with a screen reader, and other browsers or screen readers may announce the blur.
 - Against the existing editor (read from `components/Node.tsx`, not run): same roles (`treeitem`), `tabIndex=-1`, `aria-selected` on every block, `aria-level`, `aria-setsize`, `aria-posinset` (the existing numbers come from the AST). Differences:
   its `aria-label` ends with a comma ("call to f with 3 args,") to make the reader pause and it uses `aria-labelledby` on itself (and on the comment of a commented block); it sets `aria-disabled` on locked blocks and
   `aria-expanded` from the real collapsed state of any block that can collapse (here `expanded=true` is constant: nothing collapses). Ours has no comment-through-labelledby and no `aria-disabled`, and `aria-multiselectable` on the
@@ -1476,6 +1499,7 @@ focus EVENTS; it is not evidence about what NVDA, JAWS or VoiceOver say. Results
 - Not tried: a real device, a pen, iOS Safari (Pointer Events and `touchmove` cancelling differ), two-finger gestures, the virtual keyboard moving the page when a box opens.
 
 ### Fifth round: what is not done, and what I would do next
+
 - Per-edit cost that grows with the number of roots (3 to 4 ms at 3000 lines, unchanged by step 2): the map of old roots with `mapPos`, the merged error list, `fromTree` collecting every top-level node, the decoration filter.
   Next: make each proportional to the roots near the change.
 - The anchors rule is a heuristic (as the root-level rule is); bails are about 1 percent of reconciled roots in the fuzzers. A bail redraws one root, which costs focus identity there.
@@ -1513,6 +1537,7 @@ Order: (1) focus and selection follow a rebuilt block; (2) collapse / expand; (3
 Read from `keymap.tsx` and `Node.tsx` of the old editor and matched: Left on an expanded compound block collapses it, else focuses the parent (beep there, silent here); Right on a collapsed block
 expands it, else focuses the first child; Shift-Left / Shift-Right collapse / expand every block (focus to the root); Shift-Alt-Left / Right the current root and what is in it (focus to the root);
 double click toggles; Enter on a compound block toggles (leaves still edit). `aria-expanded` is now real (`false` when collapsed; leaves have none).
+
 - State: a set of nodes in the `Renderer` (`isCollapsed`, `setCollapsed`, `collapsedNodes`), the same kind of state as the selection. It follows a rebuilt block through the same `placeOf` / `resolvePlace` (step 1), and a removed block drops it (`forget`). Text is never touched.
 - Drawing is CSS only (`blocks-collapsed`): the head (keyword, or the operator slot of a call) and an ellipsis (`::after`); the argument list, glue and other slots are `display: none`, so the inside cannot be focused or clicked (the head child of a call has `pointer-events: none`). Arrow Up / Down (`nextBlock`, `prevBlock`, `lastBlock` take a `closed` predicate) skip the inside; collapsing while focus is inside moves focus to the collapsed block.
 - Differences from the old editor: collapsing all collapses every compound block (the old list holds every id, leaves included; no visible difference); no sound. Judgement: a collapsed block whose head is a call's function name still has that name as a drawn block that cannot be clicked or reached.
@@ -1522,6 +1547,7 @@ double click toggles; Enter on a compound block toggles (leaves still edit). `ar
 
 Old editor (read from `Node.tsx`, `nodes.tsx`): a block with `normallyEditable` (literals, and comment blocks) runs `handleMakeEditable` in its click handler, focused or not (the mousedown only activates it); other blocks only get focus.
 Here (`interact.ts` `onClick`): a mouse or pen click on a leaf block focuses it and opens its edit box (Enter commits, Escape cancels); a compound block only gets focus. Not edited: a click with Shift / Ctrl / Meta / Alt (focus only; the e2e tests use Shift-click to focus a literal), the second click of a double click (`detail > 1`), a touch (the existing rule stays: the second tap on the focused block edits), and the click that ends a drag (it is swallowed, a press that moves 5 px is a drag). Opening a box clears the selection, as it did.
+
 - Side fix found by the Chromium test: the edit box hid the literal's text with `style="display:none"`, and the DOM was left with `style=""` after a cancel (the checker saw it); it is now a class (`blocks-text-hidden`).
 - Evidence: `spec/click.test.ts` (15 jsdom tests), `e2e/click.e2e.ts` (3 Chromium tests: real click opens the box, a click on the focused literal opens it again, a real mouse drag does not). Existing e2e files that clicked literals only to focus them now Shift-click.
 
@@ -1529,6 +1555,7 @@ Here (`interact.ts` `onClick`): a mouse or pen click on a leaf block focuses it 
 
 Old editor (`keymap.tsx`, `Node.tsx`): a comment is a field of the block (`options.comment`); it is drawn with the block, read aloud as "with comment: ..." (`COMMENT_PREFIX`), and Shift-Ctrl-] opens a box for it (on a comment block: says "Press Enter to edit a comment block"; a collapsed block is expanded first).
 Decision (cheapest faithful version, judgement): comments stay blocks of their own (the whole design says so; nothing in the tree, the parser or the tables changes), and a comment is ATTACHED by position, computed when a block is drawn: the comment block that is the sibling directly above it (only a line break and indentation between, and that comment is not the trailing comment of the block before it), or the comment block after it on the same line (only spaces or commas between). A blank line breaks it. Why: no new tree state to keep right through reconcile, anchors and undo; the attachment cannot go stale because it is read from the text and the tree each time (a pass after each edit repaints the blocks next to a comment and those that had a marker: `Renderer.refreshComments`).
+
 - Drawn: class `blocks-has-comment`, `data-comment` and `title` = the words (hover), a quote mark before the block, and on focus the words in italics (`style.css`); spoken: the block's aria-label ends `, with comment: <words>`. State classes are kept in one fixed order (`flagClass`) because the checker compares the class string.
 - Shift-Ctrl-] (`code BracketRight`, Ctrl and Shift only; Cmd is not it, as in the old editor): a box inside the block, holding the words (line sign stripped, `#| |#` and `/* */` brackets stripped); Enter writes them: replaces the comment (a block comment keeps its brackets), or, with none, writes `<sign> words` + line break + the line's indentation above the block; EMPTY text removes the comment block (trailing one too); Escape, Alt-Q or blur cancel. One text change, one undo step. The block that gets the comment is `commentHost`: the outermost block that starts where the focused one does, moved up to one that is first on its line (so a comment for `x` in `return x;` goes above the `return`, never between `return` and `x`, which would change a JavaScript program). The new table entry per language: `lineComment` (`;`, `//`, `#`).
 - Differences from the old editor: the comment is its own block too (it can be focused, deleted, moved on its own; deleting the host leaves the comment); one line of words only; a comment inside a block whose slots are all "one" (a Scheme `define`) is not a block at all there (known, from the fourth round), so nothing attaches in it; cut and copy of the host do not take its comment along (the old editor's cut does).
@@ -1536,16 +1563,17 @@ Decision (cheapest faithful version, judgement): comments stay blocks of their o
 
 ### 5. Bundle sizes again (2026-11-16, esbuild 0.28 `--minify`, one run each, gzip -9; same entries as round four)
 
-| build | round 4 minified / gzip | now minified / gzip | change |
-|---|---|---|---|
-| (a) `demo/demo.ts`, three languages, everything bundled | 467,454 / 160,845 | 504,087 / 173,550 | +36,633 / +12,705 |
-| (b) same, CM6 (`@codemirror/state`, `view`, `commands`) external | 236,647 / 86,949 | 273,207 / 99,219 | +36,560 / +12,270 |
-| `demo/scheme-only.ts`, everything bundled | (not measured in round 4) | 363,654 / 120,102 | |
-| (c) `demo/scheme-only.ts`, CM6 external | 102,787 / 35,585 | 132,724 / 45,962 | +29,937 / +10,377 |
+| build                                                            | round 4 minified / gzip   | now minified / gzip | change            |
+| ---------------------------------------------------------------- | ------------------------- | ------------------- | ----------------- |
+| (a) `demo/demo.ts`, three languages, everything bundled          | 467,454 / 160,845         | 504,087 / 173,550   | +36,633 / +12,705 |
+| (b) same, CM6 (`@codemirror/state`, `view`, `commands`) external | 236,647 / 86,949          | 273,207 / 99,219    | +36,560 / +12,270 |
+| `demo/scheme-only.ts`, everything bundled                        | (not measured in round 4) | 363,654 / 120,102   |                   |
+| (c) `demo/scheme-only.ts`, CM6 external                          | 102,787 / 35,585          | 132,724 / 45,962    | +29,937 / +10,377 |
 
 About 30 K minified (10 K gzipped) more in the Scheme-only build over round four: the fifth-round work (selection, edit as text, anchors, touch, Python imports, template strings) and this round (places, collapse, click, attached comments, about 2.5 K of CSS text). Grammars are not external in any of these rows.
 
 ### Final checks of the sixth round (2026-11-16)
+
 jsdom 535 passed (6 skipped), tsc clean, model fuzzers at 800 seeds x 25 steps per language clean, the whole Chromium suite 49 passed (all e2e files, port 8177, server stopped).
 Not done: search; the old editor's cut taking the attached comment along; comments in blocks whose slots are all "one"; a screen reader was never run.
 
@@ -1564,6 +1592,7 @@ The pictures: `e2e/screens/scheme-cm5.png` / `scheme-cm6.png` (one program with 
 `scheme-large-cm5.png` / `scheme-large-cm6.png` (`packages/wescheme-blocks/dev-server/ast-test.rkt`), and `scheme-states-*`, `scheme-comment-*`, `scheme-edit-*` (focus, selection, collapse, a blank, the comment box, an edit box). The cm6 ones are made by `e2e/scheme-look.e2e.ts` (part of the suite, 3 tests).
 
 What was done (all CSS except two lines in the Scheme table and one in the view):
+
 - `BlockTable.lang` (new, optional): the editor gets the class `blocks-lang-<lang>` (`EditorView.editorAttributes`; the three tables say `scheme`, `javascript`, `python`). All the new rules are under `.blocks-lang-scheme` (about 250 lines at the end of `style.css`). NO shared rule was changed: JavaScript and Python look as before (their screenshots were not retaken; the jsdom and Chromium suites pass).
 - `render.ts` is NOT changed. The existing editor's DOM is a column (strip, then arguments); ours is the same for calls. For definitions and lambda, which here have the keyword, the name slot and the value slot as siblings, the strip is made with a CSS grid
   (`1fr auto auto 1fr`, the black band is a background gradient behind the first row, `define (` / `)` / `λ (` are pseudo-elements; the keyword text `lambda` stays in the DOM because the tree's positions need it: the strip shows `λ` by `font-size: 0` and `::before`).
@@ -1574,6 +1603,7 @@ What was done (all CSS except two lines in the Scheme table and one in the view)
   (existing / here: 84.4x48, 194x82, 274x191.8, 167x210, 285.4x48, 35x48, 392x112), and crops of the states look the same by eye (judgement: the pictures, not a pixel diff).
 
 Visible differences that remain (all seen in the pictures):
+
 - A comment is a block of its own here (dark, italic) AND marks the block it goes with; the existing editor draws only the balloon and a box on focus. Cannot change without hiding a block that can be focused (judgement: left).
 - The balloon's box sits about 4 px lower than the existing one's; spacing of `define (` / `λ (` differs by a pixel or two (letter widths of pseudo-elements).
 - `(lambda (n) ...)`: the parameter list is the first parameter as the call's "function" here, so `λ ( n [gap] )` has its dotted target after `n`, the existing one before and after.
@@ -1604,43 +1634,45 @@ Visible differences that remain (all seen in the pictures):
 
 ### 3b. The parity table, after the seventh round (only the rows that changed since the fifth round's table; "yes" = as the existing editor, "different" = said how)
 
-| key or gesture | here now |
-|---|---|
-| Left / Right, Shift-Left / Right, Shift-Alt-Left / Right, Enter on a block, double click | yes (sixth round) |
-| Cmd/Ctrl-Enter | yes (textarea; Enter commits, Shift-Enter newline; blur now commits as in the old editor) |
-| Shift-Ctrl-] | yes (the comment of a block; also a comment inside a block that has no list); the comment is a block of its own too |
-| Delete, Backspace | yes: the selected blocks; "Nothing selected" when none (as the old editor) |
-| Cmd/Ctrl-X, C | yes; the block's comment goes with it (cut removes it, copy writes it above the block); with nothing selected they take the focused block (the old editor's Cut says "Nothing selected": different) |
-| Shift-Tab | yes (option `focusToolbar`; Tab back with `focusEditor`) |
-| Shift-Ctrl-/ | yes (from the key table) |
-| click a literal | yes (sixth round) |
-| drag from the toolbar | yes onto a gap, a hole, or the edge of a top-level block; not onto a block |
-| PageUp / PageDown, F3, Ctrl-F, Cmd-F, Ctrl-F3 | no: search (left for later) |
-| sounds | no |
-| activity log | no (skipped) |
+| key or gesture                                                                           | here now                                                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Left / Right, Shift-Left / Right, Shift-Alt-Left / Right, Enter on a block, double click | yes (sixth round)                                                                                                                                                                                   |
+| Cmd/Ctrl-Enter                                                                           | yes (textarea; Enter commits, Shift-Enter newline; blur now commits as in the old editor)                                                                                                           |
+| Shift-Ctrl-]                                                                             | yes (the comment of a block; also a comment inside a block that has no list); the comment is a block of its own too                                                                                 |
+| Delete, Backspace                                                                        | yes: the selected blocks; "Nothing selected" when none (as the old editor)                                                                                                                          |
+| Cmd/Ctrl-X, C                                                                            | yes; the block's comment goes with it (cut removes it, copy writes it above the block); with nothing selected they take the focused block (the old editor's Cut says "Nothing selected": different) |
+| Shift-Tab                                                                                | yes (option `focusToolbar`; Tab back with `focusEditor`)                                                                                                                                            |
+| Shift-Ctrl-/                                                                             | yes (from the key table)                                                                                                                                                                            |
+| click a literal                                                                          | yes (sixth round)                                                                                                                                                                                   |
+| drag from the toolbar                                                                    | yes onto a gap, a hole, or the edge of a top-level block; not onto a block                                                                                                                          |
+| PageUp / PageDown, F3, Ctrl-F, Cmd-F, Ctrl-F3                                            | no: search (left for later)                                                                                                                                                                         |
+| sounds                                                                                   | no                                                                                                                                                                                                  |
+| activity log                                                                             | no (skipped)                                                                                                                                                                                        |
 
 ### 4. Per-edit cost at 3000 lines (2026-11-16)
 
 Profile (Chromium CDP sampling profiler, non-minified build, `e2e/profile.e2e.ts` with `e2e/profile.config.ts`; 300 one-character edits at the same place in the middle of the document, with forced layout; raw output in `e2e/profile-<lang>.json`).
 Where the 2.8 ms of Scheme went (inclusive, per edit): `fromTree` 1.17 (of it the table's "kind" rule run on every one of the 1250 top-level forms, 0.74), the walk for Lezer error nodes from the change to the end of the document 0.69, incremental parse 0.33, the map of old roots (two `mapPos` each, built for ALL roots) and the rest. The cause was ours in three places, all proportional to the number of roots:
+
 1. `old` map of every root with two `mapPos`: now a lookup on demand (the new position is mapped back, binary search in the old roots, checked forward again).
 2. `fromTree` read every top-level node and ran the kind rules even for roots that were kept: new `skip(from, to)` callback, asked before the rule, hands back the old root when it is untouched, same range, no error (`LezerOptions.skipRoots`, false for measuring).
 3. The walk over the tree for errors: when the old document had no Lezer error, the new tree's errors are looked for in the roots that were built again only (`fastErrors`). A change that makes errors in a root it does not touch is not seen by this fast path. Judgement/evidence: the model fuzzers (800 seeds x 25 steps, and 100 big seeds) compare with a fresh parse and found nothing; they are evidence about their generators, not proof. As soon as the document has an error, the old slow path runs.
-Median ms per edit, same harness, before / after: Scheme 2.8 / 1.1 (our part, `restMs`, 2.21 / 0.49), JavaScript 2.0 / 1.8 (0.78 / 0.49), Python 1.8 / 1.5 (0.94 / 0.63). What is left is mostly the Lezer parse (0.46 / 0.99 / 0.68) and two passes that are still proportional to the roots but cheap: stepping the top-level children (`collect`, 0.18 Scheme) and `shiftTree` of the kept roots after the change (0.12). NOT yet "proportional to the roots near the change" in the strict sense; those two remain. The existing `measure.e2e.ts` (edit sync with layout, near top / middle, remove a block): Scheme 4.3 / 3.6 (round 4) -> 2.6 / 2.2, JavaScript 3.0 / 3.3 -> 2.9 / 2.8, Python 3.1 / 2.3 -> 3.1 / 2.3 (block removals, which build more).
-Evidence: `spec/perf.test.ts` (600 roots: an edit rebuilds fewer than 12 roots and keeps over 1000; same text and checker result with the fast paths off; an unclosed bracket takes the slow path and is still the fresh parse).
+   Median ms per edit, same harness, before / after: Scheme 2.8 / 1.1 (our part, `restMs`, 2.21 / 0.49), JavaScript 2.0 / 1.8 (0.78 / 0.49), Python 1.8 / 1.5 (0.94 / 0.63). What is left is mostly the Lezer parse (0.46 / 0.99 / 0.68) and two passes that are still proportional to the roots but cheap: stepping the top-level children (`collect`, 0.18 Scheme) and `shiftTree` of the kept roots after the change (0.12). NOT yet "proportional to the roots near the change" in the strict sense; those two remain. The existing `measure.e2e.ts` (edit sync with layout, near top / middle, remove a block): Scheme 4.3 / 3.6 (round 4) -> 2.6 / 2.2, JavaScript 3.0 / 3.3 -> 2.9 / 2.8, Python 3.1 / 2.3 -> 3.1 / 2.3 (block removals, which build more).
+   Evidence: `spec/perf.test.ts` (600 roots: an edit rebuilds fewer than 12 roots and keeps over 1000; same text and checker result with the fast paths off; an unclosed bracket takes the slow path and is still the fresh parse).
 
 ### 5. Bundle sizes (2026-11-16, esbuild `--minify`, one run each, gzip -9, same entries as rounds four and six)
 
-| build | round 4 min / gzip | round 6 min / gzip | now min / gzip |
-|---|---|---|---|
-| (a) `demo/demo.ts`, three languages, all bundled | 467,454 / 160,845 | 504,087 / 173,550 | 533,363 / 180,512 |
-| (b) same, CodeMirror 6 external | 236,647 / 86,949 | 273,207 / 99,219 | 302,469 / 106,184 |
-| `demo/scheme-only.ts`, all bundled | n/m | 363,654 / 120,102 | 392,559 / 126,955 |
-| (c) `demo/scheme-only.ts`, CodeMirror 6 external | 102,787 / 35,585 | 132,724 / 45,962 | 161,621 / 52,825 |
+| build                                            | round 4 min / gzip | round 6 min / gzip | now min / gzip    |
+| ------------------------------------------------ | ------------------ | ------------------ | ----------------- |
+| (a) `demo/demo.ts`, three languages, all bundled | 467,454 / 160,845  | 504,087 / 173,550  | 533,363 / 180,512 |
+| (b) same, CodeMirror 6 external                  | 236,647 / 86,949   | 273,207 / 99,219   | 302,469 / 106,184 |
+| `demo/scheme-only.ts`, all bundled               | n/m                | 363,654 / 120,102  | 392,559 / 126,955 |
+| (c) `demo/scheme-only.ts`, CodeMirror 6 external | 102,787 / 35,585   | 132,724 / 45,962   | 161,621 / 52,825  |
 
 +29 K minified (+6.9 K gzip) in the Scheme-only build over round six: about 9 K of Scheme-look CSS, the key table, help dialog, announcements, toolbar drag, stray comments, per-edit lookups. Grammars are not external.
 
 ### Final checks of the seventh round (2026-11-16)
+
 jsdom 574 passed (6 skipped), tsc clean, model fuzzers at 800 seeds (100 big seeds) clean, whole Chromium suite 65 passed (port 8177, server stopped; the existing editor's page on 8190 stopped too).
 Not done: search; sounds; activity log; the strict "proportional to nearby roots" for stepping the top-level children and shifting kept roots; the grammar's `*`/`/` tagged-list bug; a finger drag from the toolbar was not tried on a real touch device.
 
@@ -1662,20 +1694,21 @@ Skipped on purpose: profiling, bundle sizes, the Scheme grammar's tagged-list bu
 
 Read: `Search.tsx`, `searchers/ByString.tsx`, `ByBlock.tsx`, the search keys and `goToMatch` in `keymap.tsx`, `spec/search-test.tsx`, `spec/searchers-test.tsx`. What the old editor does, and what is built here (`src/search.ts`, no React; the keys are in `src/keys.ts`, so the help dialog lists them):
 
-| | old editor | here |
-|---|---|---|
-| open the dialog | F3, Ctrl-F (Cmd-F too on a Mac), with a block focused | same (F3, Ctrl-F, Cmd-F) |
-| dialog | react-modal "Search Settings", tabs "Search by string" / "Search by block"; Left / Right change the tab; Enter (keyup) closes and goes to the first match; Escape or Close closes and goes nowhere | plain DOM, `role="dialog"`, `aria-modal`, `aria-label="Search Settings"`, real `role="tab"` buttons with a roving tab stop, Tab kept inside, same keys (on keydown, not keyup); focus goes back to the block that had it |
-| by string | text, "Ignore case", "Exact match" (whole word), "Regex"; matched in the whole text of the program with CodeMirror 5's search cursor; the match is the innermost block holding its start; an unfinished regex finds nothing; empty text steps through the blocks | same options and words; a JS regex (flags `gm` + `i`) over the whole text; same innermost block; same empty-text rule |
-| by block | `<select>` of the node TYPES in the document (sorted), option text is the label | `<select>` of the table LABELS in the document (sorted): "call", "definition", "number", ... (two table rows with one label, such as the three call forms, are one type: it is what is read aloud) |
-| PageDown / PageUp | next / previous match from the focused block (never the focused block itself); at the end go on from the other end with the wrap sound; none: beep. No search chosen yet: beep and "No search settings have been selected" | same, and the same sounds; `ed.sound("wrap", "wrapped")` and `("beep", "no-match")` |
-| rotor Ctrl-F3 / Shift-Ctrl-F3 | cycles the types in the document then the last text searched for (a text closed with Enter), with a wrap, saying "Searching by <label>, 2 of 5" / "Searching for text 'xy', 3 of 3" / "No search types available" | same words and order |
-| collapsed blocks | a match inside a collapsed block is SKIPPED (not expanded); the collapsed block's own text can match | same: skipped, not expanded |
-| the tests | 2 files, React Testing Library | `spec/search.test.ts` (76 jsdom tests, 3 languages: dialog, text options, empty text, wrap, beep, collapsed, block types, rotor, API, keys in the help) and `e2e/search.e2e.ts` (real key presses in Chromium, 3 languages: F3, type, Enter, PageDown x3, wrap with its sound, PageUp, Escape and the focus is the block, no match, Ctrl-F, Tab inside, Right to the block tab, Ctrl-F3) |
+|                               | old editor                                                                                                                                                                                                                                                       | here                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| open the dialog               | F3, Ctrl-F (Cmd-F too on a Mac), with a block focused                                                                                                                                                                                                            | same (F3, Ctrl-F, Cmd-F)                                                                                                                                                                                                                                                                                                                                                                 |
+| dialog                        | react-modal "Search Settings", tabs "Search by string" / "Search by block"; Left / Right change the tab; Enter (keyup) closes and goes to the first match; Escape or Close closes and goes nowhere                                                               | plain DOM, `role="dialog"`, `aria-modal`, `aria-label="Search Settings"`, real `role="tab"` buttons with a roving tab stop, Tab kept inside, same keys (on keydown, not keyup); focus goes back to the block that had it                                                                                                                                                                 |
+| by string                     | text, "Ignore case", "Exact match" (whole word), "Regex"; matched in the whole text of the program with CodeMirror 5's search cursor; the match is the innermost block holding its start; an unfinished regex finds nothing; empty text steps through the blocks | same options and words; a JS regex (flags `gm` + `i`) over the whole text; same innermost block; same empty-text rule                                                                                                                                                                                                                                                                    |
+| by block                      | `<select>` of the node TYPES in the document (sorted), option text is the label                                                                                                                                                                                  | `<select>` of the table LABELS in the document (sorted): "call", "definition", "number", ... (two table rows with one label, such as the three call forms, are one type: it is what is read aloud)                                                                                                                                                                                       |
+| PageDown / PageUp             | next / previous match from the focused block (never the focused block itself); at the end go on from the other end with the wrap sound; none: beep. No search chosen yet: beep and "No search settings have been selected"                                       | same, and the same sounds; `ed.sound("wrap", "wrapped")` and `("beep", "no-match")`                                                                                                                                                                                                                                                                                                      |
+| rotor Ctrl-F3 / Shift-Ctrl-F3 | cycles the types in the document then the last text searched for (a text closed with Enter), with a wrap, saying "Searching by <label>, 2 of 5" / "Searching for text 'xy', 3 of 3" / "No search types available"                                                | same words and order                                                                                                                                                                                                                                                                                                                                                                     |
+| collapsed blocks              | a match inside a collapsed block is SKIPPED (not expanded); the collapsed block's own text can match                                                                                                                                                             | same: skipped, not expanded                                                                                                                                                                                                                                                                                                                                                              |
+| the tests                     | 2 files, React Testing Library                                                                                                                                                                                                                                   | `spec/search.test.ts` (76 jsdom tests, 3 languages: dialog, text options, empty text, wrap, beep, collapsed, block types, rotor, API, keys in the help) and `e2e/search.e2e.ts` (real key presses in Chromium, 3 languages: F3, type, Enter, PageDown x3, wrap with its sound, PageUp, Escape and the focus is the block, no match, Ctrl-F, Tab inside, Right to the block tab, Ctrl-F3) |
 
 API: `ed.search` (`open`, `close(go)`, `next`, `previous`, `rotor(forward)`, `settings`, `set`, `types`, `find`), so a page or a test can search without the dialog.
 
 Differs from the old editor (all deliberate or noted):
+
 - No Ctrl/Cmd-G (the task asked to check: the old editor has none; F3 opens the dialog there and is not "next").
 - A match that is in NO block (between top-level blocks, in text that does not parse) is skipped; the old editor's `getNodeContainingBiased` returns nothing there and the search then reports no match. Comments are blocks here, so a match in a comment finds the comment block.
 - "No match found" is also said (the old one only beeps); "Searching for next match..." after Enter is said as there.
@@ -1689,6 +1722,7 @@ Differs from the old editor (all deliberate or noted):
 The old editor (`src/state/activityLog.ts`): a module-level list (`MAX_ACTIVITIES = 200`, the oldest are dropped and the document as of the last dropped one is kept, `getActivityBase()`); a Redux middleware logs every reducer action (`SET_AST` with the whole program printed, `SET_FOCUS` by `nid`, `COLLAPSE`...), and `recordEvent` logs what the person did: `KEY {key, mods, nid}`, `MOUSE {nid}`, `DRAG {from, to, touch}`, `EDIT {text, how: "enter"|"blur"}`, `EDIT_CANCEL`, `TYPE {char, sel}`, `PASTE {text, sel}`, `CLIP {text}`, `MODE`, `SEARCH {key | set}`. Read back with `getLog()` / `getActivityBase()` by the "Download Log" / bug-report button (`ui/EditorButtons.tsx`, `ui/bugReport.ts`), `scripts/field-reports.js` fetches the GitHub issues made from it and `spec/helpers/fieldReplay.ts` drives the editor again with the person's keys, clicks and drags (and, if that fails, only the states they left it in).
 
 Here (`src/activity.ts`, hooks in `lezer-view.ts`, `interact.ts`, `search.ts`):
+
 - `ed.activityLog()` (a copy), `ed.clearActivityLog()`, `ed.exportActivity()` = `{format: 1, base, dropped, entries}` (the text the entries start from; what a bug report would carry), option `activityLimit` (default 200, as the old one; what is dropped has its changes folded into `base`, so a replay of what is kept still starts right).
 - An entry is `{seq, t, action, target?, detail?, change?, length?}`: the action's name (the key table's commands: `next`, `delete`, `paste`, `search`, `searchNext`..., and `click`, `gapClick`, `dblclick`, `drag`, `templateDrop`, `template` (the toolbar button), `edit` / `editAll` / `insert` / `comment` (a box committed) and their `...Cancel`, `search.set` / `search.close` / `search.rotor`, `collapse`..., `mode`, `undo`, `redo`, `text` (a change with no action around it: typing in text mode), `block-edit`), `target` = `{kind, from, to}` of the block it acted on (the old log names a block by its `nid`; an offset is the same kind of thing), `detail` (key and modifiers; `{how, text}` of a box; `{to}` of a drop; the search settings), `change` = the text change as `[{from, to, insert}]` in the offsets of the text before it (one list for each CodeMirror transaction), `length` = the length of the text after.
 - Everything goes through ONE function, `ed.act(action, target, detail, fn)`: an action inside another is part of it (only the outermost makes entries), text changes made inside belong to its entry, an action with no change makes its entry when it ends, a key that did nothing makes none. The API calls that change something (`insertText`, `removeNodes`, `insertTemplate`, `collapse`...) are logged as actions of their own when a page or a test calls them.
@@ -1701,31 +1735,37 @@ Here (`src/activity.ts`, hooks in `lezer-view.ts`, `interact.ts`, `search.ts`):
 **Plainly: there is no real touch device available to me. Nothing below was run on a phone or tablet.** What was done is Chromium's touch emulation (a mobile context with `hasTouch`, a 520 x 800 viewport, real CDP `Input.dispatchTouchEvent` touches, which produce real pointer events with `pointerType: "touch"`, real `touchmove` events and the browser's own scroll gestures), plus jsdom tests of the rules, plus reading the code for the usual phone problems.
 
 What changed (`src/interact.ts`, `src/style.css`, `demo/demo.ts`, `demo/index.html`):
+
 - **The rule** for `ed.beginTemplateDrag(pointerdownEvent, name)`: a mouse or pen drags after 5 px (as before); a FINGER drags after a long press (350 ms, the block drag's rule) without moving more than 8 px; a finger that moves earlier is swiping the toolbar (the drag is dropped, the browser scrolls it); a tap (let go before 350 ms) is the button's own click and inserts after the focused block as before; a long press let go on the toolbar writes nothing and the click it ends is swallowed.
 - **While a finger drags** (a template or a block): class `blocks-touch-drag` on the editor; gaps get `min-width/min-height: 44px` and holes (a new class `blocks-hole`, put on the blank blocks for the duration: a JS or Python hole is a literal that says `...`, so CSS alone cannot tell it) the same; the label of the template follows the finger, ABOVE it (`.blocks-drag-ghost`, `pointer-events: none`, so `elementFromPoint` at the finger finds the gap, not the label); `touchmove` cannot scroll (ONE non-passive listener registered when the editor is made, not when the long press is over: iOS Safari only honours `preventDefault` of a touchmove listener that was there before the touch began; it does nothing unless a finger drag is on); `contextmenu` and `selectstart` are prevented. Everything is undone at the end (also on `pointercancel`).
 - **The toolbar** (`.blocks-toolbar`, `.blocks-toolbar-item`, in `style.css`; the demo page uses them): one row that scrolls sideways (`overflow-x: auto; flex-wrap: nowrap`), `touch-action: pan-x` on the bar and each item (swiping along the bar scrolls it; no double-tap zoom or pinch on it), items at least 44 x 44 px, `user-select: none`, `-webkit-touch-callout: none`. The library does not draw a toolbar; a page that makes one should use these classes or the same properties.
 - The activity log entry `templateDrop` says `touch: true`.
 
 Measured in Chromium emulation (`e2e/touch-toolbar.e2e.ts`, 15 tests, 5 per language; `spec/touch-toolbar.test.ts`, 15 jsdom tests of the rules):
-| | scheme | javascript | python |
-|---|---|---|---|
-| toolbar items (smallest) | 48 x 60 px | 44 x 60 | 44 x 60 |
+
+|                                       | scheme             | javascript        | python            |
+| ------------------------------------- | ------------------ | ----------------- | ----------------- |
+| toolbar items (smallest)              | 48 x 60 px         | 44 x 60           | 44 x 60           |
 | a gap at rest -> while a finger drags | 20 x 20 -> 44 x 44 | 4 x 16 -> 44 x 44 | 4 x 16 -> 44 x 44 |
-| a hole while a finger drags (was) | 28 x 44 | 80 x 44 (22 high) | 44 x 44 (22 high) |
+| a hole while a finger drags (was)     | 28 x 44            | 80 x 44 (22 high) | 44 x 44 (22 high) |
+
 - Passing, in all three languages: a long press on a button, then a finger move onto a gap writes the template there (box open, one undo takes it back); onto a hole replaces it; a short swipe on the toolbar scrolls the toolbar (`scrollLeft` grows), starts no drag and writes nothing; a tap inserts as before; the ghost is above the finger and `elementFromPoint` at the finger is the gap; during the drag the window did not scroll, the toolbar did not scroll, the editor did not scroll, the visual viewport scale stayed 1, nothing was selected; the editor checker is clean after each drop. (If `contextmenu` fired in the emulation it was prevented every time; I did not check that it fires at all: Chromium's emulated long press may not send it.)
 - **Reading, not tested on a device**: (1) the touch listener registration above is the documented iOS rule; (2) `touch-action: manipulation` on blocks was already there; the page itself can still be pinch-zoomed (not disabled: it is an accessibility feature), the drag is not affected as long as the zoom does not change during it; (3) while a drag is on the editor cannot scroll, so a target that is off screen cannot be reached (no auto-scroll at the edge yet: NOT DONE; the block drag has the same limit); (4) growing the gaps moves the code on the screen at the moment the long press ends (by design: the page shows the targets); on a long program that means the line the finger was aiming at may move: not judged on a real phone; (5) an Android long press can start a text selection handle or the share menu before 350 ms on some browsers: `user-select: none` is on blocks and items, nothing more can be done from the page.
 - **WebKit**: Playwright's WebKit is NOT installed (`~/Library/Caches/ms-playwright` has chromium only; `npx playwright install --dry-run webkit` would download webkit-2370); I did not download it, so the iPhone-descriptor run was not made. If it is installed later: `npx playwright test -c packages/cm6-blocks/e2e/playwright.config.ts touch-toolbar --project=webkit` needs a webkit project (with `devices["iPhone 15"]`) added to `playwright.config.ts`; CDP touches do not exist in WebKit, so the tests would need Playwright's `touchscreen` (which can only tap): a swipe/drag test in WebKit needs dispatching `TouchEvent`s by hand. Expect differences there, not measured.
 
 How to serve the demo to a phone on the same network (the page is static):
+
 ```
 cd <worktree>
 npm run build -w @bootstrapworld/cm6-blocks          # builds packages/cm6-blocks/demo/demo.js
 HOST=0.0.0.0 node packages/cm6-blocks/e2e/serve.js   # port 8177 on every interface (Ctrl-C stops it)
 ipconfig getifaddr en0                               # the Mac's address on the Wi-Fi (a private address such as 192.168.x.x)
 ```
+
 then open `http://<that address>:8177/index.html?lang=javascript` in the phone's browser (also `?lang=scheme`, `?lang=python`; `&constructs=1` for a bigger program). The Mac and the phone must be on the same network and the Mac's firewall must allow node.
 
 **Manual test script for a real phone or tablet** (about 5 minutes; write down what differs):
+
 1. Open the page (JavaScript). Expected: the sample program as blocks, and above it a row of buttons (`variable`, `function`, `number`, ...) that is wider than the screen. Each button is a comfortable thumb target.
 2. Swipe sideways on the row, starting on a button. Expected: the row scrolls; no ghost label appears; the program does not change.
 3. Tap `number` once with a block focused (tap a block first). Expected: a new number block appears after it with a small edit box open; type 5, tap Done / Enter. Undo (Ctrl-Z on a keyboard, or shake) is optional.
@@ -1735,16 +1775,17 @@ then open `http://<that address>:8177/index.html?lang=javascript` in the phone's
 
 ### Parity table, after the eighth round (only the rows that changed since the seventh round's table)
 
-| key or gesture | here now |
-|---|---|
-| F3, Ctrl-F, Cmd-F | yes: the Search Settings dialog (two tabs, text with ignore case / exact match / regex, block types by label); Enter closes and finds the first match, Escape or Close closes. Differs: opens on the current search's tab; picks the first type when the block tab is chosen with none; "No match found" is said too; no Ctrl/Cmd-G (the old editor has none) |
-| PageDown / PageUp | yes: next / previous match from the focused block, never the focused block, wrap with the wrap sound, beep when none, "No search settings have been selected" before anything is chosen. A match inside a collapsed block is skipped (as the old editor); a match in no block is skipped (the old editor stops there) |
-| Ctrl-F3, Shift-Ctrl-F3 | yes: the rotor over the block types in the program then the last text, the same words |
-| sounds | yes: the old editor's two files (copied unchanged) at each place it beeps that exists here (14 events, listed in `src/sound.ts`), the wrap sound for search; `playSound` injectable, `sounds: false`, `ed.setSounds`; quiet in jsdom, before the first gesture, on a rejected `play()`. Differs: Delete with nothing selected beeps here, silent there; Enter on an uneditable block and "language has no comments" have no event here |
-| activity log | yes: `ed.activityLog()`, `clearActivityLog()`, `exportActivity()`, 200 entries as the old one, the base text kept; every key-table command, click, drag, toolbar button, search step, mode switch and text change; no keystroke inside a box is recorded, the committed text is (the old editor's privacy). `replay(log, startText, make)` gives the same text and tree. Differs: the old log holds reducer actions and the whole program after each change, and its replay drives gestures; this one holds changes and replays them |
-| drag from the toolbar, with a finger | built and tested under Chromium touch emulation only (long press, ghost, finger-sized gaps and holes); NOT verified on a real device; WebKit not installed |
+| key or gesture                       | here now                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F3, Ctrl-F, Cmd-F                    | yes: the Search Settings dialog (two tabs, text with ignore case / exact match / regex, block types by label); Enter closes and finds the first match, Escape or Close closes. Differs: opens on the current search's tab; picks the first type when the block tab is chosen with none; "No match found" is said too; no Ctrl/Cmd-G (the old editor has none)                                                                                                                                                                        |
+| PageDown / PageUp                    | yes: next / previous match from the focused block, never the focused block, wrap with the wrap sound, beep when none, "No search settings have been selected" before anything is chosen. A match inside a collapsed block is skipped (as the old editor); a match in no block is skipped (the old editor stops there)                                                                                                                                                                                                                |
+| Ctrl-F3, Shift-Ctrl-F3               | yes: the rotor over the block types in the program then the last text, the same words                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| sounds                               | yes: the old editor's two files (copied unchanged) at each place it beeps that exists here (14 events, listed in `src/sound.ts`), the wrap sound for search; `playSound` injectable, `sounds: false`, `ed.setSounds`; quiet in jsdom, before the first gesture, on a rejected `play()`. Differs: Delete with nothing selected beeps here, silent there; Enter on an uneditable block and "language has no comments" have no event here                                                                                               |
+| activity log                         | yes: `ed.activityLog()`, `clearActivityLog()`, `exportActivity()`, 200 entries as the old one, the base text kept; every key-table command, click, drag, toolbar button, search step, mode switch and text change; no keystroke inside a box is recorded, the committed text is (the old editor's privacy). `replay(log, startText, make)` gives the same text and tree. Differs: the old log holds reducer actions and the whole program after each change, and its replay drives gestures; this one holds changes and replays them |
+| drag from the toolbar, with a finger | built and tested under Chromium touch emulation only (long press, ghost, finger-sized gaps and holes); NOT verified on a real device; WebKit not installed                                                                                                                                                                                                                                                                                                                                                                           |
 
 ### Final checks of the eighth round (2026-11-16)
+
 jest with `CMB_SEEDS=800 CMB_BIGSEEDS=100`: 745 passed (6 skipped), fuzzers clean; `tsc --noEmit` clean; the whole Chromium suite (port 8177, server stopped): 86 passed (the 65 before plus search 6, touch-toolbar 15).
 Not done: auto-scroll of the editor while a finger drags; anything on a real touch device or in WebKit; replay of gestures (only text changes are replayed); the grammar's tagged-list bug and performance work (skipped on purpose).
 
@@ -1758,6 +1799,7 @@ Order: 1. auto-scroll (committed first), 2. the investigation: inventory, classi
 **The old editor has none.** I searched `packages/codemirror-blocks/src` for autoscroll, `scrollBy`, `scrollTop`: nothing in the drag layer, so a drop target that is off screen could not be reached there either. This is NEW behaviour, not parity.
 
 Built (`src/autoscroll.ts`, 135 lines, no CodeMirror in it; the wiring is in `src/interact.ts`):
+
 - **When**: while a block drag or a toolbar-template drag is ON (after the 5 px of a mouse, after the long press of a finger), the pointer inside the box of `ed.view.scrollDOM` and within a 40 px zone of its top or bottom edge (left or right too, when the content is wider than the box) scrolls it. Outside the box, or in the middle, nothing. If the content does not scroll that way, nothing.
 - **Feel**: speed grows with the depth into the zone, `120 px/s` at the zone's inner border up to `1400 px/s` at the edge, along `depth^1.5` (a gentle start, a quick finish). It runs on animation frames and uses the frames' time stamps, so the speed is the same at 60 and 120 Hz (a frame that comes late moves at most 50 ms worth). Fractions are carried over between frames. 1400 px/s is about 2 screens a second on a 665 px editor; with a JavaScript statement 80 px tall in the demo that is 17 blocks a second. Judgement, not tuned on a hand: `AutoScrollOptions` has `zone`, `minSpeed`, `maxSpeed`.
 - **After every frame** the drop target under the pointer is found again (`elementFromPoint` at the last pointer position), the mark moves, the holes are marked again for a finger drag (`markHoles` now walks the DRAWN blocks, not the whole tree: CodeMirror 6 only draws the viewport, so blocks that scroll into view are new widgets, and the ones that scroll out are gone), and the dragged blocks get their `blocks-drag-source` class again. The drop uses the target under the pointer at the moment of release, so it lands where the user sees it.
@@ -1767,6 +1809,7 @@ Built (`src/autoscroll.ts`, 135 lines, no CodeMirror in it; the wiring is in `sr
 - **Growing gaps** (the last round's worry): while a finger drags, the gaps grow to 44 px; on the demo's 150-statement Scheme document `scrollHeight` goes from 4896 to 5424 px (+528, about 3.5 px per statement) when the long press begins, with `scrollTop` unchanged at that moment (CodeMirror keeps the scroll position, the content below the gaps moves down). While auto-scroll runs the target moves under the finger as CodeMirror measures what it has drawn, so a gap that was under the finger a moment ago may not be: the test aims again (up to 8 times) and a finger does the same by itself. What a person sees is gaps that appear and a list that is longer; I have not judged it on a phone.
 
 Tests:
+
 - `spec/autoscroll.test.ts`, 18 jsdom tests: `edgeDepth` (zone, sign, outside), no scroll outside the zones or when the content does not scroll, scrolls down near the bottom and up near the top with `onFrame` after each frame, faster the closer to the edge and the same distance at 16 ms and 8 ms frames, a late frame does not jump, sideways, stops when the pointer leaves, `stop()`, clamped at both ends; and the wiring with a fake scroller and fake timers, in all three languages: a mouse drag scrolls and the new element under the pointer is marked, Escape cancels and stops, letting go stops, a toolbar drag scrolls down and back up.
 - `e2e/autoscroll.e2e.ts` (Chromium, 150-statement documents, 5 tests per language): mouse, a block dragged from the top (`777`) to a gap that is off screen at the bottom (not even drawn at the start), dropped, one undo restores the text, redo again, and back to a gap at the top; stops when the pointer leaves the zone, on Escape (nothing written), at the document's end (stable, within 2 px of the maximum); a template from the toolbar to the gap at the bottom, one undo restores; touch emulation (CDP touches, a long press): a block dragged to the bottom gap and back to the top, and a template to the bottom gap; the window did not scroll, the visual viewport scale stayed 1, nothing was selected, the editor checker is clean after each drop.
 
@@ -1785,15 +1828,15 @@ Classes: LANGUAGE (a language package's parser, nodes, printing, primitives, or 
 
 Jest, by class:
 
-| class | files | tests |
-|---|---|---|
-| LANGUAGE | 21 | 611 |
-| INTERNAL | 44 | 624 |
-| SAME | 5 | 362 |
-| CHANGED | 8 | 170 |
-| MISSING | 16 | 203 |
-| HARNESS | 8 | 137 |
-| total | 102 | 2107 |
+| class    | files | tests |
+| -------- | ----- | ----- |
+| LANGUAGE | 21    | 611   |
+| INTERNAL | 44    | 624   |
+| SAME     | 5     | 362   |
+| CHANGED  | 8     | 170   |
+| MISSING  | 16    | 203   |
+| HARNESS  | 8     | 137   |
+| total    | 102   | 2107  |
 
 Playwright, by class (166 tests, 25 files): SAME 81 tests / 10 files (collapse-all-focus 3, delete-undo 5, drop-target-scroll 9, edit-literal 2, focus-dropped 1, insert-beside-root 2, matrix 42, moved-blocks 4, press-focus 5, touch 8); CHANGED 27 / 4 (comment-popup 2, edit-comment 16, search 6, undo-focus 3: labels, comment as a block); MISSING 27 / 7 (mode-switch 1, morph 7, motion-sequences 3, reduced-motion 2, toolbar-drag 2, trash-can 6, typing 6: the text/blocks morph and its motion, the toolbar of primitives, the trash can, the quarantine); LANGUAGE 8 / 2 (drop-target-lambda 3, routine 5); INTERNAL 6 / 1 (script-tags: the language bundles); HARNESS 17 / 1 (random: the old fuzzer; counterpart: the soak runner and the fuzzers in `lezer-view.test.ts`).
 
@@ -1801,151 +1844,154 @@ Counterparts here for the INTERNAL and HARNESS classes (what the same guarantee 
 
 Full per-file list, jest (file | tests | class | reason):
 
-| file | tests | class | one-line reason |
-|---|---|---|---|
-| activation-test.ts | 35 | SAME | node activation, navigation, selection through WeScheme text (mixed: 2 tests need the mode toggle and top-level typing) |
-| api-edit-focus-test.ts | 6 | MISSING | API changes (replaceRange) while a block has focus: the CM5 passthrough API |
-| api-selection-test.ts | 16 | MISSING | CM5 selection API passthroughs (getSelections, addSelection, markText...) |
-| api-test.ts | 24 | MISSING | public API: CM5 passthroughs that throw or pass through in each mode |
-| ast-helpers-test.ts | 18 | INTERNAL | describing/finding nodes in the old AST classes; here the tree is BNode (model.test, describe.test) |
-| ast-test.ts | 13 | INTERNAL | the old ASTNode classes (Literal, Sequence, FunctionApp); here BNode (model.test.ts) |
-| attach-comments-test.ts | 24 | INTERNAL | the attachComments algorithm; here comments are blocks (comments.test.ts) |
-| bug-report-test.ts | 12 | INTERNAL | the old activity recorder module and bug report; here activity.ts (activity.test.ts) |
-| bundle-contents-test.ts | 4 | INTERNAL | contents of the old webpack bundle |
-| codemirror-host-test.tsx | 2 | INTERNAL | the CM5 host component |
-| comment-conformance-test.ts | 5 | LANGUAGE | toolkit check that a language's parser keeps comments |
-| comment-rules-test.ts | 29 | LANGUAGE | a language's commentRules |
-| comment-syntax-test.ts | 4 | LANGUAGE | how a language writes comments |
-| comment-test.ts | 3 | INTERNAL | builds quarantines through the redux store (actions.setQuarantine); ported: all 3 skipped |
-| commitChanges-test.ts | 14 | INTERNAL | computeFocusNodeFromChanges / FromHint of commitChanges (here: the focus follows by the operations, spec/fixes, selection) |
-| copypaste-test.ts | 13 | INTERNAL | the copy()/pasteFromClipboard() helper functions (here: the browser's clipboard events, interact.ts) |
-| core-css-test.ts | 3 | INTERNAL | the old stylesheet |
-| defineNode-test.tsx | 12 | INTERNAL | defineNode and the core node definitions |
-| drag-test.ts | 13 | CHANGED | drag a block onto a node/target: pointer events and targets (gaps, holes, root edges) differ: parity table 'drag a block' |
-| drop-targets-test.ts | 15 | CHANGED | drops: gaps are .blocks-gap, no drop on whitespace, no toolbar of primitives, labels from the table; ported 6 of 15 pass after edits |
-| dropTarget-layout-test.tsx | 109 | INTERNAL | the DropTarget component and layout language |
-| edge-cases-test.ts | 22 | MISSING | quarantine open while dragging, unmounting, remounting another language, lambda program, language without primitives: lifecycle and quarantine |
-| edit-errors-test.ts | 25 | CHANGED | edit in place: text that does not parse is accepted here; box is an input; store and mode toggle; ported 14 of 25 pass |
-| editor-history-test.ts | 2 | INTERNAL | CodeMirrorFacade.getTopmostAction |
-| entry-point-test.ts | 12 | MISSING | the CodeMirrorBlocks() entry point and the API object it returns |
-| error-notice-test.ts | 6 | MISSING | the notice that offers to report an error |
-| event-recording-test.ts | 6 | INTERNAL | the old event recorder (here activity.ts, activity.test.ts) |
-| field-replay-test.ts | 7 | HARNESS | replays field reports into the old editor (here: replay() of text changes, activity.test.ts) |
-| fixed-list-test.tsx | 8 | INTERNAL | a core node (FixedList) with a test language |
-| focus-keeper-test.tsx | 13 | INTERNAL | focus.ts, the focus keeper (here: real DOM focus) |
-| focus-recovery-test.ts | 10 | INTERNAL | recovering focus from the placeholder and CM5's scroller (here: no placeholder) |
-| focus-rescue-test.tsx | 2 | INTERNAL | the focus placeholder rescue |
-| focus-test.ts | 9 | CHANGED | focus after delete/insert (second round A3 differs); ported 1 of 9 pass |
-| for-language-test.ts | 7 | INTERNAL | Nodes.forLanguage |
-| if-node-test.tsx | 9 | INTERNAL | the core If node with a test language |
-| insertion-index-test.ts | 49 | INTERNAL | FakeAstInsertion / insertionPos / InsertTarget |
-| interaction-test.ts | 22 | SAME | click, double click, collapse, selection, focus between editor and toolbar; ported 12 of 22 pass (the rest: toolbar, redux store, focus after the last delete) |
-| invariants-test.ts | 5 | HARNESS | the old invariants checker (here: checkLezerEditor, the oracle) |
-| keyboard-commands-test.ts | 43 | SAME | Delete, Enter, Space, arrows, help, Shift-Tab; ported 34 of 43 pass unchanged |
-| lambda-conditional-test.ts | 12 | LANGUAGE | lambda language |
-| lambda-roundtrip-test.ts | 19 | LANGUAGE | lambda language |
-| languages/index-test.ts | 4 | LANGUAGE | language registry |
-| languages/primitives-test.ts | 14 | LANGUAGE | WeScheme primitives |
-| languages/wescheme-forms-test.ts | 115 | LANGUAGE | WeScheme forms |
-| languages/wescheme-parse-test.ts | 8 | LANGUAGE | WeScheme parser |
-| lifecycle-test.ts | 24 | MISSING | text/block mode switching, two editors on a page, unmounting, mount options (pretty-printing part is LANGUAGE) |
-| loop-page-test.ts | 7 | INTERNAL | the core Loop node |
-| markText-test.ts | 15 | MISSING | the markText API and marks across mode switches |
-| new-blocks-test.ts | 16 | MISSING | the CodeMirrorBlocks class: constructor options and events |
-| new-core-nodes-test.tsx | 15 | INTERNAL | core nodes Loop, BinaryOperation, Assignment |
-| node-labels-test.ts | 13 | INTERNAL | node type labels (here: the table's labels, describe.test.ts) |
-| nodeSpec-test.ts | 8 | INTERNAL | nodeSpec() |
-| nodes-test.ts | 42 | CHANGED | what a block says and looks like for each WeScheme form: spoken labels are the table's describe templates |
-| orphan-comments-test.ts | 66 | INTERNAL | which comments go with a node |
-| packages/cmb-toolkit/spec/simulate-test.ts | 40 | HARNESS | the simulate helpers' own tests (compat/test-utils.ts re-implements them) |
-| packages/cmb-toolkit/spec/webpack-test.ts | 17 | INTERNAL | webpack configuration helpers |
-| packages/example/spec/example-test.ts | 19 | LANGUAGE | the example language |
-| packages/lambda/spec/lambda-language-test.ts | 21 | LANGUAGE | lambda |
-| packages/lambda/spec/lambda-parser-test.ts | 17 | LANGUAGE | lambda |
-| packages/wescheme/spec/wescheme-node-conversion-test.js | 107 | LANGUAGE | WeScheme |
-| packages/wescheme/spec/wescheme-parser-edge-test.js | 54 | LANGUAGE | WeScheme parser |
-| paste-test.ts | 24 | CHANGED | copy, paste, cut: paste does not replace a selection; ported 11 of 24 pass |
-| performEdits-test.ts | 48 | INTERNAL | applyEdits / performEdits |
-| pretty-string-test.ts | 6 | LANGUAGE | the pretty printer |
-| printing-test.ts | 10 | LANGUAGE | sexpr / formSexpr / displayLines printing |
-| random-sequences-test.ts | 39 | HARNESS | the old fuzzer (here: lezer-view.test.ts fuzzers, the soak generator) |
-| reserved-types-test.ts | 3 | INTERNAL | reserved node type names |
-| root-blocks-test.ts | 4 | INTERNAL | React memo of unchanged roots |
-| routine-repeat-test.tsx | 5 | LANGUAGE | Routine language |
-| routine-roundtrip-test.ts | 5 | LANGUAGE | Routine language |
-| routine-test.tsx | 20 | LANGUAGE | Routine language |
-| scripts/field-reports.test.js | 13 | HARNESS | field-report ingestion |
-| scripts/soak-lib.test.js | 20 | HARNESS | soak runner library |
-| search-test.tsx | 26 | CHANGED | search dialog, rotor: keydown not keyup, labels of types; ported 15 of 26 pass after edits |
-| searchers-test.tsx | 23 | INTERNAL | the ByString / ByBlock searcher objects (here search.ts, search.test.ts) |
-| sounds-test.ts | 8 | INTERNAL | the inlined sound data (same file here: sound.test.ts) |
-| spoken-text-test.ts | 2 | HARNESS | golden file of spoken text |
-| state/store-test.ts | 16 | INTERNAL | redux store |
-| state/undo-state-test.ts | 5 | INTERNAL | undo bookkeeping in the store |
-| summary-test.ts | 10 | MISSING | the summary read on first opening a program as blocks |
-| switch-page-test.ts | 5 | INTERNAL | a core Switch node |
-| toolbar-drag-test.ts | 8 | MISSING | the toolbar of primitives with search |
-| toolkit/debug-test.ts | 11 | HARNESS | the debug page: download and replay of logs |
-| toplevel-block-memo-test.ts | 2 | INTERNAL | areNodesEqualish |
-| toplevel-input-test.ts | 14 | MISSING | typing and pasting at the top level (the quarantine) |
-| ui/Args-test.tsx | 3 | INTERNAL | React component |
-| ui/BlockEditor-test.tsx | 1 | INTERNAL | React component |
-| ui/ContentEditable-test.tsx | 8 | INTERNAL | React component |
-| ui/Node-test.tsx | 2 | INTERNAL | React component |
-| ui/NodeEditable-test.tsx | 4 | INTERNAL | React component |
-| ui/PrimitiveList-test.tsx | 11 | MISSING | the primitives list |
-| ui/ToggleEditor-test.tsx | 6 | MISSING | the text/blocks toggle |
-| ui/Toolbar-test.tsx | 9 | MISSING | the toolbar of primitives |
-| ui/TrashCan-test.tsx | 4 | MISSING | the trash can |
-| ui/useNodeState-test.tsx | 8 | INTERNAL | React hook |
-| undo-focus-test.ts | 16 | CHANGED | which block has focus after undo/redo; ported 3 of 16 pass |
-| undo-matrix-test.ts | 258 | SAME | undo and redo of every kind of edit (258 tests generated from variants), text and AST |
-| undo-redo-test.ts | 4 | SAME | undo/redo keep the AST in sync with the text |
-| util-helpers-test.ts | 20 | INTERNAL | src/util helpers |
-| util-test.ts | 5 | INTERNAL | minimizeChange, playSound |
-| wescheme-cond-test.tsx | 5 | LANGUAGE | the cond node of WeScheme |
-| wescheme-language-test.ts | 132 | LANGUAGE | WeScheme forms to blocks |
+| file                                                    | tests | class    | one-line reason                                                                                                                                                |
+| ------------------------------------------------------- | ----- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| activation-test.ts                                      | 35    | SAME     | node activation, navigation, selection through WeScheme text (mixed: 2 tests need the mode toggle and top-level typing)                                        |
+| api-edit-focus-test.ts                                  | 6     | MISSING  | API changes (replaceRange) while a block has focus: the CM5 passthrough API                                                                                    |
+| api-selection-test.ts                                   | 16    | MISSING  | CM5 selection API passthroughs (getSelections, addSelection, markText...)                                                                                      |
+| api-test.ts                                             | 24    | MISSING  | public API: CM5 passthroughs that throw or pass through in each mode                                                                                           |
+| ast-helpers-test.ts                                     | 18    | INTERNAL | describing/finding nodes in the old AST classes; here the tree is BNode (model.test, describe.test)                                                            |
+| ast-test.ts                                             | 13    | INTERNAL | the old ASTNode classes (Literal, Sequence, FunctionApp); here BNode (model.test.ts)                                                                           |
+| attach-comments-test.ts                                 | 24    | INTERNAL | the attachComments algorithm; here comments are blocks (comments.test.ts)                                                                                      |
+| bug-report-test.ts                                      | 12    | INTERNAL | the old activity recorder module and bug report; here activity.ts (activity.test.ts)                                                                           |
+| bundle-contents-test.ts                                 | 4     | INTERNAL | contents of the old webpack bundle                                                                                                                             |
+| codemirror-host-test.tsx                                | 2     | INTERNAL | the CM5 host component                                                                                                                                         |
+| comment-conformance-test.ts                             | 5     | LANGUAGE | toolkit check that a language's parser keeps comments                                                                                                          |
+| comment-rules-test.ts                                   | 29    | LANGUAGE | a language's commentRules                                                                                                                                      |
+| comment-syntax-test.ts                                  | 4     | LANGUAGE | how a language writes comments                                                                                                                                 |
+| comment-test.ts                                         | 3     | INTERNAL | builds quarantines through the redux store (actions.setQuarantine); ported: all 3 skipped                                                                      |
+| commitChanges-test.ts                                   | 14    | INTERNAL | computeFocusNodeFromChanges / FromHint of commitChanges (here: the focus follows by the operations, spec/fixes, selection)                                     |
+| copypaste-test.ts                                       | 13    | INTERNAL | the copy()/pasteFromClipboard() helper functions (here: the browser's clipboard events, interact.ts)                                                           |
+| core-css-test.ts                                        | 3     | INTERNAL | the old stylesheet                                                                                                                                             |
+| defineNode-test.tsx                                     | 12    | INTERNAL | defineNode and the core node definitions                                                                                                                       |
+| drag-test.ts                                            | 13    | CHANGED  | drag a block onto a node/target: pointer events and targets (gaps, holes, root edges) differ: parity table 'drag a block'                                      |
+| drop-targets-test.ts                                    | 15    | CHANGED  | drops: gaps are .blocks-gap, no drop on whitespace, no toolbar of primitives, labels from the table; ported 6 of 15 pass after edits                           |
+| dropTarget-layout-test.tsx                              | 109   | INTERNAL | the DropTarget component and layout language                                                                                                                   |
+| edge-cases-test.ts                                      | 22    | MISSING  | quarantine open while dragging, unmounting, remounting another language, lambda program, language without primitives: lifecycle and quarantine                 |
+| edit-errors-test.ts                                     | 25    | CHANGED  | edit in place: text that does not parse is accepted here; box is an input; store and mode toggle; ported 14 of 25 pass                                         |
+| editor-history-test.ts                                  | 2     | INTERNAL | CodeMirrorFacade.getTopmostAction                                                                                                                              |
+| entry-point-test.ts                                     | 12    | MISSING  | the CodeMirrorBlocks() entry point and the API object it returns                                                                                               |
+| error-notice-test.ts                                    | 6     | MISSING  | the notice that offers to report an error                                                                                                                      |
+| event-recording-test.ts                                 | 6     | INTERNAL | the old event recorder (here activity.ts, activity.test.ts)                                                                                                    |
+| field-replay-test.ts                                    | 7     | HARNESS  | replays field reports into the old editor (here: replay() of text changes, activity.test.ts)                                                                   |
+| fixed-list-test.tsx                                     | 8     | INTERNAL | a core node (FixedList) with a test language                                                                                                                   |
+| focus-keeper-test.tsx                                   | 13    | INTERNAL | focus.ts, the focus keeper (here: real DOM focus)                                                                                                              |
+| focus-recovery-test.ts                                  | 10    | INTERNAL | recovering focus from the placeholder and CM5's scroller (here: no placeholder)                                                                                |
+| focus-rescue-test.tsx                                   | 2     | INTERNAL | the focus placeholder rescue                                                                                                                                   |
+| focus-test.ts                                           | 9     | CHANGED  | focus after delete/insert (second round A3 differs); ported 1 of 9 pass                                                                                        |
+| for-language-test.ts                                    | 7     | INTERNAL | Nodes.forLanguage                                                                                                                                              |
+| if-node-test.tsx                                        | 9     | INTERNAL | the core If node with a test language                                                                                                                          |
+| insertion-index-test.ts                                 | 49    | INTERNAL | FakeAstInsertion / insertionPos / InsertTarget                                                                                                                 |
+| interaction-test.ts                                     | 22    | SAME     | click, double click, collapse, selection, focus between editor and toolbar; ported 12 of 22 pass (the rest: toolbar, redux store, focus after the last delete) |
+| invariants-test.ts                                      | 5     | HARNESS  | the old invariants checker (here: checkLezerEditor, the oracle)                                                                                                |
+| keyboard-commands-test.ts                               | 43    | SAME     | Delete, Enter, Space, arrows, help, Shift-Tab; ported 34 of 43 pass unchanged                                                                                  |
+| lambda-conditional-test.ts                              | 12    | LANGUAGE | lambda language                                                                                                                                                |
+| lambda-roundtrip-test.ts                                | 19    | LANGUAGE | lambda language                                                                                                                                                |
+| languages/index-test.ts                                 | 4     | LANGUAGE | language registry                                                                                                                                              |
+| languages/primitives-test.ts                            | 14    | LANGUAGE | WeScheme primitives                                                                                                                                            |
+| languages/wescheme-forms-test.ts                        | 115   | LANGUAGE | WeScheme forms                                                                                                                                                 |
+| languages/wescheme-parse-test.ts                        | 8     | LANGUAGE | WeScheme parser                                                                                                                                                |
+| lifecycle-test.ts                                       | 24    | MISSING  | text/block mode switching, two editors on a page, unmounting, mount options (pretty-printing part is LANGUAGE)                                                 |
+| loop-page-test.ts                                       | 7     | INTERNAL | the core Loop node                                                                                                                                             |
+| markText-test.ts                                        | 15    | MISSING  | the markText API and marks across mode switches                                                                                                                |
+| new-blocks-test.ts                                      | 16    | MISSING  | the CodeMirrorBlocks class: constructor options and events                                                                                                     |
+| new-core-nodes-test.tsx                                 | 15    | INTERNAL | core nodes Loop, BinaryOperation, Assignment                                                                                                                   |
+| node-labels-test.ts                                     | 13    | INTERNAL | node type labels (here: the table's labels, describe.test.ts)                                                                                                  |
+| nodeSpec-test.ts                                        | 8     | INTERNAL | nodeSpec()                                                                                                                                                     |
+| nodes-test.ts                                           | 42    | CHANGED  | what a block says and looks like for each WeScheme form: spoken labels are the table's describe templates                                                      |
+| orphan-comments-test.ts                                 | 66    | INTERNAL | which comments go with a node                                                                                                                                  |
+| packages/cmb-toolkit/spec/simulate-test.ts              | 40    | HARNESS  | the simulate helpers' own tests (compat/test-utils.ts re-implements them)                                                                                      |
+| packages/cmb-toolkit/spec/webpack-test.ts               | 17    | INTERNAL | webpack configuration helpers                                                                                                                                  |
+| packages/example/spec/example-test.ts                   | 19    | LANGUAGE | the example language                                                                                                                                           |
+| packages/lambda/spec/lambda-language-test.ts            | 21    | LANGUAGE | lambda                                                                                                                                                         |
+| packages/lambda/spec/lambda-parser-test.ts              | 17    | LANGUAGE | lambda                                                                                                                                                         |
+| packages/wescheme/spec/wescheme-node-conversion-test.js | 107   | LANGUAGE | WeScheme                                                                                                                                                       |
+| packages/wescheme/spec/wescheme-parser-edge-test.js     | 54    | LANGUAGE | WeScheme parser                                                                                                                                                |
+| paste-test.ts                                           | 24    | CHANGED  | copy, paste, cut: paste does not replace a selection; ported 11 of 24 pass                                                                                     |
+| performEdits-test.ts                                    | 48    | INTERNAL | applyEdits / performEdits                                                                                                                                      |
+| pretty-string-test.ts                                   | 6     | LANGUAGE | the pretty printer                                                                                                                                             |
+| printing-test.ts                                        | 10    | LANGUAGE | sexpr / formSexpr / displayLines printing                                                                                                                      |
+| random-sequences-test.ts                                | 39    | HARNESS  | the old fuzzer (here: lezer-view.test.ts fuzzers, the soak generator)                                                                                          |
+| reserved-types-test.ts                                  | 3     | INTERNAL | reserved node type names                                                                                                                                       |
+| root-blocks-test.ts                                     | 4     | INTERNAL | React memo of unchanged roots                                                                                                                                  |
+| routine-repeat-test.tsx                                 | 5     | LANGUAGE | Routine language                                                                                                                                               |
+| routine-roundtrip-test.ts                               | 5     | LANGUAGE | Routine language                                                                                                                                               |
+| routine-test.tsx                                        | 20    | LANGUAGE | Routine language                                                                                                                                               |
+| scripts/field-reports.test.js                           | 13    | HARNESS  | field-report ingestion                                                                                                                                         |
+| scripts/soak-lib.test.js                                | 20    | HARNESS  | soak runner library                                                                                                                                            |
+| search-test.tsx                                         | 26    | CHANGED  | search dialog, rotor: keydown not keyup, labels of types; ported 15 of 26 pass after edits                                                                     |
+| searchers-test.tsx                                      | 23    | INTERNAL | the ByString / ByBlock searcher objects (here search.ts, search.test.ts)                                                                                       |
+| sounds-test.ts                                          | 8     | INTERNAL | the inlined sound data (same file here: sound.test.ts)                                                                                                         |
+| spoken-text-test.ts                                     | 2     | HARNESS  | golden file of spoken text                                                                                                                                     |
+| state/store-test.ts                                     | 16    | INTERNAL | redux store                                                                                                                                                    |
+| state/undo-state-test.ts                                | 5     | INTERNAL | undo bookkeeping in the store                                                                                                                                  |
+| summary-test.ts                                         | 10    | MISSING  | the summary read on first opening a program as blocks                                                                                                          |
+| switch-page-test.ts                                     | 5     | INTERNAL | a core Switch node                                                                                                                                             |
+| toolbar-drag-test.ts                                    | 8     | MISSING  | the toolbar of primitives with search                                                                                                                          |
+| toolkit/debug-test.ts                                   | 11    | HARNESS  | the debug page: download and replay of logs                                                                                                                    |
+| toplevel-block-memo-test.ts                             | 2     | INTERNAL | areNodesEqualish                                                                                                                                               |
+| toplevel-input-test.ts                                  | 14    | MISSING  | typing and pasting at the top level (the quarantine)                                                                                                           |
+| ui/Args-test.tsx                                        | 3     | INTERNAL | React component                                                                                                                                                |
+| ui/BlockEditor-test.tsx                                 | 1     | INTERNAL | React component                                                                                                                                                |
+| ui/ContentEditable-test.tsx                             | 8     | INTERNAL | React component                                                                                                                                                |
+| ui/Node-test.tsx                                        | 2     | INTERNAL | React component                                                                                                                                                |
+| ui/NodeEditable-test.tsx                                | 4     | INTERNAL | React component                                                                                                                                                |
+| ui/PrimitiveList-test.tsx                               | 11    | MISSING  | the primitives list                                                                                                                                            |
+| ui/ToggleEditor-test.tsx                                | 6     | MISSING  | the text/blocks toggle                                                                                                                                         |
+| ui/Toolbar-test.tsx                                     | 9     | MISSING  | the toolbar of primitives                                                                                                                                      |
+| ui/TrashCan-test.tsx                                    | 4     | MISSING  | the trash can                                                                                                                                                  |
+| ui/useNodeState-test.tsx                                | 8     | INTERNAL | React hook                                                                                                                                                     |
+| undo-focus-test.ts                                      | 16    | CHANGED  | which block has focus after undo/redo; ported 3 of 16 pass                                                                                                     |
+| undo-matrix-test.ts                                     | 258   | SAME     | undo and redo of every kind of edit (258 tests generated from variants), text and AST                                                                          |
+| undo-redo-test.ts                                       | 4     | SAME     | undo/redo keep the AST in sync with the text                                                                                                                   |
+| util-helpers-test.ts                                    | 20    | INTERNAL | src/util helpers                                                                                                                                               |
+| util-test.ts                                            | 5     | INTERNAL | minimizeChange, playSound                                                                                                                                      |
+| wescheme-cond-test.tsx                                  | 5     | LANGUAGE | the cond node of WeScheme                                                                                                                                      |
+| wescheme-language-test.ts                               | 132   | LANGUAGE | WeScheme forms to blocks                                                                                                                                       |
 
 Full per-file list, Playwright (file | tests | class | reason): collapse-all-focus 3 SAME (focus after collapse all); comment-popup 2 CHANGED (the balloon of a comment: a comment is its own block here); delete-undo 5 SAME; drop-target-lambda 3 LANGUAGE (lambda); drop-target-scroll 9 SAME (a click on a drop target, also after scrolling); edit-comment 16 CHANGED (comment editing from the keyboard: Edit Comment on a block, comment as a block); edit-literal 2 SAME (click and Enter open the box, text selected); focus-dropped 1 SAME; insert-beside-root 2 SAME (Ctrl-[ and Ctrl-]); matrix 42 SAME (undo/redo of every operation, 3 kinds of document); mode-switch 1 MISSING (text/blocks toggle); morph 7 MISSING (the animated morph between text and blocks); motion-sequences 3 MISSING (random sequences with the motion on); moved-blocks 4 SAME; press-focus 5 SAME; random 17 HARNESS (random sequences); reduced-motion 2 MISSING (the morph's motion); routine 5 LANGUAGE (Routine); script-tags 6 INTERNAL (language script tags in the bundles); search 6 CHANGED (labels, keys); toolbar-drag 2 MISSING (toolbar of primitives); touch 8 SAME (touch dragging, long press; counterpart `e2e/touch.e2e.ts`); trash-can 6 MISSING (the trash can); typing 6 MISSING (typing at the top level: the quarantine); undo-focus 3 CHANGED (which block has focus after undo/redo).
 
 #### 2c. What moving one costs: the compatibility layer (built)
 
 The old tests are written against `src/toolkit/test-utils.tsx` (`mountCMB`, `teardown`, `mouseDown`, `click`, `keyDown`, `insertText`, `elementForNode`...), `cmb-toolkit/simulate.ts`, `spec/helpers/*` (`gestures`, `dnd`, `editing`, `clipboard`), the API object (`cmb.getAst()`, `getValue`, `setValue`, `getFocusedNode`...), AST nodes (`.element`, `.id`, `.from` as `{line, ch}`, `.fields.func`) and the DOM (ids `block-node-<id>`, aria labels like `f expression, 2 inputs`, `aria-activedescendent`). Built, for tests only, in `packages/cm6-blocks/spec/compat/` (about 560 lines; nothing in it imports React, CodeMirror 5 or `@bootstrapworld/*`; it uses `@testing-library/dom`, not the React one):
+
 - `api.ts`: `makeAPI(ed)`, an object with the old API's shape over a `LezerBlockEditor` (getValue, setValue, getAst, getFocusedNode, getSelectedNodes, setBlockMode / getBlockMode (always blocks), setCursor, getCursor, setSelection, listSelections, somethingSelected, replaceRange, lastLine, getLine, historySize, clearHistory, undo, redo, focus, hasFocus, getScrollerElement, getWrapperElement, a thin getCM); `ASTNode` (cached, so `toBe` works: id, element, from, to as `{line, ch}`, type, value, level, parent, children(), fields (the table's slots by name: `func`, `args`...)); `AST` (rootNodes, getNodeById, getAllNodes, toString). The methods it does not have throw "not in the compat layer: cmb.X".
 - `test-utils.ts`: `mountCMB`, `teardown`, `mouseDown` (pointerdown + mousedown + the focus a browser gives), `click`, `doubleClick`, `keyDown` (adds what a browser does: Ctrl/Cmd-C, X, V fire the copy, cut and paste events with the clipboard; a capital letter with Ctrl is sent lower case), `keyPress`, `insertText`, `paste`, `cut`, `blur`, `elementForNode`, `isNodeEditable`, `wait`, `cmd_ctrl`, `mac`; `mountCMB` ignores its language argument (the Scheme table is used) and makes `ed.say` and the sounds call `compat/announcer.say` and `compat/utils.playSound` (so the old `jest.spyOn(announcer, "say")` works); after every test that mounted one it closes open boxes and runs the editor's own oracle `checkLezerEditor`. Also `testing-library.ts` (`screen`, `fireEvent` with the React `change` = the browser's `input`, `act` as identity), `gestures.ts`, `dnd.ts` (the old pointer `drag(src).dropOnto(...)`: the old editor also drags with pointer events, so it moved over as it is), `editing.ts` (`setEditableText` sets an input's value), `clipboard.ts` (`installFakeClipboard`), `wescheme.ts` (a token for `import wescheme`), `announcer.ts`, `utils.ts`, `actions.ts`, `ByBlock.ts`, `global-setup.ts` (stubs for what a test imports from the old source).
 - Playwright: `e2e/compat/helpers.ts`: `openInBlockMode` (opens the demo page and writes the program; no toggle to click), `block`, `snapshot`, `expectConsistent` (uses the editor's `demo.check()`), `undoAll`, `redoAll`, `center`, `MOD`.
 - `scripts/port-test.py` copies an old spec into `spec/ported/` changing only its imports (and adds `// @ts-nocheck`, since the old types are not here); `scripts/ported-report.sh <name>` lists what fails; `scripts/ported-ledger.py` adds `it.skip` with the reason to the tests that fail.
 
 How often the old tests use what (grep over the 25 SAME / CHANGED / MISSING jest files that are about behaviour), and what is built:
-| used | count | built |
-|---|---|---|
-| `keyDown` 322, `mouseDown` 142, `mountCMB` 39, `drag` 38, `setEditableText` 36, `select` 32, `act` 26, `click` 24, `teardown` 19, `elementForNode` 19, `typeChar` 18, `paste` 13, `dragOnto` 13, `dropOnWhitespace` 11, `isNodeEditable` 8, `toolbarPrimitive` 7, `pasteAtCursor` 6, `insertText` 6, `doubleClick` 6, `dropTargets` 5, `keyPress` 4, `installFakeClipboard` 4, `blur` 2 | | all built (but `typeChar`, `pasteAtCursor`, `dropOnWhitespace`, `toolbarPrimitive` have no feature behind them here) |
-| `cmb.getValue` 208, `setValue` 179, `getAst` 86, `getFocusedNode` 65, `setBlockMode` 64, `setCursor` 43, `getSelectedNodes` 39, `clearHistory` 33, `historySize` 31, `setSelection` 23, `replaceRange` 22, `getCM` 19, `listSelections` 14, `getCursor` 13, `getWrapperElement` 12, `undo` 11, `redo` 9, `focus` 9, `somethingSelected` 8, `lastLine` 7, `getLine` 6, `hasFocus` 4, `getScrollerElement` 4, `getBlockMode` 3 | | built (`setBlockMode(false)` does nothing: there is no text mode; `clearHistory` only forgets the depth, CodeMirror 6 history cannot be cleared; `getCM` has four methods; `setSelection` is the text selection) |
-| `setSelections` 8, `getSelections` 7, `addSelection` 6, `replaceSelection` 5, `getSelection` 4, `getHistory` 4, `markText` 3, `getLineHandle` 3, `startOperation` 2, `setSize` 2, `setHistory` 2, `setGutterMarker` 2, `setBookmark` 2, `scrollTo` 2, `scrollIntoView` 2, `runMode` 2 | | NOT built (CM5 passthroughs, 53 uses in total), they throw "not in the compat layer" |
-| node props: `.rootNodes` 85, `.element` 69, `.id` 67, `.from` 18, `.value` 15, `.to` 9, `.type` 5, `.options` 6, `.hash` (a few), `.fields` | | built except `.options` and `.hash` |
+
+| used                                                                                                                                                                                                                                                                                                                                                                                                                         | count | built                                                                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `keyDown` 322, `mouseDown` 142, `mountCMB` 39, `drag` 38, `setEditableText` 36, `select` 32, `act` 26, `click` 24, `teardown` 19, `elementForNode` 19, `typeChar` 18, `paste` 13, `dragOnto` 13, `dropOnWhitespace` 11, `isNodeEditable` 8, `toolbarPrimitive` 7, `pasteAtCursor` 6, `insertText` 6, `doubleClick` 6, `dropTargets` 5, `keyPress` 4, `installFakeClipboard` 4, `blur` 2                                      |       | all built (but `typeChar`, `pasteAtCursor`, `dropOnWhitespace`, `toolbarPrimitive` have no feature behind them here)                                                                                             |
+| `cmb.getValue` 208, `setValue` 179, `getAst` 86, `getFocusedNode` 65, `setBlockMode` 64, `setCursor` 43, `getSelectedNodes` 39, `clearHistory` 33, `historySize` 31, `setSelection` 23, `replaceRange` 22, `getCM` 19, `listSelections` 14, `getCursor` 13, `getWrapperElement` 12, `undo` 11, `redo` 9, `focus` 9, `somethingSelected` 8, `lastLine` 7, `getLine` 6, `hasFocus` 4, `getScrollerElement` 4, `getBlockMode` 3 |       | built (`setBlockMode(false)` does nothing: there is no text mode; `clearHistory` only forgets the depth, CodeMirror 6 history cannot be cleared; `getCM` has four methods; `setSelection` is the text selection) |
+| `setSelections` 8, `getSelections` 7, `addSelection` 6, `replaceSelection` 5, `getSelection` 4, `getHistory` 4, `markText` 3, `getLineHandle` 3, `startOperation` 2, `setSize` 2, `setHistory` 2, `setGutterMarker` 2, `setBookmark` 2, `scrollTo` 2, `scrollIntoView` 2, `runMode` 2                                                                                                                                        |       | NOT built (CM5 passthroughs, 53 uses in total), they throw "not in the compat layer"                                                                                                                             |
+| node props: `.rootNodes` 85, `.element` 69, `.id` 67, `.from` 18, `.value` 15, `.to` 9, `.type` 5, `.options` 6, `.hash` (a few), `.fields`                                                                                                                                                                                                                                                                                  |       | built except `.options` and `.hash`                                                                                                                                                                              |
 
 #### 2d. The sample: 12 files moved (jest: 10 files + `undo-matrix`; Playwright: 2)
 
 `spec/ported/*.test.ts(x)` and `e2e/ported/*.e2e.ts` are copies of the old files with only their imports changed to the compat layer (the header says so), then: documented-change edits (labels, selectors, key events) listed per file, and `it.skip` with a comment `// SKIPPED (class): reason` for what fails. Classes of a skip: **U** an undocumented difference (a finding), **D** a documented behaviour change that cannot be fixed by editing the expectation, **M** a missing feature or helper, **I** the test is tied to the old internals (redux store, a searcher object). Numbers: raw = only the imports changed, run with the final compat layer.
 
-| file (old tests) | raw: pass / fail | after edits: pass as is | pass after an edit | skipped U / D / M / I |
-|---|---|---|---|---|
-| activation-test (35) | 19 / 16 | 19 | 0 | 14 / 0 / 2 / 0 |
-| keyboard-commands-test (43) | 34 / 9 | 34 | 0 | 7 / 1 / 1 / 0 |
-| paste-test (24) | 11 / 13 | 11 | 0 | 5 / 6 / 2 / 0 |
-| interaction-test (22) | 12 / 10 | 12 | 0 | 1 / 0 / 7 / 2 |
-| drop-targets-test (15) | 0 / 15 | 0 | 6 | 0 / 1 / 8 / 0 |
-| undo-focus-test (16) | 3 / 13 | 3 | 0 | 6 / 3 / 4 / 0 |
-| focus-test (9) | 1 / 8 | 1 | 0 | 4 / 2 / 2 / 0 |
-| edit-errors-test (25) | 14 / 11 | 14 | 0 | 1 / 6 / 2 / 2 |
-| comment-test (3) | 0 / 3 | 0 | 0 | 0 / 1 / 0 / 2 |
-| search-test (26) | 6 / 20 | 6 | 9 | 2 / 7 / 1 / 1 |
-| undo-matrix-test (258) | 144 / 114 | 129 | 16 | 0 / 16 / 97 / 0 |
-| jest total (476) | 244 (51%) / 232 | 229 | 31 | 40 / 43 / 126 / 7 |
+| file (old tests)            | raw: pass / fail | after edits: pass as is | pass after an edit | skipped U / D / M / I |
+| --------------------------- | ---------------- | ----------------------- | ------------------ | --------------------- |
+| activation-test (35)        | 19 / 16          | 19                      | 0                  | 14 / 0 / 2 / 0        |
+| keyboard-commands-test (43) | 34 / 9           | 34                      | 0                  | 7 / 1 / 1 / 0         |
+| paste-test (24)             | 11 / 13          | 11                      | 0                  | 5 / 6 / 2 / 0         |
+| interaction-test (22)       | 12 / 10          | 12                      | 0                  | 1 / 0 / 7 / 2         |
+| drop-targets-test (15)      | 0 / 15           | 0                       | 6                  | 0 / 1 / 8 / 0         |
+| undo-focus-test (16)        | 3 / 13           | 3                       | 0                  | 6 / 3 / 4 / 0         |
+| focus-test (9)              | 1 / 8            | 1                       | 0                  | 4 / 2 / 2 / 0         |
+| edit-errors-test (25)       | 14 / 11          | 14                      | 0                  | 1 / 6 / 2 / 2         |
+| comment-test (3)            | 0 / 3            | 0                       | 0                  | 0 / 1 / 0 / 2         |
+| search-test (26)            | 6 / 20           | 6                       | 9                  | 2 / 7 / 1 / 1         |
+| undo-matrix-test (258)      | 144 / 114        | 129                     | 16                 | 0 / 16 / 97 / 0       |
+| jest total (476)            | 244 (51%) / 232  | 229                     | 31                 | 40 / 43 / 126 / 7     |
 
 Edits for documented changes (the only edits besides skips): drop-targets and undo-matrix: `getNodeLabeled(/^a,/)` to `/^a\b|symbol a$/` and `/f expression/` to `/call to f /` (the labels are the table's `describe` templates, second round D) and the drop-target selector `.blocks-drop-target` to `.blocks-gap`; search: `fireEvent.keyUp` to `keyDown` (the dialog acts on keydown, eighth round), the block types `functionApp` and `function application` to `call` (types by the table's label). Everything else is in the compat layer (a `change` event is also an `input` event; a capital letter with Ctrl is lower case; Ctrl/Cmd-C/X/V fire the clipboard events).
 
 The undocumented differences found by the sample (findings; most important first, each with what the old editor does and what this one does; every test is left as `it.skip` with its reason, none is hidden):
+
 1. **No `aria-activedescendent` on the scroller, and ids are `cmb6-node-<id>`.** Old: the scroller (the CodeMirror wrapper) carries `aria-activedescendent` (spelled so) pointing at the active block, and a block's id is `block-node-<id>`. Here: focus is the real DOM focus on the block element; nothing is set on the scroller. 9 sampled tests (activation 9). A screen reader works with real focus, so this may be right; it is a design difference nobody wrote down.
 2. **Removing a top-level block removes its line.** Old: Delete or Cut of a root leaves the line (`"\n54"` from `"11\n54"`, trailing newline kept). Here: the line goes (`"54"`). 4 tests in activation. Judgement needed: the text is the truth either way.
 3. **Arrow keys from the text input with no block focused.** Old: ArrowDown / ArrowUp with the focus in the editor's input and the cursor between blocks activate the block after / before the cursor. Here: nothing happens until a block has the focus. 3 tests (activation 2, keyboard-commands 1). Small to add.
@@ -1962,6 +2008,7 @@ The undocumented differences found by the sample (findings; most important first
 Playwright sample (`e2e/ported/`, 9 tests; the demo page instead of the example page): `search.e2e.ts` (6): raw (the old labels) 0 of 6 pass (every test fails in its `beforeEach`, which finds the first block by `/^f expression/`); after the label edits (`/^call to f /`, `"x,"` to `"symbol x"`, `functionApp` to `call`) **5 of 6 pass**, the sixth is `test.fixme` (M: the demo page has a second combobox, the language chooser; a page difference). `undo-focus.e2e.ts` (3): raw not measured (labels); after the label edits 0 of 3: one is D (focus after a delete, A3), one is M (typing at the top level), one is M (the page's clipboard permission, to check again): all `test.fixme` with the reason. Playwright total 9 tests: 5 pass after edits, 4 fixme.
 
 Missing features, by the number of old tests they block (jest + Playwright, counting the files classed MISSING and the variants skipped in `undo-matrix`):
+
 1. **The CM5 public API** (`getSelections`, `markText`, `getHistory`, `replaceSelection`, the `CodeMirrorBlocks()` entry point and its events, constructor options): 89 jest tests in 6 files (`api-test`, `api-selection`, `api-edit-focus`, `markText`, `new-blocks`, `entry-point`) plus 53 uses inside behaviour files.
 2. **The toolbar of primitives and its search** (`.Primitive`, drag from it, the search box): 28 jest tests in 3 files plus 32 `undo-matrix` tests, 2 Playwright tests (this editor has templates and buttons, a page makes the toolbar).
 3. **Typing and pasting at the top level (the quarantine)**: `toplevel-input` 14, `edge-cases` 22 (partly), 16 `undo-matrix`, 6 Playwright (`typing`), several in sampled files.
@@ -1975,15 +2022,16 @@ Missing features, by the number of old tests they block (jest + Playwright, coun
 Basis: **measured** on the 12 sampled files (476 jest tests + 9 Playwright tests: 476 of the 735 jest behaviour tests, 65%, but 258 of them are the one generated file `undo-matrix`; the MISSING class is not sampled, it is blocked by definition), **extrapolated** for the rest by the class's measured rate; the LANGUAGE, INTERNAL and HARNESS classes are classification only.
 
 Jest (2107 tests):
-| class | tests | pass as is | pass with edited expectations | blocked on a missing feature | differ (documented, or a finding to decide) | not coming over |
-|---|---|---|---|---|---|---|
-| SAME | 362 | 196 (measured 194 of 358, extrapolated 2 of 4) | 16 | 109 (measured: matrix 97, interaction 7, activation 2, keyboard 1, plus the 2 internals) | 41 (17 documented + 22 undocumented, measured) | 0 |
-| CHANGED | 170 | 52 (measured 35 of 115, extrapolated 17 of 55) | 22 (measured 15, extrapolated 7: labels in `nodes-test`, targets in `drag-test`) | 28 (measured 19, extrapolated 9) | 68 (measured 46 = 25 documented + 18 findings + 3 internal; extrapolated 22) | 0 |
-| MISSING | 203 | 0 | 0 | 203 (API 89, mode and lifecycle 30, toolbar 28, quarantine and edge cases 36, summary 10, error notice 6, trash 4) | 0 | 0 |
-| LANGUAGE | 611 | | | | | 611 |
-| INTERNAL | 624 | | | | | 624 |
-| HARNESS | 137 | | | | | 137 |
-| total | 2107 | 248 | 38 | 340 | 109 | 1372 |
+
+| class    | tests | pass as is                                     | pass with edited expectations                                                    | blocked on a missing feature                                                                                       | differ (documented, or a finding to decide)                                  | not coming over |
+| -------- | ----- | ---------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | --------------- |
+| SAME     | 362   | 196 (measured 194 of 358, extrapolated 2 of 4) | 16                                                                               | 109 (measured: matrix 97, interaction 7, activation 2, keyboard 1, plus the 2 internals)                           | 41 (17 documented + 22 undocumented, measured)                               | 0               |
+| CHANGED  | 170   | 52 (measured 35 of 115, extrapolated 17 of 55) | 22 (measured 15, extrapolated 7: labels in `nodes-test`, targets in `drag-test`) | 28 (measured 19, extrapolated 9)                                                                                   | 68 (measured 46 = 25 documented + 18 findings + 3 internal; extrapolated 22) | 0               |
+| MISSING  | 203   | 0                                              | 0                                                                                | 203 (API 89, mode and lifecycle 30, toolbar 28, quarantine and edge cases 36, summary 10, error notice 6, trash 4) | 0                                                                            | 0               |
+| LANGUAGE | 611   |                                                |                                                                                  |                                                                                                                    |                                                                              | 611             |
+| INTERNAL | 624   |                                                |                                                                                  |                                                                                                                    |                                                                              | 624             |
+| HARNESS  | 137   |                                                |                                                                                  |                                                                                                                    |                                                                              | 137             |
+| total    | 2107  | 248                                            | 38                                                                               | 340                                                                                                                | 109                                                                          | 1372            |
 
 So of the 735 jest tests that are about behaviour, **about 286 (39%) could move over with nothing or an edited expectation** (248 as they are, 38 after the documented label, key and selector edits); **about 340 (46%) wait for a feature**; **about 109 (15%) differ and need a decision** (some of those are documented changes that make the old expectation wrong; some are the undocumented differences above). 1372 (65% of all jest tests) are not behaviour tests of this editor. Playwright (166): SAME 81, CHANGED 27, MISSING 27, LANGUAGE 8, INTERNAL 6, HARNESS 17; the 9 sampled: 5 pass after label edits (extrapolated to the behaviour files, roughly half of SAME and CHANGED, about 50 to 55 of the 108, would pass once the demo page has what the old page has: a block label helper and the clipboard permission; not measured beyond the sample).
 
@@ -1992,6 +2040,7 @@ Pass rates measured on the sample: SAME files 58% raw (209 of 358, the matrix in
 The cheapest next step to raise the number: the undocumented differences 1 to 3, 5 and 6 above are each a few lines (`aria-activedescendent` and the `block-node-` id; arrow keys from the cursor; focus to the editor after the last delete; empty box keeps the block; whether a root's line stays) and they unlock about 40 of the 476 sampled tests, so roughly 90 of the 735; after that the biggest block is the CM5 passthrough API in the compat layer (`getSelections`, `setSelections`, `addSelection`, `replaceSelection`, `getHistory`, `markText`: 53 uses, a few lines each over CodeMirror 6's selection and `markText` over decorations) which raises the SAME and CHANGED files without any change to the editor; then a toolbar-of-primitives helper for tests (a `.Primitive` list over the templates) for 60 tests, and the quarantine decision (typing at the top level) for about 58.
 
 ### Final checks of the ninth round
+
 - `npx jest packages/cm6-blocks`: 1023 passed, 222 skipped (the ported files' skips: 216 of them in the 11 ported jest files, 6 earlier ones), 2 suites skipped whole (comment, and one all-skip file); `tsc --noEmit -p packages/cm6-blocks` clean.
 - The whole Chromium suite (port 8177, server stopped afterwards): **106 passed, 4 skipped** (the 4 `test.fixme` of the ported Playwright files), 0 failed; the 15 new auto-scroll tests and the 5 passing ported tests are in it.
 - Not done: auto-scroll was checked in Chromium emulation only (no real touch device, no WebKit; the iOS rule for the extra `touchmove` listener is read, not tested); the CM5 passthrough API (`getSelections` and the rest of the 53 uses), the toolbar-of-primitives helper, the quarantine, and the other 13 old Playwright behaviour files were not ported; `undo-redo-test` (4), `drag-test` (13) and `nodes-test` (42) are estimated, not run; `clearHistory` in the compat layer only forgets the depth.
@@ -2042,20 +2091,20 @@ The full Chromium suite after difference 2 (run before differences 3 to 6): 106 
 - Ported tests un-skipped: 15 jest (difference 1: 8, difference 2: 2 (a third passes its text and focus but fails the cursor snapshot of finding 13 and stays skipped), difference 3: 3, difference 5: 1, difference 6: 1). Playwright ported files unchanged (search 5 of 6, undo-focus 0 of 3: their skips are not about these differences).
 - Sample, jest, passes of the 476 sampled tests (old = ninth round's table, after edits 229 as is + 31 edited = 260): now 275 pass (58%), 201 skipped, 0 fail.
 
-| file (old tests) | pass before (as is + edited) | pass now | skipped now |
-|---|---|---|---|
-| activation (35) | 19 | 30 | 5 |
-| keyboard-commands (43) | 34 | 35 | 8 |
-| paste (24) | 11 | 11 | 13 |
-| interaction (22) | 12 | 13 | 9 |
-| drop-targets (15) | 6 | 6 | 9 |
-| undo-focus (16) | 3 | 3 | 13 |
-| focus (9) | 1 | 2 | 7 |
-| edit-errors (25) | 14 | 15 | 10 |
-| comment (3) | 0 | 0 | 3 |
-| search (26) | 15 | 15 | 11 |
-| undo-matrix (258) | 145 | 145 | 113 |
-| total (476) | 260 | 275 | 201 |
+| file (old tests)       | pass before (as is + edited) | pass now | skipped now |
+| ---------------------- | ---------------------------- | -------- | ----------- |
+| activation (35)        | 19                           | 30       | 5           |
+| keyboard-commands (43) | 34                           | 35       | 8           |
+| paste (24)             | 11                           | 11       | 13          |
+| interaction (22)       | 12                           | 13       | 9           |
+| drop-targets (15)      | 6                            | 6        | 9           |
+| undo-focus (16)        | 3                            | 3        | 13          |
+| focus (9)              | 1                            | 2        | 7           |
+| edit-errors (25)       | 14                           | 15       | 10          |
+| comment (3)            | 0                            | 0        | 3           |
+| search (26)            | 15                           | 15       | 11          |
+| undo-matrix (258)      | 145                          | 145      | 113         |
+| total (476)            | 260                          | 275      | 201         |
 
 - A fix that broke tests that passed before: difference 2 changed 6 of this editor's own tests (3 in `lezer-view.test.ts`, 2 in `move.test.ts`, 1 in `lezer.test.ts`, which was a bug of the first version of the fix: "a root" was tested by a missing parent, now by the program node) and the "ported" `keyboard-commands` / `paste` / `undo-focus` cases that passed with the old removal of the separator ("(f x y) z" gives "z" in the old editor too, thanks to its whitespace rule: the first version of the fix, which left the space, failed them; that is why the rule is copied exactly). Difference 6 broke the comment box test (a deliberate feature: see its section). No test was deleted.
 - Checks: `npx jest packages/cm6-blocks`: 1087 passed, 207 skipped, 0 failed with `CMB_SEEDS=800 CMB_BIGSEEDS=100`; `tsc --noEmit` clean; Chromium suite (port 8177, server started and stopped by the runner): 118 passed, 4 skipped, 0 failed (12 of them new, `e2e/lastblock.e2e.ts`).
@@ -2101,20 +2150,20 @@ The owner said "do it" to fixing differences 4, 7 and 9, each its own commit, in
 - Fixed: differences 4, 7 and 9. With the tenth round's 1, 2, 3, 5 and 6, **eight of the twelve are fixed (1 to 7 and 9)**; 8 (paste whitespace beside a root and after the operator), 10 (native keys in the text), 11 (node ids, `hash`) and 12 (rotor message, parameter list of a `define`) remain, plus finding 13 (the text cursor does not follow block focus).
 - Ported tests un-skipped: 7 jest (undo-focus 2, focus 1, keyboard-commands 2, search 1; the first commit's message says 3, the count is 2). Playwright ported files unchanged. Sample, jest, 476 tests:
 
-| file (old tests) | pass in the tenth round | pass now | skipped now |
-|---|---|---|---|
-| activation (35) | 30 | 30 | 5 |
-| keyboard-commands (43) | 35 | 37 | 6 |
-| paste (24) | 11 | 11 | 13 |
-| interaction (22) | 13 | 13 | 9 |
-| drop-targets (15) | 6 | 6 | 9 |
-| undo-focus (16) | 3 | 5 | 11 |
-| focus (9) | 2 | 3 | 6 |
-| edit-errors (25) | 15 | 15 | 10 |
-| comment (3) | 0 | 0 | 3 |
-| search (26) | 15 | 16 | 10 |
-| undo-matrix (258) | 145 | 145 | 113 |
-| total (476) | 275 | 281 (59%) | 195 |
+| file (old tests)       | pass in the tenth round | pass now  | skipped now |
+| ---------------------- | ----------------------- | --------- | ----------- |
+| activation (35)        | 30                      | 30        | 5           |
+| keyboard-commands (43) | 35                      | 37        | 6           |
+| paste (24)             | 11                      | 11        | 13          |
+| interaction (22)       | 13                      | 13        | 9           |
+| drop-targets (15)      | 6                       | 6         | 9           |
+| undo-focus (16)        | 3                       | 5         | 11          |
+| focus (9)              | 2                       | 3         | 6           |
+| edit-errors (25)       | 15                      | 15        | 10          |
+| comment (3)            | 0                       | 0         | 3           |
+| search (26)            | 15                      | 16        | 10          |
+| undo-matrix (258)      | 145                     | 145       | 113         |
+| total (476)            | 275                     | 281 (59%) | 195         |
 
 - Checks: `CMB_SEEDS=800 CMB_BIGSEEDS=100 npx jest packages/cm6-blocks`: 1145 passed, 201 skipped, 0 failed (45 suites passed, 2 skipped whole); `tsc --noEmit -p packages/cm6-blocks` clean; Chromium suite (port 8177, started and stopped by the runner, nothing left listening): 133 passed, 4 skipped, 0 failed (15 new: `undo-focus-real` 3, `dialogs` 12).
 - Not done: differences 8, 10, 11, 12 and finding 13; the old editor's "block before" focus after a delete (D, the two delete-redo ported tests and the Playwright undo-focus fixme stay skipped for it); the paste layout (difference 8) keeps 2 undo-focus tests skipped; no overlay click-to-close for dialogs (a choice, see difference 9); `inert` and the accessibility snapshot were checked in Chromium only.
@@ -2162,20 +2211,20 @@ The owner's decision on dialogs: "Match the old editor". Order: 1 overlay click,
 - **Of the twelve differences, 10 are now fixed (1 to 10)**, up from 8; 11 is left, and 12 is half done (its search part fixed, its `define` part a decision about the table). Finding 13 is open.
 - Ported tests un-skipped: paste 3, undo-focus 2, keyboard-commands 2, search 1 = 8. Sample, jest, 476 tests (`ported-report.sh`):
 
-| file (old tests) | pass in the eleventh round | pass now | skipped now |
-|---|---|---|---|
-| activation (35) | 30 | 30 | 5 |
-| keyboard-commands (43) | 37 | 39 | 4 |
-| paste (24) | 11 | 14 | 10 |
-| interaction (22) | 13 | 13 | 9 |
-| drop-targets (15) | 6 | 6 | 9 |
-| undo-focus (16) | 5 | 7 | 9 |
-| focus (9) | 3 | 3 | 6 |
-| edit-errors (25) | 15 | 15 | 10 |
-| comment (3) | 0 | 0 | 3 |
-| search (26) | 16 | 17 | 9 |
-| undo-matrix (258) | 145 | 145 | 113 |
-| total (476) | 281 (59%) | 289 (61%) | 187 |
+| file (old tests)       | pass in the eleventh round | pass now  | skipped now |
+| ---------------------- | -------------------------- | --------- | ----------- |
+| activation (35)        | 30                         | 30        | 5           |
+| keyboard-commands (43) | 37                         | 39        | 4           |
+| paste (24)             | 11                         | 14        | 10          |
+| interaction (22)       | 13                         | 13        | 9           |
+| drop-targets (15)      | 6                          | 6         | 9           |
+| undo-focus (16)        | 5                          | 7         | 9           |
+| focus (9)              | 3                          | 3         | 6           |
+| edit-errors (25)       | 15                         | 15        | 10          |
+| comment (3)            | 0                          | 0         | 3           |
+| search (26)            | 16                         | 17        | 9           |
+| undo-matrix (258)      | 145                        | 145       | 113         |
+| total (476)            | 281 (59%)                  | 289 (61%) | 187         |
 
 - Checks: `CMB_SEEDS=800 CMB_BIGSEEDS=100 npx jest packages/cm6-blocks`: 1190 passed, 193 skipped, 0 failed (46 suites passed, 2 skipped whole); `tsc --noEmit -p packages/cm6-blocks` clean; Chromium suite (port 8177, started and stopped by the runner, nothing listening afterwards): 148 passed, 4 skipped, 0 failed (15 new: `dialogs` 6, `nativekeys` 9).
 - Not done: difference 11; the `define` parameter-list shape; finding 13; the old "paste over a selection replaces it" and "cut takes the focused block" (documented D, not asked); the old editor's page was not run in a real browser for any of this round's rules (read from the code and the old tests; the cursor probe above is jsdom).
@@ -2236,25 +2285,26 @@ Documented edits (the only edits besides skips): labels `f expression` to `call 
 
 Jest (735 tests), by class; columns: unchanged | after a documented edit | blocked by an undocumented difference | blocked by a missing feature | blocked by a documented difference | cannot run:
 
-| class | files | tests | unchanged | after edit | undocumented | feature missing | documented | cannot run |
-|---|---|---|---|---|---|---|---|---|
-| SAME | 5 | 362 | 214 | 17 | 4 | 107 | 17 | 3 |
-| CHANGED | 8 | 170 | 51 | 18 | 5 | 19 | 53 | 24 |
-| MISSING | 16 | 203 | 46 | 0 | 14 | 52 | 8 | 83 (54 React + 29 old internals) |
-| **jest** | **29** | **735** | **311** | **35** | **23** | **178** | **78** | **110** |
+| class    | files  | tests   | unchanged | after edit | undocumented | feature missing | documented | cannot run                       |
+| -------- | ------ | ------- | --------- | ---------- | ------------ | --------------- | ---------- | -------------------------------- |
+| SAME     | 5      | 362     | 214       | 17         | 4            | 107             | 17         | 3                                |
+| CHANGED  | 8      | 170     | 51        | 18         | 5            | 19              | 53         | 24                               |
+| MISSING  | 16     | 203     | 46        | 0          | 14           | 52              | 8          | 83 (54 React + 29 old internals) |
+| **jest** | **29** | **735** | **311**   | **35**     | **23**       | **178**         | **78**     | **110**                          |
 
 Playwright (135 tests):
 
-| class | files | tests | unchanged | after edit | undocumented | feature missing | documented | cannot run |
-|---|---|---|---|---|---|---|---|---|
-| SAME | 10 | 81 | 8 | 14 | 3 | 36 | 14 | 6 |
-| CHANGED | 4 | 27 | 1 | 6 | 0 | 3 | 17 | 0 |
-| MISSING | 7 | 27 | 0 | 0 | 0 | 27 | 0 | 0 |
-| **Playwright** | **21** | **135** | **9** | **20** | **3** | **66** | **31** | **6** |
+| class          | files  | tests   | unchanged | after edit | undocumented | feature missing | documented | cannot run |
+| -------------- | ------ | ------- | --------- | ---------- | ------------ | --------------- | ---------- | ---------- |
+| SAME           | 10     | 81      | 8         | 14         | 3            | 36              | 14         | 6          |
+| CHANGED        | 4      | 27      | 1         | 6          | 0            | 3               | 17         | 0          |
+| MISSING        | 7      | 27      | 0         | 0          | 0            | 27              | 0          | 0          |
+| **Playwright** | **21** | **135** | **9**     | **20**     | **3**        | **66**          | **31**     | **6**      |
 
 Total eligible 870 (50 files): **movable now 375 = 43.1 percent** (jest 346 of 735 = 47.1 percent; Playwright 29 of 135 = 21.5 percent); of those 375, 320 pass as they are and 55 after a documented expectation edit. Last round's estimate for jest was 286 of 735 (39 percent); the measure is higher (346) mostly because the 14 new files and the round's fixes moved tests that were guessed as blocked.
 
 **Missing features, ranked by tests blocked (jest + Playwright, approximate where a test needs two features):**
+
 1. The undo matrix's variants (drop onto a node or onto whitespace, the trash can, the toolbar, top-level typing): 97 jest + 28 Playwright = 125.
 2. The text/blocks toggle, text mode, lifecycle and the morph: `lifecycle` 24, `ToggleEditor` 6, `edge-cases` 10, Playwright `morph` 7, `motion-sequences` 3, `reduced-motion` 2, `mode-switch` 1 = 53.
 3. The toolbar of primitives and its search: `toolbar-drag` 8, `drop-targets` 8, `interaction` 7, `Toolbar` 9, `PrimitiveList` 11, `paste` 2, Playwright `toolbar-drag` 2 = 47 (not counting the matrix's share).
@@ -2269,5 +2319,6 @@ Total eligible 870 (50 files): **movable now 375 = 43.1 percent** (jest 346 of 7
 Left out of the compat layer on purpose: `markText`, `findMarks`, `getAllMarks`, `getLineHandle`, `getHistory`, `setHistory`, `setBookmark` with a widget, `extendSelection*`, `runMode`, `scrollTo`, `setSize` (no clean mapping, or no feature behind them): each still throws "not in the compat layer".
 
 ### Final checks of the thirteenth round
+
 - `CMB_SEEDS=800 CMB_BIGSEEDS=100 npx jest packages/cm6-blocks`: 1276 passed, 341 skipped (the ported files' marked skips), 0 failed; `tsc --noEmit -p packages/cm6-blocks` clean; the whole Chromium suite (port 8177, started and stopped by the runner): 175 passed, 106 skipped (the `fixme` of the ported Playwright files), 0 failed. The old editor's page on 8190 was started for step 3 and stopped; nothing listens on either port.
 - Not done: the CM5 passthroughs left out of the compat layer (see the end of step 6); the 26 undocumented fails are not examined beyond their first message; the old `src/wescheme.ts` still has the call-shaped define header.

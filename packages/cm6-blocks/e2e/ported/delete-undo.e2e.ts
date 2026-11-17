@@ -127,8 +127,17 @@ test.describe("in the example page's own program", () => {
 });
 
 // FIXME-BEGIN (thirteenth round: I: waits for the old page's DOM (`.CodeMirror`, contenteditable, gutters): not found on the demo page)
-const FIXME = new Set<string>(["deleting a block, then undoing, in a long document › a top-level block comes back, and the view doesn't jump", "deleting a block, then undoing, in a long document › keeps working for several deletes and undos in a row", "deleting a block, then undoing, in a long document › redo still works after the undo", "deleting a block, then undoing, in a long document › a child block comes back too", "in the example page's own program › Cmd-Z brings a deleted top-level block back, in place, with focus"]);
+const FIXME = new Set<string>([
+  "deleting a block, then undoing, in a long document › a top-level block comes back, and the view doesn't jump",
+  "deleting a block, then undoing, in a long document › keeps working for several deletes and undos in a row",
+  "deleting a block, then undoing, in a long document › redo still works after the undo",
+  "deleting a block, then undoing, in a long document › a child block comes back too",
+  "in the example page's own program › Cmd-Z brings a deleted top-level block back, in place, with focus",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "I: waits for the old page's DOM (`.CodeMirror`, contenteditable, gutters): not found on the demo page");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "I: waits for the old page's DOM (`.CodeMirror`, contenteditable, gutters): not found on the demo page"
+  );
 });
 // FIXME-END

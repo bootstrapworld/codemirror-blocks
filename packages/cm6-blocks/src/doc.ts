@@ -219,7 +219,8 @@ export function insertNode(
     pos = nodes[index - 1].to;
     before = isRoots ? "\n" : " ";
     // (text typed by hand can leave siblings touching: `()f`)
-    if (index < nodes.length && nodes[index].from === pos) after = isRoots ? "\n" : " ";
+    if (index < nodes.length && nodes[index].from === pos)
+      after = isRoots ? "\n" : " ";
   } else if (nodes.length > 0) {
     pos = nodes[0].from;
     // text before it that touches it (`f` in `(f(g))`) must not run into the new text
@@ -241,7 +242,11 @@ export function insertNode(
       pos = owner.from + 1;
     }
   }
-  const change: TextChange = { from: pos, to: pos, insert: before + text + after };
+  const change: TextChange = {
+    from: pos,
+    to: pos,
+    insert: before + text + after,
+  };
   const apply = place(doc, node, text, pos + before.length);
 
   nodes.splice(index, 0, node);
@@ -280,7 +285,11 @@ export function removeNode(doc: Doc, node: BNode): OpResult {
     change = { from: node.from, to: node.to, insert: "" };
   } else {
     const pe = prevEnd(slot, index);
-    change = { from: pe !== null ? pe : owner.from + 1, to: node.to, insert: "" };
+    change = {
+      from: pe !== null ? pe : owner.from + 1,
+      to: node.to,
+      insert: "",
+    };
   }
   slot.nodes.splice(index, 1);
   dropIds(doc, node);
@@ -297,7 +306,8 @@ export function replaceNode(doc: Doc, old: BNode, node: BNode): OpResult {
   // an atom must not run into an atom that touched the old node
   const pe = prevEnd(slot, index);
   const nx = nextInText(slot, index + 1);
-  const before = pe !== null && pe === old.from && ATOM_START.test(text) ? " " : "";
+  const before =
+    pe !== null && pe === old.from && ATOM_START.test(text) ? " " : "";
   const after = nx && nx.from === old.to && ATOM_END.test(text) ? " " : "";
   const change: TextChange = {
     from: old.from,
@@ -323,7 +333,9 @@ function readAgain(doc: Doc, text: TextSource, node: BNode): BNode | null {
   const src = text.slice(node.from, node.to);
   try {
     if (node.kind === "clause") {
-      return doc.language.parseAs ? doc.language.parseAs("clause", src, node.from) : null;
+      return doc.language.parseAs
+        ? doc.language.parseAs("clause", src, node.from)
+        : null;
     }
     const nodes = doc.language.parse(src, node.from);
     return nodes.length === 1 ? nodes[0] : null;
@@ -335,14 +347,21 @@ function readAgain(doc: Doc, text: TextSource, node: BNode): BNode | null {
 
 /** Same kind, keyword, brackets, slots (names, kinds, number of nodes in each) and, with no slots, the same value. */
 function sameShallow(a: BNode, b: BNode): boolean {
-  if (a.kind !== b.kind || a.keyword !== b.keyword || a.brackets !== b.brackets) return false;
+  if (a.kind !== b.kind || a.keyword !== b.keyword || a.brackets !== b.brackets)
+    return false;
   if (a.slots.length !== b.slots.length) return false;
   for (let i = 0; i < a.slots.length; i++) {
     const x = a.slots[i];
     const y = b.slots[i];
-    if (x.name !== y.name || x.kind !== y.kind || x.nodes.length !== y.nodes.length) return false;
+    if (
+      x.name !== y.name ||
+      x.kind !== y.kind ||
+      x.nodes.length !== y.nodes.length
+    )
+      return false;
   }
-  if (a.slots.length === 0) return a.value === b.value && a.dataType === b.dataType;
+  if (a.slots.length === 0)
+    return a.value === b.value && a.dataType === b.dataType;
   return true;
 }
 
@@ -390,7 +409,11 @@ export function settle(doc: Doc, text: TextSource, at: BNode): TreeChange[] {
 
 /* ---------------------------------------------------------------- reparse */
 
-function tryParse(language: Language, src: string, offset: number): BNode[] | null {
+function tryParse(
+  language: Language,
+  src: string,
+  offset: number
+): BNode[] | null {
   try {
     return language.parse(src, offset);
   } catch (e) {
@@ -400,7 +423,11 @@ function tryParse(language: Language, src: string, offset: number): BNode[] | nu
 }
 
 /** the first index in [from, list.length) whose node satisfies `pred` (which must be false then true along the list) */
-function firstIndex(list: BNode[], pred: (n: BNode) => boolean, from = 0): number {
+function firstIndex(
+  list: BNode[],
+  pred: (n: BNode) => boolean,
+  from = 0
+): number {
   let lo = from;
   let hi = list.length;
   while (lo < hi) {
@@ -455,7 +482,11 @@ function lineEnd(text: TextSource, pos: number): number {
  * `shift` of everything after the change (offsets are absolute). A window that
  * does not parse costs a parse of the rest of the document.
  */
-export function reparseChange(doc: Doc, text: TextSource, change: TextChange): TreeChange[] {
+export function reparseChange(
+  doc: Doc,
+  text: TextSource,
+  change: TextChange
+): TreeChange[] {
   const language = doc.language;
   const slot = doc.program.slots[0];
   const list = slot.nodes;
@@ -463,7 +494,9 @@ export function reparseChange(doc: Doc, text: TextSource, change: TextChange): T
   const endNew = change.from + change.insert.length;
   // a `;` before the end of the change comments out the rest of its line, unless the change ends at a line start
   const limit =
-    endNew === 0 || text.slice(endNew - 1, endNew) === "\n" ? endNew : lineEnd(text, endNew);
+    endNew === 0 || text.slice(endNew - 1, endNew) === "\n"
+      ? endNew
+      : lineEnd(text, endNew);
 
   let bi = firstIndex(list, (n) => n.to >= change.from);
   // an error root may end inside a line comment: the window starts after the last root that is not one
@@ -522,7 +555,7 @@ export function reparseChange(doc: Doc, text: TextSource, change: TextChange): T
   const old = list.slice(bi, ai);
   const pair: (BNode | null)[] = fresh.map(() => null); // the old node kept for fresh[j]
   const kept = new Set<BNode>();
-  for (let i = 0, j = 0; i < old.length && j < fresh.length; ) {
+  for (let i = 0, j = 0; i < old.length && j < fresh.length;) {
     const o = old[i];
     const n = fresh[j];
     let want: number | null = null; // where it would start now
@@ -567,10 +600,12 @@ export function reparseChange(doc: Doc, text: TextSource, change: TextChange): T
 
   const changes: TreeChange[] = [];
   for (let k = old.length - 1; k >= 0; k--) {
-    if (!kept.has(old[k])) changes.push({ type: "remove", node: old[k], slot, index: bi + k });
+    if (!kept.has(old[k]))
+      changes.push({ type: "remove", node: old[k], slot, index: bi + k });
   }
   fresh.forEach((node, j) => {
-    if (pair[j] === null) changes.push({ type: "insert", node, slot, index: bi + j });
+    if (pair[j] === null)
+      changes.push({ type: "insert", node, slot, index: bi + j });
   });
   return changes;
 }
@@ -617,7 +652,9 @@ export function checkDoc(doc: Doc, text: string): string[] {
   const prog = doc.program;
   if (prog.kind !== "program") say("the root is not a program");
   if (prog.from !== 0 || prog.to !== text.length) {
-    say(`program range [${prog.from},${prog.to}) but the text has ${text.length}`);
+    say(
+      `program range [${prog.from},${prog.to}) but the text has ${text.length}`
+    );
   }
   if (prog.parent !== null || prog.slot !== null) say("program has a parent");
   if (prog.slots.length !== 1 || prog.slots[0].name !== "roots") {
@@ -635,18 +672,24 @@ export function checkDoc(doc: Doc, text: string): string[] {
   const compare = (live: BNode, ref: BNode, path: string): void => {
     for (const f of FIELDS) {
       if (live[f] !== ref[f]) {
-        say(`${path}: ${f} is ${String(live[f])}, the text says ${String(ref[f])}`);
+        say(
+          `${path}: ${f} is ${String(live[f])}, the text says ${String(ref[f])}`
+        );
         return;
       }
     }
     if (live.slots.length !== ref.slots.length) {
-      say(`${path}: ${live.slots.length} slots, the text has ${ref.slots.length}`);
+      say(
+        `${path}: ${live.slots.length} slots, the text has ${ref.slots.length}`
+      );
       return;
     }
     live.slots.forEach((ls, i) => {
       const rs = ref.slots[i];
       if (ls.name !== rs.name || ls.kind !== rs.kind) {
-        say(`${path}: slot ${i} is ${ls.name}/${ls.kind}, the text has ${rs.name}/${rs.kind}`);
+        say(
+          `${path}: slot ${i} is ${ls.name}/${ls.kind}, the text has ${rs.name}/${rs.kind}`
+        );
         return;
       }
       if (ls.kind === "one" && ls.nodes.length !== 1) {
@@ -666,22 +709,30 @@ export function checkDoc(doc: Doc, text: string): string[] {
       if (to < from) return;
       const nodes = tryParse(doc.language, text.slice(from, to), from);
       if (nodes === null || nodes.length > 0) {
-        say(`${where}: text outside the roots is not only space and comments: ${JSON.stringify(text.slice(from, to).slice(0, 40))}`);
+        say(
+          `${where}: text outside the roots is not only space and comments: ${JSON.stringify(text.slice(from, to).slice(0, 40))}`
+        );
       }
     };
     prog.slots[0].nodes.forEach((r, i) => {
       const path = `roots[${i}]`;
-      if (r.from < pos) say(`${path}: starts at ${r.from}, before the end of the one before (${pos})`);
+      if (r.from < pos)
+        say(
+          `${path}: starts at ${r.from}, before the end of the one before (${pos})`
+        );
       gap(pos, r.from, `before ${path}`);
       const own = text.slice(r.from, r.to);
       if (r.kind === "error") {
         if (r.slots.length !== 0) say(`${path}: an error root has slots`);
         if (r.value !== own) say(`${path}: error value is not its text`);
-        if (own !== own.trim() || own === "") say(`${path}: error text is not trimmed`);
-        if (tryParse(doc.language, own, r.from) !== null) say(`${path}: an error root whose text parses`);
+        if (own !== own.trim() || own === "")
+          say(`${path}: error text is not trimmed`);
+        if (tryParse(doc.language, own, r.from) !== null)
+          say(`${path}: an error root whose text parses`);
       } else {
         const ref = tryParse(doc.language, own, r.from);
-        if (ref === null || ref.length !== 1) say(`${path}: the text of a root does not parse as one node`);
+        if (ref === null || ref.length !== 1)
+          say(`${path}: the text of a root does not parse as one node`);
         else compare(r, ref[0], path);
       }
       pos = Math.max(pos, r.to);
@@ -697,7 +748,8 @@ export function checkDoc(doc: Doc, text: string): string[] {
       return;
     }
     seen.add(n);
-    if (doc.byId.get(n.id) !== n) say(`${path}: byId does not hold node ${n.id}`);
+    if (doc.byId.get(n.id) !== n)
+      say(`${path}: byId does not hold node ${n.id}`);
     for (const slot of n.slots) {
       if (slot.owner !== n) say(`${path}.${slot.name}: slot owner is wrong`);
       slot.nodes.forEach((c, i) => {

@@ -27,8 +27,14 @@ for (const [key, expected] of [
 }
 
 // FIXME-BEGIN (thirteenth round: D: the insertion box is an input here, the old one a contenteditable (`[contenteditable=true]`))
-const FIXME = new Set<string>(["Control+] beside a top-level block inserts a new top-level form", "Control+[ beside a top-level block inserts a new top-level form"]);
+const FIXME = new Set<string>([
+  "Control+] beside a top-level block inserts a new top-level form",
+  "Control+[ beside a top-level block inserts a new top-level form",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "D: the insertion box is an input here, the old one a contenteditable (`[contenteditable=true]`)");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "D: the insertion box is an input here, the old one a contenteditable (`[contenteditable=true]`)"
+  );
 });
 // FIXME-END

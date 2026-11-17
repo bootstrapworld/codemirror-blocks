@@ -65,8 +65,15 @@ for (const [name, forms, downs] of [
 }
 
 // FIXME-BEGIN (thirteenth round: U: after Collapse All the focus is in an input (an edit box) here, a block's element there: not examined)
-const FIXME = new Set<string>(["collapse all keeps keyboard focus on a root (small document)", "collapse all keeps keyboard focus on a root (medium document)", "collapse all keeps keyboard focus on a root (large document)"]);
+const FIXME = new Set<string>([
+  "collapse all keeps keyboard focus on a root (small document)",
+  "collapse all keeps keyboard focus on a root (medium document)",
+  "collapse all keeps keyboard focus on a root (large document)",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "U: after Collapse All the focus is in an input (an edit box) here, a block's element there: not examined");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "U: after Collapse All the focus is in an input (an edit box) here, a block's element there: not examined"
+  );
 });
 // FIXME-END

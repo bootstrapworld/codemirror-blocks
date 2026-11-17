@@ -14,7 +14,8 @@ const SHIM = () => {
   const doc = () => ed.view.state.doc;
   (window as any).cmb = {
     getValue: () => doc().toString(),
-    setValue: (t: string) => ed.view.dispatch({ changes: { from: 0, to: doc().length, insert: t } }),
+    setValue: (t: string) =>
+      ed.view.dispatch({ changes: { from: 0, to: doc().length, insert: t } }),
     clearHistory: () => {},
   };
 };
@@ -23,21 +24,35 @@ const SHIM = () => {
  * Open the demo page, put `code` in the editor (the demo is always in blocks mode: there is no toggle to click). `language` is the demo's `?lang=`
  * (default "scheme").
  */
-export async function openInBlockMode(page: Page, code: string, language = "scheme") {
+export async function openInBlockMode(
+  page: Page,
+  code: string,
+  language = "scheme"
+) {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => undefined); // (the old config grants it)
+  await page
+    .context()
+    .grantPermissions(["clipboard-read", "clipboard-write"])
+    .catch(() => undefined); // (the old config grants it)
   await page.goto(`/index.html?lang=${language}`);
-  await page.waitForFunction(() => !!(window as any).demo, undefined, { timeout: 15_000 }).catch(() => {
-    throw new Error(`the demo page never created window.demo. Errors on the page: ${errors.join("; ") || "(none)"}`);
-  });
+  await page
+    .waitForFunction(() => !!(window as any).demo, undefined, {
+      timeout: 15_000,
+    })
+    .catch(() => {
+      throw new Error(
+        `the demo page never created window.demo. Errors on the page: ${errors.join("; ") || "(none)"}`
+      );
+    });
   await page.evaluate(SHIM);
   await page.evaluate((c) => (window as any).cmb.setValue(c), code);
   await expect(page.getByRole("treeitem").first()).toBeVisible();
 }
 
 /** A block, found by the label a screenreader would read out. (This editor's labels are the table's: `call to f with 1 argument`, not `f expression, 1 input`.) */
-export const block = (page: Page, label: string | RegExp) => page.getByRole("treeitem", { name: label }).first();
+export const block = (page: Page, label: string | RegExp) =>
+  page.getByRole("treeitem", { name: label }).first();
 export const trashCan = (page: Page) => page.locator(".TrashCan");
 
 export type Snapshot = {
@@ -60,13 +75,19 @@ export const snapshot = (page: Page): Promise<Snapshot> =>
       reparsed: roots, // (the one tree is the parse: `demo.check()` compares the DOM with a fresh drawing and the tree with the text)
       scrollTop: ed.view.scrollDOM.scrollTop,
       history: { undo: 0, redo: 0 }, // (not available from the page)
-      focus: { tag: active?.tagName ?? "", role: active?.getAttribute("role") ?? null, id: active?.id ?? "" },
+      focus: {
+        tag: active?.tagName ?? "",
+        role: active?.getAttribute("role") ?? null,
+        id: active?.id ?? "",
+      },
     };
   });
 
 const problem = async (page: Page): Promise<string | null> => {
   const s = await snapshot(page);
-  const found: string[] = await page.evaluate(() => (window as any).demo.check());
+  const found: string[] = await page.evaluate(() =>
+    (window as any).demo.check()
+  );
   if (found.length) return `the editor's own checker says: ${found.join("; ")}`;
   if (s.focus.tag === "BODY") return "keyboard focus fell to the page body";
   return null;

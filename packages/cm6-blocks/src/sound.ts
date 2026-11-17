@@ -28,8 +28,22 @@ export type SoundName = "beep" | "wrap";
  *  - "wrapped": search went on from the other end of the document (the one use of the "wrap" sound)
  */
 export type SoundEvent =
-  | "no-previous" | "no-next" | "no-parent" | "no-child" | "collapse-root" | "no-ancestors" | "select-refused" | "delete-nothing" | "cut-nothing"
-  | "paste-refused" | "comment-of-comment" | "left-blank" | "drop-nowhere" | "drop-refused" | "no-match" | "wrapped";
+  | "no-previous"
+  | "no-next"
+  | "no-parent"
+  | "no-child"
+  | "collapse-root"
+  | "no-ancestors"
+  | "select-refused"
+  | "delete-nothing"
+  | "cut-nothing"
+  | "paste-refused"
+  | "comment-of-comment"
+  | "left-blank"
+  | "drop-nowhere"
+  | "drop-refused"
+  | "no-match"
+  | "wrapped";
 
 /** what plays a sound: the default is `browserPlayer()`; tests pass one that records */
 export type SoundPlayer = (sound: SoundName, event: SoundEvent) => void;
@@ -40,16 +54,24 @@ export type SoundPlayer = (sound: SoundName, event: SoundEvent) => void;
  * a rejected `play()` (blocked, or interrupted by the next sound), anything thrown.
  */
 export function browserPlayer(): SoundPlayer {
-  const audios = new Map<SoundName, HTMLAudioElement & { isPlaying?: boolean }>();
+  const audios = new Map<
+    SoundName,
+    HTMLAudioElement & { isPlaying?: boolean }
+  >();
   return (sound) => {
     try {
-      if (typeof Audio === "undefined" || typeof navigator === "undefined") return;
+      if (typeof Audio === "undefined" || typeof navigator === "undefined")
+        return;
       if (/jsdom/i.test(navigator.userAgent)) return; // (no audio there: play() only prints "not implemented")
-      const ua = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
+      const ua = (
+        navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }
+      ).userActivation;
       if (ua && !ua.hasBeenActive) return; // (before the first click or key: the browser would refuse)
       let a = audios.get(sound);
       if (!a) {
-        a = new Audio(sound === "beep" ? BEEP_URL : WRAP_URL) as HTMLAudioElement & { isPlaying?: boolean };
+        a = new Audio(
+          sound === "beep" ? BEEP_URL : WRAP_URL
+        ) as HTMLAudioElement & { isPlaying?: boolean };
         a.onplaying = () => (a!.isPlaying = true);
         a.onpause = () => (a!.isPlaying = false);
         audios.set(sound, a);

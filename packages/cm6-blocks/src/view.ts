@@ -43,8 +43,19 @@ import {
   Text,
   Transaction,
 } from "@codemirror/state";
-import { Decoration, DecorationSet, EditorView, WidgetType, keymap } from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap, isolateHistory } from "@codemirror/commands";
+import {
+  Decoration,
+  DecorationSet,
+  EditorView,
+  WidgetType,
+  keymap,
+} from "@codemirror/view";
+import {
+  defaultKeymap,
+  history,
+  historyKeymap,
+  isolateHistory,
+} from "@codemirror/commands";
 import {
   checkDoc,
   createDoc,
@@ -55,7 +66,17 @@ import {
   settle,
 } from "./doc";
 import { Renderer } from "./render";
-import { BNode, Doc, Language, OpResult, ParseError, Slot, TextChange, TextSource, TreeChange } from "./types";
+import {
+  BNode,
+  Doc,
+  Language,
+  OpResult,
+  ParseError,
+  Slot,
+  TextChange,
+  TextSource,
+  TreeChange,
+} from "./types";
 
 export interface BlockEditor {
   readonly view: EditorView;
@@ -74,7 +95,12 @@ export interface BlockEditor {
   /** block mode on or off (off: plain text, the tree is still kept up to date) */
   setBlockMode(on: boolean): void;
   /** counters for the experiment */
-  stats(): { ops: number; reparses: number; widgetsBuilt: number; focusRestores: number };
+  stats(): {
+    ops: number;
+    reparses: number;
+    widgetsBuilt: number;
+    focusRestores: number;
+  };
   destroy(): void;
 }
 
@@ -104,7 +130,9 @@ export class RootWidget extends WidgetType {
   }
   /** our element is already right (the renderer patched it); true only for OUR element */
   updateDOM(dom: HTMLElement): boolean {
-    return this.renderer.has(this.node) && this.renderer.element(this.node) === dom;
+    return (
+      this.renderer.has(this.node) && this.renderer.element(this.node) === dom
+    );
   }
   ignoreEvent(): boolean {
     return true;
@@ -128,7 +156,11 @@ interface RootsChange {
 const rootsEffect = StateEffect.define<RootsChange>({
   map: (v, m) => ({
     drop: v.drop,
-    add: v.add.map((a) => ({ from: m.mapPos(a.from, 1), to: m.mapPos(a.to, -1), deco: a.deco })),
+    add: v.add.map((a) => ({
+      from: m.mapPos(a.from, 1),
+      to: m.mapPos(a.to, -1),
+      deco: a.deco,
+    })),
     lo: m.mapPos(v.lo, -1),
     hi: m.mapPos(v.hi, 1),
   }),
@@ -152,7 +184,10 @@ const rootsField = StateField.define<DecorationSet>({
       set = set.update({
         add: c.add.map((a) => a.deco.range(a.from, a.to)),
         sort: true,
-        filter: c.drop.size > 0 ? (_f, _t, deco) => !c.drop.has(widgetNode(deco)) : undefined,
+        filter:
+          c.drop.size > 0
+            ? (_f, _t, deco) => !c.drop.has(widgetNode(deco))
+            : undefined,
         filterFrom: c.lo,
         filterTo: c.hi,
       });
@@ -182,7 +217,11 @@ class RootsBuilder {
 function mapChange(c: RootsChange, m: ChangeSet): RootsChange {
   return {
     drop: c.drop,
-    add: c.add.map((a) => ({ from: m.mapPos(a.from, 1), to: m.mapPos(a.to, -1), deco: a.deco })),
+    add: c.add.map((a) => ({
+      from: m.mapPos(a.from, 1),
+      to: m.mapPos(a.to, -1),
+      deco: a.deco,
+    })),
     lo: m.mapPos(c.lo, -1),
     hi: m.mapPos(c.hi, 1),
   };
@@ -208,9 +247,18 @@ interface FocusSnapshot {
   path: [number, number][];
 }
 
-export function createBlockEditor(parent: HTMLElement, text: string, language: Language): BlockEditor {
+export function createBlockEditor(
+  parent: HTMLElement,
+  text: string,
+  language: Language
+): BlockEditor {
   const renderer = new Renderer(language);
-  const counters: Counters = { ops: 0, reparses: 0, widgetsBuilt: 0, focusRestores: 0 };
+  const counters: Counters = {
+    ops: 0,
+    reparses: 0,
+    widgetsBuilt: 0,
+    focusRestores: 0,
+  };
   let doc: Doc;
   try {
     doc = createDoc(language, text);
@@ -220,11 +268,14 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
     doc = createDoc(language, "");
     reparseChange(doc, text, { from: 0, to: 0, insert: text });
   }
-  const drawn = (n: BNode): boolean => n.kind !== "error" && n.kind !== "program";
+  const drawn = (n: BNode): boolean =>
+    n.kind !== "error" && n.kind !== "program";
   const decoFor = (n: BNode): Decoration =>
     Decoration.replace({ widget: new RootWidget(n, renderer, counters) });
   const initial: DecorationSet = Decoration.set(
-    doc.program.slots[0].nodes.filter(drawn).map((n) => decoFor(n).range(n.from, n.to)),
+    doc.program.slots[0].nodes
+      .filter(drawn)
+      .map((n) => decoFor(n).range(n.from, n.to)),
     true
   );
 
@@ -243,7 +294,11 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
   /* ---- keeping the three in step: tree changes -> renderer and decorations */
 
   /** apply TreeChanges of the roots' list to a RootsBuilder (positions are the ones now in the tree) */
-  function noteRoots(b: RootsBuilder, c: TreeChange, mapOld: (n: number) => number): void {
+  function noteRoots(
+    b: RootsBuilder,
+    c: TreeChange,
+    mapOld: (n: number) => number
+  ): void {
     if (c.slot.owner.kind !== "program") return;
     const gone = (n: BNode): void => {
       b.drop.add(n);
@@ -264,7 +319,8 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
 
   /** Is the node, or a node above it, one of those that a settle change replaced? */
   function swallowed(c: TreeChange, replaced: Set<BNode>): boolean {
-    for (let n: BNode | null = c.slot.owner; n; n = n.parent) if (replaced.has(n)) return true;
+    for (let n: BNode | null = c.slot.owner; n; n = n.parent)
+      if (replaced.has(n)) return true;
     return false;
   }
 
@@ -277,7 +333,8 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
    */
   function patchRenderer(changes: TreeChange[]): void {
     const replaced = new Set<BNode>();
-    for (const c of changes) if (c.type === "replace" && c !== changes[0]) replaced.add(c.old);
+    for (const c of changes)
+      if (c.type === "replace" && c !== changes[0]) replaced.add(c.old);
     // (changes[0] is the operation's own; a replace there is not a settle)
     for (const c of changes) {
       if (swallowed(c, replaced)) {
@@ -286,8 +343,18 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
         continue;
       }
       if (c.type === "replace" && c.slot.owner.kind === "program") {
-        renderer.apply({ type: "remove", node: c.old, slot: c.slot, index: c.index });
-        renderer.apply({ type: "insert", node: c.node, slot: c.slot, index: c.index });
+        renderer.apply({
+          type: "remove",
+          node: c.old,
+          slot: c.slot,
+          index: c.index,
+        });
+        renderer.apply({
+          type: "insert",
+          node: c.node,
+          slot: c.slot,
+          index: c.index,
+        });
       } else {
         renderer.apply(c);
       }
@@ -307,7 +374,11 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
     }
     counters.ops++;
     const t = res.text;
-    const after = view.state.doc.replace(t.from, t.to, Text.of(t.insert.split("\n")));
+    const after = view.state.doc.replace(
+      t.from,
+      t.to,
+      Text.of(t.insert.split("\n"))
+    );
     const settled = settle(doc, sourceOf(after), res.tree.slot.owner);
     const changes: TreeChange[] = [res.tree, ...settled];
     patchRenderer(changes);
@@ -316,7 +387,9 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
     b.touch(t.from, t.from + t.insert.length);
     const cs = ChangeSet.of(t, view.state.doc.length);
     // the node the operation took out still has the positions it had before the change
-    changes.forEach((c, i) => noteRoots(b, c, i === 0 ? (n) => cs.mapPos(n, 1) : (n) => n));
+    changes.forEach((c, i) =>
+      noteRoots(b, c, i === 0 ? (n) => cs.mapPos(n, 1) : (n) => n)
+    );
     view.dispatch({
       changes: t,
       effects: b.empty ? [] : [rootsEffect.of(b.build())],
@@ -328,7 +401,9 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
   /** reparse for one transaction that is not ours; the changes of the roots, in the coordinates after it */
   function reparseTransaction(tr: Transaction, b: RootsBuilder): void {
     const specs: TextChange[] = [];
-    tr.changes.iterChanges((fa, ta, _fb, _tb, ins) => specs.push({ from: fa, to: ta, insert: ins.toString() }));
+    tr.changes.iterChanges((fa, ta, _fb, _tb, ins) =>
+      specs.push({ from: fa, to: ta, insert: ins.toString() })
+    );
     // last range first: the offsets of the ones before it are still those of the old text
     let d = tr.startState.doc;
     let pending = new RootsBuilder();
@@ -364,7 +439,10 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
     b.touch(pending.lo, pending.hi);
   }
 
-  function dispatchTransactions(trs: readonly Transaction[], v: EditorView): void {
+  function dispatchTransactions(
+    trs: readonly Transaction[],
+    v: EditorView
+  ): void {
     const snapshot = pendingSnapshot ?? takeSnapshot();
     pendingSnapshot = null;
     // changes of the text made by anything but us: read the tree again
@@ -381,7 +459,8 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
       const merged = new RootsBuilder();
       for (const { b, at } of parts) {
         let c = b.build();
-        for (let j = at + 1; j < trs.length; j++) c = mapChange(c, trs[j].changes);
+        for (let j = at + 1; j < trs.length; j++)
+          c = mapChange(c, trs[j].changes);
         c.drop.forEach((x) => merged.drop.add(x));
         merged.add.push(...c.add);
         merged.touch(c.lo, c.hi);
@@ -446,7 +525,8 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
   function restoreFocus(s: FocusSnapshot | null): void {
     if (!s || gone) return;
     const active = view.dom.ownerDocument.activeElement;
-    if (active && view.contentDOM.contains(active) && renderer.nodeOf(active)) return;
+    if (active && view.contentDOM.contains(active) && renderer.nodeOf(active))
+      return;
     const target = resolve(s);
     if (!target) return;
     counters.focusRestores++;
@@ -461,7 +541,8 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
     },
     doc,
     renderer,
-    insert: (slot, index, node) => run(() => insertNode(doc, slot, index, node)),
+    insert: (slot, index, node) =>
+      run(() => insertNode(doc, slot, index, node)),
     remove: (node) => run(() => removeNode(doc, node)),
     replace: (old, node) => run(() => replaceNode(doc, old, node)),
     parse: (t) => language.parse(t),
@@ -469,7 +550,8 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
       if (!isDrawn(node)) return;
       const el = renderer.element(node);
       el.focus();
-      if (typeof el.scrollIntoView === "function") el.scrollIntoView({ block: "nearest", inline: "nearest" });
+      if (typeof el.scrollIntoView === "function")
+        el.scrollIntoView({ block: "nearest", inline: "nearest" });
     },
     focusedNode() {
       const active = view.dom.ownerDocument.activeElement;
@@ -480,7 +562,9 @@ export function createBlockEditor(parent: HTMLElement, text: string, language: L
       const inner = internals.get(ed) as Internals;
       if (inner.blockMode === on) return;
       inner.blockMode = on;
-      view.dispatch({ effects: compartment.reconfigure(on ? blockExtension : []) });
+      view.dispatch({
+        effects: compartment.reconfigure(on ? blockExtension : []),
+      });
     },
     stats: () => ({ ...counters }),
     destroy() {
@@ -534,7 +618,10 @@ export function checkEditor(ed: BlockEditor): string[] {
     byNode.set(d.node, list);
   }
   for (const d of decos) {
-    if (!roots.includes(d.node)) say(`a decoration [${d.from},${d.to}) for node ${d.node.id}, which is not a root`);
+    if (!roots.includes(d.node))
+      say(
+        `a decoration [${d.from},${d.to}) for node ${d.node.id}, which is not a root`
+      );
   }
   const blockMode = (internals.get(ed) as Internals).blockMode;
   const vp = ed.view.viewport;
@@ -551,19 +638,25 @@ export function checkEditor(ed: BlockEditor): string[] {
       continue;
     }
     if (mine[0].from !== r.from || mine[0].to !== r.to) {
-      say(`root ${r.id}: the decoration is [${mine[0].from},${mine[0].to}), the node [${r.from},${r.to})`);
+      say(
+        `root ${r.id}: the decoration is [${mine[0].from},${mine[0].to}), the node [${r.from},${r.to})`
+      );
     }
     if (!ed.renderer.has(r)) {
       // only a root whose line is not drawn (or in plain mode) may have none yet
-      if (blockMode && r.from >= vp.from && r.to <= vp.to) say(`root ${r.id} is in the viewport and has no element`);
+      if (blockMode && r.from >= vp.from && r.to <= vp.to)
+        say(`root ${r.id} is in the viewport and has no element`);
       continue;
     }
     const el = ed.renderer.element(r);
     if (blockMode && r.from >= vp.from && r.to <= vp.to && !el.isConnected) {
-      say(`root ${r.id} [${r.from},${r.to}) is in the viewport and its element is not in the document`);
+      say(
+        `root ${r.id} [${r.from},${r.to}) is in the viewport and its element is not in the document`
+      );
     }
     if (!fresh) fresh = new Renderer(ed.doc.language);
-    if (!fresh.element(r).isEqualNode(el)) say(`root ${r.id}: its DOM is not what a fresh drawing gives`);
+    if (!fresh.element(r).isEqualNode(el))
+      say(`root ${r.id}: its DOM is not what a fresh drawing gives`);
   }
   return problems;
 }

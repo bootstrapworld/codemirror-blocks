@@ -4,12 +4,7 @@
 import { act, fireEvent, screen } from "../compat/testing-library";
 import wescheme from "../compat/wescheme";
 import { API } from "../compat/test-utils";
-import {
-  keyDown,
-  mountCMB,
-  mouseDown,
-  teardown,
-} from "../compat/test-utils";
+import { keyDown, mountCMB, mouseDown, teardown } from "../compat/test-utils";
 import * as announcer from "../compat/announcer";
 import * as utils from "../compat/utils";
 import ByBlock from "../compat/ByBlock";
@@ -260,13 +255,17 @@ describe("before anything is chosen", () => {
 it("leaves the rest of the page alone while the dialog is open", () => {
   press("F3");
   // the editor is hidden from screenreaders behind the dialog (edited: the editor element is `.cm-editor`; getByRole skips what is hidden)
-  expect(document.querySelector(".cm-editor")!.getAttribute("aria-hidden")).toBe("true");
+  expect(
+    document.querySelector(".cm-editor")!.getAttribute("aria-hidden")
+  ).toBe("true");
   expect(screen.getByRole("dialog")).toBeTruthy();
   act(() => {
     fireEvent.keyDown(searchInput(), { key: "Escape" });
   });
   expect(screen.queryByRole("dialog")).toBeNull();
-  expect(document.querySelector(".cm-editor")!.hasAttribute("aria-hidden")).toBe(false);
+  expect(
+    document.querySelector(".cm-editor")!.hasAttribute("aria-hidden")
+  ).toBe(false);
   expect(block("x")).toBeTruthy();
 });
 

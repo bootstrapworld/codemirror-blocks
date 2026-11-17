@@ -12,9 +12,18 @@ const all = (ed: LezerBlockEditor): BNode[] => {
   ed.roots().forEach((r) => walk(r, (n) => o.push(n)));
   return o;
 };
-const lit = (ed: LezerBlockEditor, src: string): BNode => all(ed).filter((n) => n.kind === "literal" && text(ed).slice(n.from, n.to) === src)[0];
+const lit = (ed: LezerBlockEditor, src: string): BNode =>
+  all(ed).filter(
+    (n) => n.kind === "literal" && text(ed).slice(n.from, n.to) === src
+  )[0];
 const ptr = (el: Element, type: string, x: number, pointerType: string) => {
-  const e = new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX: x, clientY: 10 });
+  const e = new MouseEvent(type, {
+    bubbles: true,
+    cancelable: true,
+    button: 0,
+    clientX: x,
+    clientY: 10,
+  });
   Object.defineProperty(e, "pointerType", { value: pointerType });
   el.dispatchEvent(e);
   return e;
@@ -26,11 +35,18 @@ describe.each(LANGS)("touch: %s", (l) => {
 
   function setup() {
     const ed = make(l);
-    const args = all(ed).find((n) => n.slots.some((s) => s.name === "args"))!.slots.find((s) => s.name === "args")!;
+    const args = all(ed)
+      .find((n) => n.slots.some((s) => s.name === "args"))!
+      .slots.find((s) => s.name === "args")!;
     const three = args.nodes[2];
-    const gap = ed.renderer.element(args.owner).querySelector(`.blocks-args[data-slot="args"] > .blocks-gap[data-index="0"]`) as HTMLElement;
+    const gap = ed.renderer
+      .element(args.owner)
+      .querySelector(
+        `.blocks-args[data-slot="args"] > .blocks-gap[data-index="0"]`
+      ) as HTMLElement;
     const at = { x: 0 };
-    document.elementFromPoint = () => (at.x === 100 ? gap : ed.renderer.element(three));
+    document.elementFromPoint = () =>
+      at.x === 100 ? gap : ed.renderer.element(three);
     return { ed, three, at, gap };
   }
 
@@ -82,18 +98,37 @@ describe.each(LANGS)("touch: %s", (l) => {
     expect(ed.focusedNode()).toBe(two);
     expect(ed.view.dom.querySelector(".blocks-edit")).toBeNull();
     tap(two);
-    const input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+    const input = ed.view.dom.querySelector(
+      "input.blocks-edit"
+    ) as HTMLInputElement;
     expect(input.value).toBe("2");
     input.value = "22";
-    input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        bubbles: true,
+        cancelable: true,
+      })
+    );
     expect(text(ed)).toContain("22");
     // a call: the whole text in a textarea
-    const call = all(ed).find((n) => n.slots.length > 0 && /^[(]?g[( ]22/.test(text(ed).slice(n.from, n.to)))!;
+    const call = all(ed).find(
+      (n) =>
+        n.slots.length > 0 && /^[(]?g[( ]22/.test(text(ed).slice(n.from, n.to))
+    )!;
     tap(call);
     tap(call);
-    const ta = ed.view.dom.querySelector("textarea.blocks-edit") as HTMLTextAreaElement;
+    const ta = ed.view.dom.querySelector(
+      "textarea.blocks-edit"
+    ) as HTMLTextAreaElement;
     expect(ta.value).toMatch(/^\(?g[( ]22\)$/);
-    ta.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    ta.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      })
+    );
     // a mouse click on the focused block does not edit
     const e = new MouseEvent("click", { bubbles: true, cancelable: true });
     ed.renderer.element(call).dispatchEvent(e);

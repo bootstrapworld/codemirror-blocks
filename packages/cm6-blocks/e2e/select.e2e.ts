@@ -17,54 +17,87 @@ const MULTI: Record<string, string> = {
 for (const lang of Object.keys(SMALL)) {
   test.describe(`selection and edit as text: ${lang}`, () => {
     test.beforeEach(async ({ page, context }) => {
-      await context.grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => undefined);
+      await context
+        .grantPermissions(["clipboard-read", "clipboard-write"])
+        .catch(() => undefined);
       await page.goto(`/index.html?lang=${lang}`);
       await page.waitForSelector(".cm-content .blocks-node");
     });
     const load = (page: any, t: string) =>
       page.evaluate((t: string) => {
         const d = (window as any).demo;
-        d.ed.view.dispatch({ changes: { from: 0, to: d.ed.view.state.doc.length, insert: t } });
+        d.ed.view.dispatch({
+          changes: { from: 0, to: d.ed.view.state.doc.length, insert: t },
+        });
       }, t);
-    const text = (page: any) => page.evaluate(() => (window as any).demo.ed.view.state.doc.toString());
-    const lit = (page: any, t: string) => page.locator(".cm-content .blocks-literal", { hasText: new RegExp(`^${t}$`) }).first();
-    const check = (page: any) => page.evaluate(() => (window as any).demo.check?.() ?? []);
+    const text = (page: any) =>
+      page.evaluate(() => (window as any).demo.ed.view.state.doc.toString());
+    const lit = (page: any, t: string) =>
+      page
+        .locator(".cm-content .blocks-literal", {
+          hasText: new RegExp(`^${t}$`),
+        })
+        .first();
+    const check = (page: any) =>
+      page.evaluate(() => (window as any).demo.check?.() ?? []);
 
-    test("Space selects with a real key press; Delete removes the selected blocks; undo brings them back", async ({ page }) => {
+    test("Space selects with a real key press; Delete removes the selected blocks; undo brings them back", async ({
+      page,
+    }) => {
       await load(page, SMALL[lang]);
       await lit(page, "1").click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
-      expect(await page.locator('.cm-content [aria-selected="true"]').count()).toBe(1);
+      expect(
+        await page.locator('.cm-content [aria-selected="true"]').count()
+      ).toBe(1);
       await lit(page, "3").click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
-      expect(await page.locator('.cm-content [aria-selected="true"]').count()).toBe(2);
-      expect(await page.locator(".cm-content .blocks-selected").count()).toBe(2);
+      expect(
+        await page.locator('.cm-content [aria-selected="true"]').count()
+      ).toBe(2);
+      expect(await page.locator(".cm-content .blocks-selected").count()).toBe(
+        2
+      );
       // the focused block is `3`: a click did not clear the selection
       await page.keyboard.press("Delete");
       const t = (await text(page)).split("\n")[0];
       expect(t).not.toMatch(/[13]/);
       expect(t).toMatch(/g/);
-      expect(await page.locator('.cm-content [aria-selected="true"]').count()).toBe(0);
-      expect(await page.evaluate(() => document.activeElement?.closest(".blocks-node") !== null)).toBe(true);
+      expect(
+        await page.locator('.cm-content [aria-selected="true"]').count()
+      ).toBe(0);
+      expect(
+        await page.evaluate(
+          () => document.activeElement?.closest(".blocks-node") !== null
+        )
+      ).toBe(true);
       await page.keyboard.press("ControlOrMeta+z");
       expect(await text(page)).toBe(SMALL[lang]);
       expect(await check(page)).toEqual([]);
     });
 
-    test("Escape clears; copy takes the selection in document order", async ({ page }) => {
+    test("Escape clears; copy takes the selection in document order", async ({
+      page,
+    }) => {
       await load(page, SMALL[lang]);
       await lit(page, "3").click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
       await lit(page, "1").click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
       await page.keyboard.press("ControlOrMeta+c");
-      expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("1\n3");
+      expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+        "1\n3"
+      );
       expect(await text(page)).toBe(SMALL[lang]);
       await page.keyboard.press("Escape");
-      expect(await page.locator('.cm-content [aria-selected="true"]').count()).toBe(0);
+      expect(
+        await page.locator('.cm-content [aria-selected="true"]').count()
+      ).toBe(0);
     });
 
-    test("a real mouse drag of a selected block moves the whole selection", async ({ page }) => {
+    test("a real mouse drag of a selected block moves the whole selection", async ({
+      page,
+    }) => {
       await load(page, SMALL[lang]);
       await lit(page, "1").click({ modifiers: ["Shift"] });
       await page.keyboard.press("Space");
@@ -74,12 +107,22 @@ for (const lang of Object.keys(SMALL)) {
       const box = (await three.boundingBox())!;
       await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
       await page.mouse.down();
-      await page.mouse.move(box.x + box.width / 2 + 12, box.y + box.height / 2 + 3, { steps: 3 });
+      await page.mouse.move(
+        box.x + box.width / 2 + 12,
+        box.y + box.height / 2 + 3,
+        { steps: 3 }
+      );
       await page.waitForSelector(".blocks-dragging"); // (the gaps widen when the drag starts: measure after that)
       // drop into h(4) after the 4
-      const gap = page.locator(`.cm-content .blocks-args[data-slot="args"] > .blocks-gap[data-index="1"]`).last();
+      const gap = page
+        .locator(
+          `.cm-content .blocks-args[data-slot="args"] > .blocks-gap[data-index="1"]`
+        )
+        .last();
       const g = (await gap.boundingBox())!;
-      await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2, { steps: 8 });
+      await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2, {
+        steps: 8,
+      });
       await page.mouse.up();
       const lines = (await text(page)).split("\n");
       expect(lines[0]).not.toMatch(/[13]/);
@@ -88,14 +131,21 @@ for (const lang of Object.keys(SMALL)) {
       expect(await text(page)).toBe(SMALL[lang]);
     });
 
-    test(`${EDIT} edits a block as text; Enter commits, Escape cancels`, async ({ page }) => {
+    test(`${EDIT} edits a block as text; Enter commits, Escape cancels`, async ({
+      page,
+    }) => {
       await load(page, SMALL[lang]);
-      await page.locator(".cm-content .blocks-node.blocks-literal", { hasText: /^g$/ }).first().click({ modifiers: ["Shift"] });
+      await page
+        .locator(".cm-content .blocks-node.blocks-literal", { hasText: /^g$/ })
+        .first()
+        .click({ modifiers: ["Shift"] });
       await page.keyboard.press("ArrowLeft"); // to the call g(2)
       await page.keyboard.press(EDIT);
       const ta = page.locator("textarea.blocks-edit");
       expect(await ta.count()).toBe(1);
-      expect(await page.evaluate(() => document.activeElement?.tagName)).toBe("TEXTAREA");
+      expect(await page.evaluate(() => document.activeElement?.tagName)).toBe(
+        "TEXTAREA"
+      );
       expect(await ta.inputValue()).toMatch(/^\(?g[( ]2\)$/);
       await page.keyboard.press("Escape");
       expect(await ta.count()).toBe(0);
@@ -105,8 +155,14 @@ for (const lang of Object.keys(SMALL)) {
       await page.keyboard.type(lang === "scheme" ? "(g 7 8)" : "g(7, 8)");
       await page.keyboard.press("Enter");
       expect(await ta.count()).toBe(0);
-      expect((await text(page)).split("\n")[0]).toContain(lang === "scheme" ? "(g 7 8)" : "g(7, 8)");
-      expect(await page.evaluate(() => document.activeElement?.closest(".blocks-node") !== null)).toBe(true);
+      expect((await text(page)).split("\n")[0]).toContain(
+        lang === "scheme" ? "(g 7 8)" : "g(7, 8)"
+      );
+      expect(
+        await page.evaluate(
+          () => document.activeElement?.closest(".blocks-node") !== null
+        )
+      ).toBe(true);
       expect(await check(page)).toEqual([]);
       // text that does not parse is accepted
       await page.keyboard.press(EDIT);
@@ -117,7 +173,9 @@ for (const lang of Object.keys(SMALL)) {
       expect(await check(page)).toEqual([]);
     });
 
-    test(`${EDIT} on a multi-line block: a textarea as high as the text, Shift+Enter a newline, Enter commits`, async ({ page }) => {
+    test(`${EDIT} on a multi-line block: a textarea as high as the text, Shift+Enter a newline, Enter commits`, async ({
+      page,
+    }) => {
       await load(page, MULTI[lang]);
       const first = page.locator(".cm-content > .cm-line .blocks-node").first();
       await first.focus();
@@ -131,7 +189,9 @@ for (const lang of Object.keys(SMALL)) {
       await page.keyboard.press("ControlOrMeta+End");
       await page.keyboard.press("Shift+Enter");
       expect(await ta.count()).toBe(1);
-      expect(await ta.evaluate((e: HTMLTextAreaElement) => e.rows)).toBe(rows + 1);
+      expect(await ta.evaluate((e: HTMLTextAreaElement) => e.rows)).toBe(
+        rows + 1
+      );
       await page.keyboard.press("Backspace");
       await page.keyboard.press("Enter");
       expect(await ta.count()).toBe(0);

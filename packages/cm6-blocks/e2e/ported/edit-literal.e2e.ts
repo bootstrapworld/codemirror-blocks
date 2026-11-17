@@ -43,8 +43,14 @@ test.describe("editing a literal", () => {
 });
 
 // FIXME-BEGIN (thirteenth round: D: the edit box is an input here, the old one a contenteditable (interact.ts header))
-const FIXME = new Set<string>(["editing a literal › a click opens its text, selected, the first time", "editing a literal › Enter on a selected literal opens its text, selected"]);
+const FIXME = new Set<string>([
+  "editing a literal › a click opens its text, selected, the first time",
+  "editing a literal › Enter on a selected literal opens its text, selected",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "D: the edit box is an input here, the old one a contenteditable (interact.ts header)");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "D: the edit box is an input here, the old one a contenteditable (interact.ts header)"
+  );
 });
 // FIXME-END

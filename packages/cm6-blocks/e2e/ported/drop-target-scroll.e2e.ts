@@ -141,8 +141,21 @@ for (const c of cases) {
 }
 
 // FIXME-BEGIN (thirteenth round: D: the old drop targets are elements with their own box; here the places are gaps (`.blocks-gap`), and the test's selectors find none)
-const FIXME = new Set<string>(["a click on a drop target between the calls of a tall block opens it for typing", "a click on a drop target between arguments opens it for typing", "a click on a drop target in an empty list opens it for typing", "after scrolling, a click on a drop target between the calls of a tall block opens it for typing", "after scrolling, a click on a drop target between arguments opens it for typing", "after scrolling, a click on a drop target in an empty list opens it for typing", "after scrolling, cancelling the box of a drop target between the calls of a tall block leaves the page where it is", "after scrolling, cancelling the box of a drop target between arguments leaves the page where it is", "after scrolling, cancelling the box of a drop target in an empty list leaves the page where it is"]);
+const FIXME = new Set<string>([
+  "a click on a drop target between the calls of a tall block opens it for typing",
+  "a click on a drop target between arguments opens it for typing",
+  "a click on a drop target in an empty list opens it for typing",
+  "after scrolling, a click on a drop target between the calls of a tall block opens it for typing",
+  "after scrolling, a click on a drop target between arguments opens it for typing",
+  "after scrolling, a click on a drop target in an empty list opens it for typing",
+  "after scrolling, cancelling the box of a drop target between the calls of a tall block leaves the page where it is",
+  "after scrolling, cancelling the box of a drop target between arguments leaves the page where it is",
+  "after scrolling, cancelling the box of a drop target in an empty list leaves the page where it is",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "D: the old drop targets are elements with their own box; here the places are gaps (`.blocks-gap`), and the test's selectors find none");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "D: the old drop targets are elements with their own box; here the places are gaps (`.blocks-gap`), and the test's selectors find none"
+  );
 });
 // FIXME-END

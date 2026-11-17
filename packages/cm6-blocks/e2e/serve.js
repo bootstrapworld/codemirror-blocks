@@ -3,16 +3,23 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const root = path.join(__dirname, "..", "demo");
-const types = { ".html": "text/html", ".js": "text/javascript", ".map": "application/json" };
+const types = {
+  ".html": "text/html",
+  ".js": "text/javascript",
+  ".map": "application/json",
+};
 http
   .createServer((req, res) => {
-    const name = req.url.split("?")[0] === "/" ? "/index.html" : req.url.split("?")[0];
+    const name =
+      req.url.split("?")[0] === "/" ? "/index.html" : req.url.split("?")[0];
     const file = path.join(root, path.normalize(name));
     if (!file.startsWith(root) || !fs.existsSync(file)) {
       res.writeHead(404).end("not found");
       return;
     }
-    res.writeHead(200, { "content-type": types[path.extname(file)] || "application/octet-stream" });
+    res.writeHead(200, {
+      "content-type": types[path.extname(file)] || "application/octet-stream",
+    });
     fs.createReadStream(file).pipe(res);
   })
   .listen(8177, process.env.HOST || "127.0.0.1"); // HOST=0.0.0.0 to let a phone on the same network open the page (see the notes, eighth round, step 4)

@@ -1,8 +1,16 @@
 // PORTED from packages/codemirror-blocks/e2e/typing.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, thirteenth round.
 // @ts-nocheck
 import { expect, test } from "@playwright/test";
-import { block, expectConsistent, openInBlockMode, snapshot } from "../compat/helpers";
-test.fixme(true, "M: typing and pasting at the top level (the quarantine) is not built");
+import {
+  block,
+  expectConsistent,
+  openInBlockMode,
+  snapshot,
+} from "../compat/helpers";
+test.fixme(
+  true,
+  "M: typing and pasting at the top level (the quarantine) is not built"
+);
 
 /** Click the blank space to the right of the block that is on this line. */
 const clickBesideBlock = async (

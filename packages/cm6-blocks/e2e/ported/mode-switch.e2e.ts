@@ -2,7 +2,10 @@
 // @ts-nocheck
 import { expect, test } from "@playwright/test";
 import { openInBlockMode } from "../compat/helpers";
-test.fixme(true, "M: the page toggle between text and blocks (and text mode) is not built");
+test.fixme(
+  true,
+  "M: the page toggle between text and blocks (and text mode) is not built"
+);
 
 type Win = { cmb: { getCM(): { getScrollInfo(): { top: number } } } };
 const scrollTop = (page: import("@playwright/test").Page) =>

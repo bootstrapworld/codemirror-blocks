@@ -12,11 +12,31 @@ const all = (ed: LezerBlockEditor): BNode[] => {
   ed.roots().forEach((r) => walk(r, (n) => o.push(n)));
   return o;
 };
-const lit = (ed: LezerBlockEditor, s: string): BNode => all(ed).filter((n) => n.kind === "literal" && text(ed).slice(n.from, n.to) === s)[0];
-const g = (ed: LezerBlockEditor): BNode => all(ed).filter((n) => n.slots.length > 0 && /^[(]?g[( ]2/.test(text(ed).slice(n.from, n.to)))[0];
-const click = (el: Element, init: MouseEventInit = {}) => el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ...init }));
-const fire = (el: Element, type: string, x: number) => el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX: x, clientY: 10 }));
-const input = (ed: LezerBlockEditor) => ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement | null;
+const lit = (ed: LezerBlockEditor, s: string): BNode =>
+  all(ed).filter(
+    (n) => n.kind === "literal" && text(ed).slice(n.from, n.to) === s
+  )[0];
+const g = (ed: LezerBlockEditor): BNode =>
+  all(ed).filter(
+    (n) =>
+      n.slots.length > 0 && /^[(]?g[( ]2/.test(text(ed).slice(n.from, n.to))
+  )[0];
+const click = (el: Element, init: MouseEventInit = {}) =>
+  el.dispatchEvent(
+    new MouseEvent("click", { bubbles: true, cancelable: true, ...init })
+  );
+const fire = (el: Element, type: string, x: number) =>
+  el.dispatchEvent(
+    new MouseEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      clientX: x,
+      clientY: 10,
+    })
+  );
+const input = (ed: LezerBlockEditor) =>
+  ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement | null;
 
 describe.each(LANGS)("click edits a literal: %s", (l) => {
   test("a click on an unfocused literal focuses it and opens its edit box; Enter commits", () => {
@@ -24,7 +44,13 @@ describe.each(LANGS)("click edits a literal: %s", (l) => {
     click(ed.renderer.element(lit(ed, "2")));
     expect(input(ed)!.value).toBe("2");
     input(ed)!.value = "29";
-    input(ed)!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+    input(ed)!.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        bubbles: true,
+        cancelable: true,
+      })
+    );
     expect(text(ed)).toContain("29");
     expect(checkLezerEditor(ed)).toEqual([]);
   });

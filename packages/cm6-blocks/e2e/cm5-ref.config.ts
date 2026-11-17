@@ -7,5 +7,9 @@ export default defineConfig({
   timeout: 120000,
   workers: 1,
   reporter: [["list"]],
-  use: { baseURL: "http://localhost:8190", viewport: { width: 1100, height: 1300 }, reducedMotion: "reduce" },
+  use: {
+    baseURL: "http://localhost:8190",
+    viewport: { width: 1100, height: 1300 },
+    reducedMotion: "reduce",
+  },
 });

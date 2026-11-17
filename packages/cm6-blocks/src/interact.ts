@@ -32,9 +32,12 @@ import type { BNode, Slot } from "./types";
 import type { SoundEvent } from "./sound";
 
 const kids = (n: BNode): BNode[] => n.slots.flatMap((s) => s.nodes);
-const drawable = (n: BNode): boolean => n.kind !== "error" && n.kind !== "program";
+const drawable = (n: BNode): boolean =>
+  n.kind !== "error" && n.kind !== "program";
 /** the platform of the old editor's key map: Cmd-Enter on a Mac, Ctrl-Enter elsewhere */
-const isMac = (): boolean => typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || "");
+const isMac = (): boolean =>
+  typeof navigator !== "undefined" &&
+  /Mac|iPhone|iPad/.test(navigator.platform || "");
 
 /**
  * The block after (or before) the text cursor, by the old editor's rule (`getNodeAfterCur` / `getNodeBeforeCur` in `ast.ts`).
@@ -42,7 +45,11 @@ const isMac = (): boolean => typeof navigator !== "undefined" && /Mac|iPhone|iPa
  * among its children, falling back to the block itself. Before: the last block that starts before the cursor, drilled into its
  * last such child (even when the cursor is past its end). Null when there is none.
  */
-export function blockNearCursor(roots: BNode[], cur: number, forward: boolean): BNode | null {
+export function blockNearCursor(
+  roots: BNode[],
+  cur: number,
+  forward: boolean
+): BNode | null {
   const loop = (nodes: BNode[], fallback: BNode | null): BNode | null => {
     const ns = nodes.filter(drawable);
     if (forward) {
@@ -60,13 +67,24 @@ export function blockNearCursor(roots: BNode[], cur: number, forward: boolean): 
   return loop(roots, null);
 }
 
-export function lastBlock(roots: BNode[], closed: (n: BNode) => boolean = () => false): BNode | null {
+export function lastBlock(
+  roots: BNode[],
+  closed: (n: BNode) => boolean = () => false
+): BNode | null {
   let n: BNode | null = [...roots].reverse().find(drawable) ?? null;
-  for (let k = n && !closed(n) ? kids(n) : []; k.length; k = closed(n) ? [] : kids(n)) n = k[k.length - 1];
+  for (
+    let k = n && !closed(n) ? kids(n) : [];
+    k.length;
+    k = closed(n) ? [] : kids(n)
+  )
+    n = k[k.length - 1];
   return n;
 }
 
-export function nextBlock(n: BNode, closed: (n: BNode) => boolean = () => false): BNode | null {
+export function nextBlock(
+  n: BNode,
+  closed: (n: BNode) => boolean = () => false
+): BNode | null {
   let c: BNode | null = n;
   while (c) {
     const k: BNode[] = closed(c) ? [] : kids(c);
@@ -85,7 +103,10 @@ export function nextBlock(n: BNode, closed: (n: BNode) => boolean = () => false)
   return null;
 }
 
-export function prevBlock(n: BNode, closed: (n: BNode) => boolean = () => false): BNode | null {
+export function prevBlock(
+  n: BNode,
+  closed: (n: BNode) => boolean = () => false
+): BNode | null {
   let c: BNode | null = n;
   while (c) {
     const p: BNode | null = c.parent;
@@ -95,7 +116,12 @@ export function prevBlock(n: BNode, closed: (n: BNode) => boolean = () => false)
     let r: BNode | null;
     if (i > 0) {
       r = sibs[i - 1];
-      for (let k = closed(r) ? [] : kids(r); k.length; k = closed(r) ? [] : kids(r)) r = k[k.length - 1];
+      for (
+        let k = closed(r) ? [] : kids(r);
+        k.length;
+        k = closed(r) ? [] : kids(r)
+      )
+        r = k[k.length - 1];
     } else r = p;
     c = r;
     if (c && c.kind === "program") return null;
@@ -106,7 +132,12 @@ export function prevBlock(n: BNode, closed: (n: BNode) => boolean = () => false)
 
 type Field = HTMLInputElement | HTMLTextAreaElement;
 
-export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(node: BNode, typed?: string): void; beginTemplateDrag(e: PointerEvent, name: string): void; search: Search } {
+export function attachInteraction(ed: LezerBlockEditor): {
+  detach(): void;
+  edit(node: BNode, typed?: string): void;
+  beginTemplateDrag(e: PointerEvent, name: string): void;
+  search: Search;
+} {
   const { view, renderer } = ed;
   const dom = view.dom;
   let open: { cancel(): void } | null = null;
@@ -116,7 +147,9 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     ed.focusNode(n);
     if (ed.focusedNode() === n) return;
     // a root that is not drawn yet (outside the viewport): scroll to it, then try again
-    view.dispatch({ effects: EditorView.scrollIntoView(n.from, { y: "center" }) });
+    view.dispatch({
+      effects: EditorView.scrollIntoView(n.from, { y: "center" }),
+    });
     const again = (left: number) => () => {
       ed.focusNode(n);
       if (ed.focusedNode() !== n && left > 0) setTimeout(again(left - 1), 30);
@@ -124,15 +157,32 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     setTimeout(again(5), 0);
   }
 
-  const search = createSearch(ed, { focus: focusSoon, host: () => view.dom.parentElement ?? view.dom });
+  const search = createSearch(ed, {
+    focus: focusSoon,
+    host: () => view.dom.parentElement ?? view.dom,
+  });
 
   /** a text box, placed by `put`; Enter or blur calls `commit(text)` (an empty text on blur does not), Escape or Alt-Q cancels */
   /** `emptyEnterCommits`: Enter on an empty box commits (the comment box: emptying it removes the comment, a feature of this editor) */
-  type Log = { action: string; target: BNode | null; emptyEnterCommits?: boolean };
-  function box(log: Log, initial: string, put: (input: Field) => void, done: () => void, commit: (text: string) => void, select = true, multiline = false): void {
+  type Log = {
+    action: string;
+    target: BNode | null;
+    emptyEnterCommits?: boolean;
+  };
+  function box(
+    log: Log,
+    initial: string,
+    put: (input: Field) => void,
+    done: () => void,
+    commit: (text: string) => void,
+    select = true,
+    multiline = false
+  ): void {
     open?.cancel();
     ed.clearSelection(); // (the old editor clears the selection when a box opens)
-    const input = multiline ? dom.ownerDocument.createElement("textarea") : dom.ownerDocument.createElement("input");
+    const input = multiline
+      ? dom.ownerDocument.createElement("textarea")
+      : dom.ownerDocument.createElement("input");
     input.className = multiline ? "blocks-edit blocks-edit-all" : "blocks-edit";
     input.value = initial;
     const fit = () => {
@@ -161,8 +211,17 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
         finish();
         // an emptied box does nothing, as in the old editor (`NodeEditable`: "no insertion value": the box closes, the block stays) and as
         // the blur below: the same for a leaf's box, the Cmd/Ctrl-Enter box and an insertion box (the comment box keeps its own rule: see `emptyEnterCommits`)
-        if (t.trim() === "" && !log.emptyEnterCommits) ed.act(log.action + "Cancel", log.target, { how: "enter-empty" }, () => {});
-        else ed.act(log.action, log.target, { how: "enter", text: t }, () => commit(t));
+        if (t.trim() === "" && !log.emptyEnterCommits)
+          ed.act(
+            log.action + "Cancel",
+            log.target,
+            { how: "enter-empty" },
+            () => {}
+          );
+        else
+          ed.act(log.action, log.target, { how: "enter", text: t }, () =>
+            commit(t)
+          );
       } else if (e.key === "Escape" || (e.altKey && e.code === "KeyQ")) {
         e.preventDefault();
         ed.act(log.action + "Cancel", log.target, {}, finish);
@@ -174,7 +233,10 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       const t = input.value;
       const to = (e as FocusEvent).relatedTarget as HTMLElement | null;
       finish();
-      if (t.trim() !== "") ed.act(log.action, log.target, { how: "blur", text: t }, () => commit(t));
+      if (t.trim() !== "")
+        ed.act(log.action, log.target, { how: "blur", text: t }, () =>
+          commit(t)
+        );
       if (to && to.isConnected && to.focus) to.focus();
     });
     put(input);
@@ -194,10 +256,12 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       if (text) text.classList.remove("blocks-text-hidden");
       ed.focusNode(node);
     };
-    ed.say(`editing ${typed ?? node.value ?? ""}.  Use Enter to save, and Alt-Q to cancel`);
+    ed.say(
+      `editing ${typed ?? node.value ?? ""}.  Use Enter to save, and Alt-Q to cancel`
+    );
     box(
       { action: "edit", target: node },
-      typed ?? (node.kind === "blank" ? "" : node.value ?? ""),
+      typed ?? (node.kind === "blank" ? "" : (node.value ?? "")),
       (input) => {
         if (text) {
           text.classList.add("blocks-text-hidden");
@@ -221,14 +285,23 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     if (!el.isConnected) return;
     const initial = ed.copyText(node);
     const line = view.state.doc.lineAt(node.from);
-    const indent = (line.text.slice(0, node.from - line.from).match(/^[ \t]*/) as RegExpMatchArray)[0];
-    ed.say(`editing ${ed.language.describe(node)}.  Use Enter to save, and Alt-Q to cancel`);
+    const indent = (
+      line.text
+        .slice(0, node.from - line.from)
+        .match(/^[ \t]*/) as RegExpMatchArray
+    )[0];
+    ed.say(
+      `editing ${ed.language.describe(node)}.  Use Enter to save, and Alt-Q to cancel`
+    );
     box(
       { action: "editAll", target: node },
       initial,
       (field) => {
         el.classList.add("blocks-editing");
-        field.setAttribute("aria-label", `editing ${ed.language.describe(node)}`);
+        field.setAttribute(
+          "aria-label",
+          `editing ${ed.language.describe(node)}`
+        );
         el.appendChild(field);
       },
       () => {
@@ -239,7 +312,11 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
         const v = t.replace(/\r\n?/g, "\n").replace(/\s+$/, "");
         if (v.trim() === "" || v === initial) return;
         // (a Python statement's range ends with its newline: the text typed does not, so what the old range ended with stays)
-        const tail = (view.state.doc.sliceString(node.from, node.to).match(/\s*$/) as RegExpMatchArray)[0];
+        const tail = (
+          view.state.doc
+            .sliceString(node.from, node.to)
+            .match(/\s*$/) as RegExpMatchArray
+        )[0];
         try {
           ed.replaceText(node, v.replace(/\n/g, "\n" + indent) + tail);
           ed.say(`changed ${v.replace(/\s+/g, " ")}`);
@@ -264,11 +341,18 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     const c = ed.commentOf(host);
     const raw = c ? view.state.doc.sliceString(c.from, c.to) : "";
     const words = c ? plainComment(raw) : "";
-    ed.say(c ? `editing comment: ${words}.  Use Enter to save, and Alt-Q to cancel` : "adding a comment.  Use Enter to save, and Alt-Q to cancel");
+    ed.say(
+      c
+        ? `editing comment: ${words}.  Use Enter to save, and Alt-Q to cancel`
+        : "adding a comment.  Use Enter to save, and Alt-Q to cancel"
+    );
     box(
       { action: "comment", target: host, emptyEnterCommits: true },
       words,
-      (input) => renderer.element(host).insertBefore(input, renderer.element(host).firstChild),
+      (input) =>
+        renderer
+          .element(host)
+          .insertBefore(input, renderer.element(host).firstChild),
       () => ed.focusNode(host),
       (t) => {
         try {
@@ -281,21 +365,32 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   }
 
   /** a box for a new element at `index` of `slot`, shown by `put`; focus goes to `anchor` first */
-  function insertBox(slot: Slot, index: number, anchor: BNode, put: (input: Field) => void): void {
+  function insertBox(
+    slot: Slot,
+    index: number,
+    anchor: BNode,
+    put: (input: Field) => void
+  ): void {
     ed.say("inserting.  Use Enter to save, and Alt-Q to cancel");
-    box({ action: "insert", target: anchor }, "", put, () => ed.focusNode(anchor), (t) => {
-      if (t.trim() === "") return;
-      try {
-        const had = slot.nodes.length;
-        ed.insertText(slot, index, t);
-        // focus goes to the block that was inserted, as in the old editor (its edit's focus hint), so that a redo comes back to it too
-        const made = slot.nodes.length > had ? slot.nodes[index] : null;
-        if (made && made.kind !== "error") ed.focusNode(made);
-        ed.say(`inserted ${t}`);
-      } catch (e) {
-        ed.lastError = (e as Error).message;
+    box(
+      { action: "insert", target: anchor },
+      "",
+      put,
+      () => ed.focusNode(anchor),
+      (t) => {
+        if (t.trim() === "") return;
+        try {
+          const had = slot.nodes.length;
+          ed.insertText(slot, index, t);
+          // focus goes to the block that was inserted, as in the old editor (its edit's focus hint), so that a redo comes back to it too
+          const made = slot.nodes.length > had ? slot.nodes[index] : null;
+          if (made && made.kind !== "error") ed.focusNode(made);
+          ed.say(`inserted ${t}`);
+        } catch (e) {
+          ed.lastError = (e as Error).message;
+        }
       }
-    });
+    );
   }
 
   function siblingBox(node: BNode, after: boolean): void {
@@ -355,7 +450,12 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     collapseRoot: (n, _e, handled) => {
       handled();
       // (the old editor: a top-level block that is collapsed already or has nothing in it only beeps)
-      if (n.parent && n.parent.kind === "program" && (renderer.isCollapsed(n) || n.slots.length === 0)) return beep("collapse-root");
+      if (
+        n.parent &&
+        n.parent.kind === "program" &&
+        (renderer.isCollapsed(n) || n.slots.length === 0)
+      )
+        return beep("collapse-root");
       ed.collapseRoot(rootsOf(n), true);
       focusSoon(rootsOf(n));
     },
@@ -430,7 +530,8 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     readAncestors: (n, _e, handled) => {
       handled();
       const parts = [ed.language.describe(n)];
-      for (let p = n.parent; p && p.kind !== "program"; p = p.parent) parts.push(ed.language.describe(p) + ", at level " + level(p));
+      for (let p = n.parent; p && p.kind !== "program"; p = p.parent)
+        parts.push(ed.language.describe(p) + ", at level " + level(p));
       if (parts.length > 1) ed.say(parts.join(", inside "));
       else beep("no-ancestors");
     },
@@ -475,7 +576,9 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       handled();
       const sel = ed.selectedBlocks();
       if (sel.length) {
-        ed.say("deleted " + sel.map((x) => ed.language.describe(x)).join(" and "));
+        ed.say(
+          "deleted " + sel.map((x) => ed.language.describe(x)).join(" and ")
+        );
         ed.clearSelection();
         ed.removeNodes(sel);
       } else {
@@ -490,7 +593,8 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       else ed.collapse(n, !renderer.isCollapsed(n)); // (the old editor: Enter on a compound block collapses or expands it)
     },
     typeIntoHole: (n, e, handled) => {
-      if (n.slots.length !== 0 || n.value !== (ed.options.table.blank ?? "...")) return;
+      if (n.slots.length !== 0 || n.value !== (ed.options.table.blank ?? "..."))
+        return;
       handled();
       editLeaf(n, e.key);
     },
@@ -503,7 +607,11 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     if (!node) {
       // no block has the focus, the text does: Down and Up activate the block after / before the cursor, as in the old editor
       // (in block mode; it keeps the key from moving the text cursor, as there, and beeps when there is no such block)
-      if (ed.isBlockMode() && view.contentDOM.contains(t) && commandOf(e, isMac()) === "editAll") {
+      if (
+        ed.isBlockMode() &&
+        view.contentDOM.contains(t) &&
+        commandOf(e, isMac()) === "editAll"
+      ) {
         // Ctrl/Cmd-Enter has no block to edit: the old editor's handler returns and its CodeMirror 5 has no binding for the key, so nothing
         // happens; CodeMirror 6's own `Mod-Enter` (insert a blank line) must not (Ctrl/Cmd-X is the same in both: the native cut, of the line)
         e.preventDefault();
@@ -512,8 +620,17 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       }
       // the search keys work from the text too (the old handlers do not need a block: `goToMatch` goes "from the focused block, or else from
       // the cursor"; the rotor and the dialog need nothing)
-      const textCmd = ed.isBlockMode() && view.contentDOM.contains(t) ? commandOf(e, isMac()) : null;
-      if (textCmd === "search" || textCmd === "searchNext" || textCmd === "searchPrevious" || textCmd === "nextSearchType" || textCmd === "previousSearchType") {
+      const textCmd =
+        ed.isBlockMode() && view.contentDOM.contains(t)
+          ? commandOf(e, isMac())
+          : null;
+      if (
+        textCmd === "search" ||
+        textCmd === "searchNext" ||
+        textCmd === "searchPrevious" ||
+        textCmd === "nextSearchType" ||
+        textCmd === "previousSearchType"
+      ) {
         e.preventDefault();
         e.stopPropagation();
         const at = view.state.selection.main.head;
@@ -523,29 +640,59 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
         else search.rotor(textCmd === "nextSearchType");
         return;
       }
-      if (!ed.isBlockMode() || !view.contentDOM.contains(t) || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
-      if (commandOf(e, isMac()) !== (e.key === "ArrowDown" ? "next" : "previous")) return;
+      if (
+        !ed.isBlockMode() ||
+        !view.contentDOM.contains(t) ||
+        (e.key !== "ArrowDown" && e.key !== "ArrowUp")
+      )
+        return;
+      if (
+        commandOf(e, isMac()) !== (e.key === "ArrowDown" ? "next" : "previous")
+      )
+        return;
       const forward = e.key === "ArrowDown";
-      const found = blockNearCursor(ed.roots(), view.state.selection.main.head, forward);
-      ed.act(forward ? "next" : "previous", found, { key: e.key, mods: "", fromCursor: true }, () => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (found) focusSoon(found);
-        else beep(forward ? "no-next" : "no-previous");
-      });
+      const found = blockNearCursor(
+        ed.roots(),
+        view.state.selection.main.head,
+        forward
+      );
+      ed.act(
+        forward ? "next" : "previous",
+        found,
+        { key: e.key, mods: "", fromCursor: true },
+        () => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (found) focusSoon(found);
+          else beep(forward ? "no-next" : "no-previous");
+        }
+      );
       return;
     }
     const cmd = commandOf(e, isMac());
     if (!cmd) return;
     // (logged when the key did something; the character that starts a box is not recorded: the box's text is, when it is committed)
     let did = false;
-    const mods = [e.ctrlKey && "Ctrl", e.metaKey && "Cmd", e.altKey && "Alt", e.shiftKey && "Shift"].filter(Boolean).join("-");
-    ed.act(cmd, node, cmd === "typeIntoHole" ? { mods } : { key: e.key, mods }, () =>
-      run[cmd](node, e, () => {
-        did = true;
-        e.preventDefault();
-        e.stopPropagation();
-      }), () => !did);
+    const mods = [
+      e.ctrlKey && "Ctrl",
+      e.metaKey && "Cmd",
+      e.altKey && "Alt",
+      e.shiftKey && "Shift",
+    ]
+      .filter(Boolean)
+      .join("-");
+    ed.act(
+      cmd,
+      node,
+      cmd === "typeIntoHole" ? { mods } : { key: e.key, mods },
+      () =>
+        run[cmd](node, e, () => {
+          did = true;
+          e.preventDefault();
+          e.stopPropagation();
+        }),
+      () => !did
+    );
   }
 
   /** a short sound is the old editor's way to say "no" (sound.ts lists the events) */
@@ -571,7 +718,11 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     const sel = ed.selectedBlocks();
     return sel.length ? sel : node.slot ? [node] : [];
   };
-  function onCopy(e: ClipboardEvent, cut: boolean, d: Record<string, unknown>): void {
+  function onCopy(
+    e: ClipboardEvent,
+    cut: boolean,
+    d: Record<string, unknown>
+  ): void {
     const node = active(e);
     if (!node) return;
     if (cut && !ed.selectedBlocks().length) {
@@ -591,7 +742,10 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     e.clipboardData?.setData("text/plain", clip);
     e.preventDefault();
     e.stopPropagation();
-    ed.say((cut ? "cut " : "copied ") + nodes.map((n) => ed.language.describe(n)).join(" and "));
+    ed.say(
+      (cut ? "cut " : "copied ") +
+        nodes.map((n) => ed.language.describe(n)).join(" and ")
+    );
     if (cut) {
       ed.clearSelection();
       ed.removeNodes(nodes, true);
@@ -613,31 +767,57 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       // only the focused block, not the other selected ones; the whole selection is cleared afterwards; one undo step; nothing is announced)
       if (renderer.isSelected(node)) {
         d.over = true;
-        ed.replaceWithTexts(node, clipItems.length > 1 && text === clip ? clipItems : [text]);
+        ed.replaceWithTexts(
+          node,
+          clipItems.length > 1 && text === clip ? clipItems : [text]
+        );
         ed.clearSelection();
         return;
       }
       // several blocks were copied and the clipboard still holds them: they go in as separate elements
-      if (clipItems.length > 1 && text === clip) ed.pasteTexts(node, clipItems, before);
+      if (clipItems.length > 1 && text === clip)
+        ed.pasteTexts(node, clipItems, before);
       else ed.pasteText(node, text, before);
       ed.clearSelection();
     } catch (err) {
       ed.lastError = (err as Error).message;
-      ed.say(d.over ? "Cannot paste over this node." : `Cannot paste ${before ? "before" : "after"} this node.`);
+      ed.say(
+        d.over
+          ? "Cannot paste over this node."
+          : `Cannot paste ${before ? "before" : "after"} this node.`
+      );
       beep("paste-refused");
     }
   }
   const onCopyEv = (e: Event) => {
     const d: Record<string, unknown> = {};
-    ed.act("copy", active(e), d, () => onCopy(e as ClipboardEvent, false, d), () => !d.text);
+    ed.act(
+      "copy",
+      active(e),
+      d,
+      () => onCopy(e as ClipboardEvent, false, d),
+      () => !d.text
+    );
   };
   const onCutEv = (e: Event) => {
     const d: Record<string, unknown> = {};
-    ed.act("cut", active(e), d, () => onCopy(e as ClipboardEvent, true, d), () => !d.text);
+    ed.act(
+      "cut",
+      active(e),
+      d,
+      () => onCopy(e as ClipboardEvent, true, d),
+      () => !d.text
+    );
   };
   const onPasteEv = (e: Event) => {
     const d: Record<string, unknown> = {};
-    ed.act("paste", active(e), d, () => onPaste(e as ClipboardEvent, d), () => !d.text);
+    ed.act(
+      "paste",
+      active(e),
+      d,
+      () => onPaste(e as ClipboardEvent, d),
+      () => !d.text
+    );
   };
 
   /* ---- drag and drop (pointer events: mouse, finger, pen) */
@@ -668,7 +848,11 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   };
 
   /** what a drop at (x, y) would mean: a gap, a blank, or the top or bottom edge of a top-level block */
-  function targetAt(x: number, y: number, node: BNode | null): { target: Target; mark: Element } | null {
+  function targetAt(
+    x: number,
+    y: number,
+    node: BNode | null
+  ): { target: Target; mark: Element } | null {
     const el = doc.elementFromPoint(x, y);
     if (!el || !dom.contains(el)) return null;
     const gap = renderer.gapOf(el);
@@ -676,25 +860,53 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     if (gap) return { target: gap, mark: el.closest(".blocks-gap") as Element };
     const hit = renderer.nodeOf(el);
     if (!hit) return null;
-    if (ed.isBlank(hit) && hit !== node) return { target: { blank: hit }, mark: renderer.element(hit) };
+    if (ed.isBlank(hit) && hit !== node)
+      return { target: { blank: hit }, mark: renderer.element(hit) };
     const root = rootsOf(hit);
     if (root !== node && root.parent && root.slot) {
       const r = renderer.element(root).getBoundingClientRect();
       const i = root.slot.nodes.indexOf(root);
-      if (r.height > 0 && y < r.top + r.height * 0.3) return { target: { slot: root.slot, index: i }, mark: renderer.element(root) };
-      if (r.height > 0 && y > r.bottom - r.height * 0.3) return { target: { slot: root.slot, index: i + 1 }, mark: renderer.element(root) };
+      if (r.height > 0 && y < r.top + r.height * 0.3)
+        return {
+          target: { slot: root.slot, index: i },
+          mark: renderer.element(root),
+        };
+      if (r.height > 0 && y > r.bottom - r.height * 0.3)
+        return {
+          target: { slot: root.slot, index: i + 1 },
+          mark: renderer.element(root),
+        };
     }
     return null;
   }
   /** where a drop went, for the log: a gap (the slot and index) or a hole (its place) */
-  const describeTarget = (t: Target): Record<string, unknown> => ("blank" in t ? { blank: { from: t.blank.from, to: t.blank.to } } : { slot: t.slot.name, owner: { kind: t.slot.owner.kind, from: t.slot.owner.from }, index: t.index });
+  const describeTarget = (t: Target): Record<string, unknown> =>
+    "blank" in t
+      ? { blank: { from: t.blank.from, to: t.blank.to } }
+      : {
+          slot: t.slot.name,
+          owner: { kind: t.slot.owner.kind, from: t.slot.owner.from },
+          index: t.index,
+        };
   /** a drag let go over the editor but not over a place that takes it (the old editor beeps there; let go elsewhere, it does nothing) */
   const overEditor = (e: PointerEvent): boolean => {
     const el = doc.elementFromPoint(e.clientX, e.clientY);
     return !!el && dom.contains(el);
   };
   /* a template dragged out of the toolbar: the same targets (gaps, blanks, the edges of top-level blocks), the same marks; the block is made where it is let go */
-  interface TDrag { name: string; x: number; y: number; on: boolean; mark: Element | null; id: number; touch: boolean; timer: ReturnType<typeof setTimeout> | null; ghost: HTMLElement | null; cx: number; cy: number }
+  interface TDrag {
+    name: string;
+    x: number;
+    y: number;
+    on: boolean;
+    mark: Element | null;
+    id: number;
+    touch: boolean;
+    timer: ReturnType<typeof setTimeout> | null;
+    ghost: HTMLElement | null;
+    cx: number;
+    cy: number;
+  }
   let tdrag: TDrag | null = null;
   /** a small label that follows the pointer, above a finger (so that the finger does not hide it); it takes no pointer events, so it never swallows `elementFromPoint` */
   function moveGhost(d: TDrag): void {
@@ -705,13 +917,22 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   /** while a finger drags: the holes (what a drop can replace) get a class, so that they can grow to a finger-sized target (a language's hole is a literal that says `...`, not a kind of its own) */
   function markHoles(on: boolean): void {
     if (!on) {
-      for (const el of Array.from(dom.querySelectorAll(".blocks-hole"))) el.classList.remove("blocks-hole");
+      for (const el of Array.from(dom.querySelectorAll(".blocks-hole")))
+        el.classList.remove("blocks-hole");
       return;
     }
     // (only what is drawn: CodeMirror draws the viewport, so the walk is over the elements that exist now; auto-scroll calls this again as blocks come into view)
     for (const el of Array.from(dom.querySelectorAll(".blocks-node"))) {
       const n = renderer.nodeOf(el);
-      if (n && renderer.has(n) && renderer.element(n) === el && n.slots.length === 0 && n.kind !== "error" && ed.isBlank(n)) el.classList.add("blocks-hole");
+      if (
+        n &&
+        renderer.has(n) &&
+        renderer.element(n) === el &&
+        n.slots.length === 0 &&
+        n.kind !== "error" &&
+        ed.isBlank(n)
+      )
+        el.classList.add("blocks-hole");
     }
   }
   /*
@@ -725,7 +946,9 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     onFrame: () => {
       if (drag?.on) {
         if (drag.touch) markHoles(true);
-        for (const g of drag.group) if (renderer.has(g)) renderer.element(g).classList.add("blocks-drag-source");
+        for (const g of drag.group)
+          if (renderer.has(g))
+            renderer.element(g).classList.add("blocks-drag-source");
         retarget(drag, pointer.x, pointer.y);
       } else if (tdrag?.on) {
         if (tdrag.touch) markHoles(true);
@@ -733,7 +956,11 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       }
     },
   });
-  function retarget(d: { mark: Element | null; target?: Target | null }, x: number, y: number): void {
+  function retarget(
+    d: { mark: Element | null; target?: Target | null },
+    x: number,
+    y: number
+  ): void {
     const hit = targetAt(x, y, drag?.on ? drag.node : null);
     if (hit?.mark !== d.mark) {
       d.mark?.classList.remove("blocks-drop-target");
@@ -744,7 +971,8 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   }
   /** Escape cancels a drag in progress (nothing is written; the click that the let-go would make is swallowed) */
   const onEscape = (e: KeyboardEvent): void => {
-    if (e.key !== "Escape" || !((drag && drag.on) || (tdrag && tdrag.on))) return;
+    if (e.key !== "Escape" || !((drag && drag.on) || (tdrag && tdrag.on)))
+      return;
     e.preventDefault();
     e.stopPropagation();
     const stop = (ev: Event): void => {
@@ -825,17 +1053,26 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       doc.addEventListener("click", stop, { capture: true, once: true });
       setTimeout(() => doc.removeEventListener("click", stop, true), 0);
       tdone();
-      ed.act("templateDrop", null, { name: d.name, to: hit ? describeTarget(hit.target) : null, touch: d.touch }, () => {
-        if (hit) {
-          try {
-            ed.insertTemplateAt(d.name, hit.target);
-          } catch (err) {
-            ed.lastError = (err as Error).message;
-            ed.say((err as Error).message);
-            beep("drop-refused");
-          }
-        } else if (overEditor(e)) beep("drop-nowhere");
-      });
+      ed.act(
+        "templateDrop",
+        null,
+        {
+          name: d.name,
+          to: hit ? describeTarget(hit.target) : null,
+          touch: d.touch,
+        },
+        () => {
+          if (hit) {
+            try {
+              ed.insertTemplateAt(d.name, hit.target);
+            } catch (err) {
+              ed.lastError = (err as Error).message;
+              ed.say((err as Error).message);
+              beep("drop-refused");
+            }
+          } else if (overEditor(e)) beep("drop-nowhere");
+        }
+      );
     } else tdone();
   }
   /**
@@ -845,7 +1082,19 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   function beginTemplateDrag(e: PointerEvent, name: string): void {
     if (e.button !== 0) return;
     tdone();
-    const d: TDrag = { name, x: e.clientX, y: e.clientY, cx: e.clientX, cy: e.clientY, on: false, mark: null, id: e.pointerId, touch: e.pointerType === "touch", timer: null, ghost: null };
+    const d: TDrag = {
+      name,
+      x: e.clientX,
+      y: e.clientY,
+      cx: e.clientX,
+      cy: e.clientY,
+      on: false,
+      mark: null,
+      id: e.pointerId,
+      touch: e.pointerType === "touch",
+      timer: null,
+      ghost: null,
+    };
     tdrag = d;
     doc.addEventListener("pointermove", tMove, true);
     doc.addEventListener("pointerup", tUp, true);
@@ -868,13 +1117,19 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
    * they say `passive: false`). It does nothing unless a finger drag is on.
    */
   const holdScroll = (e: Event): void => {
-    if ((drag && drag.on && drag.touch) || (tdrag && tdrag.on && tdrag.touch)) noScroll(e);
+    if ((drag && drag.on && drag.touch) || (tdrag && tdrag.on && tdrag.touch))
+      noScroll(e);
   };
-  doc.addEventListener("touchmove", holdScroll, { passive: false, capture: true });
+  doc.addEventListener("touchmove", holdScroll, {
+    passive: false,
+    capture: true,
+  });
   function begin(d: Drag): void {
     d.on = true;
     dom.classList.add("blocks-dragging");
-    for (const g of d.group) if (renderer.has(g)) renderer.element(g).classList.add("blocks-drag-source");
+    for (const g of d.group)
+      if (renderer.has(g))
+        renderer.element(g).classList.add("blocks-drag-source");
     if (d.touch) {
       dom.classList.add("blocks-touch-drag");
       markHoles(true);
@@ -891,7 +1146,9 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     markHoles(false);
     if (drag) {
       drag.mark?.classList.remove("blocks-drop-target");
-      for (const g of drag.group) if (renderer.has(g)) renderer.element(g).classList.remove("blocks-drag-source");
+      for (const g of drag.group)
+        if (renderer.has(g))
+          renderer.element(g).classList.remove("blocks-drag-source");
     }
     dom.classList.remove("blocks-dragging");
     drag = null;
@@ -900,13 +1157,27 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     doc.removeEventListener("pointercancel", onCancel, true);
   }
   function onDown(e: PointerEvent): void {
-    if (e.button !== 0 || (e.target as Element).closest?.(".blocks-edit")) return;
+    if (e.button !== 0 || (e.target as Element).closest?.(".blocks-edit"))
+      return;
     const node = renderer.nodeOf(e.target as Element);
     // (the press focuses the block before the click comes: remember whether it already had the focus)
     pressedFocused = !!node && ed.focusedNode() === node;
     if (!node || !node.slot || renderer.gapOf(e.target as Element)) return;
     const touch = e.pointerType === "touch";
-    drag = { touch, timer: null, node, group: renderer.isSelected(node) && ed.selectedBlocks().length ? ed.selectedBlocks() : [node], x: e.clientX, y: e.clientY, on: false, target: null, mark: null };
+    drag = {
+      touch,
+      timer: null,
+      node,
+      group:
+        renderer.isSelected(node) && ed.selectedBlocks().length
+          ? ed.selectedBlocks()
+          : [node],
+      x: e.clientX,
+      y: e.clientY,
+      on: false,
+      target: null,
+      mark: null,
+    };
     doc.addEventListener("pointermove", onMove, true);
     doc.addEventListener("pointerup", onUp, true);
     doc.addEventListener("pointercancel", onCancel, true);
@@ -956,16 +1227,25 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       swallowClick = true;
       setTimeout(() => (swallowClick = false), 0);
       clearDrag();
-      ed.act("drag", d.node, { to: hit ? describeTarget(hit.target) : null, count: d.group.length, touch: d.touch }, () => {
-        if (hit) {
-          try {
-            ed.moveNodes(d.group, hit.target);
-          } catch (err) {
-            ed.lastError = (err as Error).message;
-            beep("drop-refused");
-          }
-        } else if (overEditor(e)) beep("drop-nowhere");
-      });
+      ed.act(
+        "drag",
+        d.node,
+        {
+          to: hit ? describeTarget(hit.target) : null,
+          count: d.group.length,
+          touch: d.touch,
+        },
+        () => {
+          if (hit) {
+            try {
+              ed.moveNodes(d.group, hit.target);
+            } catch (err) {
+              ed.lastError = (err as Error).message;
+              beep("drop-refused");
+            }
+          } else if (overEditor(e)) beep("drop-nowhere");
+        }
+      );
     } else clearDrag();
   }
   function onCancel(): void {
@@ -977,7 +1257,15 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     const touch0 = (e as PointerEvent).pointerType === "touch";
     if (swallowClick || t0.closest?.(".blocks-edit")) return clicked(e);
     const g = renderer.gapOf(t0);
-    ed.act(g ? "gapClick" : "click", g ? g.slot.owner : renderer.nodeOf(t0), g ? { slot: g.slot.name, index: g.index, touch: touch0 } : { touch: touch0, shift: e.shiftKey, detail: e.detail }, () => clicked(e), () => !g && !renderer.nodeOf(t0));
+    ed.act(
+      g ? "gapClick" : "click",
+      g ? g.slot.owner : renderer.nodeOf(t0),
+      g
+        ? { slot: g.slot.name, index: g.index, touch: touch0 }
+        : { touch: touch0, shift: e.shiftKey, detail: e.detail },
+      () => clicked(e),
+      () => !g && !renderer.nodeOf(t0)
+    );
   }
   function clicked(e: MouseEvent): void {
     if (swallowClick) {
@@ -993,7 +1281,9 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     if (gap) {
       const owner = gap.slot.owner;
       const gapEl = t.closest(".blocks-gap") as HTMLElement;
-      insertBox(gap.slot, gap.index, owner, (input) => gapEl.parentElement?.insertBefore(input, gapEl));
+      insertBox(gap.slot, gap.index, owner, (input) =>
+        gapEl.parentElement?.insertBefore(input, gapEl)
+      );
       return;
     }
     const node = renderer.nodeOf(t);
@@ -1005,7 +1295,13 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     ed.focusNode(node);
     // a click (not a drag: that one is swallowed above; not a touch: that is the second-tap rule below; not the second click of a
     // double click) on a literal opens its edit box, focused or not, as in the old editor (`normallyEditable`); a compound block only gets focus
-    if (!touch && node.slots.length === 0 && node.kind !== "program" && e.detail <= 1 && !(e.shiftKey || e.ctrlKey || e.metaKey || e.altKey)) {
+    if (
+      !touch &&
+      node.slots.length === 0 &&
+      node.kind !== "program" &&
+      e.detail <= 1 &&
+      !(e.shiftKey || e.ctrlKey || e.metaKey || e.altKey)
+    ) {
       editLeaf(node);
       return;
     }
@@ -1022,7 +1318,9 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     const node = renderer.nodeOf(t);
     if (!node || node.slots.length === 0) return;
     e.preventDefault();
-    ed.act("dblclick", node, {}, () => ed.collapse(node, !renderer.isCollapsed(node)));
+    ed.act("dblclick", node, {}, () =>
+      ed.collapse(node, !renderer.isCollapsed(node))
+    );
   }
   dom.addEventListener("dblclick", onDblClick, true);
   dom.addEventListener("click", onClick, true);

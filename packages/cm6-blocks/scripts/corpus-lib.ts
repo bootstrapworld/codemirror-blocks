@@ -30,7 +30,11 @@ export function sample<T>(items: T[], n: number, seed: number): T[] {
   }
   return a.slice(0, n).sort();
 }
-const sh = (cmd: string, cwd = ROOT): string[] => execSync(cmd, { cwd, maxBuffer: 1 << 28 }).toString().split("\n").filter(Boolean);
+const sh = (cmd: string, cwd = ROOT): string[] =>
+  execSync(cmd, { cwd, maxBuffer: 1 << 28 })
+    .toString()
+    .split("\n")
+    .filter(Boolean);
 const tooBig = (f: string) => fs.statSync(f).size > 200 * 1024;
 const minified = (text: string) => text.split("\n").some((l) => l.length > 400);
 
@@ -45,7 +49,9 @@ const read = (f: string): string => fs.readFileSync(f, "utf8");
 
 /** WeScheme programs that appear as string literals in the repo's tests and soak generators */
 export function schemeLiterals(): { name: string; text: string }[] {
-  const files = sh("git ls-files 'packages/codemirror-blocks/spec' 'packages/codemirror-blocks/e2e' 'packages/wescheme/spec' 'packages/wescheme-blocks/spec' 'scripts' 'packages/codemirror-blocks/scripts' | grep -E '\\.(ts|tsx|js)$' || true");
+  const files = sh(
+    "git ls-files 'packages/codemirror-blocks/spec' 'packages/codemirror-blocks/e2e' 'packages/wescheme/spec' 'packages/wescheme-blocks/spec' 'scripts' 'packages/codemirror-blocks/scripts' | grep -E '\\.(ts|tsx|js)$' || true"
+  );
   const seen = new Set<string>();
   const out: { name: string; text: string }[] = [];
   for (const f of files) {
@@ -58,9 +64,19 @@ export function schemeLiterals(): { name: string; text: string }[] {
         const s = t.trim();
         const opens = (s.match(/[([]/g) ?? []).length;
         const closes = (s.match(/[)\]]/g) ?? []).length;
-        if (s.length >= 8 && /^[([;]/.test(s) && opens > 0 && opens === closes && !/^\(\)\s*=>/.test(s) && !seen.has(s)) {
+        if (
+          s.length >= 8 &&
+          /^[([;]/.test(s) &&
+          opens > 0 &&
+          opens === closes &&
+          !/^\(\)\s*=>/.test(s) &&
+          !seen.has(s)
+        ) {
           seen.add(s);
-          out.push({ name: `${f}:${sf.getLineAndCharacterOfPosition(n.getStart()).line + 1}`, text: t });
+          out.push({
+            name: `${f}:${sf.getLineAndCharacterOfPosition(n.getStart()).line + 1}`,
+            text: t,
+          });
         }
       }
       ts.forEachChild(n, visit);
@@ -73,23 +89,91 @@ export function schemeLiterals(): { name: string; text: string }[] {
 export function corpora(): Corpus[] {
   const out: Corpus[] = [];
   // ---- Scheme
-  const rkt = sh("git ls-files '*.rkt' '*.scm' '*.ss'").filter((f) => !tooBig(path.join(ROOT, f)));
-  out.push({ name: "scheme-repo-files", language: "scheme", note: "every .rkt/.scm/.ss tracked in this repository", files: rkt.map((f) => ({ name: f, text: read(path.join(ROOT, f)) })) });
-  out.push({ name: "scheme-test-literals", language: "scheme", note: "string literals in the repo's own tests that look like programs (what students' programs look like)", files: schemeLiterals() });
+  const rkt = sh("git ls-files '*.rkt' '*.scm' '*.ss'").filter(
+    (f) => !tooBig(path.join(ROOT, f))
+  );
+  out.push({
+    name: "scheme-repo-files",
+    language: "scheme",
+    note: "every .rkt/.scm/.ss tracked in this repository",
+    files: rkt.map((f) => ({ name: f, text: read(path.join(ROOT, f)) })),
+  });
+  out.push({
+    name: "scheme-test-literals",
+    language: "scheme",
+    note: "string literals in the repo's own tests that look like programs (what students' programs look like)",
+    files: schemeLiterals(),
+  });
   // ---- JavaScript
-  const own = sh("git ls-files '*.js' '*.mjs'").filter((f) => !/(^|\/)(dist|lib|build|vendors?)\//.test(f) && !/^packages\/wescheme\//.test(f) && !/\.min\./.test(f) && !/^packages\/cm6-blocks\/demo\/demo\.js$/.test(f) && !tooBig(path.join(ROOT, f)));
-  out.push({ name: "js-repo-own", language: "javascript", note: "plain .js/.mjs tracked in this repository (not dist/lib, not the vendored WeScheme reader)", files: own.map((f) => ({ name: f, text: read(path.join(ROOT, f)) })) });
-  const nm = sh("find node_modules -type f \\( -name '*.js' -o -name '*.mjs' \\) -size -200k -not -name '*.min.js' -not -name '*.d.ts' -not -path '*/test/*' -not -path '*/tests/*' -not -path '*/__tests__/*' -not -path '*/node_modules/.cache/*' -not -path '*/example*/*' | sort");
-  const nmFiles = sample(nm, 600, 7).map((f) => ({ name: f, text: read(path.join(ROOT, f)) })).filter((f) => !minified(f.text)).slice(0, 200);
-  out.push({ name: "js-node_modules-library", language: "javascript", note: `~200 non-minified .js/.mjs sampled (seed 7) from ${nm.length} files under node_modules: library code`, files: nmFiles });
-  const ex = sh("find node_modules -type f -name '*.js' -size -50k \\( -path '*/examples/*' -o -path '*/example/*' -o -path '*/demo/*' \\) | sort");
-  out.push({ name: "js-node_modules-examples", language: "javascript", note: `up to 40 example/demo .js sampled (seed 11) from ${ex.length} files: the nearest thing to beginner-style programs found locally`, files: sample(ex, 80, 11).map((f) => ({ name: f, text: read(path.join(ROOT, f)) })).filter((f) => !minified(f.text)).slice(0, 40) });
+  const own = sh("git ls-files '*.js' '*.mjs'").filter(
+    (f) =>
+      !/(^|\/)(dist|lib|build|vendors?)\//.test(f) &&
+      !/^packages\/wescheme\//.test(f) &&
+      !/\.min\./.test(f) &&
+      !/^packages\/cm6-blocks\/demo\/demo\.js$/.test(f) &&
+      !tooBig(path.join(ROOT, f))
+  );
+  out.push({
+    name: "js-repo-own",
+    language: "javascript",
+    note: "plain .js/.mjs tracked in this repository (not dist/lib, not the vendored WeScheme reader)",
+    files: own.map((f) => ({ name: f, text: read(path.join(ROOT, f)) })),
+  });
+  const nm = sh(
+    "find node_modules -type f \\( -name '*.js' -o -name '*.mjs' \\) -size -200k -not -name '*.min.js' -not -name '*.d.ts' -not -path '*/test/*' -not -path '*/tests/*' -not -path '*/__tests__/*' -not -path '*/node_modules/.cache/*' -not -path '*/example*/*' | sort"
+  );
+  const nmFiles = sample(nm, 600, 7)
+    .map((f) => ({ name: f, text: read(path.join(ROOT, f)) }))
+    .filter((f) => !minified(f.text))
+    .slice(0, 200);
+  out.push({
+    name: "js-node_modules-library",
+    language: "javascript",
+    note: `~200 non-minified .js/.mjs sampled (seed 7) from ${nm.length} files under node_modules: library code`,
+    files: nmFiles,
+  });
+  const ex = sh(
+    "find node_modules -type f -name '*.js' -size -50k \\( -path '*/examples/*' -o -path '*/example/*' -o -path '*/demo/*' \\) | sort"
+  );
+  out.push({
+    name: "js-node_modules-examples",
+    language: "javascript",
+    note: `up to 40 example/demo .js sampled (seed 11) from ${ex.length} files: the nearest thing to beginner-style programs found locally`,
+    files: sample(ex, 80, 11)
+      .map((f) => ({ name: f, text: read(path.join(ROOT, f)) }))
+      .filter((f) => !minified(f.text))
+      .slice(0, 40),
+  });
   // ---- Python
-  const stdlib = execSync("python3 -c \"import sysconfig; print(sysconfig.get_paths()['stdlib'])\"").toString().trim();
-  const py = sh(`find ${JSON.stringify(stdlib)} -type f -name '*.py' -size -200k -not -path '*/test/*' -not -path '*/tests/*' -not -path '*/idle_test/*' -not -path '*/site-packages/*' -not -path '*/turtledemo/*' -not -path '*/lib2to3/*' -not -name 'test_*' | sort`);
-  out.push({ name: "py-stdlib-library", language: "python", note: `~200 .py sampled (seed 5) from ${py.length} files of the standard library of ${stdlib} (Python 3.6): library code`, files: sample(py, 200, 5).map((f) => ({ name: f.replace(stdlib, "stdlib"), text: read(f) })) });
-  const demo = sh(`find ${JSON.stringify(path.join(stdlib, "turtledemo"))} -type f -name '*.py' | sort`);
-  out.push({ name: "py-turtledemo", language: "python", note: "the standard library's turtledemo programs: beginner-style, the best local match", files: demo.map((f) => ({ name: f.replace(stdlib, "stdlib"), text: read(f) })) });
+  const stdlib = execSync(
+    "python3 -c \"import sysconfig; print(sysconfig.get_paths()['stdlib'])\""
+  )
+    .toString()
+    .trim();
+  const py = sh(
+    `find ${JSON.stringify(stdlib)} -type f -name '*.py' -size -200k -not -path '*/test/*' -not -path '*/tests/*' -not -path '*/idle_test/*' -not -path '*/site-packages/*' -not -path '*/turtledemo/*' -not -path '*/lib2to3/*' -not -name 'test_*' | sort`
+  );
+  out.push({
+    name: "py-stdlib-library",
+    language: "python",
+    note: `~200 .py sampled (seed 5) from ${py.length} files of the standard library of ${stdlib} (Python 3.6): library code`,
+    files: sample(py, 200, 5).map((f) => ({
+      name: f.replace(stdlib, "stdlib"),
+      text: read(f),
+    })),
+  });
+  const demo = sh(
+    `find ${JSON.stringify(path.join(stdlib, "turtledemo"))} -type f -name '*.py' | sort`
+  );
+  out.push({
+    name: "py-turtledemo",
+    language: "python",
+    note: "the standard library's turtledemo programs: beginner-style, the best local match",
+    files: demo.map((f) => ({
+      name: f.replace(stdlib, "stdlib"),
+      text: read(f),
+    })),
+  });
   return out;
 }
 
@@ -122,13 +206,26 @@ export interface Coverage {
   examples: Record<string, string[]>;
 }
 export const emptyCoverage = (): Coverage => ({
-  files: 0, lines: 0, chars: 0, real: 0, opaque: 0, fallback: 0, errorNodes: 0, filesWithErrors: 0,
-  top: { fully: 0, partly: 0, none: 0 }, all: { fully: 0, partly: 0, none: 0 }, missing: {}, opaqueTypes: {}, parseBuildMs: 0, examples: {},
+  files: 0,
+  lines: 0,
+  chars: 0,
+  real: 0,
+  opaque: 0,
+  fallback: 0,
+  errorNodes: 0,
+  filesWithErrors: 0,
+  top: { fully: 0, partly: 0, none: 0 },
+  all: { fully: 0, partly: 0, none: 0 },
+  missing: {},
+  opaqueTypes: {},
+  parseBuildMs: 0,
+  examples: {},
 });
 
 const WRAPPERS: Record<string, RegExp> = {
   scheme: /^(Program|Form|Datum|List|ListContent|AtomLike|Quoted)$/,
-  javascript: /^(Script|ArgList|ParamList|ParenthesizedExpression|ForSpec|ForOfSpec)$/,
+  javascript:
+    /^(Script|ArgList|ParamList|ParenthesizedExpression|ForSpec|ForOfSpec)$/,
   python: /^(Script|ArgList|ParamList|ParenthesizedExpression)$/,
 };
 
@@ -139,7 +236,13 @@ const WRAPPERS: Record<string, RegExp> = {
  * construct the table has no row for: the `x` of a `throw x` shown as a block on its own).
  * Limit: punctuation inside a block with slots counts as real whether or not it is drawn.
  */
-export function measure(language: string, parser: Parser, table: BlockTable, text: string, into: Coverage): void {
+export function measure(
+  language: string,
+  parser: Parser,
+  table: BlockTable,
+  text: string,
+  into: Coverage
+): void {
   const lang = lezerLanguage(parser, table);
   const t0 = performance.now();
   const roots = lang.parse(text);
@@ -174,7 +277,8 @@ export function measure(language: string, parser: Parser, table: BlockTable, tex
       range.push(key);
       if (!byRange.has(key)) byRange.set(key, id);
       deepId.fill(id, node.from, node.to);
-      if (stmtRe.test(node.name) && node.to > node.from) stmts.push({ from: node.from, to: node.to, top: stack.length === 1 });
+      if (stmtRe.test(node.name) && node.to > node.from)
+        stmts.push({ from: node.from, to: node.to, top: stack.length === 1 });
       stack.push(id);
       return undefined;
     },
@@ -195,7 +299,12 @@ export function measure(language: string, parser: Parser, table: BlockTable, tex
     const nm = b.slots.find((q) => q.name === "name" && q.nodes[0]);
     if (b.kind === "define" && nm && b.slots.some((q) => q.name === "params")) {
       let id = byRange.get(nm.nodes[0].from + ":" + nm.nodes[0].to);
-      while (id !== undefined && id >= 0 && !/^(ParenList|BracketList)$/.test(names[id])) id = parent[id];
+      while (
+        id !== undefined &&
+        id >= 0 &&
+        !/^(ParenList|BracketList)$/.test(names[id])
+      )
+        id = parent[id];
       if (id !== undefined && id >= 0) compound.add(range[id]);
     }
     for (const s of b.slots) for (const c of s.nodes) collectC(c);
@@ -213,26 +322,41 @@ export function measure(language: string, parser: Parser, table: BlockTable, tex
     return -1;
   };
   const fill = (b: BNode, c: number, blame: number): void => {
-    for (let i = b.from; i < b.to; i++) if (cls[i] !== 0) { cls[i] = c; attr[i] = blame; }
+    for (let i = b.from; i < b.to; i++)
+      if (cls[i] !== 0) {
+        cls[i] = c;
+        attr[i] = blame;
+      }
   };
   const mark = (b: BNode): void => {
     if (b.to <= b.from || b.kind === "error") return;
     const sa = stray(b);
     if (sa >= 0) return fill(b, 3, sa);
-    if (b.kind === "unknown" && b.slots.length === 0) return fill(b, 2, byRange.get(b.from + ":" + b.to) ?? -1);
+    if (b.kind === "unknown" && b.slots.length === 0)
+      return fill(b, 2, byRange.get(b.from + ":" + b.to) ?? -1);
     if (b.slots.length === 0) return fill(b, 1, -1);
-    const kwFrom = b.keyword && b.keywordTo !== undefined ? b.keywordTo - b.keyword.length : -1;
+    const kwFrom =
+      b.keyword && b.keywordTo !== undefined
+        ? b.keywordTo - b.keyword.length
+        : -1;
     // a block with a text-pieces slot (a template string) draws all its own text between its children
     const pieces = b.slots.some((q) => q.pieces);
     for (let i = b.from; i < b.to; i++) {
       if (cls[i] === 0) continue;
-      if (pieces || !/[\w$]/.test(text[i]) || (i >= kwFrom && i < (b.keywordTo ?? -1))) cls[i] = 1;
+      if (
+        pieces ||
+        !/[\w$]/.test(text[i]) ||
+        (i >= kwFrom && i < (b.keywordTo ?? -1))
+      )
+        cls[i] = 1;
     }
     for (const s of b.slots) for (const c of s.nodes) mark(c);
   };
   for (const r of roots) if (r.kind !== "comment") mark(r);
   // totals, and who is to blame
-  let real = 0, opaque = 0, fallback = 0;
+  let real = 0,
+    opaque = 0,
+    fallback = 0;
   const seen = new Set<string>();
   for (let i = 0; i < n; i++) {
     const c = cls[i];
@@ -245,11 +369,31 @@ export function measure(language: string, parser: Parser, table: BlockTable, tex
         // dropped from a block that is drawn: name the piece and the block that left it out ("IfStatement>ExpressionStatement"),
         // else the outermost construct under the top node
         let child = deepId[i];
-        while (parent[child] >= 0 && !compound.has(range[parent[child]]) && parent[parent[child]] >= 0) child = parent[child];
+        while (
+          parent[child] >= 0 &&
+          !compound.has(range[parent[child]]) &&
+          parent[parent[child]] >= 0
+        )
+          child = parent[child];
         const par = parent[child];
         blame = child;
-        nm = par >= 0 && compound.has(range[par]) ? names[par] + ">" + names[child] : names[child];
-        if (!process.env.CMB_NOGLUE && par >= 0 && glue.get(range[par])?.has(text.slice(...(range[child].split(":").map(Number) as [number, number])).trim())) {
+        nm =
+          par >= 0 && compound.has(range[par])
+            ? names[par] + ">" + names[child]
+            : names[child];
+        if (
+          !process.env.CMB_NOGLUE &&
+          par >= 0 &&
+          glue
+            .get(range[par])
+            ?.has(
+              text
+                .slice(
+                  ...(range[child].split(":").map(Number) as [number, number])
+                )
+                .trim()
+            )
+        ) {
           cls[i] = 1; // a word the block draws as glue
           real++;
           continue;
@@ -264,7 +408,12 @@ export function measure(language: string, parser: Parser, table: BlockTable, tex
         e.n++;
         if (c === 3) {
           const ex = (into.examples[nm] ??= []);
-          if (ex.length < 3) ex.push(JSON.stringify(text.slice(Math.max(0, i - 15), i + 25)) + " @ token " + (names[deepId[i]] ?? "?"));
+          if (ex.length < 3)
+            ex.push(
+              JSON.stringify(text.slice(Math.max(0, i - 15), i + 25)) +
+                " @ token " +
+                (names[deepId[i]] ?? "?")
+            );
         }
       }
       if (c === 2) opaque++;
@@ -280,7 +429,8 @@ export function measure(language: string, parser: Parser, table: BlockTable, tex
   into.errorNodes += errors;
   if (errors) into.filesWithErrors++;
   for (const s of stmts) {
-    let r = 0, o = 0;
+    let r = 0,
+      o = 0;
     for (let i = s.from; i < s.to; i++) {
       if (cls[i] === 1) r++;
       else if (cls[i] >= 2) o++;
@@ -293,8 +443,14 @@ export function measure(language: string, parser: Parser, table: BlockTable, tex
 }
 
 /** lines of a table file: its length, the rows of `nodes`, the lines of `rules` */
-export function tableLines(language: string): { file: number; nodes: number; rules: number } {
-  const lines = read(path.join(__dirname, "..", "src", `lang-${language}.ts`)).split("\n");
+export function tableLines(language: string): {
+  file: number;
+  nodes: number;
+  rules: number;
+} {
+  const lines = read(
+    path.join(__dirname, "..", "src", `lang-${language}.ts`)
+  ).split("\n");
   const between = (open: RegExp, close: RegExp): number => {
     const i = lines.findIndex((l) => open.test(l));
     if (i < 0) return 0;
@@ -303,5 +459,9 @@ export function tableLines(language: string): { file: number; nodes: number; rul
     for (let j = i + 1; j < lines.length && !close.test(lines[j]); j++) n++;
     return n;
   };
-  return { file: lines.length, nodes: between(/^  nodes: \{$/, /^  \},$/), rules: between(/^  rules: \[/, /^  \],?$|^  rules: \[.*\],$/) };
+  return {
+    file: lines.length,
+    nodes: between(/^  nodes: \{$/, /^  \},$/),
+    rules: between(/^  rules: \[/, /^  \],?$|^  rules: \[.*\],$/),
+  };
 }

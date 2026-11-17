@@ -137,7 +137,11 @@ const operations: Operation[] = [
     name: "dragging a node onto a node",
     program: "(add a b) (sub c d)",
     run: async (page) => {
-      await dragWithEvents(page, block(page, /^symbol a\b/), block(page, /^d,/));
+      await dragWithEvents(
+        page,
+        block(page, /^symbol a\b/),
+        block(page, /^d,/)
+      );
     },
   },
   {
@@ -233,8 +237,40 @@ for (const op of operations) {
 }
 
 // FIXME-BEGIN (thirteenth round: M: a variant of the matrix this editor has no feature for (drop onto a node or whitespace, the trash can, the toolbar of primitives, top-level typing))
-const FIXME = new Set<string>(["Delete on a selected root › is undone by the keyboard", "Backspace on a selected child › is undone by the keyboard", "Cut › is undone by the keyboard", "Paste over a selection › is undone by the keyboard", "Paste beside a root › is undone by the keyboard", "editing a literal in place › changes the document and keeps it consistent", "editing a literal in place › is undone by the keyboard", "editing a literal in place › is redone by the keyboard", "inserting beside a child › changes the document and keeps it consistent", "inserting beside a child › is undone by the keyboard", "inserting beside a child › is redone by the keyboard", "typing at the top level › is undone by the keyboard", "pasting at the top level › is undone by the keyboard", "dragging a node onto a node › changes the document and keeps it consistent", "dragging a node onto a node › is undone by the keyboard", "dragging a node onto a node › is redone by the keyboard", "dragging a node onto a drop target › changes the document and keeps it consistent", "dragging a node onto a drop target › is undone by the keyboard", "dragging a node onto a drop target › is redone by the keyboard", "dragging a node onto whitespace › changes the document and keeps it consistent", "dragging a node onto whitespace › is undone by the keyboard", "dragging a node onto whitespace › is redone by the keyboard", "dragging from the toolbar onto a node › changes the document and keeps it consistent", "dragging from the toolbar onto a node › is undone by the keyboard", "dragging from the toolbar onto a node › is redone by the keyboard", "dragging a node to the trash can › changes the document and keeps it consistent", "dragging a node to the trash can › is undone by the keyboard", "dragging a node to the trash can › is redone by the keyboard"]);
+const FIXME = new Set<string>([
+  "Delete on a selected root › is undone by the keyboard",
+  "Backspace on a selected child › is undone by the keyboard",
+  "Cut › is undone by the keyboard",
+  "Paste over a selection › is undone by the keyboard",
+  "Paste beside a root › is undone by the keyboard",
+  "editing a literal in place › changes the document and keeps it consistent",
+  "editing a literal in place › is undone by the keyboard",
+  "editing a literal in place › is redone by the keyboard",
+  "inserting beside a child › changes the document and keeps it consistent",
+  "inserting beside a child › is undone by the keyboard",
+  "inserting beside a child › is redone by the keyboard",
+  "typing at the top level › is undone by the keyboard",
+  "pasting at the top level › is undone by the keyboard",
+  "dragging a node onto a node › changes the document and keeps it consistent",
+  "dragging a node onto a node › is undone by the keyboard",
+  "dragging a node onto a node › is redone by the keyboard",
+  "dragging a node onto a drop target › changes the document and keeps it consistent",
+  "dragging a node onto a drop target › is undone by the keyboard",
+  "dragging a node onto a drop target › is redone by the keyboard",
+  "dragging a node onto whitespace › changes the document and keeps it consistent",
+  "dragging a node onto whitespace › is undone by the keyboard",
+  "dragging a node onto whitespace › is redone by the keyboard",
+  "dragging from the toolbar onto a node › changes the document and keeps it consistent",
+  "dragging from the toolbar onto a node › is undone by the keyboard",
+  "dragging from the toolbar onto a node › is redone by the keyboard",
+  "dragging a node to the trash can › changes the document and keeps it consistent",
+  "dragging a node to the trash can › is undone by the keyboard",
+  "dragging a node to the trash can › is redone by the keyboard",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "M: a variant of the matrix this editor has no feature for (drop onto a node or whitespace, the trash can, the toolbar of primitives, top-level typing)");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "M: a variant of the matrix this editor has no feature for (drop onto a node or whitespace, the trash can, the toolbar of primitives, top-level typing)"
+  );
 });
 // FIXME-END

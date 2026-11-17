@@ -2,7 +2,12 @@
 // @ts-nocheck
 // EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `call to f `, `symbol g`
 import { expect, Page, test } from "@playwright/test";
-import { MOD, expectConsistent, openInBlockMode, snapshot } from "../compat/helpers";
+import {
+  MOD,
+  expectConsistent,
+  openInBlockMode,
+  snapshot,
+} from "../compat/helpers";
 
 /**
  * Which block has keyboard focus after an undo or a redo, in a real browser.

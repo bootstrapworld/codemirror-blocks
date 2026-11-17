@@ -6,8 +6,11 @@ import { make } from "./helpers";
 
 const textOf = (ed: LezerBlockEditor) => ed.view.state.doc.toString();
 const ok = (ed: LezerBlockEditor) => expect(checkLezerEditor(ed)).toEqual([]);
-const kids = (n: { slots: { nodes: unknown[] }[] }) => n.slots.flatMap((s) => s.nodes) as ReturnType<LezerBlockEditor["roots"]>;
-const descend = (n: ReturnType<LezerBlockEditor["roots"]>[number]): ReturnType<LezerBlockEditor["roots"]> => [n, ...kids(n).flatMap(descend)];
+const kids = (n: { slots: { nodes: unknown[] }[] }) =>
+  n.slots.flatMap((s) => s.nodes) as ReturnType<LezerBlockEditor["roots"]>;
+const descend = (
+  n: ReturnType<LezerBlockEditor["roots"]>[number]
+): ReturnType<LezerBlockEditor["roots"]> => [n, ...kids(n).flatMap(descend)];
 
 describe("8. paste beside a root: a line break where something else is on the line (the old OverwriteEdit)", () => {
   test.each([
@@ -28,17 +31,20 @@ describe("8. paste beside a root: a line break where something else is on the li
     ["python", "f(x)\ng(y)\n", 0, false, "z", "f(x)\nz\ng(y)\n"],
     ["python", "f(x)\ng(y)\n", 1, true, "z", "f(x)\nz\ng(y)\n"],
     ["python", "f(x)\ng(y)\n", 1, false, "z", "f(x)\ng(y)\nz\n"],
-  ] as const)("%s %j root %i before=%j paste %j", (lang, text, which, before, pasted, result) => {
-    const ed = make(lang, text);
-    const root = ed.roots()[which];
-    ed.pasteText(root, pasted, before);
-    expect(textOf(ed)).toBe(result);
-    ok(ed);
-    // one undo step
-    undo(ed.view);
-    expect(textOf(ed)).toBe(text);
-    ok(ed);
-  });
+  ] as const)(
+    "%s %j root %i before=%j paste %j",
+    (lang, text, which, before, pasted, result) => {
+      const ed = make(lang, text);
+      const root = ed.roots()[which];
+      ed.pasteText(root, pasted, before);
+      expect(textOf(ed)).toBe(result);
+      ok(ed);
+      // one undo step
+      undo(ed.view);
+      expect(textOf(ed)).toBe(text);
+      ok(ed);
+    }
+  );
   test("the pasted block gets the focus", () => {
     const ed = make("scheme", "a b");
     ed.pasteText(ed.roots()[0], "zzz");
@@ -83,7 +89,9 @@ describe("8. paste after the operator is the first argument; before it is refuse
   });
   test("javascript: after the callee is the first argument", () => {
     const ed = make("javascript", "f(x);");
-    const callee = descend(ed.roots()[0]).find((n) => textOf(ed).slice(n.from, n.to) === "f")!;
+    const callee = descend(ed.roots()[0]).find(
+      (n) => textOf(ed).slice(n.from, n.to) === "f"
+    )!;
     ed.pasteText(callee, "z");
     expect(textOf(ed)).toBe("f(z, x);");
     undo(ed.view);
@@ -92,7 +100,9 @@ describe("8. paste after the operator is the first argument; before it is refuse
   });
   test("python: after the callee is the first argument", () => {
     const ed = make("python", "f(x)\n");
-    const callee = descend(ed.roots()[0]).find((n) => textOf(ed).slice(n.from, n.to) === "f")!;
+    const callee = descend(ed.roots()[0]).find(
+      (n) => textOf(ed).slice(n.from, n.to) === "f"
+    )!;
     ed.pasteText(callee, "z");
     expect(textOf(ed)).toBe("f(z, x)\n");
     ok(ed);
@@ -100,26 +110,39 @@ describe("8. paste after the operator is the first argument; before it is refuse
 });
 
 describe("10. native keys with no block focused", () => {
-  const SRC = { scheme: "(f x y)\n\n99", javascript: "f(x, y);\n\n99;", python: "f(x, y)\n\n99\n" } as const;
+  const SRC = {
+    scheme: "(f x y)\n\n99",
+    javascript: "f(x, y);\n\n99;",
+    python: "f(x, y)\n\n99\n",
+  } as const;
   const key = (ed: LezerBlockEditor, k: string, mods: KeyboardEventInit) => {
-    const ev = new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods });
+    const ev = new KeyboardEvent("keydown", {
+      key: k,
+      bubbles: true,
+      cancelable: true,
+      ...mods,
+    });
     ed.view.contentDOM.dispatchEvent(ev);
     return ev;
   };
-  test.each(Object.keys(SRC) as (keyof typeof SRC)[])("%s: Mod-Enter in the text does nothing (CodeMirror 6's blank line is not inserted)", (lang) => {
-    const ed = make(lang, SRC[lang]);
-    ed.view.contentDOM.focus();
-    expect(ed.focusedNode()).toBeFalsy();
-    for (const mods of [{ ctrlKey: true }]) { // (Mod is Ctrl here, Cmd on a Mac: the key table decides)
-      const ev = key(ed, "Enter", mods);
-      expect(ev.defaultPrevented).toBe(true);
-      expect(textOf(ed)).toBe(SRC[lang]);
+  test.each(Object.keys(SRC) as (keyof typeof SRC)[])(
+    "%s: Mod-Enter in the text does nothing (CodeMirror 6's blank line is not inserted)",
+    (lang) => {
+      const ed = make(lang, SRC[lang]);
+      ed.view.contentDOM.focus();
+      expect(ed.focusedNode()).toBeFalsy();
+      for (const mods of [{ ctrlKey: true }]) {
+        // (Mod is Ctrl here, Cmd on a Mac: the key table decides)
+        const ev = key(ed, "Enter", mods);
+        expect(ev.defaultPrevented).toBe(true);
+        expect(textOf(ed)).toBe(SRC[lang]);
+      }
+      // a plain Enter is still the text's own
+      ed.view.dispatch({ selection: { anchor: 0 } });
+      key(ed, "Enter", {});
+      ok(ed);
     }
-    // a plain Enter is still the text's own
-    ed.view.dispatch({ selection: { anchor: 0 } });
-    key(ed, "Enter", {});
-    ok(ed);
-  });
+  );
   test("Ctrl-X with no block focused is left to the native cut: the blocks layer does not touch the key", () => {
     const ed = make("scheme", SRC.scheme);
     ed.view.contentDOM.focus();
@@ -130,9 +153,22 @@ describe("10. native keys with no block focused", () => {
 });
 
 describe("12. the search keys work from the text, with no block focused (the old handlers need no block)", () => {
-  const SRC = { scheme: "(f x)\n(g xy x)\nx", javascript: "f(x);\ng(xy, x);\nx;", python: "f(x)\ng(xy, x)\nx" } as const;
-  const press = (ed: LezerBlockEditor, k: string, mods: KeyboardEventInit = {}) => {
-    const ev = new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods });
+  const SRC = {
+    scheme: "(f x)\n(g xy x)\nx",
+    javascript: "f(x);\ng(xy, x);\nx;",
+    python: "f(x)\ng(xy, x)\nx",
+  } as const;
+  const press = (
+    ed: LezerBlockEditor,
+    k: string,
+    mods: KeyboardEventInit = {}
+  ) => {
+    const ev = new KeyboardEvent("keydown", {
+      key: k,
+      bubbles: true,
+      cancelable: true,
+      ...mods,
+    });
     ed.view.contentDOM.dispatchEvent(ev);
     return ev;
   };
@@ -140,30 +176,35 @@ describe("12. the search keys work from the text, with no block focused (the old
     const n = ed.focusedNode();
     return n ? textOf(ed).slice(n.from, n.to) : null;
   };
-  test.each(Object.keys(SRC) as (keyof typeof SRC)[])("%s: PageDown goes to the first match after the cursor, PageUp to the one before it, wrapping", (lang) => {
-    const ed = make(lang, SRC[lang]);
-    ed.search.set({ mode: "text", searchString: "xy" });
-    const toText = (pos: number) => {
-      ed.view.contentDOM.focus();
-      ed.view.dispatch({ selection: { anchor: pos } });
-      expect(ed.focusedNode()).toBeFalsy();
-    };
-    toText(0);
-    const ev = press(ed, "PageDown");
-    expect(ev.defaultPrevented).toBe(true);
-    expect(label(ed)).toBe("xy");
-    ed.search.set({ mode: "text", searchString: "x" });
-    const text = textOf(ed);
-    const second = text.indexOf("x", text.indexOf("xy") + 2); // the x after xy
-    toText(second + 1); // after it: PageDown wraps to the first x, PageUp goes back to xy's x
-    press(ed, "PageUp");
-    expect(label(ed)).toBe("x");
-    expect(ed.focusedNode()!.from).toBe(second);
-    toText(text.indexOf("xy") + 1); // inside xy
-    press(ed, "PageDown");
-    expect(ed.focusedNode()!.from).toBeGreaterThanOrEqual(text.indexOf("xy") + 1);
-    ok(ed);
-  });
+  test.each(Object.keys(SRC) as (keyof typeof SRC)[])(
+    "%s: PageDown goes to the first match after the cursor, PageUp to the one before it, wrapping",
+    (lang) => {
+      const ed = make(lang, SRC[lang]);
+      ed.search.set({ mode: "text", searchString: "xy" });
+      const toText = (pos: number) => {
+        ed.view.contentDOM.focus();
+        ed.view.dispatch({ selection: { anchor: pos } });
+        expect(ed.focusedNode()).toBeFalsy();
+      };
+      toText(0);
+      const ev = press(ed, "PageDown");
+      expect(ev.defaultPrevented).toBe(true);
+      expect(label(ed)).toBe("xy");
+      ed.search.set({ mode: "text", searchString: "x" });
+      const text = textOf(ed);
+      const second = text.indexOf("x", text.indexOf("xy") + 2); // the x after xy
+      toText(second + 1); // after it: PageDown wraps to the first x, PageUp goes back to xy's x
+      press(ed, "PageUp");
+      expect(label(ed)).toBe("x");
+      expect(ed.focusedNode()!.from).toBe(second);
+      toText(text.indexOf("xy") + 1); // inside xy
+      press(ed, "PageDown");
+      expect(ed.focusedNode()!.from).toBeGreaterThanOrEqual(
+        text.indexOf("xy") + 1
+      );
+      ok(ed);
+    }
+  );
   test("the rotor says so when there is nothing to search for, and PageDown that no settings were chosen", () => {
     const ed = make("scheme", "");
     const said: string[] = [];

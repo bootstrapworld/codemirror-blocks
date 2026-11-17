@@ -126,7 +126,6 @@ describe("when dealing with node activation,", () => {
     expect(cmb.getValue()).toBe("11\n54");
   });
 
-
   it("should cancel the editability of activated node when Alt-Q is pressed", async () => {
     mouseDown(literal1);
     expect(cmb.getFocusedNode()).toBe(literal1);

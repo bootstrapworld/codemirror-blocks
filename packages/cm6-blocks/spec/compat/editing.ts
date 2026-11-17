@@ -4,6 +4,7 @@ import { fireEvent } from "@testing-library/dom";
 export function setEditableText(text: string) {
   const el = document.activeElement;
   if (!el) throw new Error("nothing has focus");
-  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) fireEvent.input(el, { target: { value: text } });
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
+    fireEvent.input(el, { target: { value: text } });
   else fireEvent.input(el, { target: { innerHTML: text } });
 }

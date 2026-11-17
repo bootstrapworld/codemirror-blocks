@@ -13,10 +13,31 @@ const all = (ed: LezerBlockEditor): BNode[] => {
   ed.roots().forEach((r) => walk(r, (n) => o.push(n)));
   return o;
 };
-const withText = (ed: LezerBlockEditor, re: RegExp, kind?: string): BNode => all(ed).filter((n) => re.test(text(ed).slice(n.from, n.to)) && n.slots.length > 0 && (!kind || n.kind === kind))[0];
-const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
-const box = (ed: LezerBlockEditor) => ed.view.dom.querySelector("textarea.blocks-edit") as HTMLTextAreaElement | null;
-const setPlatform = (p: string) => Object.defineProperty(navigator, "platform", { value: p, configurable: true });
+const withText = (ed: LezerBlockEditor, re: RegExp, kind?: string): BNode =>
+  all(ed).filter(
+    (n) =>
+      re.test(text(ed).slice(n.from, n.to)) &&
+      n.slots.length > 0 &&
+      (!kind || n.kind === kind)
+  )[0];
+const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) =>
+  el.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: k,
+      bubbles: true,
+      cancelable: true,
+      ...mods,
+    })
+  );
+const box = (ed: LezerBlockEditor) =>
+  ed.view.dom.querySelector(
+    "textarea.blocks-edit"
+  ) as HTMLTextAreaElement | null;
+const setPlatform = (p: string) =>
+  Object.defineProperty(navigator, "platform", {
+    value: p,
+    configurable: true,
+  });
 afterEach(() => setPlatform(""));
 
 const MULTI: Record<string, string> = {
@@ -40,13 +61,17 @@ describe.each(LANGS)("edit a block as text: %s", (l) => {
     const b = box(ed)!;
     expect(b).not.toBeNull();
     expect(b.value).toMatch(l === "scheme" ? /^\(g 2\)$/ : /^g\(2\)$/);
-    expect(ed.renderer.element(call).classList.contains("blocks-editing")).toBe(true);
+    expect(ed.renderer.element(call).classList.contains("blocks-editing")).toBe(
+      true
+    );
     expect(ed.renderer.element(call).contains(b)).toBe(true);
     expect(document.activeElement).toBe(b);
     b.value = l === "scheme" ? "(g 2 3 4)" : "g(2, 3, 4)";
     key(b, "Enter");
     expect(box(ed)).toBeNull();
-    expect(text(ed).split("\n")[0]).toContain(l === "scheme" ? "(g 2 3 4)" : "g(2, 3, 4)");
+    expect(text(ed).split("\n")[0]).toContain(
+      l === "scheme" ? "(g 2 3 4)" : "g(2, 3, 4)"
+    );
     expect(ed.focusedNode()).not.toBeNull();
     // parsed again: the new call has three arguments
     const nw = withText(ed, /^[(]?g[( ]2/);
@@ -73,7 +98,9 @@ describe.each(LANGS)("edit a block as text: %s", (l) => {
       }
       expect(box(ed)).toBeNull();
       expect(text(ed)).toBe(before);
-      expect(ed.renderer.element(call).classList.contains("blocks-editing")).toBe(false);
+      expect(
+        ed.renderer.element(call).classList.contains("blocks-editing")
+      ).toBe(false);
       ok(ed);
     }
   });
@@ -127,24 +154,39 @@ describe.each(LANGS)("edit a block as text: %s", (l) => {
     expect(b.rows).toBeGreaterThan(1);
     expect(b.value).toBe(text(ed).slice(fn.from, fn.to).replace(/\s+$/, ""));
     // Shift-Enter does not commit and is not swallowed (the default action adds the newline)
-    const ev = new KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true, cancelable: true });
+    const ev = new KeyboardEvent("keydown", {
+      key: "Enter",
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
     b.dispatchEvent(ev);
     expect(ev.defaultPrevented).toBe(false);
     expect(box(ed)).toBe(b);
     b.value = REPLACEMENT[l];
     key(b, "Enter");
-    expect(text(ed)).toBe(MULTI[l].replace(/\+ x 1|x \+ 1|x \+ 1/, l === "scheme" ? "* x 2" : "x * 2").replace(/return x \* 2;/, "return x * 2;"));
+    expect(text(ed)).toBe(
+      MULTI[l]
+        .replace(/\+ x 1|x \+ 1|x \+ 1/, l === "scheme" ? "* x 2" : "x * 2")
+        .replace(/return x \* 2;/, "return x * 2;")
+    );
     ok(ed);
   });
 
   test("a multi-line block that is indented (a method / a nested body) round-trips: no change, then an edit", () => {
     const src: Record<string, string> = {
       scheme: "(define (f x)\n  (define (g y)\n    (+ y 1))\n  (g x))\n",
-      javascript: "function f(x) {\n  function g(y) {\n    return y + 1;\n  }\n  return g(x);\n}\n",
-      python: "def f(x):\n    def g(y):\n        z = y + 1\n        return z\n    return g(x)\n",
+      javascript:
+        "function f(x) {\n  function g(y) {\n    return y + 1;\n  }\n  return g(x);\n}\n",
+      python:
+        "def f(x):\n    def g(y):\n        z = y + 1\n        return z\n    return g(x)\n",
     };
     const ed = make(l, src[l]);
-    const inner = all(ed).filter((n) => n.slots.length && /^[(]?(define \(g|function g|def g)/.test(text(ed).slice(n.from, n.to)))[0];
+    const inner = all(ed).filter(
+      (n) =>
+        n.slots.length &&
+        /^[(]?(define \(g|function g|def g)/.test(text(ed).slice(n.from, n.to))
+    )[0];
     expect(inner).toBeDefined();
     ed.focusNode(inner);
     key(ed.renderer.element(inner), "Enter", ctrl);
@@ -157,7 +199,9 @@ describe.each(LANGS)("edit a block as text: %s", (l) => {
     const b2 = box(ed)!;
     b2.value = b2.value.replace("y + 1", "y * 3").replace("(+ y 1)", "(* y 3)");
     key(b2, "Enter");
-    expect(text(ed)).toBe(src[l].replace("y + 1", "y * 3").replace("(+ y 1)", "(* y 3)"));
+    expect(text(ed)).toBe(
+      src[l].replace("y + 1", "y * 3").replace("(+ y 1)", "(* y 3)")
+    );
     ok(ed);
   });
 
@@ -179,7 +223,9 @@ describe.each(LANGS)("edit a block as text: %s", (l) => {
 
   test("on a literal it edits the same as Enter; plain Enter on a block with children does nothing", () => {
     const ed = make(l);
-    const two = all(ed).find((n) => n.kind === "literal" && text(ed).slice(n.from, n.to) === "2")!;
+    const two = all(ed).find(
+      (n) => n.kind === "literal" && text(ed).slice(n.from, n.to) === "2"
+    )!;
     ed.focusNode(two);
     key(ed.renderer.element(two), "Enter", ctrl);
     const b = box(ed)!;

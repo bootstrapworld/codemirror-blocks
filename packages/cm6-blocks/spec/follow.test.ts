@@ -14,9 +14,21 @@ const all = (ed: LezerBlockEditor): BNode[] => {
   return o;
 };
 const src = (ed: LezerBlockEditor, n: BNode) => text(ed).slice(n.from, n.to);
-const lit = (ed: LezerBlockEditor, s: string): BNode => all(ed).filter((n) => n.kind === "literal" && src(ed, n) === s)[0];
-const g = (ed: LezerBlockEditor): BNode => all(ed).filter((n) => n.slots.length > 0 && /^[(]?g[( ]2/.test(src(ed, n)))[0];
-const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
+const lit = (ed: LezerBlockEditor, s: string): BNode =>
+  all(ed).filter((n) => n.kind === "literal" && src(ed, n) === s)[0];
+const g = (ed: LezerBlockEditor): BNode =>
+  all(ed).filter(
+    (n) => n.slots.length > 0 && /^[(]?g[( ]2/.test(src(ed, n))
+  )[0];
+const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) =>
+  el.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: k,
+      bubbles: true,
+      cancelable: true,
+      ...mods,
+    })
+  );
 /** select the block (Space), then Delete: the old editor deletes only what is selected */
 const del = (el: Element, k = "Delete") => {
   key(el, " ");
@@ -30,18 +42,30 @@ const space = (ed: LezerBlockEditor, n: BNode) => key(focusOn(ed, n), " ");
 const selected = (ed: LezerBlockEditor, n: BNode) => ed.renderer.isSelected(n);
 const editLeaf = (ed: LezerBlockEditor, n: BNode, v: string) => {
   key(focusOn(ed, n), "Enter");
-  const input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+  const input = ed.view.dom.querySelector(
+    "input.blocks-edit"
+  ) as HTMLInputElement;
   input.value = v;
   key(input, "Enter");
 };
 const editAsText = (ed: LezerBlockEditor, n: BNode, v: string) => {
   key(focusOn(ed, n), "Enter", { ctrlKey: true });
-  const b = ed.view.dom.querySelector("textarea.blocks-edit") as HTMLTextAreaElement;
+  const b = ed.view.dom.querySelector(
+    "textarea.blocks-edit"
+  ) as HTMLTextAreaElement;
   b.value = v;
   key(b, "Enter");
 };
-const SEVERAL: Record<string, string> = { scheme: "7 8", javascript: "7, 8", python: "7, 8" };
-const CALL: Record<string, string> = { scheme: "(g 2 3 4)", javascript: "g(2, 3, 4)", python: "g(2, 3, 4)" };
+const SEVERAL: Record<string, string> = {
+  scheme: "7 8",
+  javascript: "7, 8",
+  python: "7, 8",
+};
+const CALL: Record<string, string> = {
+  scheme: "(g 2 3 4)",
+  javascript: "g(2, 3, 4)",
+  python: "g(2, 3, 4)",
+};
 
 describe.each(LANGS)("focus follows a rebuilt block: %s", (l) => {
   test("edit a leaf: focus is on the new node in the same slot and index", () => {
@@ -78,7 +102,9 @@ describe.each(LANGS)("focus follows a rebuilt block: %s", (l) => {
     const ed = make(l);
     const h = ed.roots()[1];
     editAsText(ed, h, l === "scheme" ? "(hh 4 5)" : "hh(4, 5)");
-    expect(src(ed, ed.focusedNode()!)).toBe(l === "scheme" ? "(hh 4 5)" : "hh(4, 5)");
+    expect(src(ed, ed.focusedNode()!)).toBe(
+      l === "scheme" ? "(hh 4 5)" : "hh(4, 5)"
+    );
     ok(ed);
   });
   test("text that does not parse: focus lands on a nearby block", () => {
@@ -101,11 +127,20 @@ describe.each(LANGS)("focus follows a rebuilt block: %s", (l) => {
     const ed = make(l);
     const two = lit(ed, "2");
     editLeaf(ed, two, "27");
-    key(ed.focusedNode() ? ed.renderer.element(ed.focusedNode()!) : ed.view.contentDOM, "z", { ctrlKey: true });
+    key(
+      ed.focusedNode()
+        ? ed.renderer.element(ed.focusedNode()!)
+        : ed.view.contentDOM,
+      "z",
+      { ctrlKey: true }
+    );
     expect(text(ed)).toContain("2");
     expect(text(ed)).not.toContain("27");
     expect(src(ed, ed.focusedNode()!)).toBe("2");
-    key(ed.renderer.element(ed.focusedNode()!), "z", { ctrlKey: true, shiftKey: true });
+    key(ed.renderer.element(ed.focusedNode()!), "z", {
+      ctrlKey: true,
+      shiftKey: true,
+    });
     expect(src(ed, ed.focusedNode()!)).toBe("27");
     ok(ed);
   });
@@ -149,7 +184,9 @@ describe.each(LANGS)("selection follows a rebuilt block: %s", (l) => {
     const three = lit(ed, "3");
     space(ed, three);
     del(focusOn(ed, three), "Delete");
-    expect(ed.renderer.selected().filter((n) => ed.doc.byId.get(n.id) !== n)).toEqual([]);
+    expect(
+      ed.renderer.selected().filter((n) => ed.doc.byId.get(n.id) !== n)
+    ).toEqual([]);
     expect(ed.selectedBlocks().map((n) => src(ed, n))).not.toContain("3");
     ok(ed);
   });

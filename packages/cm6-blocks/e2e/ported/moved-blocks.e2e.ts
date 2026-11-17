@@ -2,7 +2,12 @@
 // @ts-nocheck
 // EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `call to f `, `symbol g`
 import { expect, test, type Page } from "@playwright/test";
-import { MOD, expectConsistent, openInBlockMode, snapshot } from "../compat/helpers";
+import {
+  MOD,
+  expectConsistent,
+  openInBlockMode,
+  snapshot,
+} from "../compat/helpers";
 
 /**
  * A block that only moved (a form was inserted or deleted above it) is not
@@ -106,8 +111,13 @@ test("blocks keep working after several inserts and deletes above them", async (
 });
 
 // FIXME-BEGIN (thirteenth round: D: the edit box is an input here, the old one a contenteditable)
-const FIXME = new Set<string>(["a block that moved can be edited, in the right place"]);
+const FIXME = new Set<string>([
+  "a block that moved can be edited, in the right place",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "D: the edit box is an input here, the old one a contenteditable");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "D: the edit box is an input here, the old one a contenteditable"
+  );
 });
 // FIXME-END

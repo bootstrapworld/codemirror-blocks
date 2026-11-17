@@ -14,14 +14,32 @@ export const createAppStore = missing("createAppStore", STORE);
 export type AppStore = unknown;
 export const Literal = missing("Literal", "the old node classes");
 export const Unknown = missing("Unknown", "the old node classes");
-export const FunctionAppNode = missing("FunctionAppNode", "the old node classes");
-export const describeKinds = missing("describeKinds", "the summary module: the summary read on first opening is not built");
-export const summarizeProgram = missing("summarizeProgram", "the summary module: the summary read on first opening is not built");
+export const FunctionAppNode = missing(
+  "FunctionAppNode",
+  "the old node classes"
+);
+export const describeKinds = missing(
+  "describeKinds",
+  "the summary module: the summary read on first opening is not built"
+);
+export const summarizeProgram = missing(
+  "summarizeProgram",
+  "the summary module: the summary read on first opening is not built"
+);
 export const blockModeOnlyMethods: string[] = [];
-export const buildAPI = missing("buildAPI", "the CM5 API object of the old editor");
+export const buildAPI = missing(
+  "buildAPI",
+  "the CM5 API object of the old editor"
+);
 export const resetActivityLog = () => undefined;
 export const Languages: Record<string, unknown> = {};
-const CodeMirrorBlocks = missing("CodeMirrorBlocks", "the entry point and its constructor options");
-(CodeMirrorBlocks as unknown as Record<string, unknown>).fromTextArea = missing("CodeMirrorBlocks.fromTextArea", "the entry point");
+const CodeMirrorBlocks = missing(
+  "CodeMirrorBlocks",
+  "the entry point and its constructor options"
+);
+(CodeMirrorBlocks as unknown as Record<string, unknown>).fromTextArea = missing(
+  "CodeMirrorBlocks.fromTextArea",
+  "the entry point"
+);
 export default CodeMirrorBlocks;
 export type Pos = { line: number; ch: number };

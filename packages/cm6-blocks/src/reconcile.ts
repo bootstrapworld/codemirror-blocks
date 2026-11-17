@@ -36,17 +36,30 @@ export interface ReconcileEnv {
 
 /** can `old` stand for `nw`, whatever is under them? (the same row, shape and own text) */
 export function compatible(old: BNode, nw: BNode): boolean {
-  if (old.kind !== nw.kind || keyOfNode(old) !== keyOfNode(nw) || old.keyword !== nw.keyword || old.modifier !== nw.modifier) return false;
+  if (
+    old.kind !== nw.kind ||
+    keyOfNode(old) !== keyOfNode(nw) ||
+    old.keyword !== nw.keyword ||
+    old.modifier !== nw.modifier
+  )
+    return false;
   if (old.slots.length !== nw.slots.length) {
     return false;
   }
-  if (old.slots.length === 0) return old.value === nw.value && old.dataType === nw.dataType;
+  if (old.slots.length === 0)
+    return old.value === nw.value && old.dataType === nw.dataType;
   for (let i = 0; i < old.slots.length; i++) {
     const a = old.slots[i];
     const b = nw.slots[i];
-    if (a.name !== b.name || a.kind !== b.kind || a.glue !== b.glue) return false;
+    if (a.name !== b.name || a.kind !== b.kind || a.glue !== b.glue)
+      return false;
     // the glue word of a list slot is drawn only while the list has something in it
-    if (a.glue && a.kind === "list" && a.nodes.length > 0 !== b.nodes.length > 0) return false;
+    if (
+      a.glue &&
+      a.kind === "list" &&
+      a.nodes.length > 0 !== b.nodes.length > 0
+    )
+      return false;
   }
   return true;
 }
@@ -67,7 +80,8 @@ export function reconcile(old: BNode, nw: BNode, env: ReconcileEnv): boolean {
   old.keywordTo = nw.keywordTo;
   old.brackets = nw.brackets;
   adoptMeta(old, nw);
-  for (let i = 0; i < old.slots.length; i++) if (reconcileSlot(old.slots[i], nw.slots[i], env)) changed = true;
+  for (let i = 0; i < old.slots.length; i++)
+    if (reconcileSlot(old.slots[i], nw.slots[i], env)) changed = true;
   if (changed) env.refresh(old);
   return changed;
 }
@@ -83,7 +97,8 @@ function reconcileSlot(os: Slot, ns: Slot, env: ReconcileEnv): boolean {
       return false;
     }
     let changed = false;
-    if (o0.length === 1 && n0.length === 1 && compatible(o0[0], n0[0])) return reconcile(o0[0], n0[0], env);
+    if (o0.length === 1 && n0.length === 1 && compatible(o0[0], n0[0]))
+      return reconcile(o0[0], n0[0], env);
     // a "one" slot always holds exactly one node: swap them (the shapes are the same)
     if (o0.length === 1 && n0.length === 1) {
       const old = o0[0];
@@ -123,7 +138,8 @@ function reconcileSlot(os: Slot, ns: Slot, env: ReconcileEnv): boolean {
     const oldSeg = o0.slice(oi, oj);
     const newSeg = n0.slice(ni, j);
     // (the live list already holds the new nodes of the earlier stretches and the anchors: the stretch starts at index `ni`)
-    if (oldSeg.length || newSeg.length) if (reconcileRange(os, ni, oldSeg, newSeg, env)) changed = true;
+    if (oldSeg.length || newSeg.length)
+      if (reconcileRange(os, ni, oldSeg, newSeg, env)) changed = true;
     oi = oj + 1;
     ni = j + 1;
   }
@@ -131,7 +147,13 @@ function reconcileSlot(os: Slot, ns: Slot, env: ReconcileEnv): boolean {
 }
 
 /** the stretch `o0` of the live list `os.nodes` (starting at `base`) laid over the new nodes `n0` */
-function reconcileRange(os: Slot, base: number, o0: BNode[], n0: BNode[], env: ReconcileEnv): boolean {
+function reconcileRange(
+  os: Slot,
+  base: number,
+  o0: BNode[],
+  n0: BNode[],
+  env: ReconcileEnv
+): boolean {
   let changed = false;
   const replaceAt = (index: number, node: BNode): void => {
     const old = os.nodes[base + index];
@@ -143,10 +165,21 @@ function reconcileRange(os: Slot, base: number, o0: BNode[], n0: BNode[], env: R
     changed = true;
   };
   let p = 0;
-  while (p < o0.length && p < n0.length && compatible(o0[p], n0[p]) && sameText(o0[p], n0[p])) p++;
+  while (
+    p < o0.length &&
+    p < n0.length &&
+    compatible(o0[p], n0[p]) &&
+    sameText(o0[p], n0[p])
+  )
+    p++;
   let eo = o0.length;
   let en = n0.length;
-  while (eo > p && en > p && compatible(o0[eo - 1], n0[en - 1]) && sameText(o0[eo - 1], n0[en - 1])) {
+  while (
+    eo > p &&
+    en > p &&
+    compatible(o0[eo - 1], n0[en - 1]) &&
+    sameText(o0[eo - 1], n0[en - 1])
+  ) {
     eo--;
     en--;
   }
@@ -174,6 +207,7 @@ function reconcileRange(os: Slot, base: number, o0: BNode[], n0: BNode[], env: R
     changed = true;
   }
   for (let j = 0; j < p; j++) if (reconcile(o0[j], n0[j], env)) changed = true;
-  for (let j = 0; j < o0.length - eo; j++) if (reconcile(o0[eo + j], n0[en + j], env)) changed = true;
+  for (let j = 0; j < o0.length - eo; j++)
+    if (reconcile(o0[eo + j], n0[en + j], env)) changed = true;
   return changed;
 }

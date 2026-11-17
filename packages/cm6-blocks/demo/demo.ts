@@ -1,7 +1,11 @@
 // EXPERIMENT: a page that runs the Lezer block editor in a browser.
 import css from "../src/style.css";
 import { redo, undo } from "@codemirror/commands";
-import { checkLezerEditor, createLezerBlockEditor, LezerBlockEditor } from "../src/lezer-view";
+import {
+  checkLezerEditor,
+  createLezerBlockEditor,
+  LezerBlockEditor,
+} from "../src/lezer-view";
 import { BIG } from "./samples";
 import { schemeParser, schemeTable } from "../src/lang-scheme";
 import { javascriptParser, javascriptTable } from "../src/lang-javascript";
@@ -65,7 +69,8 @@ const style = document.createElement("style");
 style.textContent = css;
 document.head.appendChild(style);
 
-const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const $ = <T extends HTMLElement>(id: string) =>
+  document.getElementById(id) as T;
 let ed: LezerBlockEditor | null = null;
 let lang: LangName = "scheme";
 
@@ -79,15 +84,39 @@ function show(text: string, reconcile = true, anchors = true): void {
   ed?.destroy();
   $("editor").textContent = "";
   const t0 = performance.now();
-  ed = createLezerBlockEditor($("editor"), text, { ...LANGS[lang].opts, reconcile, anchors, focusToolbar: () => ($("templates").querySelector("button") as HTMLElement | null)?.focus() });
+  ed = createLezerBlockEditor($("editor"), text, {
+    ...LANGS[lang].opts,
+    reconcile,
+    anchors,
+    focusToolbar: () =>
+      ($("templates").querySelector("button") as HTMLElement | null)?.focus(),
+  });
   ed.setBlockMode($<HTMLInputElement>("blocks").checked);
   const ms = performance.now() - t0;
-  const demo = { ed, lang, createMs: ms, firstDrawMs: -1, paintedMs: -1, setLanguage, show, loadBig, loadSample, undo: () => undo(ed!.view), redo: () => redo(ed!.view), check: () => checkLezerEditor(ed!) };
+  const demo = {
+    ed,
+    lang,
+    createMs: ms,
+    firstDrawMs: -1,
+    paintedMs: -1,
+    setLanguage,
+    show,
+    loadBig,
+    loadSample,
+    undo: () => undo(ed!.view),
+    redo: () => redo(ed!.view),
+    check: () => checkLezerEditor(ed!),
+  };
   (window as unknown as { demo: unknown }).demo = demo;
   const poll = () => {
-    if (document.querySelector(".cm-content .blocks-node") || !$<HTMLInputElement>("blocks").checked) {
+    if (
+      document.querySelector(".cm-content .blocks-node") ||
+      !$<HTMLInputElement>("blocks").checked
+    ) {
       demo.firstDrawMs = performance.now();
-      requestAnimationFrame(() => setTimeout(() => (demo.paintedMs = performance.now()), 0));
+      requestAnimationFrame(() =>
+        setTimeout(() => (demo.paintedMs = performance.now()), 0)
+      );
     } else requestAnimationFrame(poll);
   };
   poll();
@@ -95,8 +124,10 @@ function show(text: string, reconcile = true, anchors = true): void {
   bar.textContent = "";
   bar.classList.add("blocks-toolbar");
   const lab = document.createElement("span");
-  lab.textContent = "Tap to insert after the focused block, or press and hold, then drag into the program: ";
-  lab.style.cssText = "flex: none; align-self: center; font-size: 12px; max-width: 14em;";
+  lab.textContent =
+    "Tap to insert after the focused block, or press and hold, then drag into the program: ";
+  lab.style.cssText =
+    "flex: none; align-self: center; font-size: 12px; max-width: 14em;";
   bar.appendChild(lab);
   for (const t of ed.templates()) {
     const b = document.createElement("button");
@@ -105,17 +136,20 @@ function show(text: string, reconcile = true, anchors = true): void {
     b.className = "blocks-toolbar-item";
     b.addEventListener("mousedown", (e) => e.preventDefault()); // keep the focus on the block
     b.addEventListener("pointerdown", (e) => ed!.beginTemplateDrag(e, t.name)); // dragging it into the program inserts it there; a plain click inserts it after the focused block
-    b.addEventListener("click", () => ed!.insertTemplate(t.name, ed!.focusedNode() ?? ed!.lastFocused()));
+    b.addEventListener("click", () =>
+      ed!.insertTemplate(t.name, ed!.focusedNode() ?? ed!.lastFocused())
+    );
     bar.appendChild(b);
   }
   // Tab from the last button goes back into the editor, to the block that had the focus
-  if (!bar.dataset.tabs) bar.addEventListener("keydown", (e) => {
-    const last = bar.querySelector("button:last-of-type");
-    if (e.key === "Tab" && !e.shiftKey && e.target === last) {
-      e.preventDefault();
-      ed!.focusEditor();
-    }
-  });
+  if (!bar.dataset.tabs)
+    bar.addEventListener("keydown", (e) => {
+      const last = bar.querySelector("button:last-of-type");
+      if (e.key === "Tab" && !e.shiftKey && e.target === last) {
+        e.preventDefault();
+        ed!.focusEditor();
+      }
+    });
   bar.dataset.tabs = "1";
   stats();
 }
@@ -139,8 +173,12 @@ function loadBig(): void {
   show(bigDoc(lang));
 }
 
-$<HTMLSelectElement>("lang").addEventListener("change", (e) => setLanguage((e.target as HTMLSelectElement).value as LangName));
-$<HTMLInputElement>("blocks").addEventListener("change", (e) => ed?.setBlockMode((e.target as HTMLInputElement).checked));
+$<HTMLSelectElement>("lang").addEventListener("change", (e) =>
+  setLanguage((e.target as HTMLSelectElement).value as LangName)
+);
+$<HTMLInputElement>("blocks").addEventListener("change", (e) =>
+  ed?.setBlockMode((e.target as HTMLInputElement).checked)
+);
 $("big").addEventListener("click", loadBig);
 $("constructs").addEventListener("click", () => show(BIG[lang]));
 $("small").addEventListener("click", loadSample);

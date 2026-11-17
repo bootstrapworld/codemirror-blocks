@@ -343,8 +343,27 @@ test("the comment box of a collapsed block is shown and has focus", async ({
 });
 
 // FIXME-BEGIN (thirteenth round: D: a comment is its own block here, edited as a block (notes, sixth round 4): the old comment box and its labels do not exist)
-const FIXME = new Set<string>(["a drop with a comment box that cannot be saved still open leaves focus on a block", "the comment box of a collapsed block is shown and has focus", "editing a comment from the keyboard › adds a comment to a block that has none", "editing a comment from the keyboard › opens the text of an existing comment, selected, and replaces it", "editing a comment from the keyboard › works on a block inside another", "a comment that goes with no block › is a block of its own that can be focused and read", "a comment that goes with no block › is edited with Enter, not with the comment shortcut", "a comment that goes with no block › is deleted like any other block", "a comment that goes with no block › a block's own comment is a popup while it is active, not a stop of its own", "a comment that goes with no block › a collapsed comment block hides its words and keeps its emoji", "a comment that goes with no block › a comment popup that would go off the bottom of the editor grows upwards", "a comment that goes with no block › the box a comment is typed in grows upwards when its text would take it below the editor", "a comment that goes with no block › pasting into the box a comment is typed in leaves the caret after the text", "a comment that goes with no block › a comment popup that has room below hangs from the top of its block", "a comment that goes with no block › is left behind when the block it was above is deleted"]);
+const FIXME = new Set<string>([
+  "a drop with a comment box that cannot be saved still open leaves focus on a block",
+  "the comment box of a collapsed block is shown and has focus",
+  "editing a comment from the keyboard › adds a comment to a block that has none",
+  "editing a comment from the keyboard › opens the text of an existing comment, selected, and replaces it",
+  "editing a comment from the keyboard › works on a block inside another",
+  "a comment that goes with no block › is a block of its own that can be focused and read",
+  "a comment that goes with no block › is edited with Enter, not with the comment shortcut",
+  "a comment that goes with no block › is deleted like any other block",
+  "a comment that goes with no block › a block's own comment is a popup while it is active, not a stop of its own",
+  "a comment that goes with no block › a collapsed comment block hides its words and keeps its emoji",
+  "a comment that goes with no block › a comment popup that would go off the bottom of the editor grows upwards",
+  "a comment that goes with no block › the box a comment is typed in grows upwards when its text would take it below the editor",
+  "a comment that goes with no block › pasting into the box a comment is typed in leaves the caret after the text",
+  "a comment that goes with no block › a comment popup that has room below hangs from the top of its block",
+  "a comment that goes with no block › is left behind when the block it was above is deleted",
+]);
 test.beforeEach(({}, ti) => {
-  test.fixme(FIXME.has(ti.titlePath.slice(1).join(" › ")), "D: a comment is its own block here, edited as a block (notes, sixth round 4): the old comment box and its labels do not exist");
+  test.fixme(
+    FIXME.has(ti.titlePath.slice(1).join(" › ")),
+    "D: a comment is its own block here, edited as a block (notes, sixth round 4): the old comment box and its labels do not exist"
+  );
 });
 // FIXME-END

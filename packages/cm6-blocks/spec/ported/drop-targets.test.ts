@@ -84,7 +84,11 @@ describe("dropping a node onto bare editor whitespace", () => {
     // the point under the pointer is inside the widget that holds `b`, but not
     // on a drop target (that would replace `b`)
     const onB = getNodeLabeled(/^b\b|symbol b$/).parentElement!;
-    drag(getNodeLabeled(/^a\b|symbol a$/)).dropOnto(wrapper, { x: 20, y: 20 }, onB);
+    drag(getNodeLabeled(/^a\b|symbol a$/)).dropOnto(
+      wrapper,
+      { x: 20, y: 20 },
+      onB
+    );
     expect(cmb.getValue()).toBe("a\n\n\nb");
   });
 });
@@ -157,7 +161,9 @@ describe("drops that should do nothing", () => {
   });
 
   it("a node dropped onto one of its own descendants", () => {
-    drag(getNodeLabeled(/call to f /)).dropOnto(getNodeLabeled(/^x\b|symbol x$/));
+    drag(getNodeLabeled(/call to f /)).dropOnto(
+      getNodeLabeled(/^x\b|symbol x$/)
+    );
     expect(cmb.getValue()).toBe("(f (g x) y)");
   });
 
@@ -188,7 +194,9 @@ describe("dragging nodes that carry extra state", () => {
   it("keeps focus on a block after a drop", () => {
     cmb.setValue("(f x y)");
     mouseDown(cmb.getAst().rootNodes[0]);
-    drag(getNodeLabeled(/^x\b|symbol x$/)).dropOnto(getNodeLabeled(/^y\b|symbol y$/));
+    drag(getNodeLabeled(/^x\b|symbol x$/)).dropOnto(
+      getNodeLabeled(/^y\b|symbol y$/)
+    );
     expect(document.activeElement).toHaveAttribute("role", "treeitem");
   });
 });

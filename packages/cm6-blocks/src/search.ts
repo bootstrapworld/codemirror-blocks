@@ -54,16 +54,24 @@ export interface Search {
   rotor(forward: boolean): void;
   settings(): SearchSettings;
   /** what the dialog does when something in it changes: also callable on its own */
-  set(change: { mode?: SearchMode } & Partial<TextSetting> & Partial<BlockSetting>): void;
+  set(
+    change: { mode?: SearchMode } & Partial<TextSetting> & Partial<BlockSetting>
+  ): void;
   /** the types of block in the program, in the order of the list: [label, label, ...] */
   types(): string[];
   /** the match `next` / `previous` would go to, without going there */
   find(forward: boolean, at?: number): Match | null;
 }
 
-export const EMPTY_TEXT: TextSetting = { searchString: "", isRegex: false, isExactMatch: false, isIgnoreCase: false };
+export const EMPTY_TEXT: TextSetting = {
+  searchString: "",
+  isRegex: false,
+  isExactMatch: false,
+  isIgnoreCase: false,
+};
 
-const drawable = (n: BNode): boolean => n.kind !== "error" && n.kind !== "program";
+const drawable = (n: BNode): boolean =>
+  n.kind !== "error" && n.kind !== "program";
 const kids = (n: BNode): BNode[] => n.slots.flatMap((s) => s.nodes);
 
 /** the regular expression of a text search, or null for one that matches nothing (a pattern that is not finished) */
@@ -79,13 +87,21 @@ export function queryOf(s: TextSetting): RegExp | null {
   }
 }
 
-export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => void; host: () => HTMLElement }): Search {
-  const state: SearchSettings = { mode: null, text: { ...EMPTY_TEXT }, block: { blockType: "" } };
+export function createSearch(
+  ed: LezerBlockEditor,
+  ui: { focus: (n: BNode) => void; host: () => HTMLElement }
+): Search {
+  const state: SearchSettings = {
+    mode: null,
+    text: { ...EMPTY_TEXT },
+    block: { blockType: "" },
+  };
   /** the text search the rotor ends with: the last one closed with Enter */
   let lastText: TextSetting | null = null;
   let dialog: { el: HTMLElement; close(go: boolean): void } | null = null;
 
-  const label = (n: BNode): string => (ed.options.table.nodes[keyOfNode(n) ?? ""]?.label ?? n.kind);
+  const label = (n: BNode): string =>
+    ed.options.table.nodes[keyOfNode(n) ?? ""]?.label ?? n.kind;
   /** every block in document order (pre-order), with whether it is inside a collapsed block */
   function all(): { node: BNode; hidden: boolean }[] {
     const out: { node: BNode; hidden: boolean }[] = [];
@@ -97,7 +113,8 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     go(ed.doc.program, false);
     return out;
   }
-  const types = (): string[] => [...new Set(all().map((x) => label(x.node)))].sort();
+  const types = (): string[] =>
+    [...new Set(all().map((x) => label(x.node)))].sort();
 
   /** the innermost block that holds position `pos` (comments are blocks here too) */
   function innermost(pos: number): BNode | null {
@@ -112,8 +129,14 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
 
   function candidates(): { node: BNode; key: number }[] {
     const list = all();
-    if (state.mode === "block") return list.filter((x) => !x.hidden && label(x.node) === state.block.blockType).map((x) => ({ node: x.node, key: x.node.from }));
-    if (state.text.searchString === "") return list.filter((x) => !x.hidden).map((x) => ({ node: x.node, key: x.node.from }));
+    if (state.mode === "block")
+      return list
+        .filter((x) => !x.hidden && label(x.node) === state.block.blockType)
+        .map((x) => ({ node: x.node, key: x.node.from }));
+    if (state.text.searchString === "")
+      return list
+        .filter((x) => !x.hidden)
+        .map((x) => ({ node: x.node, key: x.node.from }));
     const re = queryOf(state.text);
     if (!re) return [];
     const text = ed.view.state.doc.toString();
@@ -137,19 +160,32 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
   function find(forward: boolean, at?: number): Match | null {
     if (state.mode === null) return null;
     const list = candidates();
-    const focus = at !== undefined && !ed.focusedNode() ? null : (ed.focusedNode() ?? ed.lastFocused());
+    const focus =
+      at !== undefined && !ed.focusedNode()
+        ? null
+        : (ed.focusedNode() ?? ed.lastFocused());
     const empty = state.mode === "text" && state.text.searchString === "";
     const block = state.mode === "block" || empty;
     // where the search starts: a block search goes by the order of the blocks (a parent before its children), a text search by position
     let after: (c: { node: BNode; key: number }) => boolean;
-    if (!focus) after = at === undefined ? () => true : block ? (c) => (forward ? c.node.from >= at : c.node.to <= at) : (c) => (forward ? c.key >= at : c.key < at);
+    if (!focus)
+      after =
+        at === undefined
+          ? () => true
+          : block
+            ? (c) => (forward ? c.node.from >= at : c.node.to <= at)
+            : (c) => (forward ? c.key >= at : c.key < at);
     else if (block) {
       const order = new Map(all().map((x, i) => [x.node, i]));
       const at = order.get(focus) ?? -1;
-      after = (c) => (forward ? (order.get(c.node) ?? -1) > at : (order.get(c.node) ?? -1) < at);
+      after = (c) =>
+        forward
+          ? (order.get(c.node) ?? -1) > at
+          : (order.get(c.node) ?? -1) < at;
     } else after = (c) => (forward ? c.key > focus.from : c.key < focus.from);
     const ok = (c: { node: BNode }) => c.node !== focus;
-    const pickFirst = (cs: { node: BNode; key: number }[]) => (forward ? cs[0] : cs[cs.length - 1]);
+    const pickFirst = (cs: { node: BNode; key: number }[]) =>
+      forward ? cs[0] : cs[cs.length - 1];
     const found = pickFirst(list.filter((c) => after(c) && ok(c)));
     if (found) return { node: found.node, wrapped: false };
     const wrapped = pickFirst(list.filter(ok));
@@ -177,14 +213,24 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     const d: Record<string, unknown> = {};
     ed.act("search.set", null, d, () => {
       set1(change);
-      d.settings = { mode: state.mode, text: { ...state.text }, block: { ...state.block } }; // (the old log keeps the setting too, with the string)
+      d.settings = {
+        mode: state.mode,
+        text: { ...state.text },
+        block: { ...state.block },
+      }; // (the old log keeps the setting too, with the string)
     });
   }
   function set1(change: Parameters<Search["set"]>[0]): void {
     const { mode, blockType, ...text } = change;
     if (Object.keys(text).length) state.text = { ...state.text, ...text };
     if (blockType !== undefined) state.block = { blockType };
-    state.mode = mode ?? (blockType !== undefined ? "block" : Object.keys(text).length ? "text" : state.mode);
+    state.mode =
+      mode ??
+      (blockType !== undefined
+        ? "block"
+        : Object.keys(text).length
+          ? "text"
+          : state.mode);
   }
 
   function rotor(forward: boolean): void {
@@ -199,8 +245,18 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     }
     let at = -1;
     if (state.mode === "block") at = ts.indexOf(state.block.blockType);
-    else if (state.mode === "text" && lastText && JSON.stringify(state.text) === JSON.stringify(lastText)) at = ts.length;
-    const next = at < 0 ? (forward ? 0 : count - 1) : (at + (forward ? 1 : count - 1)) % count;
+    else if (
+      state.mode === "text" &&
+      lastText &&
+      JSON.stringify(state.text) === JSON.stringify(lastText)
+    )
+      at = ts.length;
+    const next =
+      at < 0
+        ? forward
+          ? 0
+          : count - 1
+        : (at + (forward ? 1 : count - 1)) % count;
     const position = `${next + 1} of ${count}`;
     if (next < ts.length) {
       state.mode = "block";
@@ -217,19 +273,29 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
 
   function open(at?: number): void {
     if (dialog) return;
-    ed.act("search.open", null, at === undefined ? {} : { fromText: true }, () => open1(at));
+    ed.act(
+      "search.open",
+      null,
+      at === undefined ? {} : { fromText: true },
+      () => open1(at)
+    );
   }
   function open1(at?: number): void {
     const host = ui.host();
     const doc = host.ownerDocument;
-    const back = at !== undefined ? null : (ed.focusedNode() ?? ed.lastFocused()); // (opened from the text: the focus goes back to the text)
+    const back =
+      at !== undefined ? null : (ed.focusedNode() ?? ed.lastFocused()); // (opened from the text: the focus goes back to the text)
     const el = doc.createElement("div");
     el.className = "blocks-help blocks-search";
     el.setAttribute("role", "dialog");
     el.setAttribute("aria-modal", "true");
     el.setAttribute("aria-label", "Search Settings");
     el.tabIndex = -1;
-    const mk = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = ""): HTMLElementTagNameMap[K] => {
+    const mk = <K extends keyof HTMLElementTagNameMap>(
+      tag: K,
+      cls = "",
+      text = ""
+    ): HTMLElementTagNameMap[K] => {
       const e = doc.createElement(tag);
       if (cls) e.className = cls;
       if (text) e.textContent = text;
@@ -237,7 +303,13 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     };
     el.appendChild(mk("h2", "", "Search Settings"));
     const hint = mk("i");
-    hint.append("What should ", mk("kbd", "", "PgUp"), " and ", mk("kbd", "", "PgDown"), " search for?");
+    hint.append(
+      "What should ",
+      mk("kbd", "", "PgUp"),
+      " and ",
+      mk("kbd", "", "PgDown"),
+      " search for?"
+    );
     el.appendChild(hint);
 
     // the tabs (a roving tab stop; Left and Right change the mode, Up and Down stay in it)
@@ -270,8 +342,15 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     input.value = state.text.searchString;
     panels[0].appendChild(input);
     const opts = mk("div", "search-options");
-    const boxes: Record<"isIgnoreCase" | "isExactMatch" | "isRegex", HTMLInputElement> = {} as never;
-    for (const [name, text] of [["isIgnoreCase", "Ignore case"], ["isExactMatch", "Exact match"], ["isRegex", "Regex"]] as const) {
+    const boxes: Record<
+      "isIgnoreCase" | "isExactMatch" | "isRegex",
+      HTMLInputElement
+    > = {} as never;
+    for (const [name, text] of [
+      ["isIgnoreCase", "Ignore case"],
+      ["isExactMatch", "Exact match"],
+      ["isRegex", "Regex"],
+    ] as const) {
       const lab = mk("label");
       const cb = mk("input");
       cb.type = "checkbox";
@@ -292,12 +371,14 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
       o.value = t;
       select.appendChild(o);
     }
-    if (ts.includes(state.block.blockType)) select.value = state.block.blockType;
+    if (ts.includes(state.block.blockType))
+      select.value = state.block.blockType;
     panels[1].appendChild(select);
 
     el.appendChild(
       Object.assign(mk("small", "blocks-search-foot"), {
-        textContent: "Left and Right change the kind of search; Enter closes and finds the next match, Escape closes.",
+        textContent:
+          "Left and Right change the kind of search; Enter closes and finds the next match, Escape closes.",
       })
     );
     const closeBtn = mk("button", "closeDialog", "Close");
@@ -328,15 +409,24 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
         choose(i);
       })
     );
-    input.addEventListener("input", () => set({ searchString: input.value, mode: "text" }));
-    for (const [name, cb] of Object.entries(boxes)) cb.addEventListener("change", () => set({ [name]: cb.checked, mode: "text" }));
-    select.addEventListener("change", () => set({ blockType: select.value, mode: "block" }));
+    input.addEventListener("input", () =>
+      set({ searchString: input.value, mode: "text" })
+    );
+    for (const [name, cb] of Object.entries(boxes))
+      cb.addEventListener("change", () =>
+        set({ [name]: cb.checked, mode: "text" })
+      );
+    select.addEventListener("change", () =>
+      set({ blockType: select.value, mode: "block" })
+    );
 
     let closed = false;
     let release = (): void => {};
     const finish = (go: boolean): void => {
       if (closed) return;
-      ed.act("search.close", null, { how: go ? "enter" : "escape" }, () => finish1(go));
+      ed.act("search.close", null, { how: go ? "enter" : "escape" }, () =>
+        finish1(go)
+      );
     };
     const finish1 = (go: boolean): void => {
       closed = true;
@@ -344,11 +434,15 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
       release(); // (the page is shown again before the focus goes back to it)
       el.remove();
       if (back && ed.doc.byId.get(back.id) === back) ed.focusNode(back);
-      else if (at !== undefined) ed.view.contentDOM.focus({ preventScroll: true });
+      else if (at !== undefined)
+        ed.view.contentDOM.focus({ preventScroll: true });
       else ed.focusEditor();
       if (go) {
-        if (state.mode === "text" && state.text.searchString !== "") lastText = { ...state.text };
-        ed.say("Searching for next match. Use PageUp and PageDown to search forwards and backwards");
+        if (state.mode === "text" && state.text.searchString !== "")
+          lastText = { ...state.text };
+        ed.say(
+          "Searching for next match. Use PageUp and PageDown to search forwards and backwards"
+        );
         step(true, at);
       }
     };
@@ -360,16 +454,24 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
       } else if (e.key === "Enter") {
         e.preventDefault();
         finish(true);
-      } else if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && (e.target as Element).getAttribute("role") === "tab") {
+      } else if (
+        (e.key === "ArrowLeft" || e.key === "ArrowRight") &&
+        (e.target as Element).getAttribute("role") === "tab"
+      ) {
         e.preventDefault();
-        const i = e.key === "ArrowRight" ? Math.min(1, tab + 1) : Math.max(0, tab - 1);
+        const i =
+          e.key === "ArrowRight" ? Math.min(1, tab + 1) : Math.max(0, tab - 1);
         showTab(i, true);
         choose(i);
       } else if (e.key === "Tab") {
         // the focus stays inside while the dialog is open
-        const f = Array.from(el.querySelectorAll<HTMLElement>("input, select, button")).filter((x) => x.tabIndex >= 0 && !x.closest("[hidden]"));
+        const f = Array.from(
+          el.querySelectorAll<HTMLElement>("input, select, button")
+        ).filter((x) => x.tabIndex >= 0 && !x.closest("[hidden]"));
         const i = f.indexOf(e.target as HTMLElement);
-        const to = e.shiftKey ? f[(i <= 0 ? f.length : i) - 1] : f[(i + 1) % f.length];
+        const to = e.shiftKey
+          ? f[(i <= 0 ? f.length : i) - 1]
+          : f[(i + 1) % f.length];
         e.preventDefault();
         to?.focus();
       }
@@ -387,9 +489,14 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     close: (go = false) => dialog?.close(go),
     isOpen: () => !!dialog,
     next: (at) => ed.act("search.next", null, {}, () => step(true, at)),
-    previous: (at) => ed.act("search.previous", null, {}, () => step(false, at)),
+    previous: (at) =>
+      ed.act("search.previous", null, {}, () => step(false, at)),
     rotor,
-    settings: () => ({ mode: state.mode, text: { ...state.text }, block: { ...state.block } }),
+    settings: () => ({
+      mode: state.mode,
+      text: { ...state.text },
+      block: { ...state.block },
+    }),
     set,
     types,
     find,

@@ -10,20 +10,56 @@ const all = (ed: LezerBlockEditor): BNode[] => {
   return o;
 };
 const label = (ed: LezerBlockEditor, kind: string): string =>
-  ed.renderer.element(all(ed).find((n) => n.kind === kind && (kind !== "call" || ed.view.state.doc.sliceString(n.from, n.to).includes("g(") || ed.view.state.doc.sliceString(n.from, n.to).startsWith("(g")))!).getAttribute("aria-label")!;
+  ed.renderer
+    .element(
+      all(ed).find(
+        (n) =>
+          n.kind === kind &&
+          (kind !== "call" ||
+            ed.view.state.doc.sliceString(n.from, n.to).includes("g(") ||
+            ed.view.state.doc.sliceString(n.from, n.to).startsWith("(g"))
+      )!
+    )
+    .getAttribute("aria-label")!;
 
-const CASES: Record<string, { text: string; calls: [string, string]; extra: [string, string][] }> = {
-  scheme: { text: "(define (f x) (g 1 2 3))", calls: ["call to g with 3 arguments", "call to g with 2 arguments"], extra: [["define", "f: function definition with 1 argument: x"]] },
-  javascript: { text: "function f(a, b) { return g(1, 2, 3); }", calls: ["call to g with 3 arguments", "call to g with 2 arguments"], extra: [["function", "function f with 2 parameters"], ["return", "return g(1, 2, 3)"]] },
-  python: { text: "def f(a):\n    return g(1, 2, 3)\n", calls: ["call to g with 3 arguments", "call to g with 2 arguments"], extra: [["function", "function f with 1 parameter"], ["return", "return g(1, 2, 3)"]] },
+const CASES: Record<
+  string,
+  { text: string; calls: [string, string]; extra: [string, string][] }
+> = {
+  scheme: {
+    text: "(define (f x) (g 1 2 3))",
+    calls: ["call to g with 3 arguments", "call to g with 2 arguments"],
+    extra: [["define", "f: function definition with 1 argument: x"]],
+  },
+  javascript: {
+    text: "function f(a, b) { return g(1, 2, 3); }",
+    calls: ["call to g with 3 arguments", "call to g with 2 arguments"],
+    extra: [
+      ["function", "function f with 2 parameters"],
+      ["return", "return g(1, 2, 3)"],
+    ],
+  },
+  python: {
+    text: "def f(a):\n    return g(1, 2, 3)\n",
+    calls: ["call to g with 3 arguments", "call to g with 2 arguments"],
+    extra: [
+      ["function", "function f with 1 parameter"],
+      ["return", "return g(1, 2, 3)"],
+    ],
+  },
 };
 
 describe.each(Object.keys(CASES))("describe: %s", (l) => {
   test("labels come from the table and follow edits", () => {
     const ed = make(l, CASES[l].text);
     expect(label(ed, "call")).toBe(CASES[l].calls[0]);
-    for (const [kind, expected] of CASES[l].extra) expect(label(ed, kind)).toBe(expected);
-    const one = all(ed).find((n) => n.kind === "literal" && ed.view.state.doc.sliceString(n.from, n.to) === "1")!;
+    for (const [kind, expected] of CASES[l].extra)
+      expect(label(ed, kind)).toBe(expected);
+    const one = all(ed).find(
+      (n) =>
+        n.kind === "literal" &&
+        ed.view.state.doc.sliceString(n.from, n.to) === "1"
+    )!;
     ed.removeNode(one);
     expect(checkLezerEditor(ed)).toEqual([]);
     expect(label(ed, "call")).toBe(CASES[l].calls[1]);
@@ -32,7 +68,13 @@ describe.each(Object.keys(CASES))("describe: %s", (l) => {
   });
   test("a leaf is named by what it is, not by the first row of its kind", () => {
     const ed = make(l, CASES[l].text);
-    const n = all(ed).find((x) => x.kind === "literal" && ed.view.state.doc.sliceString(x.from, x.to) === "f")!;
-    expect(ed.renderer.element(n).getAttribute("aria-label")).not.toBe("number f");
+    const n = all(ed).find(
+      (x) =>
+        x.kind === "literal" &&
+        ed.view.state.doc.sliceString(x.from, x.to) === "f"
+    )!;
+    expect(ed.renderer.element(n).getAttribute("aria-label")).not.toBe(
+      "number f"
+    );
   });
 });

@@ -5,7 +5,10 @@ const PROG = "(f 1 2)\n(g (h 3) 4)\n(define x 5)\n42";
 async function open(page: any) {
   await page.goto("/");
   await page.waitForFunction(() => !!(window as any).cmb, { timeout: 20000 });
-  await page.evaluate((c: string) => { (window as any).cmb.setValue(c); (window as any).cmb.clearHistory(); }, PROG);
+  await page.evaluate((c: string) => {
+    (window as any).cmb.setValue(c);
+    (window as any).cmb.clearHistory();
+  }, PROG);
   await page.getByRole("button", { name: /switch to blocks mode/i }).click();
   await page.getByRole("treeitem").first().waitFor();
   await page.waitForTimeout(500);
@@ -13,13 +16,34 @@ async function open(page: any) {
 const cur = (page: any) =>
   page.evaluate(() => {
     const cm = (window as any).cmb.getCM();
-    const api = (window as any).cmb.getCursor(); const a = cm.getCursor("anchor"), h = cm.getCursor("head");
+    const api = (window as any).cmb.getCursor();
+    const a = cm.getCursor("anchor"),
+      h = cm.getCursor("head");
     const fn = (window as any).cmb.getFocusedNode();
     const sel = window.getSelection();
-    return { api: `${api.line}:${api.ch}`, same: cm === (window as any).cmb.getCM(), anchor: `${a.line}:${a.ch}`, head: `${h.line}:${h.ch}`, focused: fn ? `${fn.from.line}:${fn.from.ch}-${fn.to.line}:${fn.to.ch} ${fn.type}` : null, active: (document.activeElement as HTMLElement)?.className?.toString().slice(0, 40), domSel: sel ? `${sel.anchorNode?.nodeName}/${sel.anchorOffset}-${sel.focusOffset}` : null, scroll: cm.getScrollInfo().top };
+    return {
+      api: `${api.line}:${api.ch}`,
+      same: cm === (window as any).cmb.getCM(),
+      anchor: `${a.line}:${a.ch}`,
+      head: `${h.line}:${h.ch}`,
+      focused: fn
+        ? `${fn.from.line}:${fn.from.ch}-${fn.to.line}:${fn.to.ch} ${fn.type}`
+        : null,
+      active: (document.activeElement as HTMLElement)?.className
+        ?.toString()
+        .slice(0, 40),
+      domSel: sel
+        ? `${sel.anchorNode?.nodeName}/${sel.anchorOffset}-${sel.focusOffset}`
+        : null,
+      scroll: cm.getScrollInfo().top,
+    };
   });
 const log: string[] = [];
-const rec = async (page: any, what: string) => { const l = `${what.padEnd(34)} ${JSON.stringify(await cur(page))}`; log.push(l); console.log(l); };
+const rec = async (page: any, what: string) => {
+  const l = `${what.padEnd(34)} ${JSON.stringify(await cur(page))}`;
+  log.push(l);
+  console.log(l);
+};
 
 test("cm5 cursor probe", async ({ page }) => {
   page.setDefaultTimeout(4000);
@@ -54,7 +78,9 @@ test("cm5 cursor probe", async ({ page }) => {
   await page.keyboard.press("\\");
   await rec(page, "\\ (read ancestors)");
   // cursor set by hand, then a key on a block
-  await page.evaluate(() => (window as any).cmb.getCM().setCursor({ line: 3, ch: 1 }));
+  await page.evaluate(() =>
+    (window as any).cmb.getCM().setCursor({ line: 3, ch: 1 })
+  );
   await rec(page, "setCursor 3:1 by hand");
   await page.keyboard.press("ArrowDown");
   await rec(page, "ArrowDown after setCursor");

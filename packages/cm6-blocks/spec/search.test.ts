@@ -13,7 +13,15 @@ const SRC: Record<string, string> = {
   javascript: "f(x);\ng(xy, x);\nx;",
   python: "f(x)\ng(xy, x)\nx",
 };
-const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
+const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) =>
+  el.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: k,
+      bubbles: true,
+      cancelable: true,
+      ...mods,
+    })
+  );
 const all = (ed: LezerBlockEditor): BNode[] => {
   const o: BNode[] = [];
   ed.roots().forEach((r) => walk(r, (n) => o.push(n)));
@@ -27,9 +35,16 @@ function rig(l: string, src = SRC[l]) {
   const first = ed.roots().find((r) => r.kind !== "error")!;
   if (first) ed.focusNode(first);
   /** a key where a person is: on the block that has the focus */
-  const press = (k: string, mods: Partial<KeyboardEventInit> = {}) => key(ed.focusedNode() ? ed.renderer.element(ed.focusedNode()!) : ed.view.dom, k, mods);
-  const dlg = () => document.querySelector(".blocks-search") as HTMLElement | null;
-  const input = () => dlg()!.querySelector("input[type=text]") as HTMLInputElement;
+  const press = (k: string, mods: Partial<KeyboardEventInit> = {}) =>
+    key(
+      ed.focusedNode() ? ed.renderer.element(ed.focusedNode()!) : ed.view.dom,
+      k,
+      mods
+    );
+  const dlg = () =>
+    document.querySelector(".blocks-search") as HTMLElement | null;
+  const input = () =>
+    dlg()!.querySelector("input[type=text]") as HTMLInputElement;
   const typeIn = (v: string) => {
     input().value = v;
     input().dispatchEvent(new Event("input", { bubbles: true }));
@@ -47,40 +62,72 @@ function rig(l: string, src = SRC[l]) {
   };
   const at = () => ed.focusedNode()!.from;
   const said = () => ed.said.slice();
-  return { ed, heard, press, dlg, input, typeIn, tick, enter, searchFor, at, said, first };
+  return {
+    ed,
+    heard,
+    press,
+    dlg,
+    input,
+    typeIn,
+    tick,
+    enter,
+    searchFor,
+    at,
+    said,
+    first,
+  };
 }
 
 test("queryOf: plain text is escaped, exact adds word boundaries, an unfinished pattern matches nothing", () => {
-  const s = { searchString: "a.b", isRegex: false, isExactMatch: false, isIgnoreCase: false };
+  const s = {
+    searchString: "a.b",
+    isRegex: false,
+    isExactMatch: false,
+    isIgnoreCase: false,
+  };
   expect("a.b axb".match(queryOf(s)!)).toEqual(["a.b"]);
-  expect("xa.b a.bc a.b".match(queryOf({ ...s, isExactMatch: true })!)).toEqual(["a.b"]);
+  expect("xa.b a.bc a.b".match(queryOf({ ...s, isExactMatch: true })!)).toEqual(
+    ["a.b"]
+  );
   expect("axb".match(queryOf({ ...s, isRegex: true })!)).toEqual(["axb"]);
   expect(queryOf({ ...s, searchString: "(", isRegex: true })).toBeNull();
   expect(queryOf({ ...s, searchString: "" })).toBeNull();
-  expect("AB".match(queryOf({ ...s, searchString: "ab", isIgnoreCase: true })!)).toEqual(["AB"]);
+  expect(
+    "AB".match(queryOf({ ...s, searchString: "ab", isIgnoreCase: true })!)
+  ).toEqual(["AB"]);
 });
 
 describe.each(LANGS)("search: %s", (l) => {
-  const xs = (ed: LezerBlockEditor) => [...text(ed).matchAll(/x/g)].map((m) => m.index!);
+  const xs = (ed: LezerBlockEditor) =>
+    [...text(ed).matchAll(/x/g)].map((m) => m.index!);
 
   describe("the dialog", () => {
     test.each([
       ["F3", {}],
       ["f", { ctrlKey: true }],
       ["f", { metaKey: true }],
-    ])("opens with %s %j: a labelled dialog with the two tabs, the text box has the focus", (k, mods) => {
-      const { press, dlg, input } = rig(l);
-      press(k, mods);
-      const d = dlg()!;
-      expect(d).not.toBeNull();
-      expect(d.getAttribute("role")).toBe("dialog");
-      expect(d.getAttribute("aria-modal")).toBe("true");
-      expect(d.getAttribute("aria-label")).toBe("Search Settings");
-      expect(Array.from(d.querySelectorAll("[role=tab]")).map((t) => t.textContent)).toEqual(["Search by string", "Search by block"]);
-      expect(d.textContent).toContain("What should PgUp and PgDown search for?");
-      expect(document.activeElement).toBe(input());
-      expect(Array.from(d.querySelectorAll("label")).map((x) => x.textContent)).toEqual(["Ignore case", "Exact match", "Regex"]);
-    });
+    ])(
+      "opens with %s %j: a labelled dialog with the two tabs, the text box has the focus",
+      (k, mods) => {
+        const { press, dlg, input } = rig(l);
+        press(k, mods);
+        const d = dlg()!;
+        expect(d).not.toBeNull();
+        expect(d.getAttribute("role")).toBe("dialog");
+        expect(d.getAttribute("aria-modal")).toBe("true");
+        expect(d.getAttribute("aria-label")).toBe("Search Settings");
+        expect(
+          Array.from(d.querySelectorAll("[role=tab]")).map((t) => t.textContent)
+        ).toEqual(["Search by string", "Search by block"]);
+        expect(d.textContent).toContain(
+          "What should PgUp and PgDown search for?"
+        );
+        expect(document.activeElement).toBe(input());
+        expect(
+          Array.from(d.querySelectorAll("label")).map((x) => x.textContent)
+        ).toEqual(["Ignore case", "Exact match", "Regex"]);
+      }
+    );
 
     test("Escape closes it, goes nowhere, and the focus comes back to the block", () => {
       const { ed, press, dlg, typeIn, first } = rig(l);
@@ -105,7 +152,9 @@ describe.each(LANGS)("search: %s", (l) => {
       searchFor("xy");
       press("F3");
       expect(input().value).toBe("xy");
-      const inside = Array.from(dlg()!.querySelectorAll<HTMLElement>("input, select, button")).filter((e) => e.tabIndex >= 0 && !e.closest("[hidden]"));
+      const inside = Array.from(
+        dlg()!.querySelectorAll<HTMLElement>("input, select, button")
+      ).filter((e) => e.tabIndex >= 0 && !e.closest("[hidden]"));
       for (let i = 0; i < inside.length + 2; i++) {
         key(document.activeElement!, "Tab");
         expect(dlg()!.contains(document.activeElement)).toBe(true);
@@ -120,7 +169,9 @@ describe.each(LANGS)("search: %s", (l) => {
       const tab0 = dlg()!.querySelector("[role=tab]") as HTMLElement;
       tab0.focus();
       key(tab0, "ArrowRight");
-      expect(dlg()!.querySelectorAll("[role=tab]")[1].getAttribute("aria-selected")).toBe("true");
+      expect(
+        dlg()!.querySelectorAll("[role=tab]")[1].getAttribute("aria-selected")
+      ).toBe("true");
       expect(ed.search.settings().mode).toBe("block");
       expect(ed.search.settings().block.blockType).not.toBe(""); // (the first type of the list)
       key(document.activeElement!, "ArrowLeft");
@@ -143,8 +194,12 @@ describe.each(LANGS)("search: %s", (l) => {
       searchFor("x");
       expect(dlg()).toBeNull();
       expect(at()).toBe(xs(ed)[0]);
-      expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe("x");
-      expect(ed.said).toContain("Searching for next match. Use PageUp and PageDown to search forwards and backwards");
+      expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe(
+        "x"
+      );
+      expect(ed.said).toContain(
+        "Searching for next match. Use PageUp and PageDown to search forwards and backwards"
+      );
     });
 
     test("PageDown and PageUp step through the matches (the block that holds each)", () => {
@@ -155,7 +210,9 @@ describe.each(LANGS)("search: %s", (l) => {
       expect(at()).toBe(p[0]);
       press("PageDown");
       expect(at()).toBe(p[1]);
-      expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe("xy"); // (the block "xy", not the x in it)
+      expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe(
+        "xy"
+      ); // (the block "xy", not the x in it)
       press("PageDown");
       expect(at()).toBe(p[2]);
       press("PageDown");
@@ -178,7 +235,10 @@ describe.each(LANGS)("search: %s", (l) => {
       expect(heard).toEqual([["wrap", "wrapped"]]);
       press("PageUp");
       expect(at()).toBe(xs(ed)[3]);
-      expect(heard).toEqual([["wrap", "wrapped"], ["wrap", "wrapped"]]);
+      expect(heard).toEqual([
+        ["wrap", "wrapped"],
+        ["wrap", "wrapped"],
+      ]);
     });
 
     test("beeps when there is nothing to find, and stays where it is", () => {
@@ -192,11 +252,15 @@ describe.each(LANGS)("search: %s", (l) => {
     test("beeps when the only match is the block that has the focus", () => {
       const { ed, searchFor, press, heard } = rig(l);
       searchFor("g");
-      expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe("g");
+      expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe(
+        "g"
+      );
       heard.length = 0;
       press("PageDown");
       expect(heard).toEqual([["beep", "no-match"]]);
-      expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe("g");
+      expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe(
+        "g"
+      );
     });
 
     test("ignore case, exact match (a whole word), regex", () => {
@@ -221,7 +285,9 @@ describe.each(LANGS)("search: %s", (l) => {
       tick("isRegex");
       enter();
       // nothing after the x at that place... g is before it: on from the start of the document, f
-      expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe("f");
+      expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe(
+        "f"
+      );
       // a pattern that is not finished matches nothing
       searchFor("(");
       expect(ed.search.find(true)).toBeNull();
@@ -248,7 +314,9 @@ describe.each(LANGS)("search: %s", (l) => {
       expect(at()).toBe(xs(ed)[1]); // (the x inside the collapsed first block is not reachable)
       searchFor("f");
       // f is in the collapsed block (hidden); the only other f is none: nothing found
-      expect(text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).not.toBe("f");
+      expect(
+        text(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)
+      ).not.toBe("f");
       ed.collapse(first, false);
       ed.focusNode(ed.roots().filter((r) => r.kind !== "error")[1]);
       press("PageDown");
@@ -271,7 +339,9 @@ describe.each(LANGS)("search: %s", (l) => {
       const r = rig(l);
       r.press("F3");
       r.dlg()!.querySelectorAll<HTMLElement>("[role=tab]")[1].click();
-      const options = Array.from(r.dlg()!.querySelectorAll("option")).map((o) => o.textContent);
+      const options = Array.from(r.dlg()!.querySelectorAll("option")).map(
+        (o) => o.textContent
+      );
       expect(options).toEqual([...options].sort());
       expect(options).toEqual(r.ed.search.types());
       expect(options).toContain("call");
@@ -285,7 +355,9 @@ describe.each(LANGS)("search: %s", (l) => {
       expect(calls.length).toBe(2);
       choose(r, "call");
       // (the block that has the focus is never the match: the first call AFTER it, in the order of the blocks)
-      const after = calls.find((c) => order.indexOf(c) > order.indexOf(r.first))!;
+      const after = calls.find(
+        (c) => order.indexOf(c) > order.indexOf(r.first)
+      )!;
       expect(r.ed.focusedNode()).toBe(after);
       const other = calls.find((c) => c !== after)!;
       r.heard.length = 0;
@@ -311,7 +383,10 @@ describe.each(LANGS)("search: %s", (l) => {
       press("PageDown");
       press("PageUp");
       expect(ed.focusedNode()).toBe(first);
-      expect(heard).toEqual([["beep", "no-match"], ["beep", "no-match"]]);
+      expect(heard).toEqual([
+        ["beep", "no-match"],
+        ["beep", "no-match"],
+      ]);
       expect(ed.said).toContain("No search settings have been selected");
     });
   });
@@ -322,10 +397,17 @@ describe.each(LANGS)("search: %s", (l) => {
       const ts = ed.search.types();
       const n = ts.length;
       for (let i = 0; i <= n; i++) press("F3", { ctrlKey: true });
-      expect(ed.said.filter((s) => s.startsWith("Searching by"))).toEqual([...ts.map((t, i) => `Searching by ${t}, ${i + 1} of ${n}`), `Searching by ${ts[0]}, 1 of ${n}`]);
+      expect(ed.said.filter((s) => s.startsWith("Searching by"))).toEqual([
+        ...ts.map((t, i) => `Searching by ${t}, ${i + 1} of ${n}`),
+        `Searching by ${ts[0]}, 1 of ${n}`,
+      ]);
       const r2 = rig(l);
-      for (let i = 0; i < 2; i++) r2.press("F3", { ctrlKey: true, shiftKey: true });
-      expect(r2.said().filter((s) => s.startsWith("Searching by"))).toEqual([`Searching by ${ts[n - 1]}, ${n} of ${n}`, `Searching by ${ts[n - 2]}, ${n - 1} of ${n}`]);
+      for (let i = 0; i < 2; i++)
+        r2.press("F3", { ctrlKey: true, shiftKey: true });
+      expect(r2.said().filter((s) => s.startsWith("Searching by"))).toEqual([
+        `Searching by ${ts[n - 1]}, ${n} of ${n}`,
+        `Searching by ${ts[n - 2]}, ${n - 1} of ${n}`,
+      ]);
     });
 
     test("makes PageDown go to the next block of the chosen type", () => {
@@ -346,7 +428,10 @@ describe.each(LANGS)("search: %s", (l) => {
       ed.said.length = 0;
       press("F3", { ctrlKey: true }); // from the text search: on to the first type
       press("F3", { ctrlKey: true, shiftKey: true }); // and back
-      expect(ed.said).toEqual([`Searching by ${ed.search.types()[0]}, 1 of ${n}`, `Searching for text 'xy', ${n} of ${n}`]);
+      expect(ed.said).toEqual([
+        `Searching by ${ed.search.types()[0]}, 1 of ${n}`,
+        `Searching for text 'xy', ${n} of ${n}`,
+      ]);
     });
 
     test("says so when there is nothing to search for", () => {
@@ -367,7 +452,17 @@ describe.each(LANGS)("search: %s", (l) => {
   test("the keys are in the key table, so the help dialog lists them", () => {
     const { press } = rig(l);
     press("?", { ctrlKey: true, shiftKey: true, code: "Slash" });
-    const help = document.querySelector(".blocks-help:not(.blocks-search)") as HTMLElement;
-    for (const w of ["F3", "Ctrl-F", "PageDown", "PageUp", "Ctrl-F3", "Shift-Ctrl-F3"]) expect(help.textContent).toContain(w);
+    const help = document.querySelector(
+      ".blocks-help:not(.blocks-search)"
+    ) as HTMLElement;
+    for (const w of [
+      "F3",
+      "Ctrl-F",
+      "PageDown",
+      "PageUp",
+      "Ctrl-F3",
+      "Shift-Ctrl-F3",
+    ])
+      expect(help.textContent).toContain(w);
   });
 });

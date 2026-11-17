@@ -5,7 +5,21 @@ import { checkLezerEditor } from "../src/lezer-view";
 import { make, TEXT } from "./helpers";
 
 function fake(over: Partial<ScrollerLike> = {}) {
-  const s = { scrollTop: 500, scrollLeft: 0, scrollHeight: 2000, scrollWidth: 300, clientHeight: 400, clientWidth: 300, getBoundingClientRect: () => ({ left: 0, top: 100, right: 300, bottom: 500 }), ...over };
+  const s = {
+    scrollTop: 500,
+    scrollLeft: 0,
+    scrollHeight: 2000,
+    scrollWidth: 300,
+    clientHeight: 400,
+    clientWidth: 300,
+    getBoundingClientRect: () => ({
+      left: 0,
+      top: 100,
+      right: 300,
+      bottom: 500,
+    }),
+    ...over,
+  };
   let queue: ((t: number) => void)[] = [];
   let t = 0;
   const frames = { n: 0 };
@@ -23,7 +37,12 @@ function fake(over: Partial<ScrollerLike> = {}) {
     }
   };
   let calls = 0;
-  const a = createAutoScroll({ scroller: () => s, onFrame: () => calls++, raf, caf: () => (queue = []) });
+  const a = createAutoScroll({
+    scroller: () => s,
+    onFrame: () => calls++,
+    raf,
+    caf: () => (queue = []),
+  });
   return { s, a, run, calls: () => calls, pending: () => queue.length };
 }
 
@@ -130,79 +149,125 @@ describe("createAutoScroll", () => {
   });
 });
 
-describe.each(["scheme", "javascript", "python"])("wired into the drag: %s", (l) => {
-  beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
-  const ptr = (el: Element | Document, type: string, x: number, y: number, pointerType = "mouse") => {
-    const e = new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX: x, clientY: y });
-    Object.defineProperty(e, "pointerType", { value: pointerType });
-    Object.defineProperty(e, "pointerId", { value: 3 });
-    el.dispatchEvent(e);
-  };
-  function setup() {
-    const ed = make(l);
-    const sd = ed.view.scrollDOM;
-    let top = 0;
-    Object.defineProperties(sd, {
-      scrollTop: { get: () => top, set: (v) => (top = v), configurable: true },
-      scrollHeight: { get: () => 5000, configurable: true },
-      clientHeight: { get: () => 400, configurable: true },
+describe.each(["scheme", "javascript", "python"])(
+  "wired into the drag: %s",
+  (l) => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+    const ptr = (
+      el: Element | Document,
+      type: string,
+      x: number,
+      y: number,
+      pointerType = "mouse"
+    ) => {
+      const e = new MouseEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        clientX: x,
+        clientY: y,
+      });
+      Object.defineProperty(e, "pointerType", { value: pointerType });
+      Object.defineProperty(e, "pointerId", { value: 3 });
+      el.dispatchEvent(e);
+    };
+    function setup() {
+      const ed = make(l);
+      const sd = ed.view.scrollDOM;
+      let top = 0;
+      Object.defineProperties(sd, {
+        scrollTop: {
+          get: () => top,
+          set: (v) => (top = v),
+          configurable: true,
+        },
+        scrollHeight: { get: () => 5000, configurable: true },
+        clientHeight: { get: () => 400, configurable: true },
+      });
+      sd.getBoundingClientRect = () =>
+        ({
+          left: 0,
+          top: 0,
+          right: 500,
+          bottom: 400,
+          width: 500,
+          height: 400,
+          x: 0,
+          y: 0,
+          toJSON() {},
+        }) as DOMRect;
+      const at = { el: document.body as Element };
+      document.elementFromPoint = () => at.el;
+      const block = ed.view.dom.querySelector(
+        ".blocks-node .blocks-node"
+      ) as HTMLElement;
+      return { ed, at, block, top: () => top };
+    }
+    test("a mouse drag near the bottom scrolls, and the target is found again as the content moves; Escape cancels and stops", () => {
+      const { ed, at, block, top } = setup();
+      ptr(block, "pointerdown", 50, 50);
+      ptr(document, "pointermove", 70, 60);
+      expect(ed.view.dom.classList.contains("blocks-dragging")).toBe(true);
+      ptr(document, "pointermove", 70, 395);
+      jest.advanceTimersByTime(500);
+      expect(top()).toBeGreaterThan(50);
+      // the element under the pointer changes as the content moves: the new one is the marked target
+      const gap = ed.view.dom.querySelector(".blocks-gap") as HTMLElement;
+      at.el = gap;
+      jest.advanceTimersByTime(40);
+      expect(gap.classList.contains("blocks-drop-target")).toBe(true);
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Escape",
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+      expect(ed.view.dom.classList.contains("blocks-dragging")).toBe(false);
+      const t = top();
+      jest.advanceTimersByTime(500);
+      expect(top()).toBe(t);
+      ptr(document, "pointerup", 70, 395);
+      expect(ed.view.state.doc.toString()).toBe(TEXT[l]);
+      expect(checkLezerEditor(ed)).toEqual([]);
     });
-    sd.getBoundingClientRect = () => ({ left: 0, top: 0, right: 500, bottom: 400, width: 500, height: 400, x: 0, y: 0, toJSON() {} }) as DOMRect;
-    const at = { el: document.body as Element };
-    document.elementFromPoint = () => at.el;
-    const block = ed.view.dom.querySelector(".blocks-node .blocks-node") as HTMLElement;
-    return { ed, at, block, top: () => top };
+    test("letting go ends the scrolling", () => {
+      const { ed, block, top } = setup();
+      ptr(block, "pointerdown", 50, 50);
+      ptr(document, "pointermove", 70, 395);
+      jest.advanceTimersByTime(200);
+      ptr(document, "pointerup", 70, 395);
+      const t = top();
+      expect(t).toBeGreaterThan(0);
+      jest.advanceTimersByTime(500);
+      expect(top()).toBe(t);
+      expect(ed.view.dom.classList.contains("blocks-dragging")).toBe(false);
+    });
+    test("a template drag from the toolbar scrolls too, near the top it scrolls back", () => {
+      const { ed, top } = setup();
+      const button = document.createElement("button");
+      document.body.appendChild(button);
+      ed.beginTemplateDrag(
+        Object.assign(
+          new MouseEvent("pointerdown", { button: 0, clientX: 5, clientY: 5 }),
+          { pointerType: "mouse", pointerId: 3 }
+        ) as PointerEvent,
+        "number"
+      );
+      ptr(document, "pointermove", 70, 30);
+      ptr(document, "pointermove", 70, 398);
+      jest.advanceTimersByTime(600);
+      const down = top();
+      expect(down).toBeGreaterThan(100);
+      ptr(document, "pointermove", 70, 2);
+      jest.advanceTimersByTime(300);
+      expect(top()).toBeLessThan(down);
+      ptr(document, "pointerup", 70, 2);
+      button.remove();
+      document
+        .querySelectorAll(".blocks-drag-ghost")
+        .forEach((g) => g.remove());
+    });
   }
-  test("a mouse drag near the bottom scrolls, and the target is found again as the content moves; Escape cancels and stops", () => {
-    const { ed, at, block, top } = setup();
-    ptr(block, "pointerdown", 50, 50);
-    ptr(document, "pointermove", 70, 60);
-    expect(ed.view.dom.classList.contains("blocks-dragging")).toBe(true);
-    ptr(document, "pointermove", 70, 395);
-    jest.advanceTimersByTime(500);
-    expect(top()).toBeGreaterThan(50);
-    // the element under the pointer changes as the content moves: the new one is the marked target
-    const gap = ed.view.dom.querySelector(".blocks-gap") as HTMLElement;
-    at.el = gap;
-    jest.advanceTimersByTime(40);
-    expect(gap.classList.contains("blocks-drop-target")).toBe(true);
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
-    expect(ed.view.dom.classList.contains("blocks-dragging")).toBe(false);
-    const t = top();
-    jest.advanceTimersByTime(500);
-    expect(top()).toBe(t);
-    ptr(document, "pointerup", 70, 395);
-    expect(ed.view.state.doc.toString()).toBe(TEXT[l]);
-    expect(checkLezerEditor(ed)).toEqual([]);
-  });
-  test("letting go ends the scrolling", () => {
-    const { ed, block, top } = setup();
-    ptr(block, "pointerdown", 50, 50);
-    ptr(document, "pointermove", 70, 395);
-    jest.advanceTimersByTime(200);
-    ptr(document, "pointerup", 70, 395);
-    const t = top();
-    expect(t).toBeGreaterThan(0);
-    jest.advanceTimersByTime(500);
-    expect(top()).toBe(t);
-    expect(ed.view.dom.classList.contains("blocks-dragging")).toBe(false);
-  });
-  test("a template drag from the toolbar scrolls too, near the top it scrolls back", () => {
-    const { ed, top } = setup();
-    const button = document.createElement("button");
-    document.body.appendChild(button);
-    ed.beginTemplateDrag(Object.assign(new MouseEvent("pointerdown", { button: 0, clientX: 5, clientY: 5 }), { pointerType: "mouse", pointerId: 3 }) as PointerEvent, "number");
-    ptr(document, "pointermove", 70, 30);
-    ptr(document, "pointermove", 70, 398);
-    jest.advanceTimersByTime(600);
-    const down = top();
-    expect(down).toBeGreaterThan(100);
-    ptr(document, "pointermove", 70, 2);
-    jest.advanceTimersByTime(300);
-    expect(top()).toBeLessThan(down);
-    ptr(document, "pointerup", 70, 2);
-    button.remove();
-    document.querySelectorAll(".blocks-drag-ghost").forEach((g) => g.remove());
-  });
-});
+);

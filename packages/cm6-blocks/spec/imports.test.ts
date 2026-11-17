@@ -5,10 +5,19 @@ import { walk } from "../src/doc";
 import { make } from "./helpers";
 import type { BNode } from "../src/types";
 
-const SRC = ["import os", "import a.b as c, d", "from x import y as z, w", "from . import a", "from .a.b import (c, d as e)", "from x import *", "from x import y\n"].join("\n");
+const SRC = [
+  "import os",
+  "import a.b as c, d",
+  "from x import y as z, w",
+  "from . import a",
+  "from .a.b import (c, d as e)",
+  "from x import *",
+  "from x import y\n",
+].join("\n");
 
 const shape = (n: BNode, text: string): string => {
-  if (n.slots.length === 0) return JSON.stringify(text.slice(n.from, n.to).trim());
+  if (n.slots.length === 0)
+    return JSON.stringify(text.slice(n.from, n.to).trim());
   return `${n.kind}${n.keyword ? ":" + n.keyword : ""}(${n.slots.map((s) => s.name + "=[" + s.nodes.map((c) => shape(c, text)).join(" ") + "]").join(" ")})`;
 };
 
@@ -30,12 +39,18 @@ describe("python imports", () => {
 
   test("the words are drawn (from, import, as) and spoken", () => {
     const ed = make("python", "from x import y as z, w\nimport a.b as c\n");
-    const els = Array.from(ed.view.dom.querySelectorAll(".blocks-node")).map((e) => e.textContent);
+    const els = Array.from(ed.view.dom.querySelectorAll(".blocks-node")).map(
+      (e) => e.textContent
+    );
     expect(els[0]).toContain("from");
     expect(els[0]).toContain("import");
     expect(els[0]).toContain("as");
-    expect(ed.view.dom.querySelector('[aria-label="from x import 2 names"]')).not.toBeNull();
-    expect(ed.view.dom.querySelector('[aria-label="import a.b as c"]')).not.toBeNull();
+    expect(
+      ed.view.dom.querySelector('[aria-label="from x import 2 names"]')
+    ).not.toBeNull();
+    expect(
+      ed.view.dom.querySelector('[aria-label="import a.b as c"]')
+    ).not.toBeNull();
   });
 
   test("a name can be removed, one inserted, and the text edited; the oracle stays clean; undo restores", () => {
@@ -62,12 +77,24 @@ describe("python imports", () => {
     const ed = make("python", "def f():\n    import os\n    return os\n");
     expect(ed.templates().map((t) => t.name)).toContain("import");
     ed.insertTemplate("import", null);
-    ed.view.dom.querySelector("input.blocks-edit")?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    ed.view.dom
+      .querySelector("input.blocks-edit")
+      ?.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Escape",
+          bubbles: true,
+          cancelable: true,
+        })
+      );
     expect(checkLezerEditor(ed)).toEqual([]);
     const imp: BNode[] = [];
-    ed.roots().forEach((r) => walk(r, (n) => n.kind === "import" && imp.push(n)));
+    ed.roots().forEach((r) =>
+      walk(r, (n) => n.kind === "import" && imp.push(n))
+    );
     expect(imp.length).toBe(2);
-    ed.view.dispatch({ changes: { from: 0, insert: "from import (\nimport , as\n" } });
+    ed.view.dispatch({
+      changes: { from: 0, insert: "from import (\nimport , as\n" },
+    });
     expect(checkLezerEditor(ed)).toEqual([]);
   });
 });
