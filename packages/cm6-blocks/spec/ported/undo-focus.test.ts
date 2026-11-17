@@ -71,13 +71,13 @@ describe("undoing and redoing a delete", () => {
 
   // SKIPPED (U): undo does not put the focus back on the block that had it before the edit (the old history keeps the focus)
 
-  it.skip("undo puts focus back on the block that had it before the delete", () => {
+  it("undo puts focus back on the block that had it before the delete", () => {
     undo();
     expect(cmb.getValue()).toBe("(f x y)");
     expect(focused()).toBe("x");
   });
 
-  // SKIPPED (U): redo after an undo of a delete: the document is not the deleted one (redo did nothing visible); to look at
+  // SKIPPED (D): the focus a delete leaves is the node at the same index here (notes, second round A3), the old editor's the block before; undo is the same in both
 
   it.skip("redo puts focus where the delete left it, not on whatever now has x's position", () => {
     undo();
@@ -123,7 +123,7 @@ describe("an edit made while the first block (position 0) had focus", () => {
     expect(cmb.getValue()).toBe("(f x)\nzzz\n b");
   });
 
-  // SKIPPED (U): undo of a paste at the first block: focus and the layout around the pasted line differ
+  // SKIPPED (U): a paste beside a root writes other whitespace around the pasted line (difference 8, not this round); the focus part passes in spec/eleventh.test.ts
 
   it.skip("undo puts focus back on that first block", () => {
     undo();
@@ -131,7 +131,7 @@ describe("an edit made while the first block (position 0) had focus", () => {
     expect(focused()).toBe("(f x)");
   });
 
-  // SKIPPED (U): redo of a paste: the layout around the pasted line differs
+  // SKIPPED (U): as above (difference 8)
 
   it.skip("redo puts focus on the pasted block", () => {
     undo();
@@ -159,7 +159,7 @@ describe("undoing and redoing an insertion beside a block", () => {
 
   // SKIPPED (U): redo of an insertion beside a block: redo through the key did not redo (document unchanged)
 
-  it.skip("redo goes to the inserted block", () => {
+  it("redo goes to the inserted block", () => {
     undo();
     redo();
     expect(cmb.getValue()).toBe("(f x zzz y)");
@@ -226,7 +226,7 @@ describe("undoing through the API instead of the keyboard", () => {
   // cmb.undo() and cmb.redo() do what Ctrl-Z and Ctrl-Y do, so focus follows
   // the same saved blocks: the deleted block comes back with focus, and a redo
   // focuses the block before it.
-  // SKIPPED (U): undo does not put the focus back on the block that had it (as above)
+  // SKIPPED (D): the redo half: the focus a delete leaves differs (as above); the undo half passes
   it.skip("brings the AST back and focuses the same blocks as the keyboard", () => {
     cmb.setValue("(f x y)");
     cmb.clearHistory();

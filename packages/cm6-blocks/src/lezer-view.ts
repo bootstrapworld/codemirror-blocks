@@ -23,7 +23,7 @@
  */
 import { Compartment, EditorState, Extension, StateField, Transaction } from "@codemirror/state";
 import { Decoration, DecorationSet, EditorView, keymap } from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap, isolateHistory } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap, isolateHistory, redoDepth, undoDepth } from "@codemirror/commands";
 import { Tree, TreeFragment } from "@lezer/common";
 import type { Parser } from "@lezer/common";
 import { walk } from "./doc";
@@ -769,6 +769,93 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     view.contentDOM.focus({ preventScroll: true });
   }
 
+  /**
+   * Focus and history. The old editor stores with each history item the block that had focus before the edit and the one that had it
+   * after (`actionFocus`, `commitChanges.ts`); an undo focuses the first, a redo the second (`focusAfterUndoOrRedo`); a quick run of
+   * typing that CodeMirror merges into one item keeps the first "before" and the last "after". Here the two stacks are kept in step
+   * with CodeMirror's history by its depths, and a block is stored as a path (slot name and index at each level from the program),
+   * which means the same block in the same text, whatever the objects are by then.
+   */
+  interface PathStep {
+    slot: string;
+    index: number;
+  }
+  interface HistFocus {
+    before: PathStep[] | null;
+    after: PathStep[] | null;
+  }
+  const histUndo: HistFocus[] = [];
+  const histRedo: HistFocus[] = [];
+  let histPending: HistFocus | null = null;
+  function pathOf(node: BNode): PathStep[] {
+    const steps: PathStep[] = [];
+    for (let c: BNode | null = node; c && c.parent && c.slot; c = c.parent) steps.unshift({ slot: c.slot.name, index: c.slot.nodes.indexOf(c) });
+    return steps;
+  }
+  function resolvePath(steps: PathStep[]): BNode | null {
+    let owner: BNode = program;
+    let node: BNode | null = null;
+    for (const st of steps) {
+      const sl = owner.slots.find((q) => q.name === st.slot);
+      const next = sl && sl.nodes[st.index];
+      if (!next) return null;
+      node = next;
+      owner = next;
+    }
+    return node;
+  }
+  function focusedPath(): PathStep[] | null {
+    const active = view.dom.ownerDocument.activeElement;
+    const node = active && view.contentDOM.contains(active) ? renderer.nodeOf(active) : null;
+    return node && doc.byId.get(node.id) === node ? pathOf(node) : null;
+  }
+  /** the focus the last edit left is what a redo goes back to: read it when the next thing happens, not while the edit is still going */
+  function settleHistoryFocus(): void {
+    if (!histPending) return;
+    histPending.after = focusedPath();
+    histPending = null;
+  }
+  /** keep the two stacks in step with CodeMirror's history after a batch of transactions; returns the path an undo or redo should focus */
+  function trackHistory(trs: readonly Transaction[], before: EditorState, focusBefore: PathStep[] | null, after: EditorState): PathStep[] | null | undefined {
+    const changing = trs.filter((t) => t.docChanged);
+    if (!changing.length) return undefined;
+    const last = changing[changing.length - 1];
+    let target: PathStep[] | null | undefined;
+    if (last.isUserEvent("undo")) {
+      const e = histUndo.pop() ?? { before: null, after: null };
+      histRedo.push(e);
+      target = e.before;
+    } else if (last.isUserEvent("redo")) {
+      const e = histRedo.pop() ?? { before: null, after: null };
+      histUndo.push(e);
+      target = e.after;
+    } else {
+      histRedo.length = 0;
+      const grew = undoDepth(after) - undoDepth(before);
+      if (grew > 0) for (let i = 0; i < grew; i++) histUndo.push({ before: i === 0 ? focusBefore : null, after: null });
+      else if (histUndo.length) histUndo[histUndo.length - 1].after = null; // (merged into the item before: its "before" stays)
+      histPending = histUndo[histUndo.length - 1] ?? null;
+    }
+    while (histUndo.length > undoDepth(after)) histUndo.shift();
+    while (histUndo.length < undoDepth(after)) histUndo.unshift({ before: null, after: null });
+    while (histRedo.length > redoDepth(after)) histRedo.shift();
+    while (histRedo.length < redoDepth(after)) histRedo.unshift({ before: null, after: null });
+    return target;
+  }
+  /** an undo or redo puts focus on the block its history item remembers (when it is in the new text); false when there is none to go to */
+  function focusFromHistory(path: PathStep[] | null | undefined): boolean {
+    if (!path || gone || !blockMode) return false;
+    const found = resolvePath(path);
+    const target = found && nearestDrawn(found);
+    if (!target || target.kind === "program") return false;
+    const el = renderer.element(target);
+    if (view.dom.ownerDocument.activeElement !== el) {
+      stats.focusRestores++;
+      el.focus();
+    }
+    return true;
+  }
+
   /** an edit that puts focus where it wants (a removal) holds the generic restore back, so that focus does not visit the parent on the way */
   let holdFocus = false;
   function restoreFocus(s: Snap | null, trs: readonly Transaction[]): void {
@@ -1316,9 +1403,13 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     }),
     dispatchTransactions(trs, v) {
       for (const t of trs) recorder.transaction(t);
+      if (trs.some((t) => t.docChanged)) settleHistoryFocus();
       const snap = trs.some((t) => t.docChanged) ? takeSnapshot() : null;
+      const focusBefore = snap && snap.node ? pathOf(snap.node) : null;
       const before = v.state;
       v.update(trs);
+      const histTarget = trackHistory(trs, before, focusBefore, v.state);
+      if (histPending) queueMicrotask(settleHistoryFocus);
       // what undo and redo say they undid or redid: the words of the edit ("changed 22"), kept in two stacks in step with the history
       if (blockMode)
         for (const t of trs) {
@@ -1342,7 +1433,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       carryMarks(snap);
       // blocks that are new inside a selected block are selected with it
       if (trs.some((t) => t.docChanged)) for (const m of renderer.selected()) walk(m, (n) => renderer.setSelected(n, true));
-      restoreFocus(snap, trs);
+      if (!focusFromHistory(histTarget)) restoreFocus(snap, trs);
       keepFocusInEditor(snap);
       // undo and redo scroll to the old selection (the top, for block edits): show what changed instead
       const last = trs.find((t) => t.docChanged && (t.isUserEvent("undo") || t.isUserEvent("redo")));
@@ -1353,11 +1444,13 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         });
         if (at >= 0) {
           v.dispatch({ effects: EditorView.scrollIntoView(at, { y: "nearest" }) });
-          restoreFocus(snap, trs);
+          if (!focusFromHistory(histTarget)) restoreFocus(snap, trs);
         }
       }
     },
   });
+  // the next key or touch of the pointer settles which block an edit left focused (a redo goes back to it)
+  for (const type of ["keydown", "pointerdown", "mousedown", "touchstart"]) view.dom.addEventListener(type, settleHistoryFocus, true);
   // the API entry points that change something are logged as actions of their own when called by a page or a test (inside a key or a mouse
   // handler they are part of that action)
   const named = <K extends keyof LezerBlockEditor>(name: K, action: (...a: never[]) => string, target: (...a: never[]) => BNode | null, detail?: (...a: never[]) => Record<string, unknown> | undefined): void => {

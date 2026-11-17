@@ -286,7 +286,11 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     box({ action: "insert", target: anchor }, "", put, () => ed.focusNode(anchor), (t) => {
       if (t.trim() === "") return;
       try {
+        const had = slot.nodes.length;
         ed.insertText(slot, index, t);
+        // focus goes to the block that was inserted, as in the old editor (its edit's focus hint), so that a redo comes back to it too
+        const made = slot.nodes.length > had ? slot.nodes[index] : null;
+        if (made && made.kind !== "error") ed.focusNode(made);
         ed.say(`inserted ${t}`);
       } catch (e) {
         ed.lastError = (e as Error).message;
