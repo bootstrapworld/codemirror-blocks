@@ -1639,3 +1639,7 @@ Evidence: `spec/perf.test.ts` (600 roots: an edit rebuilds fewer than 12 roots a
 | (c) `demo/scheme-only.ts`, CodeMirror 6 external | 102,787 / 35,585 | 132,724 / 45,962 | 161,621 / 52,825 |
 
 +29 K minified (+6.9 K gzip) in the Scheme-only build over round six: about 9 K of Scheme-look CSS, the key table, help dialog, announcements, toolbar drag, stray comments, per-edit lookups. Grammars are not external.
+
+### Final checks of the seventh round (2026-11-16)
+jsdom 574 passed (6 skipped), tsc clean, model fuzzers at 800 seeds (100 big seeds) clean, whole Chromium suite 65 passed (port 8177, server stopped; the existing editor's page on 8190 stopped too).
+Not done: search; sounds; activity log; the strict "proportional to nearby roots" for stepping the top-level children and shifting kept roots; the grammar's `*`/`/` tagged-list bug; a finger drag from the toolbar was not tried on a real touch device.
