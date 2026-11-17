@@ -17,7 +17,19 @@ rules = [
   (r'"\.\./src/ui/searchers/ByBlock"', '"../compat/ByBlock"'),
   (r'"\.\./src/state/actions"', '"../compat/actions"'),
   (r'"\./globalSetup"', '"../compat/global-setup"'),
+  # thirteenth round: the old internals a test imports by name get stubs that throw when used (compat/internals.ts)
+  (r'import "codemirror/addon/search/searchcursor.js";\n', ''),
+  (r'import "@bootstrapworld/example";\n', ''),
+  (r'"@bootstrapworld/lambda"', '"../compat/wescheme"'),
+  (r'from "codemirror"', 'from "../compat/codemirror"'),
+  (r'"\.\./src/state/store"', '"../compat/internals"'),
+  (r'"\.\./src/nodes"', '"../compat/internals"'),
+  (r'"\.\./src/summary"', '"../compat/internals"'),
+  (r'"\.\./src/editor"', '"../compat/internals"'),
+  (r'"\.\./src/CodeMirror-api"', '"../compat/internals"'),
+  (r'"\.\./src/state/activityLog"', '"../compat/internals"'),
 ]
+s = re.sub(r'import CodeMirrorBlocks, \{ Languages \} from "\.\./src/CodeMirrorBlocks"', 'import CodeMirrorBlocks, { Languages } from "../compat/internals"', s)
 for a, b in rules:
     s = re.sub(a, b, s)
 header = "// PORTED from packages/codemirror-blocks/spec/%s: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.\n" % name

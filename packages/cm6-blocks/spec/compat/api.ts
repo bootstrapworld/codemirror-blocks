@@ -7,6 +7,7 @@ import { redo, redoDepth, undo, undoDepth } from "@codemirror/commands";
 import { EditorSelection } from "@codemirror/state";
 import type { LezerBlockEditor } from "../../src/lezer-view";
 import { contentHash } from "../../src/hash";
+import { hasError } from "../../src/lezer";
 import type { BNode } from "../../src/types";
 
 export type Pos = { line: number; ch: number };
@@ -89,6 +90,11 @@ export class AST {
     const b = this.api.ed.doc.byId.get(Number(id));
     return b ? this.api.wrap(b) : undefined;
   }
+  getNodeByIdOrThrow(id: string): ASTNode {
+    const n = this.getNodeById(id);
+    if (!n) throw new Error(`no node with id ${id}`);
+    return n;
+  }
   getAllNodes(): Generator<ASTNode> {
     return this.walk();
   }
@@ -170,11 +176,99 @@ export class CompatAPI {
     const r = this.ed.view.state.selection.main;
     return posOf(this.ed, which === "anchor" ? r.anchor : which === "to" ? r.to : which === "from" ? r.from : r.head);
   }
-  setSelection(anchor: Pos, head: Pos = anchor): void {
-    this.ed.view.dispatch({ selection: EditorSelection.range(offsetOf(this.ed, anchor), offsetOf(this.ed, head)) });
+  // ---- selections (thirteenth round): the old API's block-aware ranges. A range that is exactly one block SELECTS the block (the editor's own
+  // selection by node); any other range must lie between blocks (outside every block, or on a root's edge) and stays a text selection; a range that
+  // ends inside a block "partially covers a node" and throws.
+  private allNodes(): BNode[] {
+    const o: BNode[] = [];
+    const go = (n: BNode) => {
+      o.push(n);
+      for (const s of n.slots) for (const c of s.nodes) go(c);
+    };
+    for (const r of this.ed.roots()) if (r.kind !== "error") go(r);
+    return o;
+  }
+  private blockAt(a: number, b: number): BNode | undefined {
+    return this.allNodes().find((n) => n.from === a && n.to === b && b > a && n.kind !== "comment");
+  }
+  private validateRange(a: number, b: number): void {
+    if (this.blockAt(a, b)) return;
+    const roots = this.ed.roots();
+    const topLevel = (o: number) => !this.allNodes().some((n) => n.from < o && o < n.to && n.kind !== "program") || roots.some((r) => r.from === o || r.to === o);
+    if (topLevel(a) && topLevel(b)) return;
+    const p = (o: number) => posOf(this.ed, o);
+    throw new Error(`The range {line:${p(a).line}, ch:${p(a).ch}}, {line:${p(b).line}, ch:${p(b).ch}} partially covers a node, which is not allowed`);
+  }
+  setSelections(ranges: { anchor: Pos; head?: Pos }[], _primary?: number, _opts?: unknown): void {
+    const rs = ranges.map((r) => {
+      const a = offsetOf(this.ed, r.anchor);
+      const h = offsetOf(this.ed, r.head ?? r.anchor);
+      return { a, h, lo: Math.min(a, h), hi: Math.max(a, h) };
+    });
+    for (const r of rs) this.validateRange(r.lo, r.hi);
+    const nodes: BNode[] = [];
+    const text: typeof rs = [];
+    for (const r of rs) {
+      const n = r.lo !== r.hi ? this.blockAt(r.lo, r.hi) : undefined;
+      if (n) nodes.push(n);
+      else text.push(r);
+    }
+    this.ed.clearSelection();
+    for (const n of nodes) this.ed.renderer.setSelected(n, true); // (only the node: the old API selects its id alone, not what is inside)
+    const sel = text.length ? EditorSelection.create(text.map((r) => EditorSelection.range(r.a, r.h))) : this.ed.view.state.selection;
+    this.ed.view.dispatch({ selection: sel });
+  }
+  setSelection(anchor: Pos, head: Pos = anchor, opts?: unknown): void {
+    this.setSelections([{ anchor, head }], undefined, opts);
+  }
+  addSelection(anchor: Pos, head: Pos = anchor): void {
+    this.setSelections([...this.listSelections(), { anchor, head }]);
   }
   listSelections(): { anchor: Pos; head: Pos }[] {
-    return this.ed.view.state.selection.ranges.map((r) => ({ anchor: posOf(this.ed, r.anchor), head: posOf(this.ed, r.head) }));
+    const nodes = this.ed.selectedBlocks();
+    // (with blocks selected the cursor is not a selection: only text that is really selected stays)
+    const text = this.ed.view.state.selection.ranges.filter((r) => !nodes.length || !r.empty);
+    const all = [
+      ...nodes.map((n) => ({ anchor: posOf(this.ed, n.from), head: posOf(this.ed, n.to), at: n.from })),
+      ...text.map((r) => ({ anchor: posOf(this.ed, r.anchor), head: posOf(this.ed, r.head), at: r.from })),
+    ].sort((x, y) => x.at - y.at);
+    return all.map(({ anchor, head }) => ({ anchor, head }));
+  }
+  getSelections(sep = "\n"): string[] {
+    const d = this.ed.view.state.doc;
+    return this.listSelections().map((r) => {
+      const a = offsetOf(this.ed, r.anchor);
+      const h = offsetOf(this.ed, r.head);
+      return d.sliceString(Math.min(a, h), Math.max(a, h), sep);
+    });
+  }
+  getSelection(sep = "\n"): string {
+    return this.getSelections(sep).join(sep);
+  }
+  /** each selected block (and text range) is replaced; the new text must be whole blocks. `around`: the new block is selected; `start`: the cursor goes to its start */
+  replaceSelections(texts: string[], select?: "around" | "start"): void {
+    const ranges = this.listSelections().map((r) => ({ a: offsetOf(this.ed, r.anchor), h: offsetOf(this.ed, r.head) }));
+    const lang = this.ed.language;
+    texts.forEach((t, i) => {
+      if (!ranges[i] || ranges[i].a === ranges[i].h) return;
+      const parsed = lang.parse(t);
+      if (parsed.length === 0 || parsed.some((n) => n.kind === "error" || hasError(n))) throw new Error(`replaceSelection: "${t}" is not whole blocks`);
+    });
+    const changes = ranges
+      .map((r, i) => ({ from: Math.min(r.a, r.h), to: Math.max(r.a, r.h), insert: texts[i] ?? texts[0] }))
+      .sort((x, y) => x.from - y.from);
+    this.ed.clearSelection();
+    this.ed.change(changes.length === 1 ? changes[0] : (changes as never));
+    const first = changes[0];
+    if (first) {
+      if (select === "around") {
+        const n = this.blockAt(first.from, first.from + first.insert.length);
+        if (n) this.ed.renderer.setSelected(n, true);
+      } else this.ed.view.dispatch({ selection: EditorSelection.cursor(select === "start" ? first.from : first.from + first.insert.length) });
+    }
+  }
+  replaceSelection(text: string, select?: "around" | "start"): void {
+    this.replaceSelections(Array(this.listSelections().length).fill(text), select);
   }
   somethingSelected(): boolean {
     return this.ed.selection().length > 0 || this.ed.view.state.selection.ranges.some((r) => !r.empty);
@@ -212,17 +306,17 @@ export class CompatAPI {
       getScrollerElement: () => ed.view.scrollDOM,
       getInputField: () => ed.view.contentDOM,
       coordsChar: () => ({ line: 0, ch: 0 }),
+      /** CodeMirror's OWN cursor (the one that does not follow block focus) */
+      getCursor: (which: "head" | "anchor" | "from" | "to" = "head") => {
+        const r = ed.view.state.selection.main;
+        return posOf(ed, which === "anchor" ? r.anchor : which === "from" ? r.from : which === "to" ? r.to : r.head);
+      },
     };
   }
 }
 
 /** the methods the old tests use that this layer does not have, with what they would need (see the notes for how often each is used) */
 const MISSING: Record<string, string> = {
-  getSelections: "the old API answers with the selected blocks' text",
-  setSelections: "several text selections",
-  getSelection: "the old API answers with the selected block's text",
-  addSelection: "text selections",
-  replaceSelection: "replace the selected block",
   getHistory: "the CM5 history object",
   setHistory: "the CM5 history object",
   markText: "text marks on blocks",
