@@ -21,6 +21,7 @@
   "include": [
     "src",
     "spec",
-    "demo"
+    "demo",
+    "e2e"
   ]
 }
