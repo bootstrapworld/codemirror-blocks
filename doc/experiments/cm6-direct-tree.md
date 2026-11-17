@@ -2060,3 +2060,11 @@ The full Chromium suite after difference 2 (run before differences 3 to 6): 106 
 - A fix that broke tests that passed before: difference 2 changed 6 of this editor's own tests (3 in `lezer-view.test.ts`, 2 in `move.test.ts`, 1 in `lezer.test.ts`, which was a bug of the first version of the fix: "a root" was tested by a missing parent, now by the program node) and the "ported" `keyboard-commands` / `paste` / `undo-focus` cases that passed with the old removal of the separator ("(f x y) z" gives "z" in the old editor too, thanks to its whitespace rule: the first version of the fix, which left the space, failed them; that is why the rule is copied exactly). Difference 6 broke the comment box test (a deliberate feature: see its section). No test was deleted.
 - Checks: `npx jest packages/cm6-blocks`: 1087 passed, 207 skipped, 0 failed with `CMB_SEEDS=800 CMB_BIGSEEDS=100`; `tsc --noEmit` clean; Chromium suite (port 8177, server started and stopped by the runner): 118 passed, 4 skipped, 0 failed (12 of them new, `e2e/lastblock.e2e.ts`).
 - Not done: the other seven differences; the comment box's emptied-Enter rule awaits the owner's choice; the text cursor following block focus (13).
+
+### Decision on the comment box (2026-11-17, owner)
+
+Emptying the comment box (Shift-Ctrl-]) and pressing Enter keeps REMOVING the
+comment, as it does now (`emptyEnterCommits`, pinned by `spec/attached.test.ts`).
+The existing editor's equivalent box does nothing on an empty Enter. This is a
+deliberate difference, not an open one; every other edit box here cancels on an
+empty Enter, matching the old editor.
