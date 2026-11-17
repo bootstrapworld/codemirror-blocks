@@ -2031,7 +2031,32 @@ The full Chromium suite after difference 2 (run before differences 3 to 6): 106 
 
 ### Difference 6: an emptied box committed with Enter (2026-11-17)
 
-- Old: all boxes are one component, `NodeEditable`: Enter blurs it, and `handleBlur` does `if (value === initialValue || !value)`: close the box, re-activate the block that had the focus, do nothing else (no edit, no history step). That holds for a leaf's box (Enter), for the Cmd/Ctrl-Enter box (`Edit Anything` opens the same component, `isInsertion` false) and for insertion boxes (`DropTarget`, `ToplevelBlockEditable`, `isInsertion` true): an empty insertion box inserts nothing. (The old test is only a whitespace-only value is not "empty" there: `insert()` gets it. Here whitespace-only is empty, as this editor's blur path already had it.)
+- Old: all boxes are one component, `NodeEditable`: Enter blurs it, and `handleBlur` does `if (value === initialValue || !value)`: close the box, re-activate the block that had the focus, do nothing else (no edit, no history step). That holds for a leaf's box (Enter), for the Cmd/Ctrl-Enter box (`Edit Anything` opens the same component, `isInsertion` false) and for insertion boxes (`DropTarget`, `ToplevelBlockEditable`, `isInsertion` true): an empty insertion box inserts nothing. (A whitespace-only value is not "empty" there: `insert()` gets it. Here whitespace-only counts as empty, as this editor's blur path already had it: a small difference left as it was.)
 - Before this round, here: a leaf box emptied with Enter removed the block (`removeNode`); the Cmd/Ctrl-Enter box and the insertion box already did nothing (their commit functions return on an empty text), the blur path cancelled in all boxes. Now Enter on an empty box (trim) cancels in `box()` for every kind, logged as `<action>Cancel` with `how: "enter-empty"`, and the leaf commit no longer has a delete branch.
 - CHOICE not made silently: the comment box (Shift-Ctrl-]) is NOT in the three kinds the owner listed, and this editor deliberately removes the comment when its box is emptied and committed with Enter (tested in `attached.test.ts`: "deleting all the text removes the comment"). The old editor's comment box is the same `NodeEditable` and would do nothing (the comment stays), so matching would remove a feature; the comment box keeps its rule (`emptyEnterCommits`), and its blur path still cancels (an existing inconsistency, left). The owner can say which way.
 - Un-skipped: 1 ported test (edit-errors). New: 15 jest tests (3 languages x 5) in `spec/tenth.test.ts`.
+
+### Results of the tenth round (2026-11-17)
+
+- Fixed: differences 1, 2, 3, 5 and 6 (five of the twelve); the other seven (4, 7, 8, 9, 10, 11, 12) remain. One new finding: 13, the text cursor does not follow the focused block (old snapshot of `getCursor()` after a delete, activation-test "focus on the previous node").
+- Ported tests un-skipped: 15 jest (difference 1: 8, difference 2: 2 (a third passes its text and focus but fails the cursor snapshot of finding 13 and stays skipped), difference 3: 3, difference 5: 1, difference 6: 1). Playwright ported files unchanged (search 5 of 6, undo-focus 0 of 3: their skips are not about these differences).
+- Sample, jest, passes of the 476 sampled tests (old = ninth round's table, after edits 229 as is + 31 edited = 260): now 275 pass (58%), 201 skipped, 0 fail.
+
+| file (old tests) | pass before (as is + edited) | pass now | skipped now |
+|---|---|---|---|
+| activation (35) | 19 | 30 | 5 |
+| keyboard-commands (43) | 34 | 35 | 8 |
+| paste (24) | 11 | 11 | 13 |
+| interaction (22) | 12 | 13 | 9 |
+| drop-targets (15) | 6 | 6 | 9 |
+| undo-focus (16) | 3 | 3 | 13 |
+| focus (9) | 1 | 2 | 7 |
+| edit-errors (25) | 14 | 15 | 10 |
+| comment (3) | 0 | 0 | 3 |
+| search (26) | 15 | 15 | 11 |
+| undo-matrix (258) | 145 | 145 | 113 |
+| total (476) | 260 | 275 | 201 |
+
+- A fix that broke tests that passed before: difference 2 changed 6 of this editor's own tests (3 in `lezer-view.test.ts`, 2 in `move.test.ts`, 1 in `lezer.test.ts`, which was a bug of the first version of the fix: "a root" was tested by a missing parent, now by the program node) and the "ported" `keyboard-commands` / `paste` / `undo-focus` cases that passed with the old removal of the separator ("(f x y) z" gives "z" in the old editor too, thanks to its whitespace rule: the first version of the fix, which left the space, failed them; that is why the rule is copied exactly). Difference 6 broke the comment box test (a deliberate feature: see its section). No test was deleted.
+- Checks: `npx jest packages/cm6-blocks`: 1087 passed, 207 skipped, 0 failed with `CMB_SEEDS=800 CMB_BIGSEEDS=100`; `tsc --noEmit` clean; Chromium suite (port 8177, server started and stopped by the runner): 118 passed, 4 skipped, 0 failed (12 of them new, `e2e/lastblock.e2e.ts`).
+- Not done: the other seven differences; the comment box's emptied-Enter rule awaits the owner's choice; the text cursor following block focus (13).
