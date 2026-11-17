@@ -54,3 +54,15 @@ characters in text mode.
   The bucketing is heuristic; treat percentages as ±10 points.
 - `render` counts fibers that did work in each commit (function components,
   memo, class), not DOM changes.
+
+## Gotchas
+
+- The example page loads the **built** `packages/codemirror-blocks/lib/`, not `src/`.
+  After checking out another commit, `rm -rf lib && npm run build` before serving, or you
+  measure the old code.
+- `profile.mjs` **appends** to `--out`. Use a new file per commit (or delete it), or the
+  medians mix commits.
+- `main-thread-trace.mjs` measures busy time from a Chrome trace only (no CPU profiler, no
+  settle-polling). The profiler plus the polling `setInterval` add ~9% "(program)" time
+  that is not the editor's. The 200 ms that "settled" times show after delete/undo/redo is
+  the screen-reader announcement delay (`announcer.ts`), not processing.

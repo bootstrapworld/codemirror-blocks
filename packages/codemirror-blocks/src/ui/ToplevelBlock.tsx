@@ -9,7 +9,7 @@ import React, {
 import ReactDOM from "react-dom";
 import { useStore } from "react-redux";
 import { poscmp } from "../utils";
-import { ASTNode, Pos, currentNode } from "../ast";
+import { ASTNode, Pos, currentNode, fixId } from "../ast";
 import * as selectors from "../state/selectors";
 import type { RootState } from "../state/reducers";
 import { BlockNodeMarker, CMBEditor } from "../editor";
@@ -124,6 +124,14 @@ const ToplevelBlock = (props: Props) => {
  * ids that are no longer in the AST, and none for the ones that are.
  */
 export function areNodesEqualish(prevNode: ASTNode, nextNode: ASTNode) {
+  // The same node object is always equal to itself, and finding that out by
+  // walking the node and everything inside it is the cost of a focus change
+  // (nothing is parsed, so every block gets the node it had before).
+  return prevNode === nextNode || haveSameDrawing(prevNode, nextNode);
+}
+
+/** The comparison behind {@link areNodesEqualish}, for two different node objects */
+export function haveSameDrawing(prevNode: ASTNode, nextNode: ASTNode) {
   // (the marker covers the node's comment too, which the hash and the node's
   // own range don't say anything about)
   const shape = (n: ASTNode) => {
@@ -148,12 +156,58 @@ export function areNodesEqualish(prevNode: ASTNode, nextNode: ASTNode) {
   );
 }
 
+// What haveSameIds said about a pair of node objects.
+//
+// A block that is not drawn again keeps the props it was last drawn with, so
+// after an edit every unchanged block is compared, on each later render (a
+// focus change, say), as its old node object against the current one. Those
+// are two objects for the same code, and walking them is the cost of the
+// render, so the answer is kept. It cannot go stale as long as the ids of the
+// nodes inside, and which nodes they are, stay as they were when it was worked
+// out. Ids are made final when an answer is kept (see fixId), and changing one
+// after that throws. The children are not guarded: the tests check every kept
+// answer again when it is used (see keptAnswerCheck). Everything else that can
+// change in place (the node's own hash, level, place among its siblings, where
+// it ends) is compared every time, outside this cache.
+const sameIdsCache = new WeakMap<ASTNode, WeakMap<ASTNode, boolean>>();
+
+/**
+ * @internal
+ * The tests turn this on, and then every kept answer is checked against a new
+ * walk. Code that changes the children of a node in an AST (an id cannot be
+ * changed, see ASTNode.id) makes some answer wrong, and fails the tests here.
+ */
+export const keptAnswerCheck = { enabled: false };
+
 // (the hashes are equal, so the nodes inside line up one to one)
 function haveSameIds(prevNode: ASTNode, nextNode: ASTNode) {
+  let answers = sameIdsCache.get(prevNode);
+  if (!answers) sameIdsCache.set(prevNode, (answers = new WeakMap()));
+  let same = answers.get(nextNode);
+  if (same === undefined) {
+    same = walkSameIds(prevNode, nextNode);
+    answers.set(nextNode, same);
+  } else if (
+    keptAnswerCheck.enabled &&
+    walkSameIds(prevNode, nextNode) !== same
+  ) {
+    throw new Error(
+      "The ids inside a node changed after they were compared (see sameIdsCache)"
+    );
+  }
+  return same;
+}
+
+function walkSameIds(prevNode: ASTNode, nextNode: ASTNode) {
+  const seen: ASTNode[] = [];
   const next = nextNode.descendants()[Symbol.iterator]();
   for (const prev of prevNode.descendants()) {
-    if (prev.id !== next.next().value?.id) return false;
+    const other = next.next().value;
+    if (prev.id !== other?.id) return false;
+    seen.push(prev, other);
   }
+  // (the ids this answer depends on cannot change from here on)
+  seen.forEach(fixId);
   return true;
 }
 

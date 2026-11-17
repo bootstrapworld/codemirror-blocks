@@ -1,5 +1,10 @@
 import "@testing-library/jest-dom";
 
+import { keptAnswerCheck } from "../src/ui/ToplevelBlock";
+
+// every answer the blocks keep about the ids inside a node is checked again when used
+keptAnswerCheck.enabled = true;
+
 export {};
 
 window.focus = () => {};

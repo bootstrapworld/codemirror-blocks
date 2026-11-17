@@ -189,6 +189,18 @@ export type ASTData = Readonly<{
   readonly edgeIdMap: Readonly<{ [id: string]: Readonly<Edges> }>;
 }>;
 
+/** The nodes whose ids can no longer change (see ASTNode.id) */
+const idsAreFinal = new WeakSet<object>();
+
+/**
+ * @internal
+ * From now on the id of this node cannot change: something has been worked
+ * out from it that would go wrong silently if it did (see haveSameIds).
+ */
+export function fixId(node: ASTNode) {
+  idsAreFinal.add(node);
+}
+
 /**
  * annotateNodes : ASTNodes ASTNode -> Void
  * walk through the siblings, assigning aria-* attributes
@@ -658,6 +670,8 @@ export type ASTNodeProps<Spec extends NodeSpec = NodeSpec> = {
 // TODO(pcardune): figure out how to get rid of the duplication
 // between this interface, and the ASTNode class definition
 export interface NodeForSpec<Spec extends NodeSpec = NodeSpec> {
+  /** @internal (see ASTNode.id) */
+  readonly _id: string;
   readonly from: Pos;
   readonly to: Pos;
   readonly type: string;
@@ -749,7 +763,28 @@ export class ASTNode<
   readonly from: Pos;
   readonly to: Pos;
   readonly type: string;
-  id = "uninitialized";
+  /** @internal use `id`, which checks that it is not changed once the node is in an AST */
+  _id = "uninitialized";
+  /**
+   * The node's unique id. It is set while the tree is being made (the parser
+   * leaves it unset, annotateNodes gives it one, and patchAst copies the old
+   * tree's ids onto the new one, even onto the nodes of an AST that has been
+   * made but not yet used), and is final once something has relied on it
+   * (see {@link fixId}). The blocks keep what they have worked out about the
+   * ids inside a node, so an id that changed afterwards would leave them wrong
+   * without any error. Make a new node instead.
+   */
+  get id() {
+    return this._id;
+  }
+  set id(id: string) {
+    if (idsAreFinal.has(this) && id !== this._id) {
+      throw new Error(
+        `Cannot change the id of a node that has been relied on (${this._id} -> ${id}). Make a new node instead.`
+      );
+    }
+    this._id = id;
+  }
   nid = -1;
   level = -1;
   ariaSetSize = -1;
