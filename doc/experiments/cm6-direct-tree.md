@@ -2095,3 +2095,26 @@ The owner said "do it" to fixing differences 4, 7 and 9, each its own commit, in
 - Here (`src/modal.ts`, used by `help.ts` and `search.ts`, the only two dialogs of the package; the demo page has none of its own): `modalOpen(dialog)` marks every sibling of the dialog and of each of its ancestors (so everything on the page but the dialog: the editor, the toolbar, the demo's other content) `aria-hidden="true"` AND `inert` (the attribute does nothing in a browser without `inert`, and `aria-hidden` stays as the fallback); live regions (`aria-live`, `role=status|alert`: the editor's announcer) and `script/style/head` are left alone, so what the editor says is still heard. Each element's previous `aria-hidden` and `inert` are kept in one record shared by all open dialogs with a count, so opening twice, two dialogs at once, and closing in any order bring back exactly what was there (a value the page had set comes back as it was, even `aria-hidden="false"`). The returned release function runs BEFORE the focus goes back (`finish` in both dialogs, whichever route closes: Escape, Close, Enter in search, `search.close()`, `help.close()`, and `detach` of the editor, which now closes both). Only the newest dialog holds the focus: Tab and Shift-Tab go round inside (help now has a trap; search had its own), a focus that goes outside returns, and a click that sends it to the body (a click on the inert page) brings it back a tick later; `aria-modal="true"` was already there. Chosen differently: no overlay element and no click-outside-closes (react-modal's `shouldCloseOnOverlayClick`): an `inert` page cannot be clicked, and a click outside would close a search the person is typing in; say if the old behaviour is wanted.
 - Checked with Playwright's accessibility snapshot (`e2e/dialogs.e2e.ts`, 12 tests): with the search or the help dialog open the snapshot has the dialog and no `treeitem`, none of the blocks' labels; after Escape (or the Close button, twice in a row) the snapshot and every element's `aria-hidden` and `inert` equal those from before, and focus is on the block that had it. Jest: 4 tests in `spec/eleventh.test.ts` (restored exactly with pre-set values, two dialogs, destroy, focus brought back).
 - Un-skipped: 3 ported (keyboard-commands: help hides the editor, closes on Escape and shows it again; search: leaves the rest of the page alone), with the old `.Editor` selector edited to `.cm-editor`. Still skipped in the help group: the list of descriptions (the old names, `Next Block`: U, a different key table).
+
+### Results of the eleventh round (2026-11-17)
+
+- Fixed: differences 4, 7 and 9. With the tenth round's 1, 2, 3, 5 and 6, **eight of the twelve are fixed (1 to 7 and 9)**; 8 (paste whitespace beside a root and after the operator), 10 (native keys in the text), 11 (node ids, `hash`) and 12 (rotor message, parameter list of a `define`) remain, plus finding 13 (the text cursor does not follow block focus).
+- Ported tests un-skipped: 7 jest (undo-focus 2, focus 1, keyboard-commands 2, search 1; the first commit's message says 3, the count is 2). Playwright ported files unchanged. Sample, jest, 476 tests:
+
+| file (old tests) | pass in the tenth round | pass now | skipped now |
+|---|---|---|---|
+| activation (35) | 30 | 30 | 5 |
+| keyboard-commands (43) | 35 | 37 | 6 |
+| paste (24) | 11 | 11 | 13 |
+| interaction (22) | 13 | 13 | 9 |
+| drop-targets (15) | 6 | 6 | 9 |
+| undo-focus (16) | 3 | 5 | 11 |
+| focus (9) | 2 | 3 | 6 |
+| edit-errors (25) | 15 | 15 | 10 |
+| comment (3) | 0 | 0 | 3 |
+| search (26) | 15 | 16 | 10 |
+| undo-matrix (258) | 145 | 145 | 113 |
+| total (476) | 275 | 281 (59%) | 195 |
+
+- Checks: `CMB_SEEDS=800 CMB_BIGSEEDS=100 npx jest packages/cm6-blocks`: 1145 passed, 201 skipped, 0 failed (45 suites passed, 2 skipped whole); `tsc --noEmit -p packages/cm6-blocks` clean; Chromium suite (port 8177, started and stopped by the runner, nothing left listening): 133 passed, 4 skipped, 0 failed (15 new: `undo-focus-real` 3, `dialogs` 12).
+- Not done: differences 8, 10, 11, 12 and finding 13; the old editor's "block before" focus after a delete (D, the two delete-redo ported tests and the Playwright undo-focus fixme stay skipped for it); the paste layout (difference 8) keeps 2 undo-focus tests skipped; no overlay click-to-close for dialogs (a choice, see difference 9); `inert` and the accessibility snapshot were checked in Chromium only.

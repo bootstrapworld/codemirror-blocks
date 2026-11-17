@@ -1,12 +1,12 @@
 {
   "scheme": {
-    "waitForSelectorMs": 114,
+    "waitForSelectorMs": 103,
     "lines": 2751,
     "roots": 1250,
     "nodes": 13750,
-    "firstDrawMs": 93,
-    "paintedMs": 100.89999997615814,
-    "createMs": 64.40000003576279,
+    "firstDrawMs": 84.69999998807907,
+    "paintedMs": 91,
+    "createMs": 61,
     "widgetsAtLoad": 36,
     "rootsInDomAtLoad": 8,
     "viewport": {
@@ -15,31 +15,31 @@
       "docLength": 55750
     },
     "edit_near_top": {
-      "syncWithLayoutMs": 2.5,
-      "toPaintMs": 15.800000011920929,
-      "undoToPaintMs": 17.69999998807907,
+      "syncWithLayoutMs": 2.399999976158142,
+      "toPaintMs": 16,
+      "undoToPaintMs": 17.700000047683716,
       "all": [
-        7.4,
-        16.5,
-        14.6,
-        16.2,
-        15.6,
+        11.4,
+        16.3,
+        14.7,
+        16.3,
         15.8,
-        15.8
+        16,
+        16
       ]
     },
     "edit_near_middle": {
-      "syncWithLayoutMs": 1.899999976158142,
-      "toPaintMs": 15.699999988079071,
+      "syncWithLayoutMs": 2.199999988079071,
+      "toPaintMs": 15.600000023841858,
       "undoToPaintMs": 17.69999998807907,
       "all": [
-        14.5,
+        14,
+        15.6,
+        14.7,
+        15.6,
+        15.8,
         15.7,
-        15.3,
-        15.7,
-        16.2,
-        15.4,
-        15.7
+        15.6
       ]
     },
     "middleRootIndex": 494,
@@ -137,19 +137,19 @@
       "nodesAnchored": 254,
       "anchorBails": 0,
       "maxRootNodes": 0,
-      "parseMs": 22.09999990463257,
-      "restMs": 38.1000000834465
+      "parseMs": 21.999999940395355,
+      "restMs": 37.19999986886978
     },
     "errors": []
   },
   "javascript": {
-    "waitForSelectorMs": 94,
+    "waitForSelectorMs": 93,
     "lines": 2821,
     "roots": 940,
     "nodes": 11656,
-    "firstDrawMs": 75.5,
+    "firstDrawMs": 75.69999998807907,
     "paintedMs": 81,
-    "createMs": 52.19999998807907,
+    "createMs": 51.5,
     "widgetsAtLoad": 36,
     "rootsInDomAtLoad": 8,
     "viewport": {
@@ -158,30 +158,30 @@
       "docLength": 45120
     },
     "edit_near_top": {
-      "syncWithLayoutMs": 2.899999976158142,
-      "toPaintMs": 16.19999998807907,
-      "undoToPaintMs": 17.19999998807907,
+      "syncWithLayoutMs": 2.699999988079071,
+      "toPaintMs": 16.30000001192093,
+      "undoToPaintMs": 16.69999998807907,
       "all": [
-        9.3,
-        16,
-        16.4,
+        8.8,
         16.2,
-        16.1,
+        16.5,
         16.3,
-        16.2
+        16.2,
+        17.4,
+        16.7
       ]
     },
     "edit_near_middle": {
-      "syncWithLayoutMs": 2.600000023841858,
+      "syncWithLayoutMs": 2.399999976158142,
       "toPaintMs": 16.19999998807907,
-      "undoToPaintMs": 17.100000023841858,
+      "undoToPaintMs": 17.19999998807907,
       "all": [
-        16.9,
-        16.4,
-        16.2,
-        15.9,
-        16.2,
+        18,
         16.5,
+        16,
+        17.2,
+        16,
+        16.2,
         15.9
       ]
     },
@@ -280,8 +280,8 @@
       "nodesAnchored": 216,
       "anchorBails": 0,
       "maxRootNodes": 0,
-      "parseMs": 38.799999952316284,
-      "restMs": 43.39999997615814
+      "parseMs": 35.999999940395355,
+      "restMs": 40.80000001192093
     },
     "errors": []
   },
@@ -290,9 +290,9 @@
     "lines": 2773,
     "roots": 1155,
     "nodes": 13629,
-    "firstDrawMs": 81.90000003576279,
-    "paintedMs": 87.60000002384186,
-    "createMs": 58.30000001192093,
+    "firstDrawMs": 82.10000002384186,
+    "paintedMs": 87.80000001192093,
+    "createMs": 58.5,
     "widgetsAtLoad": 60,
     "rootsInDomAtLoad": 10,
     "viewport": {
@@ -301,31 +301,31 @@
       "docLength": 47817
     },
     "edit_near_top": {
-      "syncWithLayoutMs": 3.399999976158142,
-      "toPaintMs": 16.100000023841858,
-      "undoToPaintMs": 16.600000023841858,
+      "syncWithLayoutMs": 3.100000023841858,
+      "toPaintMs": 16.19999998807907,
+      "undoToPaintMs": 17,
       "all": [
-        15.6,
+        15.1,
         16.1,
-        16.8,
-        16.9,
+        16.7,
         16.2,
-        15.6,
-        15.8
+        16.2,
+        16.3,
+        16.6
       ]
     },
     "edit_near_middle": {
-      "syncWithLayoutMs": 2.300000011920929,
-      "toPaintMs": 16.400000035762787,
+      "syncWithLayoutMs": 2.099999964237213,
+      "toPaintMs": 16.299999952316284,
       "undoToPaintMs": 17,
       "all": [
-        7.2,
-        16.5,
-        15.3,
+        12.5,
         16.4,
-        15.8,
-        16.8,
-        17
+        15.9,
+        16.5,
+        16.3,
+        16.2,
+        16.3
       ]
     },
     "middleRootIndex": 226,
@@ -423,8 +423,8 @@
       "nodesAnchored": 186,
       "anchorBails": 0,
       "maxRootNodes": 0,
-      "parseMs": 35.49999988079071,
-      "restMs": 52.59999990463257
+      "parseMs": 34.90000009536743,
+      "restMs": 47.69999969005585
     },
     "errors": []
   }

@@ -79,16 +79,19 @@
    "domProblems": [],
    "sameAsAFreshEditor": true,
    "staticTextNodesInTree": 18,
-   "focusEvents": [],
+   "focusEvents": [
+    "focusout block(number 4) -> block(number 3) (active BODY)",
+    "focusin block(number 3) -> block(number 4) (active block(number 3))"
+   ],
    "activeElementPerFrame": [
     "block(number 4)",
-    "block(number 4)",
-    "block(number 4)",
-    "block(number 4)",
-    "block(number 4)",
-    "block(number 4)"
+    "block(number 3)",
+    "block(number 3)",
+    "block(number 3)",
+    "block(number 3)",
+    "block(number 3)"
    ],
-   "focusRestoresDuringTheCase": 0,
+   "focusRestoresDuringTheCase": 1,
    "treeitems": 11
   }
  },
@@ -172,16 +175,19 @@
    "domProblems": [],
    "sameAsAFreshEditor": true,
    "staticTextNodesInTree": 18,
-   "focusEvents": [],
+   "focusEvents": [
+    "focusout block(number 4) -> block(number 3) (active BODY)",
+    "focusin block(number 3) -> block(number 4) (active block(number 3))"
+   ],
    "activeElementPerFrame": [
     "block(number 4)",
-    "block(number 4)",
-    "block(number 4)",
-    "block(number 4)",
-    "block(number 4)",
-    "block(number 4)"
+    "block(number 3)",
+    "block(number 3)",
+    "block(number 3)",
+    "block(number 3)",
+    "block(number 3)"
    ],
-   "focusRestoresDuringTheCase": 0,
+   "focusRestoresDuringTheCase": 1,
    "treeitems": 13
   }
  },
@@ -265,16 +271,19 @@
    "domProblems": [],
    "sameAsAFreshEditor": true,
    "staticTextNodesInTree": 18,
-   "focusEvents": [],
+   "focusEvents": [
+    "focusout block(number 4) -> block(number 3) (active BODY)",
+    "focusin block(number 3) -> block(number 4) (active block(number 3))"
+   ],
    "activeElementPerFrame": [
     "block(number 4)",
-    "block(number 4)",
-    "block(number 4)",
-    "block(number 4)",
-    "block(number 4)",
-    "block(number 4)"
+    "block(number 3)",
+    "block(number 3)",
+    "block(number 3)",
+    "block(number 3)",
+    "block(number 3)"
    ],
-   "focusRestoresDuringTheCase": 0,
+   "focusRestoresDuringTheCase": 1,
    "treeitems": 13
   }
  }
