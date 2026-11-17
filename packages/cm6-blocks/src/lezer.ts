@@ -92,7 +92,12 @@ export type LezerLanguage = Language & {
      * hand back an old node for a block INSIDE it (an "anchor": not built again, used as is), see lezer-view.ts.
      */
     enter?: (from: number, to: number, key: string) => void,
-    inner?: (c: InnerCand) => BNode | null
+    inner?: (c: InnerCand) => BNode | null,
+    /**
+     * Called for each top-level child of the tree BEFORE its table row is looked for (the "kind" rules cost): an old node it hands
+     * back is used as it is, and the child is not read at all. What `keep` does, without the check of the row.
+     */
+    skip?: (from: number, to: number) => BNode | null
   ): BNode[];
 };
 
@@ -107,6 +112,8 @@ export interface InnerCand {
 }
 
 interface Cand {
+  /** a top-level block the editor took over from the old tree without reading this part of the new one (see `fromTree`'s `skip`) */
+  pre?: BNode;
   node: SyntaxNode;
   key: string;
   path: string[];
@@ -138,6 +145,8 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
   let innerKeep: ((c: InnerCand) => BNode | null) | null = null;
   /** the level of the block being built (a top-level block is 1); only kept while an `inner` keeper is given */
   let level = 0;
+  /** set by `fromTree` while it collects the top-level children */
+  let topSkip: ((from: number, to: number) => BNode | null) | null = null;
   /** a child block: an anchor the editor takes from the old tree, else built */
   const childOf = (cd: Cand, text: string, offset: number): BNode =>
     (cd.win && innerKeep?.({ from: cd.node.from, to: cd.node.to, key: cd.key, win: cd.win, level: level + 1 })) || build(cd, text, offset);
@@ -155,6 +164,13 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       if (c.type.isError) {
         out.push({ node: c, key: "@error", path });
         continue;
+      }
+      if (top && topSkip) {
+        const pre = topSkip(c.from, c.to);
+        if (pre) {
+          out.push({ node: c, key: "@pre", path, pre });
+          continue;
+        }
       }
       const key = keyOf(c, text);
       const row = table.nodes[key];
@@ -404,12 +420,18 @@ export function lezerLanguage(parser: Parser, table: BlockTable): LezerLanguage 
       collect(top, [], out, text, true);
       return out.map((c) => build(c, text, offset));
     },
-    fromTree(tree, text, keep, enter, inner) {
+    fromTree(tree, text, keep, enter, inner, skip) {
       const out: Cand[] = [];
-      collect(tree.topNode, [], out, text, true);
+      topSkip = skip ?? null;
+      try {
+        collect(tree.topNode, [], out, text, true);
+      } finally {
+        topSkip = null;
+      }
       try {
         level = 0;
         return out.map((c) => {
+          if (c.pre) return c.pre;
           const kept = keep?.(c.node.from, c.node.to, c.key);
           if (kept) return kept;
           enter?.(c.node.from, c.node.to, c.key);

@@ -42,6 +42,10 @@ export interface LezerOptions {
   reconcile?: boolean;
   /** inside a touched root, take old nodes over without building them where the change is not near (the fifth round); false builds the whole root and compares it (for measuring) */
   anchors?: boolean;
+  /** edits after a document with no parse error: look for errors in the roots built again only, not in the whole tree after the change; false walks it (for measuring) */
+  fastErrors?: boolean;
+  /** roots that no change is near are taken from the old tree without reading their part of the new one; false reads every top-level node of the new tree (for measuring) */
+  skipRoots?: boolean;
   /** Shift-Tab on a block calls this (the old editor moves the focus to its toolbar); without it the key does what the browser does */
   focusToolbar?: () => void;
 }
@@ -347,12 +351,33 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         const last = lo - 1;
         for (let k = Math.max(0, first - 1); k <= Math.min(rs.length - 1, last + 1); k++) affected.add(k);
       }
-      const old = new Map<number, { node: BNode; to: number; touched: boolean; from0: number; to0: number }>();
-      rs.forEach((r, k) => {
-        const from = tr.changes.mapPos(r.from, 1);
-        const to = tr.changes.mapPos(r.to, -1);
-        if (to > from) old.set(from, { node: r, to, touched: affected.has(k), from0: r.from, to0: r.to });
-      });
+      // The old root at a new position, looked up when asked (not for all of them: that was a pass over every root of the document, with two
+      // mapPos each, for each edit). The new position is mapped back, the root found by binary search, and the answer checked the other way round.
+      type Old = { node: BNode; to: number; touched: boolean; from0: number; to0: number };
+      const inv = tr.changes.desc.invertedDesc;
+      const found = new Map<number, Old | undefined>();
+      const old = {
+        get(nf: number): Old | undefined {
+          if (found.has(nf)) return found.get(nf);
+          const p = inv.mapPos(nf, 1);
+          let lo = 0;
+          let hi = rs.length;
+          while (lo < hi) {
+            const m = (lo + hi) >> 1;
+            if (rs[m].from >= p) hi = m;
+            else lo = m + 1;
+          }
+          let o: Old | undefined;
+          const r = rs[lo];
+          if (r && r.from === p) {
+            const from = tr.changes.mapPos(r.from, 1);
+            const to = tr.changes.mapPos(r.to, -1);
+            if (from === nf && to > from) o = { node: r, to, touched: affected.has(lo), from0: r.from, to0: r.to };
+          }
+          found.set(nf, o);
+          return o;
+        },
+      };
       // Context: a change can alter how UNCHANGED text after it reads without touching it (an unclosed
       // bracket makes the newlines after it mean nothing; a dedent moves a line out of a body). That
       // always changes the error nodes after the change (found by the fuzzer on a larger program). So: if
@@ -365,17 +390,26 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         firstChange = Math.min(firstChange, c.fromB);
         firstChangeA = Math.min(firstChangeA, c.fromA);
       }
-      const merged = new Map<string, [number, number]>();
-      for (const e of [...v.errs.filter((e) => e[1] <= firstChangeA), ...errorsOf(tree, firstChange)]) merged.set(e[0] + ":" + e[1], e);
-      const errs = [...merged.values()].sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+      // A document with no Lezer error before the change: the errors of the new tree are found in the roots that are built again (the others are
+      // the old ones, which had none), instead of walking the whole tree after the change; a change that makes errors in roots it does not touch
+      // is not seen by this (the slow path below sees it; the fuzzers compare with a fresh parse).
+      const noErrs = options.fastErrors !== false && v.errs.length === 0;
+      let errs: [number, number][] = [];
+      let sameErrors = true;
+      let lastError = -1;
       let lastAffected = -1;
       affected.forEach((k) => (lastAffected = Math.max(lastAffected, k)));
+      if (!noErrs) {
+      const merged = new Map<string, [number, number]>();
+      for (const e of [...v.errs.filter((e) => e[1] <= firstChangeA), ...errorsOf(tree, firstChange)]) merged.set(e[0] + ":" + e[1], e);
+      errs = [...merged.values()].sort((x, y) => x[0] - y[0] || x[1] - y[1]);
       const oldB = lastAffected >= 0 ? rs[lastAffected].to : firstChangeA;
       const newB = tr.changes.mapPos(oldB, 1);
       const oldBeyond = v.errs.filter((e) => e[0] >= oldB).map((e) => [tr.changes.mapPos(e[0], 1), tr.changes.mapPos(e[1], -1)]);
       const newBeyond = errs.filter((e) => e[0] >= newB);
-      const sameErrors = oldBeyond.length === newBeyond.length && oldBeyond.every((e, i) => e[0] === newBeyond[i][0] && e[1] === newBeyond[i][1]);
-      const lastError = sameErrors ? -1 : errs.reduce((m, e) => Math.max(m, e[1]), -1);
+      sameErrors = oldBeyond.length === newBeyond.length && oldBeyond.every((e, i) => e[0] === newBeyond[i][0] && e[1] === newBeyond[i][1]);
+      lastError = sameErrors ? -1 : errs.reduce((m, e) => Math.max(m, e[1]), -1);
+      }
       const kept = new Set<BNode>();
       // Anchors: inside a touched root that holds a change, a block that no change is near (nor its neighbours), with no Lezer error in it, and
       // that is in the old tree at the same place (mapped through the change) with the same table row, is NOT built again: the old node is
@@ -450,8 +484,17 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
           return o.node;
         },
         enter,
-        inner
+        inner,
+        options.skipRoots === false
+          ? undefined
+          : (from, to) => {
+              const o = old.get(from);
+              if (!o || o.touched || (lastError >= 0 && to >= firstChange && from <= lastError) || o.to !== to || o.node.kind === "error" || hasError(o.node)) return null;
+              kept.add(o.node);
+              return o.node;
+            }
       );
+      if (noErrs) for (const r of roots) if (!kept.has(r)) tree.iterate({ from: r.from, to: r.to, enter: (n) => { if (n.type.isError) errs.push([n.from, n.to]); } });
       // touched roots: the old nodes are kept as far as they are the same (reconcile.ts)
       const env: ReconcileEnv = {
         anchored: (n) => anchored.has(n),
