@@ -963,8 +963,13 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     return out;
   }
   const sortedNodes = (ns: BNode[]): BNode[] => ns.sort((a, b) => a.from - b.from || a.to - b.to);
-  /** where text pasted after `anchor` goes: the nearest list slot that holds it (the roots at the end), and the indentation to give its later lines */
-  function pasteSpot(anchor: BNode | null, before = false): { slot: Slot; index: number; indent: string } {
+  /**
+   * where text pasted after (or before) `anchor` goes: the gap of the list that holds it. A block that is not an element of a list
+   * (the operator of a call, a condition) has no index to go by: as in the old editor (`findAdjacentDropTargetId`) it is the nearest gap of
+   * its PARENT on that side with no other child of the parent between, so after the operator is the first argument; null (refused: "Cannot
+   * paste before this node") when there is none. A block inside a slot of pieces (a template string) goes up to the block around it, and further up through blocks that are not list elements.
+   */
+  function pasteSpot(anchor: BNode | null, before = false): { slot: Slot; index: number; indent: string } | null {
     let slot = rootsSlot;
     let ref: BNode | null = rootsSlot.nodes[rootsSlot.nodes.length - 1] ?? null;
     let index = rootsSlot.nodes.length;
@@ -975,8 +980,35 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         index = n.slot.nodes.indexOf(n) + (before ? 0 : 1);
         break;
       }
+      if (n === anchor && n.slot && n.slot.kind === "one" && n.parent) {
+        const p = n.parent;
+        const at = p.slots.indexOf(n.slot);
+        const step = before ? -1 : 1;
+        for (let i = at + step; i >= 0 && i < p.slots.length; i += step) {
+          const s = p.slots[i];
+          if (s.pieces) return null;
+          if (s.kind === "list") return { slot: s, index: before ? s.nodes.length : 0, indent: indentAt((s.nodes[0] ?? n).from) };
+          if (s.nodes.length) return null; // (another child of the parent is in between)
+        }
+        return null;
+      }
     }
     return { slot, index, indent: ref ? indentAt(ref.from) : "" };
+  }
+  /**
+   * Text pasted beside a root (the old editor's `OverwriteEdit`, whatever the language): the text goes at the end (or start) of the root, with a
+   * line break before it when something other than blanks comes before it on its line, and one after it when something does after it. So
+   * `a b` pasted after `a` is `a\nzzz\n b`, and `a` then a line break then `b` takes only `zzz` and its line break after `a`.
+   */
+  function rootPasteChange(anchor: BNode, before: boolean, snippet: string): TextChange {
+    const t = currentText();
+    const pos = before ? anchor.from : anchor.to;
+    const ls = t.lastIndexOf("\n", pos - 1) + 1;
+    let le = t.indexOf("\n", pos);
+    if (le < 0) le = t.length;
+    const lead = /\S/.test(t.slice(ls, pos)) ? "\n" : "";
+    const trail = /\S/.test(t.slice(pos, le)) ? "\n" : "";
+    return { from: pos, to: pos, insert: lead + snippet + trail };
   }
 
   const recorder = createRecorder(text, options.activityLimit ?? DEFAULT_LIMIT);
@@ -1276,8 +1308,9 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       if (anchor) live(anchor);
       if (anchor && isBlank(anchor)) throw new Error("a hole takes one block");
       const where = pasteSpot(anchor, before);
+      if (!where) throw new Error("no place for it beside this block");
       const joined = texts.map((x) => x.replace(/\n/g, "\n" + where.indent)).join(separatorFor(table, currentText(), where.slot));
-      const change = changeFor(where.slot, where.index, joined);
+      const change = anchor && anchor.slot === rootsSlot ? rootPasteChange(anchor, !!before, joined) : changeFor(where.slot, where.index, joined);
       dispatch(change);
       const found = blockAt(change.from + change.insert.indexOf(texts[0].split("\n")[0]), texts[0].length);
       if (found) ed.focusNode(found);
@@ -1305,10 +1338,9 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
         return found;
       }
       const where = pasteSpot(anchor, before);
-      const slot = where.slot;
-      const index = where.index;
+      if (!where) throw new Error("no place for it beside this block");
       const snippet = text.replace(/\n/g, "\n" + where.indent);
-      const change = changeFor(slot, index, snippet);
+      const change = anchor && anchor.slot === rootsSlot ? rootPasteChange(anchor, !!before, snippet) : changeFor(where.slot, where.index, snippet);
       dispatch(change);
       let found = blockAt(change.from + change.insert.indexOf(snippet), snippet.length);
       // (a block that was copied with its comment: the focus goes to the block, not to the comment line above it)

@@ -137,8 +137,7 @@ describe("paste onto a selected node", () => {
 });
 
 describe("paste beside a root that isn't selected", () => {
-  // SKIPPED (U): pasting beside a root: the whitespace written around the pasted block differs (old: its own line)
-  it.skip("inserts after the root", () => {
+  it("inserts after the root", () => {
     cmb.setValue("a b");
     clipboard.text = "zzz";
     mouseDown(root(0));
@@ -147,9 +146,7 @@ describe("paste beside a root that isn't selected", () => {
     expect(cmb.getValue()).toBe("a\nzzz\n b");
   });
 
-  // SKIPPED (U): pasting before a root: the whitespace written around the pasted block differs
-
-  it.skip("inserts before the root with Paste Before", () => {
+  it("inserts before the root with Paste Before", () => {
     cmb.setValue("a b");
     clipboard.text = "zzz";
     mouseDown(root(1));
@@ -186,9 +183,7 @@ describe("paste beside a child that isn't selected", () => {
     expect(cmb.getValue()).toBe("(f x 1 2 3)");
   });
 
-  // SKIPPED (U): paste after the operator of a call: refused here (the operator's slot is a single place), the old editor makes it the first argument
-
-  it.skip("inserts as the first argument when pasting after the operator", () => {
+  it("inserts as the first argument when pasting after the operator", () => {
     cmb.setValue("(f x)");
     clipboard.text = "z";
     const func = (root(0) as unknown as { fields: { func: ASTNode } }).fields

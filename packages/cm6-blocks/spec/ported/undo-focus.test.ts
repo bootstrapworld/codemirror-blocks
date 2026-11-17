@@ -123,17 +123,13 @@ describe("an edit made while the first block (position 0) had focus", () => {
     expect(cmb.getValue()).toBe("(f x)\nzzz\n b");
   });
 
-  // SKIPPED (U): a paste beside a root writes other whitespace around the pasted line (difference 8, not this round); the focus part passes in spec/eleventh.test.ts
-
-  it.skip("undo puts focus back on that first block", () => {
+  it("undo puts focus back on that first block", () => {
     undo();
     expect(cmb.getValue()).toBe("(f x) b");
     expect(focused()).toBe("(f x)");
   });
 
-  // SKIPPED (U): as above (difference 8)
-
-  it.skip("redo puts focus on the pasted block", () => {
+  it("redo puts focus on the pasted block", () => {
     undo();
     redo();
     expect(focused()).toBe("zzz");
