@@ -98,3 +98,33 @@ describe("8. paste after the operator is the first argument; before it is refuse
     ok(ed);
   });
 });
+
+describe("10. native keys with no block focused", () => {
+  const SRC = { scheme: "(f x y)\n\n99", javascript: "f(x, y);\n\n99;", python: "f(x, y)\n\n99\n" } as const;
+  const key = (ed: LezerBlockEditor, k: string, mods: KeyboardEventInit) => {
+    const ev = new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods });
+    ed.view.contentDOM.dispatchEvent(ev);
+    return ev;
+  };
+  test.each(Object.keys(SRC) as (keyof typeof SRC)[])("%s: Mod-Enter in the text does nothing (CodeMirror 6's blank line is not inserted)", (lang) => {
+    const ed = make(lang, SRC[lang]);
+    ed.view.contentDOM.focus();
+    expect(ed.focusedNode()).toBeFalsy();
+    for (const mods of [{ ctrlKey: true }]) { // (Mod is Ctrl here, Cmd on a Mac: the key table decides)
+      const ev = key(ed, "Enter", mods);
+      expect(ev.defaultPrevented).toBe(true);
+      expect(textOf(ed)).toBe(SRC[lang]);
+    }
+    // a plain Enter is still the text's own
+    ed.view.dispatch({ selection: { anchor: 0 } });
+    key(ed, "Enter", {});
+    ok(ed);
+  });
+  test("Ctrl-X with no block focused is left to the native cut: the blocks layer does not touch the key", () => {
+    const ed = make("scheme", SRC.scheme);
+    ed.view.contentDOM.focus();
+    const ev = key(ed, "x", { ctrlKey: true });
+    expect(ev.defaultPrevented).toBe(false);
+    expect(textOf(ed)).toBe(SRC.scheme); // (only the cut event the browser sends next does something: CodeMirror's, of the line)
+  });
+});

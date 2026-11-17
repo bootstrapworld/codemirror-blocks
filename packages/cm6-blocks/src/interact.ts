@@ -503,6 +503,13 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     if (!node) {
       // no block has the focus, the text does: Down and Up activate the block after / before the cursor, as in the old editor
       // (in block mode; it keeps the key from moving the text cursor, as there, and beeps when there is no such block)
+      if (ed.isBlockMode() && view.contentDOM.contains(t) && commandOf(e, isMac()) === "editAll") {
+        // Ctrl/Cmd-Enter has no block to edit: the old editor's handler returns and its CodeMirror 5 has no binding for the key, so nothing
+        // happens; CodeMirror 6's own `Mod-Enter` (insert a blank line) must not (Ctrl/Cmd-X is the same in both: the native cut, of the line)
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       if (!ed.isBlockMode() || !view.contentDOM.contains(t) || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
       if (commandOf(e, isMac()) !== (e.key === "ArrowDown" ? "next" : "previous")) return;
       const forward = e.key === "ArrowDown";

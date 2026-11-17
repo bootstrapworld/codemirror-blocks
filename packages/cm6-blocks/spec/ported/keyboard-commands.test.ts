@@ -287,11 +287,13 @@ describe("commands pressed with no block focused (at the top level)", () => {
     ["V", cmd_ctrl],
   ];
   nodeOnly.forEach(([key, props]) => {
-    // SKIPPED (U): Ctrl/Cmd-Enter with the focus in the text and no block focused inserts a blank line (CodeMirror 6's own key); the old editor does nothing.
-    // Cut (Ctrl/Cmd-X) with the focus in the text and no selection removes the line (CodeMirror 6's native cut); the old editor does nothing.
-    (key === "Enter" || key === "X" ? it.skip : it)(`${JSON.stringify(key)} ${JSON.stringify(props)} does nothing`, () => {
+    // EDITED (not a difference): Ctrl/Cmd-Enter is ignored here too (CodeMirror 5 has no binding for it; the blocks layer did not handle it).
+    // Ctrl/Cmd-X with no selection is the browser's native cut, in CodeMirror 5 (`lineWiseCopyCut`, on by default) and in 6: it cuts the LINE.
+    // The old jest key helper only sends the keydown and does not do what the browser does next, so there the text stayed; the compat layer
+    // does fire the `cut` event, and the line goes in both editors (spec/twelfth.test.ts shows it is the native cut and not the blocks layer).
+    it(`${JSON.stringify(key)} ${JSON.stringify(props)} does nothing${key === "X" ? " to the blocks (the native cut takes the line)" : ""}`, () => {
       keyDown(key, props, cmb.getCM().getInputField());
-      expect(cmb.getValue()).toBe("(f x y)\n\n99");
+      expect(cmb.getValue()).toBe(key === "X" ? "\n99" : "(f x y)\n\n99");
       expect(cmb.getSelectedNodes()).toEqual([]);
     });
   });
