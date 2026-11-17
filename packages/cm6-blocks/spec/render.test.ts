@@ -422,7 +422,7 @@ describe("oracle", () => {
           check(step);
         }
       } catch (e) {
-        throw new Error(`seed ${seed}: ${(e as Error).message}`);
+        throw new Error(`seed ${seed}: ${(e as Error).message}`, { cause: e });
       }
     }
   });

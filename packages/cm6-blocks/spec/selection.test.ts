@@ -26,11 +26,6 @@ const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) =>
       ...mods,
     })
   );
-/** select the block (Space), then Delete: the old editor deletes only what is selected */
-const del = (el: Element, k = "Delete") => {
-  key(el, " ");
-  key(el, k);
-};
 const space = (ed: LezerBlockEditor, n: BNode) => {
   ed.focusNode(n);
   key(ed.renderer.element(n), " ");

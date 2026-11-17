@@ -677,7 +677,8 @@ describe("fuzzer", () => {
           op = randomOp(doc, rnd);
         } catch (e) {
           throw new Error(
-            `seed ${seed}: cannot choose an operation after: ${log.join("; ")}\n${e}`
+            `seed ${seed}: cannot choose an operation after: ${log.join("; ")}\n${e}`,
+            { cause: e }
           );
         }
         log.push(op.log);
@@ -693,7 +694,8 @@ describe("fuzzer", () => {
           problems = checkDoc(doc, text);
         } catch (e) {
           throw new Error(
-            `seed ${seed} step ${i}: ${e}\nops: ${log.join("\n     ")}`
+            `seed ${seed} step ${i}: ${e}\nops: ${log.join("\n     ")}`,
+            { cause: e }
           );
         }
         if (problems.length > 0) {

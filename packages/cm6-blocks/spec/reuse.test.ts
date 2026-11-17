@@ -167,7 +167,6 @@ describe.each(Object.keys(OPTS))("node-level reuse: %s", (name) => {
     [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
 
   // corpus-lib reads files from the repository and node_modules; only used here
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const lib =
     require("../scripts/corpus-lib") as typeof import("../scripts/corpus-lib");
   const cs = lib.corpora();
@@ -178,7 +177,6 @@ describe.each(Object.keys(OPTS))("node-level reuse: %s", (name) => {
   const rep = (s: string, lines: number) =>
     s.repeat(Math.ceil(lines / s.split("\n").length));
   // the demo's big documents: the sample repeated to about 3000 lines
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const BIG = (require("../demo/samples") as typeof import("../demo/samples"))
     .BIG;
 

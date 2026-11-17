@@ -96,7 +96,6 @@ function reconcileSlot(os: Slot, ns: Slot, env: ReconcileEnv): boolean {
       adopt(os, n0[0]); // (the new parent it was built under is not the one that stays)
       return false;
     }
-    let changed = false;
     if (o0.length === 1 && n0.length === 1 && compatible(o0[0], n0[0]))
       return reconcile(o0[0], n0[0], env);
     // a "one" slot always holds exactly one node: swap them (the shapes are the same)
@@ -108,7 +107,6 @@ function reconcileSlot(os: Slot, ns: Slot, env: ReconcileEnv): boolean {
       env.removed(old);
       env.added(node);
       env.apply({ type: "replace", old, node, slot: os, index: 0 });
-      changed = true;
     } else {
       os.nodes = n0;
       for (const c of n0) {
@@ -116,9 +114,8 @@ function reconcileSlot(os: Slot, ns: Slot, env: ReconcileEnv): boolean {
         env.added(c);
       }
       for (const c of o0) env.removed(c);
-      changed = true;
     }
-    return changed;
+    return true;
   }
   if (!n0.some(anchored)) return reconcileRange(os, 0, o0, n0, env);
   // Anchors are old nodes of this very slot, in the same order: they split the list into stretches, and each stretch is

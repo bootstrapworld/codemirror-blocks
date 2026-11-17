@@ -116,7 +116,7 @@ const WORDS: Record<string, string[]> = {
       for (const f of sampled) {
         const parent = document.createElement("div");
         document.body.appendChild(parent);
-        let log: string[] = [];
+        const log: string[] = [];
         try {
           const ed = createLezerBlockEditor(parent, f.text, { parser, table });
           const check = (what: string) => {
@@ -153,16 +153,14 @@ const WORDS: Record<string, string[]> = {
                   const x = nodes[Math.floor(rnd() * nodes.length)];
                   what = `template ${name} after ${x.kind}[${x.from},${x.to})`;
                   ed.insertTemplate(name, x);
-                  parent
-                    .querySelectorAll("input.blocks-edit")
-                    .forEach((el) =>
-                      el.dispatchEvent(
-                        new KeyboardEvent("keydown", {
-                          key: "Escape",
-                          bubbles: true,
-                        })
-                      )
-                    );
+                  parent.querySelectorAll("input.blocks-edit").forEach((el) =>
+                    el.dispatchEvent(
+                      new KeyboardEvent("keydown", {
+                        key: "Escape",
+                        bubbles: true,
+                      })
+                    )
+                  );
                 } else {
                   const len = ed.view.state.doc.length;
                   const at = Math.floor(rnd() * (len + 1));

@@ -577,7 +577,6 @@ export function createLezerBlockEditor(
       // is not seen by this (the slow path below sees it; the fuzzers compare with a fresh parse).
       const noErrs = options.fastErrors !== false && v.errs.length === 0;
       let errs: [number, number][] = [];
-      let sameErrors = true;
       let lastError = -1;
       let lastAffected = -1;
       affected.forEach((k) => (lastAffected = Math.max(lastAffected, k)));
@@ -598,7 +597,7 @@ export function createLezerBlockEditor(
             tr.changes.mapPos(e[1], -1),
           ]);
         const newBeyond = errs.filter((e) => e[0] >= newB);
-        sameErrors =
+        const sameErrors =
           oldBeyond.length === newBeyond.length &&
           oldBeyond.every(
             (e, i) => e[0] === newBeyond[i][0] && e[1] === newBeyond[i][1]

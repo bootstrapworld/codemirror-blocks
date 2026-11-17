@@ -77,15 +77,13 @@ describe("python imports", () => {
     const ed = make("python", "def f():\n    import os\n    return os\n");
     expect(ed.templates().map((t) => t.name)).toContain("import");
     ed.insertTemplate("import", null);
-    ed.view.dom
-      .querySelector("input.blocks-edit")
-      ?.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "Escape",
-          bubbles: true,
-          cancelable: true,
-        })
-      );
+    ed.view.dom.querySelector("input.blocks-edit")?.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      })
+    );
     expect(checkLezerEditor(ed)).toEqual([]);
     const imp: BNode[] = [];
     ed.roots().forEach((r) =>

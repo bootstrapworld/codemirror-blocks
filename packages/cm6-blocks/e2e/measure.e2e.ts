@@ -103,7 +103,7 @@ for (const lang of ["scheme", "javascript", "python"]) {
       await raf();
       await raf();
       const vpFrom = ed.view.viewport.from;
-      let ri = ed.roots().findIndex((r: any) => r.from >= vpFrom);
+      const ri = ed.roots().findIndex((r: any) => r.from >= vpFrom);
       await edit("near_middle", Math.max(ri, mid > ri ? ri : ri));
       out.middleRootIndex = ri;
 
@@ -140,12 +140,6 @@ for (const lang of ["scheme", "javascript", "python"]) {
       await raf();
 
       // focus: focus a block in a root in view, edit elsewhere, see where the focus is
-      const inView = () =>
-        ed
-          .roots()
-          .filter(
-            (r: any) => ed.renderer.has(r) && ed.renderer.element(r).isConnected
-          );
       const list = (r: any) => {
         const o: any[] = [];
         const w = (x: any) => {
@@ -157,7 +151,6 @@ for (const lang of ["scheme", "javascript", "python"]) {
         w(r);
         return o;
       };
-      const withList = () => inView().filter((r: any) => list(r).length);
       const focusCases: any = {};
       const textAt = (n: any) =>
         n ? ed.view.state.doc.sliceString(n.from, n.to).slice(0, 30) : null;

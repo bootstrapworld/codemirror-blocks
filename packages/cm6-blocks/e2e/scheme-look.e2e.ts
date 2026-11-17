@@ -12,7 +12,11 @@ async function shot(
 ) {
   await page.goto("/index.html?lang=scheme");
   await page.waitForSelector(".cm-content .blocks-node");
-  await page.evaluate((c: string) => (window as any).demo.show(c), code);
+  await page.evaluate(
+    (c: string) =>
+      (window as unknown as { demo: { show(c: string): void } }).demo.show(c),
+    code
+  );
   await page.waitForSelector(".cm-content .blocks-node");
   await page.waitForTimeout(500);
   await page.screenshot({ path: out });
@@ -33,7 +37,11 @@ test("scheme look: ast-test.rkt", async ({ page }) => {
 test("scheme look: states", async ({ page }) => {
   await page.goto("/index.html?lang=scheme");
   await page.waitForSelector(".cm-content .blocks-node");
-  await page.evaluate((c: string) => (window as any).demo.show(c), STATES);
+  await page.evaluate(
+    (c: string) =>
+      (window as unknown as { demo: { show(c: string): void } }).demo.show(c),
+    STATES
+  );
   await page.waitForSelector(".cm-content .blocks-node");
   const root = (head: string) =>
     page

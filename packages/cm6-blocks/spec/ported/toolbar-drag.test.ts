@@ -1,5 +1,4 @@
 /** @jest-environment jsdom */
-// @ts-nocheck
 // PORTED from packages/codemirror-blocks/spec/toolbar-drag-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
 import { act, fireEvent, screen } from "../compat/testing-library";
 import wescheme from "../compat/wescheme";

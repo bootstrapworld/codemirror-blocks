@@ -313,7 +313,7 @@ export function measure(
   const wrap = WRAPPERS[language];
   /** the nearest ancestor of block `b`'s Lezer node that is neither a block nor a plain wrapper, or -1 */
   const stray = (b: BNode): number => {
-    let id = byRange.get(b.from + ":" + b.to);
+    const id = byRange.get(b.from + ":" + b.to);
     if (id === undefined) return -1;
     for (let a = parent[id]; a >= 0; a = parent[a]) {
       if (compound.has(range[a])) return -1;
@@ -461,7 +461,7 @@ export function tableLines(language: string): {
   };
   return {
     file: lines.length,
-    nodes: between(/^  nodes: \{$/, /^  \},$/),
-    rules: between(/^  rules: \[/, /^  \],?$|^  rules: \[.*\],$/),
+    nodes: between(/^ {2}nodes: \{$/, /^ {2}\},$/),
+    rules: between(/^ {2}rules: \[/, /^ {2}\],?$|^ {2}rules: \[.*\],$/),
   };
 }

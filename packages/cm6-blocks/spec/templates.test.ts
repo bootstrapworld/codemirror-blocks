@@ -76,15 +76,13 @@ describe.each(Object.keys(CONTEXTS))("templates: %s", (l) => {
         // typing into the hole replaces it
         ed.focusNode(hole!);
         const isBlank = hole!.value === (OPTS[l].table.blank ?? "...");
-        ed.renderer
-          .element(hole!)
-          .dispatchEvent(
-            new KeyboardEvent("keydown", {
-              key: isBlank ? "z" : "Enter",
-              bubbles: true,
-              cancelable: true,
-            })
-          );
+        ed.renderer.element(hole!).dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: isBlank ? "z" : "Enter",
+            bubbles: true,
+            cancelable: true,
+          })
+        );
         input = ed.view.dom.querySelector(
           "input.blocks-edit"
         ) as HTMLInputElement;

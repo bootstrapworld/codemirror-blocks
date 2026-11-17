@@ -1,5 +1,4 @@
 /** @jest-environment jsdom */
-// @ts-nocheck
 // PORTED from packages/codemirror-blocks/spec/error-notice-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
 import { act, screen, fireEvent } from "../compat/testing-library";
 import wescheme from "../compat/wescheme";

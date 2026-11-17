@@ -1,5 +1,4 @@
 // PORTED from packages/codemirror-blocks/e2e/motion-sequences.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, thirteenth round.
-// @ts-nocheck
 import { expect, Page, test } from "@playwright/test";
 import { snapshot } from "../compat/helpers";
 test.fixme(true, "M: the morph and its motion are not built");

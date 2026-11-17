@@ -6,7 +6,7 @@
     "moduleResolution": "bundler",
     "lib": [
       "dom",
-      "es2020"
+      "es2022"
     ],
     "types": [
       "node",

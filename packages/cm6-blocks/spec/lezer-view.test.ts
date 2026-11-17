@@ -8,9 +8,6 @@ import {
   LezerBlockEditor,
   LezerOptions,
 } from "../src/lezer-view";
-import { schemeParser, schemeTable } from "../src/lang-scheme";
-import { javascriptParser, javascriptTable } from "../src/lang-javascript";
-import { pythonParser, pythonTable } from "../src/lang-python";
 import type { BNode } from "../src/types";
 import { BIG } from "../demo/samples";
 import { LANGS, mulberry32, randomStep } from "./steps";
@@ -229,7 +226,6 @@ function fuzz(
     let kept = 0;
     let nodes = 0;
     let maxRoot = 0;
-    let total = 0;
     let anchors = 0;
     let bails = 0;
     for (
@@ -238,7 +234,6 @@ function fuzz(
       seed++
     ) {
       const rnd = mulberry32(seed * 7919 + name.length);
-      const pick = <T>(a: T[]): T => a[Math.floor(rnd() * a.length)];
       const ed = make(L.opts, starts[seed % starts.length]);
       const log: string[] = [];
       for (let i = 0; i < 25; i++) {
@@ -246,7 +241,8 @@ function fuzz(
           randomStep(ed, L, rnd, log);
         } catch (e) {
           throw new Error(
-            `seed ${seed} step ${i}: threw ${(e as Error).message}\n${log.join("\n")}`
+            `seed ${seed} step ${i}: threw ${(e as Error).message}\n${log.join("\n")}`,
+            { cause: e }
           );
         }
         const problems = checkLezerEditor(ed);
@@ -264,7 +260,6 @@ function fuzz(
       kept += st.rootsKept;
       nodes += st.nodesRebuilt;
       maxRoot = Math.max(maxRoot, st.maxRootNodes);
-      total += ed.roots().length;
       anchors += st.nodesAnchored;
       bails += st.anchorBails;
     }

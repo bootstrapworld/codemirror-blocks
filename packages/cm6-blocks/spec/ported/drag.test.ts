@@ -1,5 +1,4 @@
 /** @jest-environment jsdom */
-// @ts-nocheck
 // EDITED (documented, second round D): the labels `add expression`, `sub expression`, `collapse expression` are the table's `call to + `, `call to - `, `call to collapse `
 // PORTED from packages/codemirror-blocks/spec/drag-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
 import wescheme from "../compat/wescheme";

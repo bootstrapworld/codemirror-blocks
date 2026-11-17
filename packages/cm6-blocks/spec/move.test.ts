@@ -17,14 +17,6 @@ const lit = (ed: LezerBlockEditor, src: string, nth = 0): BNode =>
   all(ed).filter(
     (n) => n.kind === "literal" && text(ed).slice(n.from, n.to) === src
   )[nth];
-const argsOf = (ed: LezerBlockEditor, head: string) => {
-  const call = all(ed).find(
-    (n) =>
-      n.slots.some((s) => s.name === "args") &&
-      text(ed).slice(n.from, n.to).startsWith(head.replace("(", ""))
-  )!;
-  return call.slots.find((s) => s.name === "args")!;
-};
 
 function clipboardEvent(type: string, data: { v: string }): Event {
   const e = new Event(type, { bubbles: true, cancelable: true });

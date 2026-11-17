@@ -2,7 +2,7 @@
 // Tenth round: the differences from the old editor that the owner asked to match (1 to 3, 5, 6)
 import { undo } from "@codemirror/commands";
 import { checkLezerEditor } from "../src/lezer-view";
-import { make, TEXT } from "./helpers";
+import { make } from "./helpers";
 
 const textOf = (ed: ReturnType<typeof make>) => ed.view.state.doc.toString();
 const ok = (ed: ReturnType<typeof make>) =>

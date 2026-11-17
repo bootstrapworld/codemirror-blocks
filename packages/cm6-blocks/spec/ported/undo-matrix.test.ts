@@ -1,5 +1,4 @@
 /** @jest-environment jsdom */
-// @ts-nocheck
 // PORTED from packages/codemirror-blocks/spec/undo-matrix-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
 import wescheme from "../compat/wescheme";
 import {

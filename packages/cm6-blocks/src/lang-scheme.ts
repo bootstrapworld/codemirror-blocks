@@ -41,7 +41,7 @@ export const schemeTable: BlockTable = {
     QuoteForm: {
       kind: "quote",
       label: "quote",
-      keyword: "\'",
+      keyword: "'",
       slots: [{ name: "datum", kind: "one", take: ["#0"] }],
     },
     QuasiquoteForm: {

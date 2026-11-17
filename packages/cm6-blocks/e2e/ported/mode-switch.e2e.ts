@@ -1,5 +1,4 @@
 // PORTED from packages/codemirror-blocks/e2e/mode-switch.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, thirteenth round.
-// @ts-nocheck
 import { expect, test } from "@playwright/test";
 import { openInBlockMode } from "../compat/helpers";
 test.fixme(

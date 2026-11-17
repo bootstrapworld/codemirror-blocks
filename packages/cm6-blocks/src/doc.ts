@@ -197,8 +197,8 @@ function place(doc: Doc, node: BNode, text: string, start: number): () => void {
   return () => copyPositions(node, back[0]);
 }
 
-const ATOM_START = /^[^()\[\]{}",'`;\s]/;
-const ATOM_END = /[^()\[\]{}",'`;\s"]$/;
+const ATOM_START = /^[^()[\]{}",'`;\s]/;
+const ATOM_END = /[^()[\]{}",'`;\s"]$/;
 
 export function insertNode(
   doc: Doc,

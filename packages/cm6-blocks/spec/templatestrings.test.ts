@@ -115,16 +115,14 @@ describe.each(Object.keys(CASES))("template strings: %s", (l) => {
     const ed = make(l, C.text);
     const t = all(ed).filter((n) => n.kind === "template")[0];
     ed.focusNode(t);
-    ed.renderer
-      .element(t)
-      .dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "Enter",
-          ctrlKey: true,
-          bubbles: true,
-          cancelable: true,
-        })
-      );
+    ed.renderer.element(t).dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Enter",
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      })
+    );
     const box = ed.view.dom.querySelector(
       "textarea.blocks-edit"
     ) as HTMLTextAreaElement;

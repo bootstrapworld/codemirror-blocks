@@ -81,7 +81,7 @@ function dataTypeOf(src: string, val: unknown): string {
   return "number";
 }
 
-const OPEN = /^[(\[]/;
+const OPEN = /^[([]/;
 
 function convert(s: Sexp, text: string, offset: number): BNode {
   const loc = s.location;
@@ -96,7 +96,7 @@ function convert(s: Sexp, text: string, offset: number): BNode {
         return makeNode("blank", [], { value: src, from, to });
       }
       // a vector (#(1 2), #3(1 2)) is a literal to the lexer, but not one of ours
-      if (s instanceof literal && /^#\d*[(\[{]/.test(src)) {
+      if (s instanceof literal && /^#\d*[([{]/.test(src)) {
         return opaque(src, from);
       }
       const dataType =

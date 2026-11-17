@@ -1,5 +1,4 @@
 // PORTED from packages/codemirror-blocks/e2e/delete-undo.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, thirteenth round.
-// @ts-nocheck
 // EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `call to f `, `symbol g`
 import { expect, test } from "@playwright/test";
 import {
