@@ -2150,3 +2150,32 @@ The owner's decision on dialogs: "Match the old editor". Order: 1 overlay click,
 - Here (`interact.ts` text branch, `search.ts`): in block mode, with the focus in the text, F3 / Mod-F open the dialog, PageDown / PageUp go to the next / previous match from the TEXT CURSOR (`find(forward, at)`: both kinds of search by position from the cursor, wrapping as before), Ctrl-F3 / Shift-Ctrl-F3 are the rotor; the key is kept from the browser (its Find) as there. A dialog opened from the text gives the focus back to the text on Escape or Close (the old react-modal returns to the element that had it), not to a block. Enter finds the first match after the cursor.
 - Un-skipped: 1 ported (search: "says so when there is nothing to search for"). Tests: `spec/twelfth.test.ts` (3 more: the rotor words, PageDown/PageUp from the cursor in 3 languages, the dialog from the text), `e2e/nativekeys.e2e.ts` (3 more, real keys).
 - The other half of difference 12, deleting the parameter list of a `define`: NOT fixed and not an editor difference. In the old tree `define` has the name and the parameter list as separate children, so `children()[1]` is the list and Delete leaves `(define (f ...) a)`. The Scheme table here reads the header `(f a b)` as one call block, so `children()[1]` is the body and the same keys leave `(define (f a b) ...)`. Matching it means changing the language table's `define` shape (name and parameters as slots of the define), which touches templates, search types, labels and the soak; left for the owner to decide. The ported test stays skipped, reclassified D (a language-table difference).
+
+### 4b. Finding 13: the text cursor follows block focus (2026-11-17): looked at, NOT done
+
+- Measured in the old editor (a throwaway jest test with the old test utils, not kept): after `setValue` of three lines the cursor is `0:0`; after pressing a block on line 3 it is `2:0`; after Space and Delete on it (text now two lines and a blank one) it is `1:0`, the start of the block that took the focus; after a press on the first block `0:0`; ArrowDown to the second block gives `1:0`. So in jsdom the cursor does sit at the focused block's start.
+- Where it comes from I could not find: no code of the old `src` calls `setCursor` on activation (only the Insert Left/Right keys, the quarantine and the toggle do), and wrapping the CM5 document's `setSelection`, `setSelections` and `setCursor` showed no call, so it is CodeMirror 5's own reaction to the focus or the press inside its DOM (internals), which jsdom may not do as a browser does. Without a real-browser reading of the old editor (its Playwright page was not run) copying a jsdom artefact is not safe: moving the cursor also moves `scrollIntoView` in CodeMirror 6 and would fight auto-scroll and touch drags. The ported test (activation: "focus on the previous node when a top-level node is deleted") stays skipped, with its reason unchanged. A next session should look at the old page in Chromium first (`getCursor()` after a click and after arrow keys on a block).
+
+### Results of the twelfth round (2026-11-17)
+
+- Fixed: 1 (the dialogs' overlay click: a decision of the owner, not one of the twelve), difference 8 (paste beside a root and after the operator), difference 10 (native keys: Ctrl/Cmd-Enter was a real difference and is fixed; Ctrl/Cmd-X was never one), and the cause of difference 12's first half (the search keys from the text; the spoken lines were already the old ones). Not fixed: the second half of 12 (a `define`'s parameter list: a language-table shape), 11 (ids and `hash`, left alone), finding 13.
+- **Of the twelve differences, 10 are now fixed (1 to 10)**, up from 8; 11 is left, and 12 is half done (its search part fixed, its `define` part a decision about the table). Finding 13 is open.
+- Ported tests un-skipped: paste 3, undo-focus 2, keyboard-commands 2, search 1 = 8. Sample, jest, 476 tests (`ported-report.sh`):
+
+| file (old tests) | pass in the eleventh round | pass now | skipped now |
+|---|---|---|---|
+| activation (35) | 30 | 30 | 5 |
+| keyboard-commands (43) | 37 | 39 | 4 |
+| paste (24) | 11 | 14 | 10 |
+| interaction (22) | 13 | 13 | 9 |
+| drop-targets (15) | 6 | 6 | 9 |
+| undo-focus (16) | 5 | 7 | 9 |
+| focus (9) | 3 | 3 | 6 |
+| edit-errors (25) | 15 | 15 | 10 |
+| comment (3) | 0 | 0 | 3 |
+| search (26) | 16 | 17 | 9 |
+| undo-matrix (258) | 145 | 145 | 113 |
+| total (476) | 281 (59%) | 289 (61%) | 187 |
+
+- Checks: `CMB_SEEDS=800 CMB_BIGSEEDS=100 npx jest packages/cm6-blocks`: 1190 passed, 193 skipped, 0 failed (46 suites passed, 2 skipped whole); `tsc --noEmit -p packages/cm6-blocks` clean; Chromium suite (port 8177, started and stopped by the runner, nothing listening afterwards): 148 passed, 4 skipped, 0 failed (15 new: `dialogs` 6, `nativekeys` 9).
+- Not done: difference 11; the `define` parameter-list shape; finding 13; the old "paste over a selection replaces it" and "cut takes the focused block" (documented D, not asked); the old editor's page was not run in a real browser for any of this round's rules (read from the code and the old tests; the cursor probe above is jsdom).
