@@ -886,8 +886,14 @@ export function attachInteraction(ed: LezerBlockEditor): {
           mark: renderer.element(root),
         };
     }
-    // a drop on a block inside a top-level block replaces it (the old editor's drop on a node); the top-level block itself takes drops at its edges only
-    if (hit !== root && hit !== node && !(node && isInside(hit, node)))
+    // a drop on a value inside a top-level block replaces it: in the old editor only the nodes that are "normally editable" (a literal, a blank) are drop targets, a compound block is not; the top-level block itself takes drops at its edges only
+    if (
+      hit !== root &&
+      hit !== node &&
+      hit.slots.length === 0 &&
+      hit.kind !== "comment" &&
+      !(node && isInside(hit, node))
+    )
       return { target: { blank: hit }, mark: renderer.element(hit) };
     return null;
   }

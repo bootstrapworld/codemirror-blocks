@@ -5,7 +5,7 @@ import { drag, getNodeLabeled } from "./compat/dnd";
 
 afterEach(teardown);
 
-describe("a drop on a block inside a top-level block replaces it", () => {
+describe("a drop on a value inside a top-level block replaces it", () => {
   it("replaces the block and takes the dragged one out of its old place", () => {
     const { cmb } = mountCMB(wescheme);
     cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
@@ -17,6 +17,13 @@ describe("a drop on a block inside a top-level block replaces it", () => {
     cmb.setValue(`(f x y)`);
     drag(getNodeLabeled(/^y\b/)).dropOnto(getNodeLabeled(/^x\b/));
     expect(cmb.getValue()).toBe("(f y)");
+  });
+  it("does not replace a compound block: only values (literals, blanks) are drop targets, as in the old editor", () => {
+    const { cmb } = mountCMB(wescheme);
+    cmb.setValue(`(f (g a b) y)\n(h z)`);
+    drag(getNodeLabeled(/^z\b/)).dropOnto(getNodeLabeled(/call to g /));
+    // z did not take the place of (g a b)
+    expect(cmb.getValue()).toContain("(g a b)");
   });
   it("does nothing on the dragged block's own ancestor", () => {
     const { cmb } = mountCMB(wescheme);
