@@ -177,7 +177,7 @@ describe("corner cases", () => {
 
 describe("when the block being dragged goes away before the drop", () => {
   // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
-  it.skip("drops it on the trash can without an error", () => {
+  it("drops it on the trash can without an error", () => {
     cmb.setValue(`(add firstVar secondVar)`);
     const el = getNodeLabeled(/firstVar/);
     const trash = document.querySelector(".TrashCan")!;
