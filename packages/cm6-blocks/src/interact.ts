@@ -613,12 +613,54 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     return !!el && dom.contains(el);
   };
   /* a template dragged out of the toolbar: the same targets (gaps, blanks, the edges of top-level blocks), the same marks; the block is made where it is let go */
-  interface TDrag { name: string; x: number; y: number; on: boolean; mark: Element | null; id: number }
+  interface TDrag { name: string; x: number; y: number; on: boolean; mark: Element | null; id: number; touch: boolean; timer: ReturnType<typeof setTimeout> | null; ghost: HTMLElement | null; cx: number; cy: number }
   let tdrag: TDrag | null = null;
+  /** a small label that follows the pointer, above a finger (so that the finger does not hide it); it takes no pointer events, so it never swallows `elementFromPoint` */
+  function moveGhost(d: TDrag): void {
+    if (!d.ghost) return;
+    d.ghost.style.left = `${d.cx + (d.touch ? 0 : 14)}px`;
+    d.ghost.style.top = `${d.cy + (d.touch ? -52 : 14)}px`;
+  }
+  /** while a finger drags: the holes (what a drop can replace) get a class, so that they can grow to a finger-sized target (a language's hole is a literal that says `...`, not a kind of its own) */
+  function markHoles(on: boolean): void {
+    if (!on) {
+      for (const el of Array.from(dom.querySelectorAll(".blocks-hole"))) el.classList.remove("blocks-hole");
+      return;
+    }
+    const go = (n: BNode): void => {
+      if (n.slots.length === 0 && n.kind !== "error" && ed.isBlank(n) && renderer.has(n)) renderer.element(n).classList.add("blocks-hole");
+      for (const k of kids(n)) go(k);
+    };
+    for (const r of ed.roots()) go(r);
+  }
+  function tbegin(d: TDrag): void {
+    d.on = true;
+    dom.classList.add("blocks-dragging");
+    if (d.touch) {
+      // a finger: gaps and holes grow to a size a finger can hit; no scrolling, no menu, no selection until it is let go
+      dom.classList.add("blocks-touch-drag");
+      markHoles(true);
+      doc.addEventListener("contextmenu", noScroll, true);
+      doc.addEventListener("selectstart", noScroll, true);
+    }
+    const g = doc.createElement("div");
+    g.className = "blocks-drag-ghost";
+    g.textContent = d.name;
+    g.setAttribute("aria-hidden", "true");
+    (doc.body ?? dom).appendChild(g);
+    d.ghost = g;
+    moveGhost(d);
+  }
   function tdone(): void {
+    if (tdrag?.timer) clearTimeout(tdrag.timer);
+    tdrag?.ghost?.remove();
     tdrag?.mark?.classList.remove("blocks-drop-target");
     dom.classList.remove("blocks-dragging");
+    dom.classList.remove("blocks-touch-drag");
+    markHoles(false);
     tdrag = null;
+    doc.removeEventListener("contextmenu", noScroll, true);
+    doc.removeEventListener("selectstart", noScroll, true);
     doc.removeEventListener("pointermove", tMove, true);
     doc.removeEventListener("pointerup", tUp, true);
     doc.removeEventListener("pointercancel", tdone, true);
@@ -626,12 +668,20 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   function tMove(e: PointerEvent): void {
     const d = tdrag;
     if (!d || e.pointerId !== d.id) return;
+    d.cx = e.clientX;
+    d.cy = e.clientY;
     if (!d.on) {
-      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 5) return;
-      d.on = true;
-      dom.classList.add("blocks-dragging");
+      const moved = Math.hypot(e.clientX - d.x, e.clientY - d.y);
+      // a finger that moves before the long press is over is swiping the toolbar: not a drag
+      if (d.touch) {
+        if (moved > 8) tdone();
+        return;
+      }
+      if (moved < 5) return;
+      tbegin(d);
     }
     e.preventDefault();
+    moveGhost(d);
     const hit = targetAt(e.clientX, e.clientY, null);
     if (hit?.mark !== d.mark) {
       d.mark?.classList.remove("blocks-drop-target");
@@ -652,7 +702,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       doc.addEventListener("click", stop, { capture: true, once: true });
       setTimeout(() => doc.removeEventListener("click", stop, true), 0);
       tdone();
-      ed.act("templateDrop", null, { name: d.name, to: hit ? describeTarget(hit.target) : null, touch: e.pointerType === "touch" }, () => {
+      ed.act("templateDrop", null, { name: d.name, to: hit ? describeTarget(hit.target) : null, touch: d.touch }, () => {
         if (hit) {
           try {
             ed.insertTemplateAt(d.name, hit.target);
@@ -665,32 +715,56 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       });
     } else tdone();
   }
+  /**
+   * Call from a `pointerdown` on a toolbar button. A mouse or pen drags after moving 5 px. A finger drags after a long press (350 ms without moving
+   * more than 8 px), because a finger that moves at once is swiping the toolbar, which scrolls; a tap is the button's own click.
+   */
   function beginTemplateDrag(e: PointerEvent, name: string): void {
     if (e.button !== 0) return;
     tdone();
-    tdrag = { name, x: e.clientX, y: e.clientY, on: false, mark: null, id: e.pointerId };
+    const d: TDrag = { name, x: e.clientX, y: e.clientY, cx: e.clientX, cy: e.clientY, on: false, mark: null, id: e.pointerId, touch: e.pointerType === "touch", timer: null, ghost: null };
+    tdrag = d;
     doc.addEventListener("pointermove", tMove, true);
     doc.addEventListener("pointerup", tUp, true);
     doc.addEventListener("pointercancel", tdone, true);
+    if (d.touch) {
+      d.timer = setTimeout(() => {
+        d.timer = null;
+        if (tdrag === d) tbegin(d);
+      }, LONG_PRESS_MS);
+    }
   }
 
   /** a finger that is dragging must not scroll the page (this is only reached after a long press, before any movement) */
   const noScroll = (e: Event): void => {
     if (e.cancelable) e.preventDefault();
   };
+  /*
+   * The listener that holds a finger's scrolling off is registered ONCE, here, before any touch begins, not when the long press is over: iOS Safari
+   * only lets a touchmove listener prevent scrolling if it was there when the touch started (and treats document-level ones as passive unless
+   * they say `passive: false`). It does nothing unless a finger drag is on.
+   */
+  const holdScroll = (e: Event): void => {
+    if ((drag && drag.on && drag.touch) || (tdrag && tdrag.on && tdrag.touch)) noScroll(e);
+  };
+  doc.addEventListener("touchmove", holdScroll, { passive: false, capture: true });
   function begin(d: Drag): void {
     d.on = true;
     dom.classList.add("blocks-dragging");
     for (const g of d.group) if (renderer.has(g)) renderer.element(g).classList.add("blocks-drag-source");
     if (d.touch) {
-      doc.addEventListener("touchmove", noScroll, { passive: false, capture: true });
+      dom.classList.add("blocks-touch-drag");
+      markHoles(true);
       doc.addEventListener("contextmenu", noScroll, true);
+      doc.addEventListener("selectstart", noScroll, true);
     }
   }
   function clearDrag(): void {
     if (drag?.timer) clearTimeout(drag.timer);
-    doc.removeEventListener("touchmove", noScroll, true);
     doc.removeEventListener("contextmenu", noScroll, true);
+    doc.removeEventListener("selectstart", noScroll, true);
+    dom.classList.remove("blocks-touch-drag");
+    markHoles(false);
     if (drag) {
       drag.mark?.classList.remove("blocks-drop-target");
       for (const g of drag.group) if (renderer.has(g)) renderer.element(g).classList.remove("blocks-drag-source");
@@ -830,6 +904,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     detach() {
       open?.cancel();
       search.close();
+      doc.removeEventListener("touchmove", holdScroll, true);
       dom.removeEventListener("keydown", onKey, true);
       dom.removeEventListener("click", onClick, true);
       dom.removeEventListener("dblclick", onDblClick, true);

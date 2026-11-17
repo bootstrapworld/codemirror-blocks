@@ -15,4 +15,4 @@ http
     res.writeHead(200, { "content-type": types[path.extname(file)] || "application/octet-stream" });
     fs.createReadStream(file).pipe(res);
   })
-  .listen(8177, "127.0.0.1");
+  .listen(8177, process.env.HOST || "127.0.0.1"); // HOST=0.0.0.0 to let a phone on the same network open the page (see the notes, eighth round, step 4)

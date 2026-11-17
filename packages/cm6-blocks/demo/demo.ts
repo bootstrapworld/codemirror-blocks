@@ -92,11 +92,17 @@ function show(text: string, reconcile = true, anchors = true): void {
   };
   poll();
   const bar = $("templates");
-  bar.textContent = "Insert after the focused block: ";
+  bar.textContent = "";
+  bar.classList.add("blocks-toolbar");
+  const lab = document.createElement("span");
+  lab.textContent = "Tap to insert after the focused block, or press and hold, then drag into the program: ";
+  lab.style.cssText = "flex: none; align-self: center; font-size: 12px; max-width: 14em;";
+  bar.appendChild(lab);
   for (const t of ed.templates()) {
     const b = document.createElement("button");
     b.textContent = t.name;
     b.dataset.template = t.name;
+    b.className = "blocks-toolbar-item";
     b.addEventListener("mousedown", (e) => e.preventDefault()); // keep the focus on the block
     b.addEventListener("pointerdown", (e) => ed!.beginTemplateDrag(e, t.name)); // dragging it into the program inserts it there; a plain click inserts it after the focused block
     b.addEventListener("click", () => ed!.insertTemplate(t.name, ed!.focusedNode() ?? ed!.lastFocused()));

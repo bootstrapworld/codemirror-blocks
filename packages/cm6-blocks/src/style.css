@@ -121,6 +121,14 @@
 .blocks-dragging .blocks-block > .blocks-args > .blocks-gap,
 .blocks-dragging .blocks-body > .blocks-args > .blocks-gap { width: auto; height: 8px; }
 .blocks-drag-source { opacity: 0.5; }
+/* a finger is dragging (a block, or a template out of the toolbar): the places it can drop on grow to what a finger can hit (about 44 px),
+   and the label that follows it sits above it, takes no pointer events (it must never be what elementFromPoint finds at the drop point) */
+.blocks-touch-drag .blocks-gap { min-width: 44px !important; min-height: 44px !important; box-sizing: border-box; background: rgba(26, 115, 232, 0.12); }
+.blocks-touch-drag .blocks-hole { min-height: 44px; min-width: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
+.blocks-drag-ghost { position: fixed; z-index: 3000; pointer-events: none; transform: translateX(-50%); padding: 6px 12px; border-radius: 6px; background: #1a73e8; color: #fff; font: 14px system-ui, sans-serif; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
+/* the items of a toolbar a page makes: finger-sized, no text selection or callout on a long press, swiping along the bar scrolls it (a long press then starts a drag) */
+.blocks-toolbar { display: flex; gap: 6px; overflow-x: auto; flex-wrap: nowrap; touch-action: pan-x; -webkit-overflow-scrolling: touch; }
+.blocks-toolbar-item { min-height: 44px; min-width: 44px; padding: 0 12px; flex: none; touch-action: pan-x; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
 .blocks-drop-target { background: rgba(26, 115, 232, 0.35) !important; outline: 2px dashed #1a73e8; }
 
 /* selection (Space): the block and what is inside it */
