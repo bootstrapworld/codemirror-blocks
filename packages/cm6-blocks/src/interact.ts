@@ -20,6 +20,7 @@
  * so a finger or a pen too) onto a gap, a blank, or the top or bottom edge of a top-level block to move it.
  * Text that does not parse cleanly is accepted: the root then shows as text.
  */
+import { createAutoScroll } from "./autoscroll";
 import { redo, undo } from "@codemirror/commands";
 import { EditorView } from "@codemirror/view";
 import type { LezerBlockEditor } from "./lezer-view";
@@ -627,12 +628,55 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       for (const el of Array.from(dom.querySelectorAll(".blocks-hole"))) el.classList.remove("blocks-hole");
       return;
     }
-    const go = (n: BNode): void => {
-      if (n.slots.length === 0 && n.kind !== "error" && ed.isBlank(n) && renderer.has(n)) renderer.element(n).classList.add("blocks-hole");
-      for (const k of kids(n)) go(k);
-    };
-    for (const r of ed.roots()) go(r);
+    // (only what is drawn: CodeMirror draws the viewport, so the walk is over the elements that exist now; auto-scroll calls this again as blocks come into view)
+    for (const el of Array.from(dom.querySelectorAll(".blocks-node"))) {
+      const n = renderer.nodeOf(el);
+      if (n && renderer.has(n) && renderer.element(n) === el && n.slots.length === 0 && n.kind !== "error" && ed.isBlank(n)) el.classList.add("blocks-hole");
+    }
   }
+  /*
+   * Auto-scroll (ninth round; the old editor has none). While a drag is on, a pointer within 40 px of an edge of the editor's scroller moves it;
+   * after every frame the drop target under the pointer is found again, and what a drag marks on DOM that was made after it began (holes,
+   * the dragged blocks) is marked again.
+   */
+  const pointer = { x: 0, y: 0 };
+  const auto = createAutoScroll({
+    scroller: () => ed.view.scrollDOM,
+    onFrame: () => {
+      if (drag?.on) {
+        if (drag.touch) markHoles(true);
+        for (const g of drag.group) if (renderer.has(g)) renderer.element(g).classList.add("blocks-drag-source");
+        retarget(drag, pointer.x, pointer.y);
+      } else if (tdrag?.on) {
+        if (tdrag.touch) markHoles(true);
+        retarget(tdrag, pointer.x, pointer.y);
+      }
+    },
+  });
+  function retarget(d: { mark: Element | null; target?: Target | null }, x: number, y: number): void {
+    const hit = targetAt(x, y, drag?.on ? drag.node : null);
+    if (hit?.mark !== d.mark) {
+      d.mark?.classList.remove("blocks-drop-target");
+      hit?.mark.classList.add("blocks-drop-target");
+    }
+    if ("target" in d) d.target = hit?.target ?? null;
+    d.mark = hit?.mark ?? null;
+  }
+  /** Escape cancels a drag in progress (nothing is written; the click that the let-go would make is swallowed) */
+  const onEscape = (e: KeyboardEvent): void => {
+    if (e.key !== "Escape" || !((drag && drag.on) || (tdrag && tdrag.on))) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const stop = (ev: Event): void => {
+      ev.preventDefault();
+      ev.stopPropagation();
+    };
+    doc.addEventListener("click", stop, { capture: true, once: true });
+    setTimeout(() => doc.removeEventListener("click", stop, true), 300);
+    clearDrag();
+    tdone();
+  };
+  doc.addEventListener("keydown", onEscape, true);
   function tbegin(d: TDrag): void {
     d.on = true;
     dom.classList.add("blocks-dragging");
@@ -652,6 +696,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     moveGhost(d);
   }
   function tdone(): void {
+    auto.stop();
     if (tdrag?.timer) clearTimeout(tdrag.timer);
     tdrag?.ghost?.remove();
     tdrag?.mark?.classList.remove("blocks-drop-target");
@@ -682,12 +727,10 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     }
     e.preventDefault();
     moveGhost(d);
-    const hit = targetAt(e.clientX, e.clientY, null);
-    if (hit?.mark !== d.mark) {
-      d.mark?.classList.remove("blocks-drop-target");
-      hit?.mark.classList.add("blocks-drop-target");
-    }
-    d.mark = hit?.mark ?? null;
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    retarget(d, e.clientX, e.clientY);
+    auto.update(e.clientX, e.clientY);
   }
   function tUp(e: PointerEvent): void {
     const d = tdrag;
@@ -760,6 +803,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     }
   }
   function clearDrag(): void {
+    if (!tdrag?.on) auto.stop();
     if (drag?.timer) clearTimeout(drag.timer);
     doc.removeEventListener("contextmenu", noScroll, true);
     doc.removeEventListener("selectstart", noScroll, true);
@@ -807,13 +851,10 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       begin(drag);
     }
     e.preventDefault();
-    const hit = targetAt(e.clientX, e.clientY, drag.node);
-    if (hit?.mark !== drag.mark) {
-      drag.mark?.classList.remove("blocks-drop-target");
-      hit?.mark.classList.add("blocks-drop-target");
-    }
-    drag.target = hit?.target ?? null;
-    drag.mark = hit?.mark ?? null;
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    retarget(drag, e.clientX, e.clientY);
+    auto.update(e.clientX, e.clientY);
   }
   function onUp(e: PointerEvent): void {
     if (!drag) return;
@@ -905,6 +946,8 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       open?.cancel();
       search.close();
       doc.removeEventListener("touchmove", holdScroll, true);
+      doc.removeEventListener("keydown", onEscape, true);
+      auto.stop();
       dom.removeEventListener("keydown", onKey, true);
       dom.removeEventListener("click", onClick, true);
       dom.removeEventListener("dblclick", onDblClick, true);
