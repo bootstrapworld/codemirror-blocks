@@ -1628,3 +1628,14 @@ Where the 2.8 ms of Scheme went (inclusive, per edit): `fromTree` 1.17 (of it th
 3. The walk over the tree for errors: when the old document had no Lezer error, the new tree's errors are looked for in the roots that were built again only (`fastErrors`). A change that makes errors in a root it does not touch is not seen by this fast path. Judgement/evidence: the model fuzzers (800 seeds x 25 steps, and 100 big seeds) compare with a fresh parse and found nothing; they are evidence about their generators, not proof. As soon as the document has an error, the old slow path runs.
 Median ms per edit, same harness, before / after: Scheme 2.8 / 1.1 (our part, `restMs`, 2.21 / 0.49), JavaScript 2.0 / 1.8 (0.78 / 0.49), Python 1.8 / 1.5 (0.94 / 0.63). What is left is mostly the Lezer parse (0.46 / 0.99 / 0.68) and two passes that are still proportional to the roots but cheap: stepping the top-level children (`collect`, 0.18 Scheme) and `shiftTree` of the kept roots after the change (0.12). NOT yet "proportional to the roots near the change" in the strict sense; those two remain. The existing `measure.e2e.ts` (edit sync with layout, near top / middle, remove a block): Scheme 4.3 / 3.6 (round 4) -> 2.6 / 2.2, JavaScript 3.0 / 3.3 -> 2.9 / 2.8, Python 3.1 / 2.3 -> 3.1 / 2.3 (block removals, which build more).
 Evidence: `spec/perf.test.ts` (600 roots: an edit rebuilds fewer than 12 roots and keeps over 1000; same text and checker result with the fast paths off; an unclosed bracket takes the slow path and is still the fresh parse).
+
+### 5. Bundle sizes (2026-11-16, esbuild `--minify`, one run each, gzip -9, same entries as rounds four and six)
+
+| build | round 4 min / gzip | round 6 min / gzip | now min / gzip |
+|---|---|---|---|
+| (a) `demo/demo.ts`, three languages, all bundled | 467,454 / 160,845 | 504,087 / 173,550 | 533,363 / 180,512 |
+| (b) same, CodeMirror 6 external | 236,647 / 86,949 | 273,207 / 99,219 | 302,469 / 106,184 |
+| `demo/scheme-only.ts`, all bundled | n/m | 363,654 / 120,102 | 392,559 / 126,955 |
+| (c) `demo/scheme-only.ts`, CodeMirror 6 external | 102,787 / 35,585 | 132,724 / 45,962 | 161,621 / 52,825 |
+
++29 K minified (+6.9 K gzip) in the Scheme-only build over round six: about 9 K of Scheme-look CSS, the key table, help dialog, announcements, toolbar drag, stray comments, per-edit lookups. Grammars are not external.
