@@ -21,6 +21,7 @@
     "lint": "eslint .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format:check": "prettier --check .",
+    "prepare": "husky",
     "soak": "node scripts/soak.js",
     "test:e2e": "npm run test:e2e --workspace=@bootstrapworld/codemirror-blocks",
     "build:libs": "npm run build --workspace=@bootstrapworld/codemirror-blocks && npm run build --workspace=@bootstrapworld/example && npm run build --workspace=@bootstrapworld/lambda && npm run build --workspace=@bootstrapworld/routine && npm run build --workspace=@bootstrapworld/wescheme",
@@ -38,7 +39,16 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.14.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1"
+  },
+  "lint-staged": {
+    "*.{js,jsx,mjs,cjs,ts,tsx}": [
+      "eslint --fix --no-warn-ignored",
+      "prettier --write --ignore-unknown"
+    ],
+    "*.{json,md,css,less,html,yml,yaml}": "prettier --write --ignore-unknown"
   }
 }
