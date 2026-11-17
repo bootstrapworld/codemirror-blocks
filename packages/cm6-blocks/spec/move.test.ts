@@ -138,7 +138,8 @@ describe("moving statements (Python): indentation follows the target", () => {
     const body = fn.slots.find((s) => s.name === "body")!.nodes[0].slots[0];
     const c = ed.roots()[1];
     ed.moveNode(c, { slot: body, index: 1 });
-    expect(text(ed)).toBe("def f():\n    a = 1\n    c = 3\n    b = 2\n");
+    // (the statement's line stays, blank, where it was: the old editor leaves the line of a root that goes)
+    expect(text(ed)).toBe("def f():\n    a = 1\n    c = 3\n    b = 2\n\n");
     ok(ed);
     const fn2 = ed.roots()[0];
     const body2 = fn2.slots.find((s) => s.name === "body")!.nodes[0].slots[0];
@@ -150,7 +151,7 @@ describe("moving statements (Python): indentation follows the target", () => {
     const ed = make("python", "def f():\n    a = 1\nif x:\n    y = 1\n    z = 2\n");
     const body = ed.roots()[0].slots.find((s) => s.name === "body")!.nodes[0].slots[0];
     ed.moveNode(ed.roots()[1], { slot: body, index: 1 });
-    expect(text(ed)).toBe("def f():\n    a = 1\n    if x:\n        y = 1\n        z = 2\n");
+    expect(text(ed)).toBe("def f():\n    a = 1\n    if x:\n        y = 1\n        z = 2\n\n");
     ok(ed);
   });
 });

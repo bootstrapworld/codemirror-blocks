@@ -73,7 +73,11 @@ describe.each(Object.keys(LANGS))("lezer editor: %s", (name) => {
     ed.removeNode(ed.roots()[1]);
     ok(ed);
     expect(ed.roots().length).toBe(n0);
-    expect(textOf(ed)).toBe(START);
+    // (a root that goes leaves its line, blank, as in the old editor)
+    expect(textOf(ed)).not.toBe(START);
+    expect(textOf(ed).replace("\n\n", "\n")).toBe(START);
+    ed.view.dispatch({ changes: { from: 0, to: textOf(ed).length, insert: START } });
+    ok(ed);
     // into / out of a list slot below a root
     let target: BNode | null = null;
     for (const r of ed.roots()) walk(r, (n) => {

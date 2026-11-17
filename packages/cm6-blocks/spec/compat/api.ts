@@ -129,9 +129,10 @@ export class CompatAPI {
   getAst(): AST {
     return new AST(this);
   }
-  getFocusedNode(): ASTNode | null {
+  getFocusedNode(): ASTNode | undefined {
+    // (the old API answers undefined when nothing is focused)
     const n = this.ed.focusedNode();
-    return n ? this.wrap(n) : null;
+    return n ? this.wrap(n) : undefined;
   }
   getSelectedNodes(): ASTNode[] {
     return this.ed.selection().map((n) => this.wrap(n));

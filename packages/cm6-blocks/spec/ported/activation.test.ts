@@ -183,7 +183,7 @@ describe("switching to block mode", () => {
 });
 
 describe("deleting a node", () => {
-  // SKIPPED (U): removing a top-level block: the old editor leaves its (blank) line, this one removes the line
+  // SKIPPED (U): after the delete the old editor's text cursor is on the line of the block that has the focus (line 1); here the text cursor does not follow block focus (new finding 13)
   it.skip("should focus on the previous node when a top-level node is deleted", () => {
     cmb.setValue("firstLiteral\nsecondLiteral\nthirdLiteral");
     mouseDown(screen.getByRole("treeitem", { name: /thirdLiteral/ }));
@@ -239,9 +239,7 @@ describe("cut/copy/paste", () => {
     literal2 = ast.rootNodes[1];
   });
 
-  // SKIPPED (U): removing a top-level block: the old editor leaves its (blank) line, this one removes the line
-
-  it.skip("should remove selected nodes on cut", async () => {
+  it("should remove selected nodes on cut", async () => {
     mouseDown(literal1);
     keyDown(" ", {}, literal1);
 
@@ -251,9 +249,7 @@ describe("cut/copy/paste", () => {
     expect(cmb.getFocusedNode()!.hash).toBe(literal2.hash);
   });
 
-  // SKIPPED (U): removing a top-level block: the old editor leaves its (blank) line, this one removes the line
-
-  it.skip("should remove multiple selected nodes on cut", async () => {
+  it("should remove multiple selected nodes on cut", async () => {
     mouseDown(literal1);
     keyDown(" ", {}, literal1);
     keyDown("ArrowDown");

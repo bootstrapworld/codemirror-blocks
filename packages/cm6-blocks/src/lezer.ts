@@ -501,8 +501,68 @@ export function insertChange(table: BlockTable, text: string, slot: Slot, index:
   return { from: ns[index].from, to: ns[index].from, insert: snippet + sep };
 }
 
+/**
+ * The text changes that remove top-level blocks (roots), as the old editor does (its `DeleteRootEdit` and `removeWhitespace`):
+ * only the block's text goes and its line stays, blank, where it was: separators are not joined, blank lines are not
+ * collapsed, a Python statement's own newline stays so that the lines after it do not move. The one exception is the
+ * old editor's whitespace rule, applied within the line and block by block in document order: a space before the block is
+ * taken too when a space or the end of the line follows it, and a space after it when it is first on its line.
+ * A comment right before a block that goes as well (cut takes the comment with the block) goes in one piece with it.
+ */
+export function rootRemovals(roots: BNode[], text?: string): Map<BNode, TextChange> {
+  const sorted = [...roots].sort((a, b) => a.from - b.from || a.to - b.to);
+  const out = new Map<BNode, TextChange>();
+  if (!text) {
+    for (const n of sorted) out.set(n, { from: n.from, to: n.to, insert: "" });
+    return out;
+  }
+  const gone: [number, number][] = []; // what earlier blocks took, in the text's own positions
+  const isGone = (i: number): boolean => gone.some(([a, b]) => i >= a && i < b);
+  const before = (pos: number): string => {
+    let i = pos - 1;
+    while (i >= 0 && isGone(i)) i--;
+    return i < 0 || text[i] === "\n" || text[i] === "\r" ? "" : text[i];
+  };
+  const after = (pos: number): string => {
+    let i = pos;
+    while (i < text.length && isGone(i)) i++;
+    return i >= text.length || text[i] === "\n" || text[i] === "\r" ? "" : text[i];
+  };
+  for (let k = 0; k < sorted.length; k++) {
+    const n = sorted[k];
+    let from = n.from;
+    let to = n.to;
+    while (to > from && (text[to - 1] === "\n" || text[to - 1] === "\r")) to--;
+    // (a comment that goes with the next block: one piece, the line break between them goes too)
+    const nx = sorted[k + 1];
+    if (n.kind === "comment" && nx && !/\S/.test(text.slice(n.to, nx.from))) {
+      out.set(n, { from, to: from, insert: "" });
+      gone.push([from, from]);
+      continue;
+    }
+    const prev = sorted[k - 1];
+    if (prev && prev.kind === "comment" && !/\S/.test(text.slice(prev.to, n.from))) from = prev.from;
+    const p = before(from);
+    const q = after(to);
+    if (p === " " && (q === " " || q === "")) {
+      let i = from - 1;
+      while (i >= 0 && isGone(i)) i--;
+      from = i;
+    } else if (q === " " && p === "") {
+      let i = to;
+      while (i < text.length && isGone(i)) i++;
+      to = i + 1;
+    }
+    out.set(n, { from, to, insert: "" });
+    gone.push([from, to]);
+  }
+  return out;
+}
+
 /** The text change that removes a list element and one separator. */
 export function removeChange(node: BNode, text?: string): TextChange {
+  // a top-level block (a root): see rootRemovals
+  if (node.slot!.owner.kind === "program") return rootRemovals([node], text).get(node)!;
   const ns = node.slot!.nodes;
   const i = ns.indexOf(node);
   if (i + 1 < ns.length) return { from: node.from, to: ns[i + 1].from, insert: "" };
