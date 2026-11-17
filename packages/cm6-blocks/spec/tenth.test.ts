@@ -218,3 +218,83 @@ describe("4. the last block goes: focus goes to the editor, not to the page body
     b.remove();
   });
 });
+
+describe.each(["scheme", "javascript", "python"])("6. a box emptied and committed with Enter does nothing: %s", (l) => {
+  const key = (el: Element, k: string, mods: Partial<KeyboardEventInit> = {}) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...mods }));
+  const ctrl = { ctrlKey: true, metaKey: false };
+  const pick = (ed: ReturnType<typeof make>) => {
+    // a leaf argument inside the first call
+    let leaf = ed.roots()[0];
+    const dig = (n: typeof leaf): void => {
+      if (n.slots.length === 0) return void (leaf = n);
+      const k = n.slots.flatMap((s) => s.nodes).filter((c) => c.kind !== "comment");
+      if (k.length) dig(k[k.length - 1]);
+    };
+    dig(leaf);
+    return leaf;
+  };
+  test("a leaf's box: the block stays, no undo step, the box closes, focus is on the block", () => {
+    const ed = make(l);
+    const before = textOf(ed);
+    const leaf = pick(ed);
+    ed.focusNode(leaf);
+    key(ed.renderer.element(leaf), "Enter");
+    const input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+    expect(input).not.toBeNull();
+    input.value = "";
+    key(input, "Enter");
+    expect(ed.view.dom.querySelector(".blocks-edit")).toBeNull();
+    expect(textOf(ed)).toBe(before);
+    expect(ed.focusedNode()?.id).toBe(leaf.id);
+    undo(ed.view);
+    expect(textOf(ed)).toBe(before); // (nothing was written: the undo has nothing of ours to take back)
+    ok(ed);
+  });
+  test("a leaf's box with only spaces is cancelled as the blur does", () => {
+    const ed = make(l);
+    const before = textOf(ed);
+    const leaf = pick(ed);
+    ed.focusNode(leaf);
+    key(ed.renderer.element(leaf), "Enter");
+    const input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+    input.value = "   ";
+    key(input, "Enter");
+    expect(textOf(ed)).toBe(before);
+  });
+  test("the Ctrl-Enter text box", () => {
+    const ed = make(l);
+    const before = textOf(ed);
+    ed.focusNode(ed.roots()[0]);
+    key(ed.renderer.element(ed.roots()[0]), "Enter", ctrl);
+    const box = ed.view.dom.querySelector("textarea.blocks-edit") as HTMLTextAreaElement;
+    expect(box).not.toBeNull();
+    box.value = "";
+    key(box, "Enter");
+    expect(ed.view.dom.querySelector(".blocks-edit")).toBeNull();
+    expect(textOf(ed)).toBe(before);
+    expect(ed.roots().length).toBe(3);
+  });
+  test("an insertion box inserts nothing", () => {
+    const ed = make(l);
+    const before = textOf(ed);
+    ed.focusNode(ed.roots()[1]);
+    key(ed.renderer.element(ed.roots()[1]), "]", { ctrlKey: true, code: "BracketRight" });
+    const box = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+    expect(box).not.toBeNull();
+    box.value = "";
+    key(box, "Enter");
+    expect(ed.view.dom.querySelector(".blocks-edit")).toBeNull();
+    expect(textOf(ed)).toBe(before);
+    expect(ed.roots().length).toBe(3);
+  });
+  test("a non-empty box still commits", () => {
+    const ed = make(l);
+    const leaf = pick(ed);
+    ed.focusNode(leaf);
+    key(ed.renderer.element(leaf), "Enter");
+    const input = ed.view.dom.querySelector("input.blocks-edit") as HTMLInputElement;
+    input.value = "77";
+    key(input, "Enter");
+    expect(textOf(ed)).toContain("77");
+  });
+});

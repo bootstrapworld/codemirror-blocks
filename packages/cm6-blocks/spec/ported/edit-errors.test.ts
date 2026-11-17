@@ -97,9 +97,7 @@ describe("editing an existing node in place", () => {
     expect(undoSteps()).toBe(0);
   });
 
-  // SKIPPED (U): an emptied box committed with Enter deletes the block here; the old editor does nothing
-
-  it.skip("does nothing if the value is emptied", () => {
+  it("does nothing if the value is emptied", () => {
     startEditing(root());
     setEditableText("");
     keyDown("Enter");

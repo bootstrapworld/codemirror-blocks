@@ -127,7 +127,8 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
   const search = createSearch(ed, { focus: focusSoon, host: () => view.dom.parentElement ?? view.dom });
 
   /** a text box, placed by `put`; Enter or blur calls `commit(text)` (an empty text on blur does not), Escape or Alt-Q cancels */
-  type Log = { action: string; target: BNode | null };
+  /** `emptyEnterCommits`: Enter on an empty box commits (the comment box: emptying it removes the comment, a feature of this editor) */
+  type Log = { action: string; target: BNode | null; emptyEnterCommits?: boolean };
   function box(log: Log, initial: string, put: (input: Field) => void, done: () => void, commit: (text: string) => void, select = true, multiline = false): void {
     open?.cancel();
     ed.clearSelection(); // (the old editor clears the selection when a box opens)
@@ -158,7 +159,10 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
         e.preventDefault();
         const t = input.value;
         finish();
-        ed.act(log.action, log.target, { how: "enter", text: t }, () => commit(t));
+        // an emptied box does nothing, as in the old editor (`NodeEditable`: "no insertion value": the box closes, the block stays) and as
+        // the blur below: the same for a leaf's box, the Cmd/Ctrl-Enter box and an insertion box (the comment box keeps its own rule: see `emptyEnterCommits`)
+        if (t.trim() === "" && !log.emptyEnterCommits) ed.act(log.action + "Cancel", log.target, { how: "enter-empty" }, () => {});
+        else ed.act(log.action, log.target, { how: "enter", text: t }, () => commit(t));
       } else if (e.key === "Escape" || (e.altKey && e.code === "KeyQ")) {
         e.preventDefault();
         ed.act(log.action + "Cancel", log.target, {}, finish);
@@ -202,12 +206,9 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
       },
       back,
       (t) => {
-        if (t === (node.value ?? "") ) return;
-        if (t.trim() === "") ed.removeNode(node);
-        else {
-          ed.replaceText(node, t);
-          ed.say(`changed ${t}`);
-        }
+        if (t === (node.value ?? "")) return;
+        ed.replaceText(node, t);
+        ed.say(`changed ${t}`);
       },
       typed === undefined
     );
@@ -265,7 +266,7 @@ export function attachInteraction(ed: LezerBlockEditor): { detach(): void; edit(
     const words = c ? plainComment(raw) : "";
     ed.say(c ? `editing comment: ${words}.  Use Enter to save, and Alt-Q to cancel` : "adding a comment.  Use Enter to save, and Alt-Q to cancel");
     box(
-      { action: "comment", target: host },
+      { action: "comment", target: host, emptyEnterCommits: true },
       words,
       (input) => renderer.element(host).insertBefore(input, renderer.element(host).firstChild),
       () => ed.focusNode(host),
