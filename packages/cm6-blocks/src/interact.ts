@@ -881,8 +881,15 @@ export function attachInteraction(ed: LezerBlockEditor): {
           mark: renderer.element(root),
         };
     }
+    // a drop on a block inside a top-level block replaces it (the old editor's drop on a node); the top-level block itself takes drops at its edges only
+    if (hit !== root && hit !== node && !(node && isInside(hit, node)))
+      return { target: { blank: hit }, mark: renderer.element(hit) };
     return null;
   }
+  const isInside = (n: BNode, of: BNode): boolean => {
+    for (let c: BNode | null = n; c; c = c.parent) if (c === of) return true;
+    return false;
+  };
   /** where a drop went, for the log: a gap (the slot and index) or a hole (its place) */
   const describeTarget = (t: Target): Record<string, unknown> =>
     "blank" in t

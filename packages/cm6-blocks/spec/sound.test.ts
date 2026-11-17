@@ -307,7 +307,11 @@ describe.each(LANGS)("sounds: %s", (l) => {
   test("a block let go over the editor where nothing takes it beeps; one let go outside does not", () => {
     const { ed, heard } = rig(l);
     const el = ed.renderer.element(lit(ed, "4"));
-    const target = ed.renderer.element(lit(ed, "5"));
+    // (the middle of a top-level block: a block inside one is replaced by a drop, the edges of a top-level one take it)
+    const five = lit(ed, "5");
+    const target = ed.renderer.element(
+      ed.roots().find((r) => r.from <= five.from && five.to <= r.to) ?? five
+    );
     const where = { el: target as Element | null };
     document.elementFromPoint = () => where.el;
     ptr(el, "pointerdown", 10);
