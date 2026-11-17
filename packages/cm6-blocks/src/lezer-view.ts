@@ -754,6 +754,21 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
     }
   }
 
+  /**
+   * The last block went while a block had the focus: the focus goes to the editor itself (the text), as in the old editor
+   * (`focusAfterUndoOrRedo`: "with no block left to focus, keep keyboard focus in the editor"), not to the page body, where a
+   * screen reader user hears the editor vanish. Every way the last block can go ends here: it is a net under the transaction.
+   */
+  function keepFocusInEditor(s: Snap | null): void {
+    if (!s || !s.node || gone || !blockMode) return;
+    const doc_ = view.dom.ownerDocument;
+    const active = doc_.activeElement;
+    if (active && active !== doc_.body && view.dom.contains(active)) return;
+    if (active && active !== doc_.body && active !== doc_.documentElement) return; // (the focus went somewhere on purpose)
+    if (rootsSlot.nodes.some((r) => r.kind !== "error")) return;
+    view.contentDOM.focus({ preventScroll: true });
+  }
+
   /** an edit that puts focus where it wants (a removal) holds the generic restore back, so that focus does not visit the parent on the way */
   let holdFocus = false;
   function restoreFocus(s: Snap | null, trs: readonly Transaction[]): void {
@@ -1328,6 +1343,7 @@ export function createLezerBlockEditor(parent: HTMLElement, text: string, option
       // blocks that are new inside a selected block are selected with it
       if (trs.some((t) => t.docChanged)) for (const m of renderer.selected()) walk(m, (n) => renderer.setSelected(n, true));
       restoreFocus(snap, trs);
+      keepFocusInEditor(snap);
       // undo and redo scroll to the old selection (the top, for block edits): show what changed instead
       const last = trs.find((t) => t.docChanged && (t.isUserEvent("undo") || t.isUserEvent("redo")));
       if (last) {

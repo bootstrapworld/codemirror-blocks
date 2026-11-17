@@ -167,3 +167,54 @@ describe("3. Down and Up from the text cursor with no block focused", () => {
     expect(ed.focusedNode()).toBeNull();
   });
 });
+
+describe("4. the last block goes: focus goes to the editor, not to the page body", () => {
+  const inEditor = (ed: ReturnType<typeof make>) => {
+    const a = document.activeElement;
+    expect(a).not.toBe(document.body);
+    expect(ed.view.dom.contains(a)).toBe(true);
+  };
+  test("delete", () => {
+    const ed = make("scheme", "42");
+    ed.focusNode(ed.roots()[0]);
+    ed.toggleSelect(ed.roots()[0]);
+    ed.view.contentDOM.querySelector<HTMLElement>(".blocks-node")!.dispatchEvent(new KeyboardEvent("keydown", { key: "Delete", bubbles: true, cancelable: true }));
+    expect(ed.roots().length).toBe(0);
+    inEditor(ed);
+  });
+  test("cut (removeNodes with comments)", () => {
+    const ed = make("javascript", "f(1);");
+    ed.focusNode(ed.roots()[0]);
+    ed.removeNodes([ed.roots()[0]], true);
+    inEditor(ed);
+  });
+  test("undo of an insert into an empty document", () => {
+    const ed = make("python", "");
+    ed.insertText(ed.doc.program.slots[0], 0, "x = 1");
+    ed.focusNode(ed.roots()[0]);
+    undo(ed.view);
+    expect(ed.roots().length).toBe(0);
+    inEditor(ed);
+  });
+  test("a text change that empties the document while a block has the focus", () => {
+    const ed = make("scheme", "(f 1)");
+    ed.focusNode(ed.roots()[0]);
+    ed.view.dispatch({ changes: { from: 0, to: 5, insert: "" } });
+    inEditor(ed);
+  });
+  test("a block that stays keeps the focus rules as before (no stealing when blocks remain)", () => {
+    const ed = make("scheme", "(f 1)\n(g 2)");
+    ed.focusNode(ed.roots()[1]);
+    ed.removeNodes([ed.roots()[1]]);
+    expect(ed.focusedNode()).toBe(ed.roots()[0]);
+  });
+  test("focus that was elsewhere stays elsewhere", () => {
+    const ed = make("scheme", "(f 1)");
+    const b = document.createElement("button");
+    document.body.appendChild(b);
+    b.focus();
+    ed.removeNodes([ed.roots()[0]]);
+    expect(document.activeElement).toBe(b);
+    b.remove();
+  });
+});

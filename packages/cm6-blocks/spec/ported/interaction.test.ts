@@ -249,8 +249,7 @@ describe("moving focus between the editor and the toolbar", () => {
 });
 
 describe("when the last block is deleted", () => {
-  // SKIPPED (U): after the last block is deleted focus falls to the page body (the old editor moves it to the editor's input)
-  it.skip("keyboard focus moves into the editor instead of falling to the page", () => {
+  it("keyboard focus moves into the editor instead of falling to the page", () => {
     cmb.setValue("42");
     mouseDown(root());
     keyDown(" ", {}, root());
