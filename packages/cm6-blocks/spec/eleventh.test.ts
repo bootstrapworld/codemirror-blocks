@@ -320,4 +320,56 @@ describe("9. dialogs hide the rest of the page", () => {
     outside.remove();
     s.cleanup();
   });
+  test.each([
+    ["search", (ed: LezerBlockEditor) => ed.search.open()],
+    ["help", (ed: LezerBlockEditor) => key(ed.renderer.element(ed.focusedNode()!), "?", { ctrlKey: true, shiftKey: true, code: "Slash" })],
+  ])("%s: an overlay behind the dialog closes it on a click, as Escape does (page restored exactly, focus back, overlay not reachable)", (_n, open) => {
+    const s = setup();
+    const snap0 = s.snapshot();
+    open(s.ed);
+    const dlg = document.querySelector("[role=dialog]")!;
+    const overlay = document.querySelector(".blocks-overlay") as HTMLElement;
+    expect(overlay).not.toBeNull();
+    expect(overlay.nextElementSibling).toBe(dlg); // behind the dialog
+    expect(overlay.getAttribute("aria-hidden")).toBe("true"); // not announced
+    expect(overlay.hasAttribute("inert")).toBe(false); // but it takes clicks
+    expect(overlay.tabIndex).toBe(-1);
+    expect(overlay.querySelector("button, input, [tabindex]")).toBeNull();
+    // a click inside the dialog does not close it
+    dlg.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(document.querySelector("[role=dialog]")).not.toBeNull();
+    overlay.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(document.querySelector("[role=dialog]")).toBeNull();
+    expect(document.querySelector(".blocks-overlay")).toBeNull();
+    expect(s.snapshot()).toBe(snap0);
+    expect(s.ed.focusedNode()).toBe(s.f);
+    expect(s.ed.search.isOpen()).toBe(false);
+    s.cleanup();
+  });
+  test("a click outside a search dialog is Escape: the settings stay and nothing is searched", () => {
+    const s = setup();
+    s.ed.search.open();
+    (document.querySelector(".blocks-search input") as HTMLInputElement).value = "g";
+    document.querySelector(".blocks-search input")!.dispatchEvent(new Event("input", { bubbles: true }));
+    document.querySelector(".blocks-overlay")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(s.ed.search.settings().text.searchString).toBe("g");
+    expect(s.ed.focusedNode()).toBe(s.f); // (Enter would have gone to the match)
+    s.cleanup();
+  });
+  test("two dialogs: the click closes only the newest, and the older one's overlay stays", () => {
+    const s = setup();
+    const snap0 = s.snapshot();
+    key(s.ed.renderer.element(s.f), "?", { ctrlKey: true, shiftKey: true, code: "Slash" });
+    s.ed.search.open();
+    const overlays = document.querySelectorAll(".blocks-overlay");
+    expect(overlays.length).toBe(2);
+    overlays[0].dispatchEvent(new MouseEvent("click", { bubbles: true })); // (the older one's: not the top dialog, ignored)
+    expect(document.querySelectorAll("[role=dialog]").length).toBe(2);
+    overlays[1].dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(document.querySelectorAll("[role=dialog]").length).toBe(1);
+    expect(document.querySelectorAll(".blocks-overlay").length).toBe(1);
+    document.querySelector(".blocks-overlay")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(s.snapshot()).toBe(snap0);
+    s.cleanup();
+  });
 });

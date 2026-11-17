@@ -371,7 +371,7 @@ export function createSearch(ed: LezerBlockEditor, ui: { focus: (n: BNode) => vo
     });
     closeBtn.addEventListener("click", () => finish(false));
     host.appendChild(el);
-    release = modalOpen(el);
+    release = modalOpen(el, () => finish(false)); // a click outside is Escape: the settings stay, nothing is searched (the old `closeFn`)
     dialog = { el, close: finish };
     (tab === 1 ? select : input).focus();
     if (tab === 0) input.select();

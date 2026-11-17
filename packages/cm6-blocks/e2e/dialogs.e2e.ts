@@ -48,12 +48,41 @@ for (const lang of Object.keys(SRC)) {
         expect(await page.evaluate(() => !!document.activeElement?.closest(".blocks-help"))).toBe(true);
         for (let i = 0; i < 5; i++) await page.keyboard.press("Shift+Tab");
         expect(await page.evaluate(() => !!document.activeElement?.closest(".blocks-help"))).toBe(true);
-        // a click on the hidden editor does not take the focus out either
-        await page.locator(".cm-content").click({ position: { x: 5, y: 5 }, force: true }).catch(() => {});
-        await page.waitForTimeout(100); // (the focus is put back a tick after the click took it)
+        // focus sent to the hidden editor does not take the focus out either
+        await page.evaluate(() => (document.querySelector(".cm-content") as HTMLElement).focus());
+        await page.waitForTimeout(100); // (the focus is put back a tick after it was taken)
         expect(await page.evaluate(() => !!document.activeElement?.closest(".blocks-help"))).toBe(true);
         await page.keyboard.press("Escape");
         await expect(page.locator(".blocks-help")).toHaveCount(0);
+        expect(await tree(page)).toBe(before);
+        expect(await attrs(page)).toBe(domBefore);
+        expect(await focusedText(page)).toBe("f");
+        expect(await page.evaluate(() => document.activeElement?.classList.contains("blocks-node"))).toBe(true);
+      });
+      test(`${name}: a click on the overlay closes it like Escape; the overlay is not in the accessibility tree`, async ({ page }) => {
+        const before = await tree(page);
+        const domBefore = await attrs(page);
+        await page.keyboard.press(open);
+        await expect(page.locator(".blocks-help")).toBeVisible();
+        const overlay = page.locator(".blocks-overlay");
+        await expect(overlay).toHaveCount(1);
+        expect(await overlay.getAttribute("aria-hidden")).toBe("true");
+        const during = await tree(page);
+        expect(during).toContain(title);
+        expect(during).not.toMatch(/treeitem/);
+        // the overlay covers the window, and is what a click at the editor's place reaches
+        const hit = await page.evaluate(() => {
+          const r = document.querySelector(".cm-content")!.getBoundingClientRect();
+          return document.elementFromPoint(r.left + 5, r.top + 5)?.className;
+        });
+        expect(hit).toBe("blocks-overlay");
+        // a click inside the dialog leaves it open
+        await page.locator(".blocks-help h2").click();
+        await expect(page.locator(".blocks-help")).toBeVisible();
+        // a real click on the overlay, near the editor
+        await page.mouse.click(3, 3);
+        await expect(page.locator(".blocks-help")).toHaveCount(0);
+        await expect(overlay).toHaveCount(0);
         expect(await tree(page)).toBe(before);
         expect(await attrs(page)).toBe(domBefore);
         expect(await focusedText(page)).toBe("f");

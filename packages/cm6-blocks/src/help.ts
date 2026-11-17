@@ -61,7 +61,7 @@ export function openHelp(host: HTMLElement, mac: boolean, done: () => void): Hel
     }
   });
   host.appendChild(box);
-  release = modalOpen(box);
+  release = modalOpen(box, finish);
   close.focus();
   return { close: finish };
 }

@@ -24,7 +24,7 @@ const isLive = (e: Element): boolean => e.hasAttribute("aria-live") || e.getAttr
  * Hide everything but `dialog` (and what it sits in) from screen readers and from the keyboard and the pointer, and keep the focus
  * inside it. Returns the function that puts it all back: call it BEFORE moving the focus back to where it was.
  */
-export function modalOpen(dialog: HTMLElement): () => void {
+export function modalOpen(dialog: HTMLElement, onOutside?: () => void): () => void {
   const doc = dialog.ownerDocument;
   const mine: Element[] = [];
   for (let node: Element = dialog; node.parentElement; node = node.parentElement) {
@@ -39,6 +39,20 @@ export function modalOpen(dialog: HTMLElement): () => void {
       }
       mine.push(sib);
     }
+  }
+  // the overlay (react-modal's: `ReactModal__Overlay`, a pane over the whole page behind the dialog; a click on it asks to close):
+  // made after the page was hidden so it is not hidden itself, and it is for the pointer only: not announced, not focusable
+  let overlay: HTMLElement | null = null;
+  if (onOutside && dialog.parentElement) {
+    const o = doc.createElement("div");
+    overlay = o;
+    o.className = "blocks-overlay";
+    o.setAttribute("aria-hidden", "true");
+    o.addEventListener("mousedown", (e) => e.preventDefault()); // (no focus to the body)
+    o.addEventListener("click", (e) => {
+      if (e.target === o && open[open.length - 1] === dialog) onOutside();
+    });
+    dialog.parentElement.insertBefore(o, dialog);
   }
   open.push(dialog);
   let last: HTMLElement = dialog;
@@ -62,6 +76,7 @@ export function modalOpen(dialog: HTMLElement): () => void {
   return () => {
     if (released) return;
     released = true;
+    overlay?.remove();
     open.splice(open.indexOf(dialog), 1);
     doc.removeEventListener("focusin", onFocus, true);
     dialog.removeEventListener("focusout", onBlur);

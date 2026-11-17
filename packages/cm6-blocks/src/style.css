@@ -498,6 +498,8 @@
 .blocks-lang-scheme .blocks-node.blocks-comment:focus { outline: 2px solid orange; border: 1px solid #333; }
 
 /* ---- the help dialog (Shift-Ctrl-/): the list of keys, made from keys.ts ---- */
+/* behind the dialog, over the page: react-modal's default overlay (fixed, the whole window, white at 75%) */
+.blocks-overlay { position: fixed; z-index: 999; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255, 255, 255, 0.75); }
 .blocks-help {
   position: fixed;
   z-index: 1000;
