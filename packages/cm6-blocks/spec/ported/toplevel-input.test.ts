@@ -55,7 +55,7 @@ describe("typing at the top level", () => {
     expect(cmb.getValue()).toBe("42\n11"); // nothing is committed yet
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality
+  // SKIPPED (M): typing and pasting at the top level (the quarantine) is not built: the test types into the text between blocks
 
   it.skip("commits on Enter, at the end of a line", () => {
     cmb.setCursor({ line: 0, ch: 2 });
@@ -65,7 +65,7 @@ describe("typing at the top level", () => {
     expect(quarantine()).toBeNull();
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality
+  // SKIPPED (M): typing and pasting at the top level (the quarantine) is not built: the test types into the text between blocks
 
   it.skip("commits on Enter, at the beginning of a line", () => {
     cmb.setCursor({ line: 0, ch: 0 });
@@ -74,7 +74,7 @@ describe("typing at the top level", () => {
     expect(cmb.getValue()).toBe("9\n42\n11");
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality
+  // SKIPPED (M): typing and pasting at the top level (the quarantine) is not built: the test types into the text between blocks
 
   it.skip("commits on Enter, at the end of the document", () => {
     cmb.setCursor({ line: 1, ch: 2 });
@@ -83,7 +83,7 @@ describe("typing at the top level", () => {
     expect(cmb.getValue()).toBe("42\n11\n9");
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality
+  // SKIPPED (M): typing and pasting at the top level (the quarantine) is not built: the test types into the text between blocks
 
   it.skip("commits into an empty document", () => {
     cmb.setValue("");
@@ -133,7 +133,7 @@ describe("typing at the top level", () => {
   // is already collapsed by the time the key handler runs. In a real browser it
   // replaces the selection; see e2e/typing.e2e.ts.
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality
+  // SKIPPED (M): typing and pasting at the top level (the quarantine) is not built: the test types into the text between blocks
 
   it.skip("stays open (and flags an error) if the text can't be parsed", () => {
     allowConsoleErrors(); // a rejected edit is logged
@@ -160,7 +160,7 @@ describe("pasting at the top level", () => {
     expect(cmb.getValue()).toBe("42\n11");
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality
+  // SKIPPED (M): typing and pasting at the top level (the quarantine) is not built: the test types into the text between blocks
 
   it.skip("commits the pasted text on Enter", () => {
     cmb.setCursor({ line: 0, ch: 2 });
@@ -169,7 +169,7 @@ describe("pasting at the top level", () => {
     expect(cmb.getValue()).toBe("42\n(f x)\n11");
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toEqual(expected) // deep equality
+  // SKIPPED (M): typing and pasting at the top level (the quarantine) is not built: the test types into the text between blocks
 
   it.skip("can paste several expressions", () => {
     cmb.setCursor({ line: 1, ch: 2 });

@@ -1,5 +1,6 @@
 // PORTED from packages/codemirror-blocks/e2e/search.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, ninth round.
 // @ts-nocheck
+// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `call to f `, `symbol g`
 import { expect, Page, test } from "@playwright/test";
 import { block, expectConsistent, openInBlockMode } from "../compat/helpers";
 

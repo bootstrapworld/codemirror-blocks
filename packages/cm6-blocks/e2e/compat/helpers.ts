@@ -26,6 +26,7 @@ const SHIM = () => {
 export async function openInBlockMode(page: Page, code: string, language = "scheme") {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => undefined); // (the old config grants it)
   await page.goto(`/index.html?lang=${language}`);
   await page.waitForFunction(() => !!(window as any).demo, undefined, { timeout: 15_000 }).catch(() => {
     throw new Error(`the demo page never created window.demo. Errors on the page: ${errors.join("; ") || "(none)"}`);
@@ -87,3 +88,67 @@ export const center = async (l: Locator) => {
   const b = (await l.boundingBox())!;
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 };
+
+// (thirteenth round: the old helpers, unchanged; the drag layer listens to pointer events, which the mouse makes)
+export const settledCenter = async (l: Locator, timeout = 5000) => {
+  const deadline = Date.now() + timeout;
+  let last = await center(l);
+  for (;;) {
+    await l.page().waitForTimeout(80);
+    const now = await center(l);
+    if (now.x === last.x && now.y === last.y) {
+      return now;
+    }
+    if (Date.now() > deadline) {
+      throw new Error("element never stopped moving");
+    }
+    last = now;
+  }
+};
+
+/**
+ * A native drag with the real mouse: press, move a little to start the drag,
+ * then move onto the target and release. Chromium's drag emulation under
+ * Playwright is reliable for large targets such as the trash can, but not for
+ * small blocks, which is why `dragWithEvents` exists.
+ */
+export async function dragWithMouse(
+  page: Page,
+  source: Locator,
+  target: Locator
+) {
+  const s = await center(source);
+  const d = await center(target);
+  await page.mouse.move(s.x, s.y);
+  await page.mouse.down();
+  await page.mouse.move(s.x + 6, s.y + 6, { steps: 3 });
+  // let the browser start the drag before moving on
+  await page.waitForTimeout(60);
+  await page.mouse.move(d.x, d.y, { steps: 8 });
+  await page.mouse.move(d.x + 1, d.y + 1);
+  await page.mouse.move(d.x, d.y);
+  // Chromium reports "drag over" to the target on a timer, and a drop is only
+  // accepted after the target has seen one, so hover before releasing
+  await page.waitForTimeout(200);
+  await page.mouse.up();
+}
+
+/**
+ * Drag with the real mouse to `at` (page coordinates; by default the middle of
+ * `target`). The app's drag layer listens to pointer events, which the mouse
+ * produces, so this runs the real handlers against a real layout.
+ */
+export async function dragWithEvents(
+  page: Page,
+  source: Locator,
+  target: Locator,
+  at?: { x: number; y: number }
+) {
+  const s = await settledCenter(source);
+  await page.mouse.move(s.x, s.y);
+  await page.mouse.down();
+  await page.mouse.move(s.x + 6, s.y + 6, { steps: 3 });
+  const d = at ?? (await settledCenter(target));
+  await page.mouse.move(d.x, d.y, { steps: 8 });
+  await page.mouse.up();
+}

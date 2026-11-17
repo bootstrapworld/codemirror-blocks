@@ -199,7 +199,7 @@ describe("The CodeMirrorBlocks Class", function () {
         keyDown("Enter");
       };
 
-      // SKIPPED (U): the edit box is an input here, the old one a contenteditable (interact.ts header)
+      // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
 
       it.skip("Ctrl-[ should open an insertion to the left of an argument", async function () {
         mouseDown(firstArg.element!);
@@ -208,7 +208,7 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cmb.getValue()).toBe("(+ 9 1 2) (+)");
       });
 
-      // SKIPPED (U): the edit box is an input here, the old one a contenteditable (interact.ts header)
+      // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
 
       it.skip("Ctrl-] should open an insertion to the right of an argument", async function () {
         mouseDown(firstArg.element!);
@@ -217,7 +217,7 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cmb.getValue()).toBe("(+ 1 9 2) (+)");
       });
 
-      // SKIPPED (U): the edit box is an input here, the old one a contenteditable (interact.ts header)
+      // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
 
       it.skip("Ctrl-] should open an insertion in the first arg position", async function () {
         mouseDown(blank.fields.func.element!);
@@ -226,7 +226,7 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cmb.getValue()).toBe("(+ 1 2) (+ 9)");
       });
 
-      // SKIPPED (U): the edit box is an input here, the old one a contenteditable (interact.ts header)
+      // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
 
       it.skip("should open an insertion when the whitespace between arguments is clicked", async function () {
         click(whiteSpaceEl);
@@ -245,7 +245,7 @@ describe("The CodeMirrorBlocks Class", function () {
               .firstChild!;
         });
 
-        // SKIPPED (U): the edit box is an input here, the old one a contenteditable (interact.ts header)
+        // SKIPPED (D): the edit box is an input here, the old one a contenteditable (interact.ts header)
 
         it.skip("should allow editing the argument whitespace", async function () {
           click(argWS);

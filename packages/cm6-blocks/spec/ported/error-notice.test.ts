@@ -78,7 +78,7 @@ describe("the notice that offers to report an error", () => {
     expect(open).not.toHaveBeenCalled();
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: late
+  // SKIPPED (M): the error notice that offers to report an error is not built
 
   it.skip("counts an uncaught error right after the editor was used", () => {
     act(() => {
@@ -89,7 +89,7 @@ describe("the notice that offers to report an error", () => {
     expect(screen.getByRole("alert")).toBeTruthy();
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: not ours
+  // SKIPPED (M): the error notice that offers to report an error is not built
 
   it.skip("ignores an uncaught error long after the editor was used", () => {
     const now = Date.now();

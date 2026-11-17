@@ -18,7 +18,7 @@ beforeEach(() => {
 afterEach(teardown);
 
 describe("the picture of a block that is being dragged", () => {
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toHaveClass()
+  // SKIPPED (D): drops go on gaps, holes and root edges, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
   it.skip("is a copy of the block in a box that has the language's class, so it has its shape", () => {
     cmb.setValue(`(add firstVar secondVar)`);
     const add = getNodeLabeled(/call to add /);
@@ -36,7 +36,7 @@ describe("the picture of a block that is being dragged", () => {
 });
 
 describe("when dragging a node onto a node in a different subtree", () => {
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toEqual(expected) // deep equality
+  // SKIPPED (D): drops go on gaps, holes and root edges, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
   it.skip("should replace the node that it's dropped onto and focus on the new node", () => {
     cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
     drag(getNodeLabeled(/firstVar/)).dropOnto(getNodeLabeled(/fifthVar/));
@@ -44,7 +44,7 @@ describe("when dragging a node onto a node in a different subtree", () => {
     expect(getNodeLabeled(/firstVar/)).toHaveFocus();
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toEqual(expected) // deep equality
+  // SKIPPED (D): drops go on gaps, holes and root edges, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
 
   it.skip("should focus the nth child of the node that was just dropped", () => {
     cmb.setValue(
@@ -64,7 +64,7 @@ describe("when dragging a node onto a node that can't be dropped onto", () => {
     cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
     addExprEl = getNodeLabeled(/call to add /);
   });
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).toEqual(expected) // deep equality
+  // SKIPPED (D): drops go on gaps, holes and root edges, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
   it.skip("should not add the blocks-over-target css class", () => {
     drag(getNodeLabeled(/fifthVar/)).dragOver(addExprEl);
     expect(addExprEl).not.toHaveClass("blocks-over-target");
@@ -91,7 +91,7 @@ describe("when dragging a node over a drop target", () => {
       .querySelectorAll(".blocks-drop-target");
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: expect(received).not.toHaveClass()
+  // SKIPPED (D): drops go on gaps, holes and root edges, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
 
   it.skip("should add the blocks-over-target css class to the drop target", () => {
     expect(subDropTargets[0]).not.toHaveClass("blocks-over-target");
@@ -99,7 +99,7 @@ describe("when dragging a node over a drop target", () => {
     expect(subDropTargets[0]).toHaveClass("blocks-over-target");
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: Unable to fire a "pointermove" event - please provide a DOM element.
+  // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
 
   it.skip("should remove the blocks-over-target css class when leaving the drop target", () => {
     drag(getNodeLabeled(/firstVar/))
@@ -108,7 +108,7 @@ describe("when dragging a node over a drop target", () => {
     expect(subDropTargets[0]).not.toHaveClass("blocks-over-target");
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: Unable to fire a "pointermove" event - please provide a DOM element.
+  // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
 
   it.skip("should insert the node where the drop target was (lower down in the file)", () => {
     drag(getNodeLabeled(/firstVar/)).dropOnto(subDropTargets[0]);
@@ -117,7 +117,7 @@ describe("when dragging a node over a drop target", () => {
     );
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: Unable to fire a "pointermove" event - please provide a DOM element.
+  // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
 
   it.skip("should insert the node where the drop target was (higher up in the file)", () => {
     drag(getNodeLabeled(/fifthVar/)).dropOnto(addDropTargets[0]);
@@ -127,7 +127,7 @@ describe("when dragging a node over a drop target", () => {
   });
 });
 
-// SKIPPED (U): undocumented difference or not yet examined: Error: Unable to fire a "pointermove" event - please provide a DOM element.
+// SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
 
 it.skip("saves collapsed state when dragging a root node to be the last child of the next root node", async () => {
   cmb.setValue("(collapse me)\n(add 1 2)");
@@ -165,13 +165,13 @@ describe("corner cases", () => {
     target2 = document.querySelectorAll(".blocks-drop-target")[2];
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: Unable to fire a "pointermove" event - please provide a DOM element.
+  // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
 
   it.skip("regression test for unstable block IDs", () => {
     drag(source.element!).dropOnto(target1);
   });
 
-  // SKIPPED (U): undocumented difference or not yet examined: Error: Unable to fire a "pointermove" event - please provide a DOM element.
+  // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
 
   it.skip("regression test for empty identifierLists returning a null location", () => {
     drag(source.element!).dropOnto(target2); // drag to the last droptarget
@@ -179,7 +179,7 @@ describe("corner cases", () => {
 });
 
 describe("when the block being dragged goes away before the drop", () => {
-  // SKIPPED (U): undocumented difference or not yet examined: Error: Unable to fire a "pointermove" event - please provide a DOM element.
+  // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
   it.skip("drops it on the trash can without an error", () => {
     cmb.setValue(`(add firstVar secondVar)`);
     const el = getNodeLabeled(/firstVar/);
