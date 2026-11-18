@@ -34,7 +34,9 @@ for (const lang of ["scheme", "javascript", "python"]) {
     const b = (await preview.boundingBox())!;
     expect(b.x).toBeGreaterThan(a.x + 50);
     if (lang === "scheme")
-      await page.screenshot({ path: "e2e/screens/drag-ghost-scheme.png" });
+      await page.screenshot({
+        path: "packages/cm6-blocks/e2e/screens/drag-ghost-scheme.png",
+      });
     await page.mouse.up();
     await expect(preview).toHaveCount(0);
   });
