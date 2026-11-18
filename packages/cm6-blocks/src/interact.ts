@@ -842,6 +842,10 @@ export function attachInteraction(ed: LezerBlockEditor): {
     /** a finger: the drag starts after a long press (a quick swipe scrolls the page) */
     touch: boolean;
     timer: ReturnType<typeof setTimeout> | null;
+    /** the picture that follows the pointer (a copy of the block, as the old editor's drag preview) */
+    ghost?: HTMLElement | null;
+    /** where in the block the pointer took hold of it */
+    grab?: { dx: number; dy: number };
   }
   const LONG_PRESS_MS = 350;
   let pressedFocused = false;
@@ -987,8 +991,11 @@ export function attachInteraction(ed: LezerBlockEditor): {
   ): void {
     const hit = targetAt(x, y, drag?.on ? drag.node : null);
     if (hit?.mark !== d.mark) {
-      d.mark?.classList.remove("blocks-drop-target");
+      d.mark?.classList.remove("blocks-drop-target", "blocks-drop-replace");
       hit?.mark.classList.add("blocks-drop-target");
+      // (a value or hole that the drop would replace: its own colour, as in the old editor)
+      if (hit && "blank" in hit.target)
+        hit.mark.classList.add("blocks-drop-replace");
     }
     if ("target" in d) d.target = hit?.target ?? null;
     d.mark = hit?.mark ?? null;
@@ -1031,7 +1038,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     auto.stop();
     if (tdrag?.timer) clearTimeout(tdrag.timer);
     tdrag?.ghost?.remove();
-    tdrag?.mark?.classList.remove("blocks-drop-target");
+    tdrag?.mark?.classList.remove("blocks-drop-target", "blocks-drop-replace");
     dom.classList.remove("blocks-dragging");
     dom.classList.remove("blocks-touch-drag");
     markHoles(false);
@@ -1151,8 +1158,40 @@ export function attachInteraction(ed: LezerBlockEditor): {
     passive: false,
     capture: true,
   });
+  /** a copy of the dragged block (more than one selected: the first, with a count) that follows the pointer, as the old editor's drag preview */
+  function makeBlockGhost(d: Drag): HTMLElement | null {
+    if (!renderer.has(d.node)) return null;
+    const src = renderer.element(d.node);
+    const copy = src.cloneNode(true) as HTMLElement;
+    copy.removeAttribute("id");
+    copy.querySelectorAll("[id]").forEach((e) => e.removeAttribute("id"));
+    copy.classList.remove("blocks-drag-source", "blocks-selected");
+    const box = doc.createElement("div");
+    box.className = `blocks-drag-preview ${dom.className.match(/blocks-lang-\S+/)?.[0] ?? ""}`;
+    const style = getComputedStyle(src);
+    box.style.fontFamily = style.fontFamily;
+    box.style.fontSize = style.fontSize;
+    box.style.lineHeight = style.lineHeight;
+    box.setAttribute("aria-hidden", "true"); // a picture, not a second block
+    box.appendChild(copy);
+    if (d.group.length > 1) {
+      const n = doc.createElement("span");
+      n.className = "blocks-drag-count";
+      n.textContent = `+${d.group.length - 1}`;
+      box.appendChild(n);
+    }
+    (doc.body ?? dom).appendChild(box);
+    return box;
+  }
+  function moveBlockGhost(d: Drag, x: number, y: number): void {
+    if (!d.ghost || !d.grab) return;
+    d.ghost.style.left = `${x - d.grab.dx}px`;
+    d.ghost.style.top = `${y - d.grab.dy - (d.touch ? 60 : 0)}px`;
+  }
   function begin(d: Drag): void {
     d.on = true;
+    d.ghost = makeBlockGhost(d);
+    moveBlockGhost(d, d.x, d.y);
     dom.classList.add("blocks-dragging");
     for (const g of d.group)
       if (renderer.has(g))
@@ -1172,7 +1211,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
     dom.classList.remove("blocks-touch-drag");
     markHoles(false);
     if (drag) {
-      drag.mark?.classList.remove("blocks-drop-target");
+      drag.ghost?.remove();
+      drag.mark?.classList.remove("blocks-drop-target", "blocks-drop-replace");
       for (const g of drag.group)
         if (renderer.has(g))
           renderer.element(g).classList.remove("blocks-drag-source");
@@ -1204,6 +1244,10 @@ export function attachInteraction(ed: LezerBlockEditor): {
       on: false,
       target: null,
       mark: null,
+      grab: (() => {
+        const r = renderer.element(node).getBoundingClientRect();
+        return { dx: e.clientX - r.left, dy: e.clientY - r.top };
+      })(),
     };
     doc.addEventListener("pointermove", onMove, true);
     doc.addEventListener("pointerup", onUp, true);
@@ -1244,6 +1288,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     pointer.x = e.clientX;
     pointer.y = e.clientY;
     retarget(drag, e.clientX, e.clientY);
+    moveBlockGhost(drag, e.clientX, e.clientY);
     auto.update(e.clientX, e.clientY);
   }
   function onUp(e: PointerEvent): void {

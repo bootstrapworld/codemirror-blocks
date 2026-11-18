@@ -527,7 +527,7 @@
 .blocks-lang-scheme .blocks-gap:hover,
 .blocks-lang-scheme .blocks-gap.blocks-gap-active {
   width: auto;
-  background: #fff;
+  background: lightblue; /* (the old editor: a drop target the pointer is over is lightblue, with or without a drag) */
   border-style: inset;
   cursor: pointer;
 }
@@ -1136,4 +1136,33 @@
 .blocks-search .blocks-search-foot {
   display: block;
   margin-top: 8px;
+}
+
+/* the picture that follows the pointer while a block is dragged (a copy of the block, see makeBlockGhost in interact.ts) */
+.blocks-drag-preview {
+  position: fixed;
+  z-index: 3000;
+  margin: 0;
+  pointer-events: none;
+  opacity: 0.65;
+}
+.blocks-drag-preview * {
+  pointer-events: none;
+}
+.blocks-drag-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: #1a73e8;
+  color: #fff;
+  font:
+    12px/18px system-ui,
+    sans-serif;
+}
+/* a value or a hole that a drop would REPLACE: red, as in the old editor (gaps that it would insert at are lightblue) */
+.blocks-drop-target.blocks-drop-replace,
+.blocks-lang-scheme .blocks-drop-target.blocks-drop-replace {
+  background: red !important;
 }
