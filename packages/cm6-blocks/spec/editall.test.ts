@@ -128,20 +128,35 @@ describe.each(LANGS)("edit a block as text: %s", (l) => {
     ok(ed);
   });
 
-  test("text that does not parse is accepted and shown as text", () => {
+  test("text that does not parse is refused: nothing is written, the box stays open, red, with the message as its title; editing clears it", () => {
     const ed = make(l);
+    const before = text(ed);
     const call = withText(ed, /^[(]?g[( ]2/);
     ed.focusNode(call);
     key(ed.renderer.element(call), "Enter", ctrl);
     const b = box(ed)!;
     b.value = l === "scheme" ? "(((" : "g(((";
     key(b, "Enter");
-    expect(text(ed).split("\n")[0]).toContain("(((");
-    expect(ed.lastError).toBeNull();
+    expect(text(ed)).toBe(before);
+    expect(box(ed)).toBe(b);
+    expect(b.classList.contains("blocks-error")).toBe(true);
+    expect(b.title).not.toBe("");
+    expect(b.getAttribute("aria-invalid")).toBe("true");
+    if (l === "scheme") expect(b.title).toMatch(/^Missing "\)"/);
+    else expect(b.title).toMatch(/^(Unexpected|Unexpected end)/);
+    // editing the text clears the red; a good text then commits
+    b.value = l === "scheme" ? "(g 9)" : "g(9)";
+    b.dispatchEvent(new Event("input"));
+    expect(b.classList.contains("blocks-error")).toBe(false);
+    expect(b.hasAttribute("title")).toBe(false);
+    expect(b.hasAttribute("aria-invalid")).toBe(false);
+    key(b, "Enter");
+    expect(box(ed)).toBeNull();
+    expect(text(ed)).toContain(l === "scheme" ? "(g 9)" : "g(9)");
     ok(ed);
     const { undo } = jest.requireActual("@codemirror/commands");
     undo(ed.view);
-    ok(ed);
+    expect(text(ed)).toBe(before);
   });
 
   test("a multi-line block gets a multi-line box; Shift-Enter is a newline, Enter commits; later lines keep their indentation", () => {

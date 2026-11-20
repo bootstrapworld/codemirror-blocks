@@ -13,12 +13,12 @@
  *   Space                 select / unselect the block (aria-selected); Escape, Ctrl-Escape or Alt-Q clear the selection;
  *                         Delete, cut, copy and a drag then use the selected blocks (none selected: copy and a drag take the focused one; Delete and cut say "Nothing selected" and beep)
  *   Cmd-Enter (Mac) / Ctrl-Enter (elsewhere)   edit the whole block as text in a box (Enter commits, Shift-Enter is a newline,
- *                         Escape cancels); text that does not parse is accepted
+ *                         Escape cancels); text that does not parse is refused: the box stays open, red, its title the message
  *   Shift-Ctrl-]          edit the comment of the block (a comment block directly above it or after it on its line; none: written above)
  *   Home / End            first / last block;  Shift-,  jump to the root;  \  read the ancestors;  Shift-\  read the children
  * Mouse: click a block to focus it (a click on a literal opens its edit box, as in the old editor; a touch needs a second tap); click a gap to open the box for a new sibling there; drag a block (pointer events,
  * so a finger or a pen too) onto a gap, a blank, or the top or bottom edge of a top-level block to move it.
- * Text that does not parse cleanly is accepted: the root then shows as text.
+ * A box refuses text that does not parse (nothing is written; red outline, the message as the title and aloud); text typed in the document itself may still read as an error root.
  */
 import { createAutoScroll } from "./autoscroll";
 import { redo, undo } from "@codemirror/commands";
@@ -176,7 +176,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
     done: () => void,
     commit: (text: string) => void,
     select = true,
-    multiline = false
+    multiline = false,
+    check?: (text: string) => string | null
   ): void {
     open?.cancel();
     ed.clearSelection(); // (the old editor clears the selection when a box opens)
@@ -193,7 +194,23 @@ export function attachInteraction(ed: LezerBlockEditor): {
       } else input.size = Math.max(2, input.value.length + 1);
     };
     fit();
-    input.addEventListener("input", fit);
+    // a text that does not parse is refused (as in the old editor): nothing is written, the box stays open and red, and its title is
+    // the message (also `aria-invalid`, and said aloud). Editing the text again clears it
+    const clearRefusal = () => {
+      input.classList.remove("blocks-error");
+      input.removeAttribute("title");
+      input.removeAttribute("aria-invalid");
+    };
+    const refuse = (message: string) => {
+      input.classList.add("blocks-error");
+      input.title = message;
+      input.setAttribute("aria-invalid", "true");
+      ed.say(message);
+    };
+    input.addEventListener("input", () => {
+      fit();
+      clearRefusal();
+    });
     let finished = false;
     const finish = (): void => {
       if (finished) return;
@@ -208,6 +225,11 @@ export function attachInteraction(ed: LezerBlockEditor): {
       if (e.key === "Enter" && !(multiline && e.shiftKey)) {
         e.preventDefault();
         const t = input.value;
+        const message = t.trim() === "" ? null : (check?.(t) ?? null);
+        if (message) {
+          refuse(message);
+          return;
+        }
         finish();
         // an emptied box does nothing, as in the old editor (`NodeEditable`: "no insertion value": the box closes, the block stays) and as
         // the blur below: the same for a leaf's box, the Cmd/Ctrl-Enter box and an insertion box (the comment box keeps its own rule: see `emptyEnterCommits`)
@@ -232,6 +254,14 @@ export function attachInteraction(ed: LezerBlockEditor): {
       if (finished) return;
       const t = input.value;
       const to = (e as FocusEvent).relatedTarget as HTMLElement | null;
+      const message = t.trim() === "" ? null : (check?.(t) ?? null);
+      if (message) {
+        refuse(message);
+        queueMicrotask(() => {
+          if (!finished && input.isConnected) input.focus();
+        });
+        return;
+      }
       finish();
       if (t.trim() !== "")
         ed.act(log.action, log.target, { how: "blur", text: t }, () =>
@@ -274,7 +304,9 @@ export function attachInteraction(ed: LezerBlockEditor): {
         ed.replaceText(node, t);
         ed.say(`changed ${t}`);
       },
-      typed === undefined
+      typed === undefined,
+      false,
+      (t) => (t === (node.value ?? "") ? null : ed.refuseReplace(node, t))
     );
   }
 
@@ -293,6 +325,18 @@ export function attachInteraction(ed: LezerBlockEditor): {
     ed.say(
       `editing ${ed.language.describe(node)}.  Use Enter to save, and Alt-Q to cancel`
     );
+    // the text to write for what was typed (null: nothing to change)
+    const allText = (t: string) => {
+      const v = t.replace(/\r\n?/g, "\n").replace(/\s+$/, "");
+      if (v.trim() === "" || v === initial) return null;
+      // (a Python statement's range ends with its newline: the text typed does not, so what the old range ended with stays)
+      const tail = (
+        view.state.doc
+          .sliceString(node.from, node.to)
+          .match(/\s*$/) as RegExpMatchArray
+      )[0];
+      return { v, snippet: v.replace(/\n/g, "\n" + indent) + tail };
+    };
     box(
       { action: "editAll", target: node },
       initial,
@@ -309,23 +353,21 @@ export function attachInteraction(ed: LezerBlockEditor): {
         ed.focusNode(node);
       },
       (t) => {
-        const v = t.replace(/\r\n?/g, "\n").replace(/\s+$/, "");
-        if (v.trim() === "" || v === initial) return;
-        // (a Python statement's range ends with its newline: the text typed does not, so what the old range ended with stays)
-        const tail = (
-          view.state.doc
-            .sliceString(node.from, node.to)
-            .match(/\s*$/) as RegExpMatchArray
-        )[0];
+        const r = allText(t);
+        if (!r) return;
         try {
-          ed.replaceText(node, v.replace(/\n/g, "\n" + indent) + tail);
-          ed.say(`changed ${v.replace(/\s+/g, " ")}`);
+          ed.replaceText(node, r.snippet);
+          ed.say(`changed ${r.v.replace(/\s+/g, " ")}`);
         } catch (err) {
           ed.lastError = (err as Error).message;
         }
       },
       false,
-      true
+      true,
+      (t) => {
+        const r = allText(t);
+        return r ? ed.refuseReplace(node, r.snippet) : null;
+      }
     );
   }
 
@@ -389,7 +431,10 @@ export function attachInteraction(ed: LezerBlockEditor): {
         } catch (e) {
           ed.lastError = (e as Error).message;
         }
-      }
+      },
+      true,
+      false,
+      (t) => (t.trim() === "" ? null : ed.refuseInsert(slot, index, t))
     );
   }
 

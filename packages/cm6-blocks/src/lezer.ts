@@ -96,6 +96,8 @@ export interface BlockTable {
    * The handful of rules. Names the adapter knows:
    *   "kind":      apply(node: SyntaxNode, text: string) => table key | undefined
    *   "separator": apply(slot: Slot, text: string) => string | undefined
+   *   "explain":   apply(text: string, from: number, to: number) => string | undefined
+   *                (a sentence for the error node at from..to of text; see explain.ts)
    */
   rules?: { name: string; apply: (...args: any[]) => any }[]; // eslint-disable-line @typescript-eslint/no-explicit-any
 }

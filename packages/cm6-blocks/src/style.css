@@ -145,6 +145,13 @@
   min-width: 2ch;
 }
 
+/* a refused box: red, as in the old editor (its title is the message) */
+.blocks-edit.blocks-error,
+.blocks-lang-scheme .blocks-edit.blocks-error {
+  border: 2px solid red;
+  background: #fdd;
+}
+
 /* ---- glue words, comments, classes, members ---- */
 .blocks-glue {
   color: #667;

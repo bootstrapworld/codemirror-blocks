@@ -107,11 +107,12 @@ describe.each(LANGS)("focus follows a rebuilt block: %s", (l) => {
     );
     ok(ed);
   });
-  test("text that does not parse: focus lands on a nearby block", () => {
+  test("text that does not parse is refused: the text is as it was and the box is still open", () => {
     const ed = make(l);
-    editAsText(ed, lit(ed, "2"), l === "scheme" ? "(((" : "(((");
-    expect(ed.focusedNode()).not.toBeNull();
-    ok(ed);
+    const before = ed.view.state.doc.toString();
+    editAsText(ed, lit(ed, "2"), "(((");
+    expect(ed.view.state.doc.toString()).toBe(before);
+    expect(ed.view.dom.querySelector("textarea.blocks-edit")).not.toBeNull();
   });
   test("a blank filled in: focus on the new block", () => {
     const ed = make(l);

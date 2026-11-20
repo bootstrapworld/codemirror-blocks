@@ -220,16 +220,26 @@ describe.each(Object.keys(LANGS))("keys and mouse: %s", (l) => {
     expect(ed.focusedNode()).not.toBeNull();
   });
 
-  test("Enter with text that does not parse cleanly is accepted", () => {
+  test("Enter with text that does not parse is refused: the box stays, red, titled with the message; a good text then commits", () => {
     const ed = make(l);
     const n = withText(ed, "2");
     key(focusOn(ed, n), "Enter");
     const input = ed.view.dom.querySelector(
       "input.blocks-edit"
     ) as HTMLInputElement;
+    const before = textOf(ed);
     input.value = l === "scheme" ? "(((" : "2 +* (";
     key(input, "Enter");
-    expect(textOf(ed)).toContain(input.value);
+    expect(textOf(ed)).toBe(before);
+    expect(input.isConnected).toBe(true);
+    expect(input.classList.contains("blocks-error")).toBe(true);
+    expect(input.title).not.toBe("");
+    expect(input.getAttribute("aria-invalid")).toBe("true");
+    input.value = "27";
+    input.dispatchEvent(new Event("input"));
+    expect(input.classList.contains("blocks-error")).toBe(false);
+    key(input, "Enter");
+    expect(textOf(ed)).toContain("27");
     ok(ed);
   });
 

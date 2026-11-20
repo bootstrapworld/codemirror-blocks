@@ -1,4 +1,5 @@
 // EXPERIMENT: Scheme blocks from the Lezer grammar `cm6-lezer-scheme-common-lang`.
+import { place } from "./explain";
 import { parser } from "cm6-lezer-scheme-common-lang";
 import { lezerLanguage, BlockRow, BlockTable } from "./lezer";
 
@@ -26,6 +27,41 @@ const headerOf = (d: SN): SN | null => {
   const its = c ? c.getChildren("Datum") : [];
   return h && its.length > 0 && its.every(isSym) ? h : null;
 };
+
+const CLOSER: Record<string, string> = { "(": ")", "[": "]", "{": "}" };
+/** a sentence for the first unbalanced bracket or quote of `text`, if there is one */
+function explainBrackets(text: string): string | undefined {
+  const open: { ch: string; at: number }[] = [];
+  const where = (pos: number) => place(text, pos);
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === ";") {
+      while (i < text.length && text[i] !== "\n") i++;
+    } else if (c === "#" && text[i + 1] === "\\") {
+      i += 2; // a character: #\( is not a bracket
+    } else if (c === "#" && text[i + 1] === "|") {
+      const end = text.indexOf("|#", i + 2);
+      if (end < 0) return `Missing "|#" to close the comment at ${where(i)}`;
+      i = end + 1;
+    } else if (c === '"') {
+      let j = i + 1;
+      while (j < text.length && text[j] !== '"') j += text[j] === "\\" ? 2 : 1;
+      if (j >= text.length)
+        return `Missing the closing quote of the string at ${where(i)}`;
+      i = j;
+    } else if (CLOSER[c]) open.push({ ch: c, at: i });
+    else if (c === ")" || c === "]" || c === "}") {
+      const top = open.pop();
+      if (!top) return `Unexpected "${c}" at ${where(i)}: no bracket is open`;
+      if (CLOSER[top.ch] !== c)
+        return `Unexpected "${c}" at ${where(i)}: "${CLOSER[top.ch]}" is needed to close the "${top.ch}" at ${where(top.at)}`;
+    }
+  }
+  const top = open.pop();
+  return top
+    ? `Missing "${CLOSER[top.ch]}" to close the "${top.ch}" at ${where(top.at)}`
+    : undefined;
+}
 
 export const schemeTable: BlockTable = {
   lang: "scheme",
@@ -201,6 +237,11 @@ export const schemeTable: BlockTable = {
     symbol: { text: "x", kind: "literal" },
   },
   rules: [
+    {
+      name: "explain",
+      // unbalanced brackets and quotes, by name (the first problem in the text)
+      apply: explainBrackets,
+    },
     {
       name: "kind",
       // "a list whose first element is the symbol define is a definition", checked for the arity wescheme demands

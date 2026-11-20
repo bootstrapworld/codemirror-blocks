@@ -71,6 +71,7 @@ import {
 import { browserPlayer, SoundEvent, SoundName, SoundPlayer } from "./sound";
 import { makeNode } from "./node";
 import { contentHash } from "./hash";
+import { refusal } from "./explain";
 import { Bail, compatible, reconcile, ReconcileEnv } from "./reconcile";
 import type { BNode, Doc, Slot, TextChange } from "./types";
 
@@ -154,6 +155,10 @@ export interface LezerBlockEditor {
   lastFocused(): BNode | null;
   /** insert source text `snippet` as element `index` of a list slot (a text change, one undo step) */
   insertText(slot: Slot, index: number, snippet: string): void;
+  /** the message that refuses `insertText` with these arguments (the text would not parse), or null */
+  refuseInsert(slot: Slot, index: number, snippet: string): string | null;
+  /** the message that refuses `replaceText` with these arguments, or null */
+  refuseReplace(node: BNode, snippet: string): string | null;
   /** remove a node: out of a list with one separator, or (a "one" slot) put the table's blank there */
   removeNode(node: BNode): void;
   /** remove several nodes (none inside another) in ONE text change, one undo step */
@@ -1478,6 +1483,26 @@ export function createLezerBlockEditor(
     insertText(slot, index, snippet) {
       live(slot.owner);
       dispatch(changeFor(slot, index, snippet));
+    },
+    refuseInsert(slot, index, snippet) {
+      try {
+        live(slot.owner);
+        return refusal(
+          language,
+          currentText(),
+          changeFor(slot, index, snippet)
+        );
+      } catch {
+        return null; // (the edit itself reports what is wrong)
+      }
+    },
+    refuseReplace(node, snippet) {
+      try {
+        live(node);
+        return refusal(language, currentText(), replaceChange(node, snippet));
+      } catch {
+        return null;
+      }
     },
     templates: () =>
       Object.entries(table.templates ?? {}).map(([name, t]) => ({
