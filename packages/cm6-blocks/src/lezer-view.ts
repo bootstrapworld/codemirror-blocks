@@ -25,6 +25,7 @@ import {
   Compartment,
   EditorState,
   Extension,
+  StateEffect,
   StateField,
   Transaction,
 } from "@codemirror/state";
@@ -33,6 +34,7 @@ import {
   DecorationSet,
   EditorView,
   keymap,
+  WidgetType,
 } from "@codemirror/view";
 import {
   defaultKeymap,
@@ -155,6 +157,17 @@ export interface LezerBlockEditor {
   lastFocused(): BNode | null;
   /** insert source text `snippet` as element `index` of a list slot (a text change, one undo step) */
   insertText(slot: Slot, index: number, snippet: string): void;
+  /**
+   * Set by the interaction layer: text typed or pasted at the top level (outside every block) never reaches the document; this is
+   * called with it instead (a microtask later), and opens the pending box (the old editor's "quarantine").
+   */
+  topLevelInput:
+    | ((from: number, to: number, text: string, how: "type" | "paste") => void)
+    | null;
+  /** the element of a new pending box at `pos` (a widget in the text); `clearPending` removes it, `pendingAt` is where it is now */
+  pendingHost(pos: number): HTMLElement;
+  clearPending(): void;
+  pendingAt(): number | null;
   /** the message that refuses `insertText` with these arguments (the text would not parse), or null */
   refuseInsert(slot: Slot, index: number, snippet: string): string | null;
   /** the message that refuses `replaceText` with these arguments, or null */
@@ -877,7 +890,77 @@ export function createLezerBlockEditor(
   });
 
   const compartment = new Compartment();
+  class PendingWidget extends WidgetType {
+    constructor(readonly el: HTMLElement) {
+      super();
+    }
+    eq(o: PendingWidget): boolean {
+      return o.el === this.el;
+    }
+    toDOM(): HTMLElement {
+      return this.el;
+    }
+    ignoreEvent(): boolean {
+      return true;
+    }
+  }
+  const setPending = StateEffect.define<{
+    pos: number;
+    el: HTMLElement;
+  } | null>();
+  const pendingField = StateField.define<DecorationSet>({
+    create: () => Decoration.none,
+    update(d, tr) {
+      d = d.map(tr.changes);
+      for (const e of tr.effects)
+        if (e.is(setPending))
+          d = e.value
+            ? Decoration.set([
+                Decoration.widget({
+                  widget: new PendingWidget(e.value.el),
+                  side: 1,
+                }).range(e.value.pos),
+              ])
+            : Decoration.none;
+      return d;
+    },
+    provide: (f) => EditorView.decorations.from(f),
+  });
   const blockExtension: Extension = [
+    pendingField,
+    // typing or pasting at the top level (no block under the change) is held in a pending box, not written: nothing half-typed
+    // reaches the document or the undo history
+    EditorState.transactionFilter.of((tr) => {
+      const hook = ed.topLevelInput;
+      if (!blockMode || !hook || !tr.docChanged) return tr;
+      const how = tr.isUserEvent("input.paste")
+        ? "paste"
+        : tr.isUserEvent("input.type")
+          ? "type"
+          : null;
+      if (!how) return tr;
+      let n = 0;
+      let from = 0;
+      let to = 0;
+      let text = "";
+      tr.changes.iterChanges((a, b, _c, _d, ins) => {
+        n++;
+        from = a;
+        to = b;
+        text = ins.toString();
+      });
+      if (n !== 1 || text.trim() === "") return tr;
+      if (
+        rootsSlot.nodes.some(
+          (r) =>
+            (from < r.to && to > r.from) ||
+            (from === to && r.from < from && from < r.to)
+        )
+      )
+        return tr;
+      queueMicrotask(() => hook(from, to, text, how));
+      return [];
+    }),
     EditorView.decorations.from(field, (v) => v.decos),
     EditorView.atomicRanges.of((v) => v.state.field(field).decos),
     EditorView.editorAttributes.of({
@@ -1483,6 +1566,21 @@ export function createLezerBlockEditor(
     insertText(slot, index, snippet) {
       live(slot.owner);
       dispatch(changeFor(slot, index, snippet));
+    },
+    topLevelInput: null,
+    pendingHost(pos) {
+      const el = view.dom.ownerDocument.createElement("span");
+      el.className = "blocks-pending";
+      view.dispatch({ effects: setPending.of({ pos, el }) });
+      return el;
+    },
+    clearPending() {
+      if (view.state.field(pendingField).size > 0)
+        view.dispatch({ effects: setPending.of(null) });
+    },
+    pendingAt() {
+      const it = view.state.field(pendingField).iter();
+      return it.value ? it.from : null;
     },
     refuseInsert(slot, index, snippet) {
       try {

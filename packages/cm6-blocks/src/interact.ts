@@ -458,6 +458,51 @@ export function attachInteraction(ed: LezerBlockEditor): {
     });
   }
 
+  /**
+   * Top level typing (the old editor's "quarantine"): text typed or pasted where no block is goes into a box at that place, and is
+   * written, as one change, when it parses (Enter, or blur); text that does not parse is refused, as in any box. Escape discards it.
+   */
+  function pendingBox(from: number, to: number, text: string): void {
+    const slot = ed.doc.program.slots[0];
+    let at = from;
+    const indexAt = (pos: number) =>
+      slot.nodes.filter((r) => r.to <= pos).length;
+    ed.say("inserting.  Use Enter to save, and Alt-Q to cancel");
+    const host = ed.pendingHost(from);
+    box(
+      { action: "insert", target: null },
+      text,
+      (input) => host.appendChild(input),
+      () => {
+        at = ed.pendingAt() ?? at;
+        ed.clearPending();
+        view.focus();
+      },
+      (t) => {
+        try {
+          const index = indexAt(at);
+          const had = slot.nodes.length;
+          ed.insertText(slot, index, t);
+          const made = slot.nodes.length > had ? slot.nodes[index] : null;
+          if (made && made.kind !== "error") ed.focusNode(made);
+          ed.say(`inserted ${t}`);
+        } catch (e) {
+          ed.lastError = (e as Error).message;
+        }
+      },
+      false,
+      text.includes("\n"),
+      (t) =>
+        t.trim() === ""
+          ? null
+          : ed.refuseInsert(slot, indexAt(ed.pendingAt() ?? at), t)
+    );
+    void to;
+  }
+  ed.topLevelInput = (from, to, text) => {
+    if (ed.isBlockMode()) pendingBox(from, to, text);
+  };
+
   type Handler = (node: BNode, e: KeyboardEvent, handled: () => void) => void;
   let help: Help | null = null;
   /** one handler for each command of the key table (keys.ts): a command without one does not compile */
@@ -1461,6 +1506,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     beginTemplateDrag,
     search,
     detach() {
+      ed.topLevelInput = null;
       open?.cancel();
       search.close();
       help?.close();

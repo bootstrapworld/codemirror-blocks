@@ -145,6 +145,12 @@
   min-width: 2ch;
 }
 
+/* the pending box of top-level typing sits in the text, where the cursor was */
+.blocks-pending {
+  display: inline-block;
+  vertical-align: middle;
+}
+
 /* a refused box: red, as in the old editor (its title is the message) */
 .blocks-edit.blocks-error,
 .blocks-lang-scheme .blocks-edit.blocks-error {
