@@ -74,8 +74,8 @@ test.describe("undoing and redoing a delete", () => {
 });
 
 test.describe("undoing and redoing typing at the top level", () => {
-  // FIXME (M): typing at the top level (the quarantine) is not built
-  test.fixme("undo goes back to the first block, redo to the typed one, without errors", async ({
+  // FIXME (M): typing at the top level works now; the spoken label of a number here is "9, a number", the test expects "number 9" (SPOKEN-LABELS)
+  test.fixme("undo goes back, redo to the typed one, without errors", async ({
     page,
   }) => {
     const errors = pageErrors(page);

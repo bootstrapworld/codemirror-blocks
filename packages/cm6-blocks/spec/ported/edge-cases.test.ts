@@ -39,17 +39,15 @@ describe("dragging while a top-level quarantine is open", () => {
     cmb.clearHistory();
     cmb.setCursor({ line: 0, ch: 19 }); // the end of the line
     typeChar(cmb, "9");
-    expect(document.activeElement?.getAttribute("contenteditable")).toBe(
-      "true"
-    );
+    expect(document.activeElement?.classList.contains("blocks-edit")).toBe(
+      true
+    ); // (the pending box is an input; the old one was a contenteditable)
     const a = kids(root(0))[1];
     const d = kids(root(1))[2];
     dragOnto(elementForNode(a)!, elementForNode(d)!);
   });
 
-  // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
-
-  it.skip("commits what was typed first, then does the drop", () => {
+  it("commits what was typed first, then does the drop", () => {
     expect(cmb.getValue()).toBe("(add b) (sub c a)\n9");
     expect(texts()).toEqual(["(add b)", "(sub c a)", "9"]);
   });
@@ -61,7 +59,7 @@ describe("dragging while a top-level quarantine is open", () => {
 
   // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
 
-  it.skip("is two undo steps: the drop, then the typing", () => {
+  it("is two undo steps: the drop, then the typing", () => {
     expect(cmb.historySize().undo).toBe(2);
     undo();
     expect(cmb.getValue()).toBe("(add a b) (sub c d)\n9");

@@ -1,5 +1,11 @@
-import { fireEvent } from "@testing-library/dom";
-import { keyDown, mouseDown, getMountedCMB, ASTNode, API } from "./test-utils";
+import {
+  keyDown,
+  mouseDown,
+  getMountedCMB,
+  typeAtCursor,
+  ASTNode,
+  API,
+} from "./test-utils";
 import { schemeTable } from "../../src/lang-scheme";
 import { drag, type DragMode } from "./dnd";
 
@@ -45,15 +51,9 @@ export const toolbarPrimitive = (name: string): Element => {
   return button;
 };
 export const typeChar = (cmb: API, char: string) =>
-  fireEvent.keyPress(cmb.getCM().getInputField(), {
-    key: char,
-    code: `Key${char.toUpperCase()}`,
-    charCode: char.charCodeAt(0),
-  });
+  typeAtCursor(cmb, char, "input.type");
 export const pasteAtCursor = (cmb: API, text: string) =>
-  fireEvent.paste(cmb.getCM().getInputField(), {
-    clipboardData: { getData: () => text },
-  });
+  typeAtCursor(cmb, text, "input.paste");
 export const dragOnto = (
   src: Element,
   target: Element,

@@ -139,8 +139,7 @@ describe("when dealing with node activation,", () => {
 });
 
 describe("inserting a new node", () => {
-  // SKIPPED (M): top-level typing into a quarantine (typeChar / pasteAtCursor opens a box at the text cursor): not built here
-  it.skip("should focus the node that was just inserted", () => {
+  it("should focus the node that was just inserted", () => {
     cmb.focus();
     // start inserting a new node
     keyPress("a");

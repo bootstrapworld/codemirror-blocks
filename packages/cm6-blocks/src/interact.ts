@@ -140,7 +140,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
 } {
   const { view, renderer } = ed;
   const dom = view.dom;
-  let open: { cancel(): void } | null = null;
+  let open: { cancel(): void; commit(): void } | null = null;
   const isClosed = (n: BNode): boolean => renderer.isCollapsed(n);
 
   function focusSoon(n: BNode): void {
@@ -219,7 +219,11 @@ export function attachInteraction(ed: LezerBlockEditor): {
       input.remove();
       done();
     };
-    const self = { cancel: finish };
+    // (commit: what a drag does to an open box: what was typed is written first, as when the box loses focus)
+    const self = {
+      cancel: finish,
+      commit: () => input.dispatchEvent(new FocusEvent("blur")),
+    };
     input.addEventListener("keydown", ((e: KeyboardEvent) => {
       e.stopPropagation();
       if (e.key === "Enter" && !(multiline && e.shiftKey)) {
@@ -476,7 +480,9 @@ export function attachInteraction(ed: LezerBlockEditor): {
       () => {
         at = ed.pendingAt() ?? at;
         ed.clearPending();
-        view.focus();
+        // (a block takes focus, as when the old editor's quarantine closes; an editor with none keeps it itself)
+        ed.focusEditor();
+        if (!ed.focusedNode()) view.focus();
       },
       (t) => {
         try {
@@ -1279,6 +1285,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     d.ghost.style.top = `${y - d.grab.dy - (d.touch ? 60 : 0)}px`;
   }
   function begin(d: Drag): void {
+    open?.commit();
     d.on = true;
     d.ghost = makeBlockGhost(d);
     moveBlockGhost(d, d.x, d.y);

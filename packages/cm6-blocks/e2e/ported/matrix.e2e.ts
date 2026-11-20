@@ -248,6 +248,7 @@ const FIXME = new Set<string>([
   "inserting beside a child › changes the document and keeps it consistent",
   "inserting beside a child › is undone by the keyboard",
   "inserting beside a child › is redone by the keyboard",
+  // (eighteenth round: the two top-level variants run now; their undo/redo variants undo past the page's own first program, as the literal-edit and insert variants above do: `undoAll` is not stopped by this editor's history)
   "typing at the top level › is undone by the keyboard",
   "pasting at the top level › is undone by the keyboard",
   "dragging a node onto a node › changes the document and keeps it consistent",

@@ -225,11 +225,37 @@ export function keyDown(
     el.dispatchEvent(ev);
   }
 }
+/** Type text where the text cursor is, as a typing (or pasting) transaction: at the top level it goes into the pending box */
+export const typeAtCursor = (
+  cmb: API,
+  text: string,
+  userEvent: "input.type" | "input.paste"
+) => {
+  const ed = (cmb as unknown as { ed: LezerBlockEditor }).ed;
+  const sel = ed.view.state.selection.main;
+  ed.view.dispatch({
+    changes: { from: sel.from, to: sel.to, insert: text },
+    userEvent,
+  });
+  ed.flushTopLevel();
+};
 export function keyPress(
   key: string,
   props: Record<string, unknown> = {},
   node: ElementLike = active()
 ) {
+  // a character pressed with the text editor itself focused (no block, no box) is typing
+  const cmb = mounted?.cmb;
+  if (
+    cmb &&
+    key.length === 1 &&
+    !props.ctrlKey &&
+    !props.metaKey &&
+    toElement(node) === cmb.getCM().getInputField()
+  ) {
+    typeAtCursor(cmb, key, "input.type");
+    return;
+  }
   const code = getKeyCode(key);
   fireEvent.keyPress(toElement(node), {
     which: code,

@@ -244,8 +244,7 @@ describe("undoing through the API instead of the keyboard", () => {
 });
 
 describe("when the saved block can't be found", () => {
-  // SKIPPED (M): top-level typing into a quarantine (typeChar / pasteAtCursor opens a box at the text cursor): not built here
-  it.skip("undoing the only block added leaves focus in the editor, with no block", () => {
+  it("undoing the only block added leaves focus in the editor, with no block", () => {
     // nothing has focus before this edit, and nothing is left after the undo
     cmb.setValue("");
     cmb.clearHistory();

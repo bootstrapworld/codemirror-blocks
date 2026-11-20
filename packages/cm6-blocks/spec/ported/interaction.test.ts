@@ -17,6 +17,7 @@ import {
 import { API } from "../compat/test-utils";
 import { ASTNode } from "../compat/test-utils";
 import { AppStore } from "../src/state/store";
+import { typeChar } from "../compat/gestures";
 import { setEditableText } from "../compat/editing";
 
 let cmb: API;
@@ -259,18 +260,12 @@ describe("when the last block is deleted", () => {
     expect(cmb.getWrapperElement().contains(document.activeElement)).toBe(true);
   });
 
-  // SKIPPED (M): top-level typing into a quarantine (typeChar / pasteAtCursor opens a box at the text cursor): not built here
-
-  it.skip("typing then works straight away", () => {
+  it("typing then works straight away", () => {
     cmb.setValue("42");
     mouseDown(root());
     keyDown(" ", {}, root());
     keyDown("Delete", {}, root());
-    fireEvent.keyPress(cmb.getCM().getInputField(), {
-      key: "7",
-      code: "Digit7",
-      charCode: 55,
-    });
+    typeChar(cmb, "7"); // (the old test fired a keypress on the CM5 input)
     keyDown("Enter");
     expect(cmb.getValue()).toBe("7");
   });

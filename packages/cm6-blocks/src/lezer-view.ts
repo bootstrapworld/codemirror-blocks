@@ -164,6 +164,8 @@ export interface LezerBlockEditor {
   topLevelInput:
     | ((from: number, to: number, text: string, how: "type" | "paste") => void)
     | null;
+  /** open the pending box for text just held back now, not in a microtask (tests that cannot wait) */
+  flushTopLevel(): void;
   /** the element of a new pending box at `pos` (a widget in the text); `clearPending` removes it, `pendingAt` is where it is now */
   pendingHost(pos: number): HTMLElement;
   clearPending(): void;
@@ -890,6 +892,7 @@ export function createLezerBlockEditor(
   });
 
   const compartment = new Compartment();
+  let held: (() => void) | null = null;
   class PendingWidget extends WidgetType {
     constructor(readonly el: HTMLElement) {
       super();
@@ -958,7 +961,8 @@ export function createLezerBlockEditor(
         )
       )
         return tr;
-      queueMicrotask(() => hook(from, to, text, how));
+      held = () => hook(from, to, text, how);
+      queueMicrotask(() => ed.flushTopLevel());
       return [];
     }),
     EditorView.decorations.from(field, (v) => v.decos),
@@ -1568,6 +1572,11 @@ export function createLezerBlockEditor(
       dispatch(changeFor(slot, index, snippet));
     },
     topLevelInput: null,
+    flushTopLevel() {
+      const q = held;
+      held = null;
+      q?.();
+    },
     pendingHost(pos) {
       const el = view.dom.ownerDocument.createElement("span");
       el.className = "blocks-pending";
