@@ -1,5 +1,4 @@
 // EXPERIMENT: a page that runs the Lezer block editor in a browser.
-import css from "../src/style.css";
 import { redo, undo } from "@codemirror/commands";
 import {
   checkLezerEditor,
@@ -64,10 +63,6 @@ print(total, "done")
   },
 };
 type LangName = keyof typeof LANGS;
-
-const style = document.createElement("style");
-style.textContent = css;
-document.head.appendChild(style);
 
 const $ = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;

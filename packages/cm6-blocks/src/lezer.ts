@@ -88,6 +88,11 @@ export interface BlockTable {
   statementSuffix?: string;
   /** text put where a node that has to be there (a "one" slot) is deleted; default "..." */
   blank?: string;
+  /**
+   * OPTIONAL: the language's own stylesheet (its look: rules under the class `blocks-lang-<lang>`, or for the kinds only it has). A language
+   * file imports it as text (`import css from "./css/<lang>.css"`) and puts it here; the editor injects it with the core sheet, once per root.
+   */
+  css?: string;
   /** the sign that starts a line comment (`;`, `//`, `#`): used to write a comment above a block */
   lineComment?: string;
   /**

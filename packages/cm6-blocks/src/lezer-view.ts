@@ -76,6 +76,33 @@ import { contentHash } from "./hash";
 import { refusal } from "./explain";
 import { Bail, compatible, reconcile, ReconcileEnv } from "./reconcile";
 import type { BNode, Doc, Slot, TextChange } from "./types";
+import coreCss from "./css/core-css";
+
+/**
+ * The editor's sheets go into the root its element is in (the document, or a shadow root), once each: a `<style data-cm6-blocks="core">` and
+ * one for the language (`table.css`). Nothing else in the page is touched.
+ */
+export function injectSheets(
+  el: Element,
+  table: { lang?: string; css?: string }
+): void {
+  const root = el.getRootNode() as Document | ShadowRoot;
+  const host: Node = (root as Document).head ?? root;
+  const doc = el.ownerDocument;
+  const put = (name: string, css: string | undefined): void => {
+    if (!css) return;
+    const have = Array.from(
+      root.querySelectorAll?.("style[data-cm6-blocks]") ?? []
+    ).some((s) => s.getAttribute("data-cm6-blocks") === name);
+    if (have) return;
+    const st = doc.createElement("style");
+    st.setAttribute("data-cm6-blocks", name);
+    st.textContent = css;
+    host.appendChild(st);
+  };
+  put("core", coreCss);
+  put(table.lang ?? "lang", table.css);
+}
 
 export interface LezerOptions {
   parser: Parser;
@@ -2333,6 +2360,7 @@ export function createLezerBlockEditor(
       }
     },
   });
+  injectSheets(view.dom, table);
   // the next key or touch of the pointer settles which block an edit left focused (a redo goes back to it)
   for (const type of ["keydown", "pointerdown", "mousedown", "touchstart"])
     view.dom.addEventListener(type, settleHistoryFocus, true);

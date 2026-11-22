@@ -1,5 +1,6 @@
 // EXPERIMENT: Scheme blocks from the Lezer grammar `cm6-lezer-scheme-common-lang`.
 import { place } from "./explain";
+import schemeCss from "./css/scheme-css";
 import { parser } from "cm6-lezer-scheme-common-lang";
 import { lezerLanguage, BlockRow, BlockTable } from "./lezer";
 
@@ -65,6 +66,7 @@ function explainBrackets(text: string): string | undefined {
 
 export const schemeTable: BlockTable = {
   lang: "scheme",
+  css: schemeCss,
   nodes: {
     Blank: { kind: "blank", label: "blank", leaf: true },
     Symbol: atom("symbol"),
