@@ -162,7 +162,7 @@ test.describe("a comment that goes with no block", () => {
   }) => {
     await openInBlockMode(page, "#| apart words |#\n\n(g y)");
     const c = page.getByRole("treeitem", { name: /apart.*, a comment$/ });
-    await c.click();
+    await c.focus(); // (a click here opens the comment for editing)
     await page.keyboard.press("ArrowLeft");
     await expect(c).toHaveAttribute("aria-expanded", "false");
     await expect(c.locator(".blocks-comment-text")).toBeHidden();
@@ -193,22 +193,17 @@ test.describe("a comment that goes with no block", () => {
     const popup = g.locator("> .blocks-comment");
     // (CodeMirror draws only the lines in view: go to the end, where g is)
     await page.evaluate(() => {
-      const cm = (
-        document.querySelector(".CodeMirror") as unknown as {
-          CodeMirror: { scrollTo(x: number, y: number): void };
-        }
-      ).CodeMirror;
-      cm.scrollTo(0, 1e6);
+      (document.querySelector(".cm-scroller") as HTMLElement).scrollTop = 1e6;
     });
     await g.click({ position: { x: 4, y: 4 } });
     await expect(popup).toBeVisible();
     await expect(popup).toHaveClass(/blocks-comment-above/);
     // (it is all in the editor)
     expect(await edge(".blocks-comment", "bottom")).toBeLessThanOrEqual(
-      await edge(".CodeMirror", "bottom")
+      await edge(".cm-editor", "bottom")
     );
     expect(await edge(".blocks-comment", "top")).toBeGreaterThanOrEqual(
-      await edge(".CodeMirror", "top")
+      await edge(".cm-editor", "top")
     );
   });
 
@@ -346,12 +341,9 @@ test("the comment box of a collapsed block is shown and has focus", async ({
 
 // FIXME-BEGIN (twentieth round: what is left: the old comment popup's placement and box placement, and a comment block that collapses (here a comment has no slots, so ArrowLeft does nothing and it has no aria-expanded))
 const FIXME = new Set<string>([
-  "a comment that goes with no block › a collapsed comment block hides its words and keeps its emoji",
   "a drop with a comment box that cannot be saved still open leaves focus on a block",
-  "a comment that goes with no block › a comment popup that would go off the bottom of the editor grows upwards",
   "a comment that goes with no block › the box a comment is typed in grows upwards when its text would take it below the editor",
   "a comment that goes with no block › pasting into the box a comment is typed in leaves the caret after the text",
-  "a comment that goes with no block › a comment popup that has room below hangs from the top of its block",
 ]);
 test.beforeEach(({}, ti) => {
   test.fixme(

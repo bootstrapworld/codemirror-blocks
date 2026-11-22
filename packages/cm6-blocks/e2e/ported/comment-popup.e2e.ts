@@ -73,7 +73,7 @@ test("a popup does not take the pointer from what it is over, and a comment bloc
   await openInBlockMode(page, "; note\n(f x)\n\n#| alone |#\n\n(g y)");
   const kinds = await page.evaluate(() => {
     const events = (selector: string) => {
-      const el = document.querySelector(`.CodeMirror-code ${selector}`);
+      const el = document.querySelector(`.cm-content ${selector}`);
       return el ? getComputedStyle(el).pointerEvents : "(none on the page)";
     };
     return {
@@ -85,16 +85,3 @@ test("a popup does not take the pointer from what it is over, and a comment bloc
   expect(kinds.block).not.toBe("none");
   expect(kinds.block).not.toBe("(none on the page)");
 });
-
-// FIXME-BEGIN (thirteenth round: D: a comment is its own block here: the popup's page rules differ (notes, sixth round 4))
-const FIXME = new Set<string>([
-  "a popup does not take the pointer from what it is over, and a comment block of its own does take it",
-]);
-test.beforeEach(({}, ti) => {
-  test.fixme(
-    FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "D: a comment is its own block here: the popup's page rules differ (notes, sixth round 4)"
-  );
-});
-// FIXME-END
-// first error (sweep): a popup does not take the pointer from what it is over, and a comment block of its own does take it => Error: expect(received).toBe(expected) // Object.is equality

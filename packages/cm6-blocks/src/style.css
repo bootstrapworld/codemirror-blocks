@@ -1061,9 +1061,14 @@
 .blocks-node.blocks-comment.blocks-collapsed > * {
   display: none;
 }
-.blocks-node.blocks-comment.blocks-collapsed::after {
+.blocks-node.blocks-comment.blocks-collapsed::before {
+  display: inline;
   content: "\1F4AC";
+  position: static;
   color: inherit;
+}
+.blocks-node.blocks-comment.blocks-collapsed::after {
+  content: none;
 }
 .blocks-lang-scheme .blocks-node.blocks-comment:focus {
   outline: 2px solid orange;
