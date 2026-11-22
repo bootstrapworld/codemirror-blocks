@@ -4,7 +4,7 @@
 import { ASTNode } from "../compat/test-utils";
 import { API } from "../compat/test-utils";
 import wescheme from "../compat/wescheme";
-import type { FunctionAppNode, LiteralNode } from "../src/nodes";
+import type { FunctionAppNode } from "../src/nodes";
 import { setEditableText } from "../compat/editing";
 import { typeChar } from "../compat/gestures";
 
@@ -83,10 +83,7 @@ describe("focusing,", () => {
     expect(cmb.getFocusedNode()!.id).toBe(literal1.id);
   });
 
-  // SKIPPED (M): the test inserts through the CM5 passthrough `replaceRange` and reads `getFocusedNode().value`: a text change from outside does not focus the new block here
-
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("inserting a node should put focus on the new node", async () => {
+  it("inserting a node should put focus on the new node", async () => {
     mouseDown(literal1);
     keyDown("]", { ctrlKey: true });
     insertText("99"); // in place of 2x keydown
@@ -94,21 +91,19 @@ describe("focusing,", () => {
     // extra WS is removed when we switch back to text, but in blockmode
     // there's an extra space inserted after 99
     expect(cmb.getValue()).toBe("(+ 1 99 2 3)");
-    // TODO(Emmanuel): does getFocusedNode().value always return strings?
-    expect((cmb.getFocusedNode() as LiteralNode).fields.value).toBe("99");
+    // edited: the node's text, not the old `fields.value`
+    expect(cmb.getFocusedNode()?.toString()).toBe("99");
   });
 
-  // SKIPPED (M): as above
-
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
+  // SKIPPED (D): after inserting "99 88 77" focus is on the FIRST new block here ("99"), the old editor put it on the last ("77"); which one is the rule is a decision for the owner
   it.skip("inserting multiple nodes should put focus on the last of the new nodes", async () => {
     mouseDown(literal1);
     keyDown("]", { ctrlKey: true });
     insertText("99 88 77");
     keyDown("Enter");
     expect(cmb.getValue()).toBe("(+ 1 99 88 77 2 3)");
-    // TODO(Emmanuel): does getFocusedNode().value always return strings?
-    expect((cmb.getFocusedNode() as LiteralNode).fields.value).toBe("77");
+    // edited: the node's text, not the old `fields.value`
+    expect(cmb.getFocusedNode()?.toString()).toBe("77");
   });
 });
 

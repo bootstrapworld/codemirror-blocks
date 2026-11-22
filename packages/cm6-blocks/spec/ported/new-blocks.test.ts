@@ -215,9 +215,7 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cmb.getValue()).toBe("(+ 1 9 2) (+)");
       });
 
-      // SKIPPED (U): in `(+)` Ctrl-] on the function name opens no insertion here (focus stays on the name)
-      // first error (sweep): Error: expect(received).toBeInstanceOf(expected)
-      it.skip("Ctrl-] should open an insertion in the first arg position", async function () {
+      it("Ctrl-] should open an insertion in the first arg position", async function () {
         mouseDown(blank.fields.func.element!);
         keyDown("]", { ctrlKey: true }, blank.fields.func.element!);
         typeAndSave("9");

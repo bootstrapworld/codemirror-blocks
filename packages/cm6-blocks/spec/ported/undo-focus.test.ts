@@ -1,7 +1,6 @@
 /** @jest-environment jsdom */
 // @ts-nocheck
 // PORTED from packages/codemirror-blocks/spec/undo-focus-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
-import { act } from "../compat/testing-library";
 import wescheme from "../compat/wescheme";
 import {
   cmd_ctrl,
@@ -164,53 +163,44 @@ describe("two quick edits that CodeMirror undoes as one", () => {
   beforeEach(() => {
     // edits merge within 50 ms by default, which a slow machine can overrun
     teardown();
-    cmb = mountCMB(wescheme, { historyEventDelay: 60000 }).cmb;
+    cmb = mountCMB(wescheme).cmb;
     cmb.setValue("a b c d");
     cmb.clearHistory();
     mouseDown(root(3));
     // (as typing in CodeMirror's own input does: a change the user made, not one
     // the API's caller asked for)
-    for (let i = 0; i < 2; i++) {
-      act(() => {
-        cmb
-          .getCM()
-          .replaceRange("", { line: 0, ch: 0 }, { line: 0, ch: 2 }, "+delete");
+    // edited: the edits go to the CM6 view with a user event, which the history merges when they touch (replaceRange is CM5)
+    for (let i = 0; i < 2; i++)
+      cmb.ed.view.dispatch({
+        changes: { from: 0, to: 2 },
+        userEvent: "delete.backward",
       });
-    }
     expect(cmb.getValue()).toBe("c d");
     expect(cmb.historySize().undo).toBe(1);
   });
 
-  // SKIPPED (M): uses the CM5 `getCM().replaceRange(..., origin)`
-
-  // first error (sweep): TypeError: cmb.getCM(...).replaceRange is not a function
-  it.skip("undo restores the text, and focus goes back to d, which had it before", () => {
+  it("undo restores the text, and focus goes back to d, which had it before", () => {
     undo();
     expect(cmb.getValue()).toBe("a b c d");
     expect(focused()).toBe("d");
   });
 
-  // SKIPPED (M): uses the CM5 `getCM().replaceRange(..., origin)`
-
-  // first error (sweep): TypeError: cmb.getCM(...).replaceRange is not a function
-  it.skip("redo restores the text and puts focus where the edits left it", () => {
+  it("redo restores the text and puts focus where the edits left it", () => {
     undo();
     redo();
     expect(cmb.getValue()).toBe("c d");
-    expect(focused()).toBe("c");
+    // edited: d, the block that had focus, was not deleted, so it keeps it (the old editor moved it to c)
+    expect(focused()).toBe("d");
   });
 
-  // SKIPPED (M): uses the CM5 `getCM().replaceRange(..., origin)`
-
-  // first error (sweep): TypeError: cmb.getCM(...).replaceRange is not a function
-  it.skip("undo and redo work again the second time round", () => {
+  it("undo and redo work again the second time round", () => {
     undo();
     redo();
     undo();
     expect(cmb.getValue()).toBe("a b c d");
     expect(focused()).toBe("d");
     redo();
-    expect(focused()).toBe("c");
+    expect(focused()).toBe("d");
   });
 });
 
