@@ -154,7 +154,7 @@ export class Renderer {
   }
 
   private paintCollapsed(el: HTMLElement, node: BNode): void {
-    if (node.slots.length === 0) return;
+    if (node.slots.length === 0 && node.kind !== "comment") return;
     const on = this.folded.has(node);
     this.setAttr(el, "aria-expanded", on ? "false" : "true");
     flagClass(el, "blocks-collapsed", on);
@@ -381,6 +381,11 @@ export class Renderer {
       );
       text.textContent = node.value ?? "";
       el.appendChild(text);
+      // (a comment block collapses like the old editor's: only its emoji stays)
+      if (node.kind === "comment") {
+        el.setAttribute("aria-expanded", "true");
+        if (this.folded.has(node)) this.paintCollapsed(el, node);
+      }
       return el;
     }
     el.setAttribute("aria-expanded", "true");

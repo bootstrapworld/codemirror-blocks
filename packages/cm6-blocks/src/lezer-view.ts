@@ -474,6 +474,9 @@ export function createLezerBlockEditor(
     );
     return ns[ns.length - 1];
   };
+  /** a block that can be collapsed: it has something inside, or it is a comment (collapsed it is only its emoji) */
+  const foldable = (n: BNode): boolean =>
+    n.kind !== "program" && (n.slots.length > 0 || n.kind === "comment");
   /** a block with the comments that go with it (those in a list: made-up ones are in its text already): the text range and the nodes */
   const groupOf = (n: BNode): { from: number; to: number; nodes: BNode[] } => {
     const cs = commentsOf(n).filter((c) => c.slot);
@@ -1960,7 +1963,7 @@ export function createLezerBlockEditor(
       });
     },
     collapse(node, on) {
-      if (node.slots.length === 0 || node.kind === "program") return;
+      if (!foldable(node)) return;
       renderer.setCollapsed(node, on);
       // focus inside what is now hidden goes to the block that holds it
       const f = ed.focusedNode();
@@ -1973,7 +1976,7 @@ export function createLezerBlockEditor(
     },
     collapseRoot(root, on) {
       walk(root, (n) => {
-        if (n.slots.length > 0) renderer.setCollapsed(n, on);
+        if (foldable(n)) renderer.setCollapsed(n, on);
       });
       const f = ed.focusedNode();
       if (on && f) ed.focusNode(root);

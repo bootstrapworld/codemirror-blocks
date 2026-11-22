@@ -1054,6 +1054,17 @@
 .blocks-lang-scheme .blocks-node.blocks-comment .blocks-literal-other {
   color: inherit;
 }
+/* collapsed, a comment block hides its words and keeps its emoji (the old editor) */
+.blocks-node.blocks-comment.blocks-collapsed {
+  max-width: none;
+}
+.blocks-node.blocks-comment.blocks-collapsed > * {
+  display: none;
+}
+.blocks-node.blocks-comment.blocks-collapsed::after {
+  content: "\1F4AC";
+  color: inherit;
+}
 .blocks-lang-scheme .blocks-node.blocks-comment:focus {
   outline: 2px solid orange;
   border: 1px solid #333;

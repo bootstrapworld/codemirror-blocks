@@ -722,7 +722,11 @@ export function attachInteraction(ed: LezerBlockEditor): {
     },
     collapseOrParent: (n, _e, handled) => {
       handled();
-      if (n.slots.length > 0 && !renderer.isCollapsed(n)) ed.collapse(n, true);
+      if (
+        (n.slots.length > 0 || n.kind === "comment") &&
+        !renderer.isCollapsed(n)
+      )
+        ed.collapse(n, true);
       else if (n.parent && n.parent.kind !== "program") focusSoon(n.parent);
       else beep("no-parent");
     },
@@ -1566,7 +1570,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     const t = e.target as Element;
     if (t.closest?.(".blocks-edit")) return;
     const node = renderer.nodeOf(t);
-    if (!node || node.slots.length === 0) return;
+    if (!node || (node.slots.length === 0 && node.kind !== "comment")) return;
     e.preventDefault();
     ed.act("dblclick", node, {}, () =>
       ed.collapse(node, !renderer.isCollapsed(node))

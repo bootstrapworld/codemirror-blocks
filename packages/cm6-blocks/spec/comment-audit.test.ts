@@ -108,14 +108,15 @@ describe.each(LANGS)("comment blocks, orphan: %s", (l) => {
     press("End");
     expect(ed.focusedNode()!.from).toBeGreaterThan(c.to);
   });
-  test("(a)(m) old: Left collapses the comment (aria-expanded=false), Right on a collapsed one expands; here nothing (no children, no aria-expanded): DECIDED", () => {
+  test("(a)(m) old: Left collapses the comment (aria-expanded=false), Right on a collapsed one expands; here the same (reversed in the twenty-second round)", () => {
     const { ed, c, el, focus, press } = rig(l);
     focus(c);
-    expect(el(c).hasAttribute("aria-expanded")).toBe(false);
+    expect(el(c).getAttribute("aria-expanded")).toBe("true");
     press("ArrowLeft");
+    expect(el(c).getAttribute("aria-expanded")).toBe("false");
     press("ArrowRight");
     expect(ed.focusedNode()).toBe(c);
-    expect(el(c).hasAttribute("aria-expanded")).toBe(false);
+    expect(el(c).getAttribute("aria-expanded")).toBe("true");
   });
   test("(a) old: backslash beeps at the top level (no ancestors); here it reads the top-level summary", () => {
     const { ed, c, focus, press } = rig(l);
@@ -301,8 +302,11 @@ describe.each(LANGS)("comment blocks, orphan: %s", (l) => {
     key(ed.renderer.element(c), "ArrowDown");
     expect(T(ed, ed.focusedNode())).toBe(CFG[l].inner);
     ed.focusNode(c);
+    key(ed.renderer.element(c), "ArrowLeft"); // (collapses it first, as any block)
+    expect(ed.renderer.isCollapsed(c)).toBe(true);
     key(ed.renderer.element(c), "ArrowLeft");
     expect(ed.focusedNode()).toBe(c.parent);
+    ed.collapse(c, false);
     ed.focusNode(c);
     key(ed.renderer.element(c), "\\");
     expect(ed.said[ed.said.length - 1]).toMatch(/^.*apart, a comment, inside /);
