@@ -132,11 +132,12 @@ describe("pasting at the top level", () => {
     cmb.setValue("42\n11");
   });
 
+  // edited: pasted text that parses is committed at once, not held (the owner's rule); one that does not is held, red
   it("starts a quarantine holding the pasted text", () => {
     cmb.setCursor({ line: 0, ch: 2 });
     pasteIntoEditor("(f x)");
-    expect(quarantine()?.value).toBe("(f x)");
-    expect(cmb.getValue()).toBe("42\n11");
+    expect(quarantine()).toBeNull();
+    expect(cmb.getValue()).toBe("42\n(f x)\n11");
   });
 
   it("commits the pasted text on Enter", () => {

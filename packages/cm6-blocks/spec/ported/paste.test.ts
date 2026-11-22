@@ -188,8 +188,7 @@ describe("paste beside a child that isn't selected", () => {
 
 describe("paste that can't be parsed", () => {
   // SKIPPED (D): text that does not parse is accepted and written (interact.ts header; the old editor refuses it and keeps the box open with an error flag)
-  // first error (sweep): Expected "(f x y)", received "(f x y ((()": paste does not ask the refusal that an edit box asks (needs: refusal in paste)
-  it.skip("leaves the document and the AST alone", () => {
+  it("leaves the document and the AST alone", () => {
     cmb.setValue("(f x y)");
     clipboard.text = "(((";
     const y = argsOf(root(0))[1];

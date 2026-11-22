@@ -84,11 +84,14 @@ describe.each(["scheme", "javascript", "python"])(
       expect(docText(ed)).toBe(before + "\n");
       expect(boxOf(ed)).toBeNull();
     });
-    test("a paste is held in the box too, and several forms commit together", async () => {
+    // edited: a paste that parses is committed at once (spec/paste-box.test.ts); only one that does not is held in the box
+    test("a paste that does not parse is held in the box; Enter commits it once it parses", async () => {
       const ed = make(l, START[l]);
-      await typeAt(ed, 0, NEW[l] + "\n" + NEW[l], "input.paste");
+      await typeAt(ed, 0, BAD[l] + "\n" + NEW[l], "input.paste");
       const b = boxOf(ed)!;
-      expect(b.value).toBe(NEW[l] + "\n" + NEW[l]);
+      expect(b.value).toBe(BAD[l] + "\n" + NEW[l]);
+      expect(b.classList.contains("blocks-error")).toBe(true);
+      b.value = NEW[l] + "\n" + NEW[l];
       key(b, "Enter");
       expect(ed.roots().length).toBe(4);
     });

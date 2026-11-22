@@ -174,6 +174,16 @@ export interface LezerBlockEditor {
   refuseInsert(slot: Slot, index: number, snippet: string): string | null;
   /** the message that refuses `replaceText` with these arguments, or null */
   refuseReplace(node: BNode, snippet: string): string | null;
+  /**
+   * the message that refuses this paste (`over`: replacing the block; else after / before it), or null if it parses; throws when the paste
+   * cannot go anywhere ("no place for it beside this block"). Writes nothing.
+   */
+  refusePaste(
+    anchor: BNode,
+    texts: string[],
+    before: boolean,
+    over: boolean
+  ): string | null;
   /** remove a node: out of a list with one separator, or (a "one" slot) put the table's blank there */
   removeNode(node: BNode): void;
   /** remove several nodes (none inside another) in ONE text change, one undo step */
@@ -1282,7 +1292,14 @@ export function createLezerBlockEditor(
 
   /* ---- edits: all plain text changes */
 
+  /** set while `refusePaste` asks what a paste would write: the change is caught, not dispatched */
+  let dry: ((c: TextChange) => void) | null = null;
+  const DRY = new Error("dry run");
   function dispatch(c: TextChange): void {
+    if (dry) {
+      dry(c);
+      throw DRY;
+    }
     stats.edits++;
     view.dispatch({
       changes: c,
@@ -1602,6 +1619,19 @@ export function createLezerBlockEditor(
       } catch {
         return null; // (the edit itself reports what is wrong)
       }
+    },
+    refusePaste(anchor, texts, before, over) {
+      let got = null as TextChange | null;
+      dry = (c) => (got = c);
+      try {
+        if (over) ed.replaceWithTexts(anchor, texts);
+        else ed.pasteTexts(anchor, texts, before);
+      } catch (e) {
+        if (e !== DRY) throw e;
+      } finally {
+        dry = null;
+      }
+      return got ? refusal(language, currentText(), got) : null;
     },
     refuseReplace(node, snippet) {
       try {

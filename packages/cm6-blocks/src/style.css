@@ -158,6 +158,19 @@
   background: #fdd;
 }
 
+/* the refusal's message, visible under the box (also its title) */
+.blocks-error-message {
+  display: block;
+  color: #c00;
+  font: 11px monospace;
+  margin: 1px 2px;
+  white-space: normal;
+  max-width: 40em;
+}
+.blocks-lang-scheme .blocks-error-message {
+  margin: 1px 5px;
+}
+
 /* ---- glue words, comments, classes, members ---- */
 .blocks-glue {
   color: #667;

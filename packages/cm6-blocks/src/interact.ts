@@ -177,7 +177,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
     commit: (text: string) => void,
     select = true,
     multiline = false,
-    check?: (text: string) => string | null
+    check?: (text: string) => string | null,
+    initialError?: string
   ): void {
     open?.cancel();
     ed.clearSelection(); // (the old editor clears the selection when a box opens)
@@ -196,7 +197,11 @@ export function attachInteraction(ed: LezerBlockEditor): {
     fit();
     // a text that does not parse is refused (as in the old editor): nothing is written, the box stays open and red, and its title is
     // the message (also `aria-invalid`, and said aloud). Editing the text again clears it
+    // (and shown as a small red line under the box: `blocks-error-message`, aria-hidden since the message is spoken)
+    let line: HTMLElement | null = null;
     const clearRefusal = () => {
+      line?.remove();
+      line = null;
       input.classList.remove("blocks-error");
       input.removeAttribute("title");
       input.removeAttribute("aria-invalid");
@@ -205,6 +210,13 @@ export function attachInteraction(ed: LezerBlockEditor): {
       input.classList.add("blocks-error");
       input.title = message;
       input.setAttribute("aria-invalid", "true");
+      if (!line) {
+        line = dom.ownerDocument.createElement("div");
+        line.className = "blocks-error-message";
+        line.setAttribute("aria-hidden", "true");
+        input.insertAdjacentElement("afterend", line);
+      }
+      line.textContent = message;
       ed.say(message);
     };
     input.addEventListener("input", () => {
@@ -216,6 +228,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
       if (finished) return;
       finished = true;
       open = null;
+      line?.remove();
       input.remove();
       done();
     };
@@ -278,6 +291,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     input.focus();
     if (select) input.select();
     else input.setSelectionRange(input.value.length, input.value.length);
+    if (initialError) refuse(initialError);
   }
 
   function editLeaf(node: BNode, typed?: string): void {
@@ -315,7 +329,10 @@ export function attachInteraction(ed: LezerBlockEditor): {
   }
 
   /** Cmd-Enter / Ctrl-Enter: the whole text of the block in a box (a textarea sized to it); Enter commits, Shift-Enter is a newline */
-  function editAll(node: BNode): void {
+  function editAll(
+    node: BNode,
+    pasted?: { text: string; message: string }
+  ): void {
     ed.focusNode(node);
     const el = renderer.element(node);
     if (!el.isConnected) return;
@@ -343,7 +360,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     };
     box(
       { action: "editAll", target: node },
-      initial,
+      pasted?.text ?? initial,
       (field) => {
         el.classList.add("blocks-editing");
         field.setAttribute(
@@ -371,7 +388,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
       (t) => {
         const r = allText(t);
         return r ? ed.refuseReplace(node, r.snippet) : null;
-      }
+      },
+      pasted?.message
     );
   }
 
@@ -415,12 +433,13 @@ export function attachInteraction(ed: LezerBlockEditor): {
     slot: Slot,
     index: number,
     anchor: BNode,
-    put: (input: Field) => void
+    put: (input: Field) => void,
+    pasted?: { text: string; message: string }
   ): void {
     ed.say("inserting.  Use Enter to save, and Alt-Q to cancel");
     box(
       { action: "insert", target: anchor },
-      "",
+      pasted?.text ?? "",
       put,
       () => ed.focusNode(anchor),
       (t) => {
@@ -436,13 +455,18 @@ export function attachInteraction(ed: LezerBlockEditor): {
           ed.lastError = (e as Error).message;
         }
       },
-      true,
-      false,
-      (t) => (t.trim() === "" ? null : ed.refuseInsert(slot, index, t))
+      !pasted,
+      pasted?.text.includes("\n") ?? false,
+      (t) => (t.trim() === "" ? null : ed.refuseInsert(slot, index, t)),
+      pasted?.message
     );
   }
 
-  function siblingBox(node: BNode, after: boolean): void {
+  function siblingBox(
+    node: BNode,
+    after: boolean,
+    pasted?: { text: string; message: string }
+  ): void {
     const slot = node.slot;
     if (!slot || slot.kind !== "list" || slot.pieces) return;
     const i = slot.nodes.indexOf(node);
@@ -451,22 +475,33 @@ export function attachInteraction(ed: LezerBlockEditor): {
     ed.view.dispatch({
       selection: { anchor: after ? node.to : node.from },
     });
-    insertBox(slot, after ? i + 1 : i, node, (input) => {
-      if (node.parent && node.parent.kind !== "program" && el.parentElement) {
-        el.parentElement.insertBefore(input, after ? el.nextSibling : el);
-      } else {
-        // a root: the box goes inside its own element (the line belongs to CodeMirror)
-        if (after) el.appendChild(input);
-        else el.insertBefore(input, el.firstChild);
-      }
-    });
+    insertBox(
+      slot,
+      after ? i + 1 : i,
+      node,
+      (input) => {
+        if (node.parent && node.parent.kind !== "program" && el.parentElement) {
+          el.parentElement.insertBefore(input, after ? el.nextSibling : el);
+        } else {
+          // a root: the box goes inside its own element (the line belongs to CodeMirror)
+          if (after) el.appendChild(input);
+          else el.insertBefore(input, el.firstChild);
+        }
+      },
+      pasted
+    );
   }
 
   /**
    * Top level typing (the old editor's "quarantine"): text typed or pasted where no block is goes into a box at that place, and is
    * written, as one change, when it parses (Enter, or blur); text that does not parse is refused, as in any box. Escape discards it.
    */
-  function pendingBox(from: number, to: number, text: string): void {
+  function pendingBox(
+    from: number,
+    to: number,
+    text: string,
+    message?: string
+  ): void {
     const slot = ed.doc.program.slots[0];
     let at = from;
     const indexAt = (pos: number) =>
@@ -501,12 +536,33 @@ export function attachInteraction(ed: LezerBlockEditor): {
       (t) =>
         t.trim() === ""
           ? null
-          : ed.refuseInsert(slot, indexAt(ed.pendingAt() ?? at), t)
+          : ed.refuseInsert(slot, indexAt(ed.pendingAt() ?? at), t),
+      message
     );
     void to;
   }
-  ed.topLevelInput = (from, to, text) => {
-    if (ed.isBlockMode()) pendingBox(from, to, text);
+  ed.topLevelInput = (from, to, text, how) => {
+    if (!ed.isBlockMode()) return;
+    if (how === "paste" && text.trim() !== "") {
+      // a paste that parses is committed at once (one undo step) and drawn; one that does not is shown in the box, red, with the message
+      const slot = ed.doc.program.slots[0];
+      const index = slot.nodes.filter((r) => r.to <= from).length;
+      const message = ed.refuseInsert(slot, index, text);
+      if (!message) {
+        try {
+          const had = slot.nodes.length;
+          ed.insertText(slot, index, text);
+          const made = slot.nodes.length > had ? slot.nodes[index] : null;
+          if (made && made.kind !== "error") ed.focusNode(made);
+          ed.say(`inserted ${text}`);
+          return;
+        } catch (e) {
+          ed.lastError = (e as Error).message;
+        }
+      }
+      return pendingBox(from, to, text, message ?? undefined);
+    }
+    pendingBox(from, to, text);
   };
 
   type Handler = (node: BNode, e: KeyboardEvent, handled: () => void) => void;
@@ -862,6 +918,22 @@ export function attachInteraction(ed: LezerBlockEditor): {
     pasteBefore = false;
     d.text = text;
     d.before = before;
+    // text that does not parse opens a box at the place the paste would have gone (the box is the feedback: no beep)
+    const items = clipItems.length > 1 && text === clip ? clipItems : [text];
+    const over = renderer.isSelected(node);
+    try {
+      const message = ed.refusePaste(node, items, before, over);
+      if (message) {
+        const pasted = { text: items.join("\n"), message };
+        ed.clearSelection();
+        if (over || ed.isBlank(node)) editAll(node, pasted);
+        else siblingBox(node, !before, pasted);
+        if (open) return;
+        throw new Error("no box");
+      }
+    } catch {
+      // (nowhere for it to go: the paste below says so)
+    }
     try {
       // the focused block is selected (or inside a selected one): the paste REPLACES that block (the old editor's Case 1, `ReplaceNodeTarget`:
       // only the focused block, not the other selected ones; the whole selection is cleared afterwards; one undo step; nothing is announced)
