@@ -1453,7 +1453,11 @@ export function createLezerBlockEditor(
       if (n.slot && n.slot.kind === "list" && !n.slot.pieces) {
         slot = n.slot;
         ref = n;
-        index = n.slot.nodes.indexOf(n) + (before ? 0 : 1);
+        // (before a block that has a comment above it is above the comment, which goes with the block)
+        const lead = before && n === anchor ? commentOf(n) : null;
+        index =
+          n.slot.nodes.indexOf(lead && lead.to <= n.from ? lead : n) +
+          (before ? 0 : 1);
         break;
       }
       if (n === anchor && n.slot && n.slot.kind === "one" && n.parent) {
@@ -1487,7 +1491,12 @@ export function createLezerBlockEditor(
     snippet: string
   ): TextChange {
     const t = currentText();
-    const pos = before ? anchor.from : anchor.to;
+    const above = before ? commentOf(anchor) : null;
+    const pos = before
+      ? above && above.to <= anchor.from
+        ? above.from
+        : anchor.from
+      : anchor.to;
     const ls = t.lastIndexOf("\n", pos - 1) + 1;
     let le = t.indexOf("\n", pos);
     if (le < 0) le = t.length;

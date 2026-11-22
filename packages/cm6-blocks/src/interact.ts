@@ -465,7 +465,9 @@ export function attachInteraction(ed: LezerBlockEditor): {
   ): void {
     const slot = node.slot;
     if (!slot || slot.kind !== "list" || slot.pieces) return;
-    const i = slot.nodes.indexOf(node);
+    // (a new sibling before a block that has a comment above it goes above the comment)
+    const lead = after ? null : ed.commentOf(node);
+    const i = slot.nodes.indexOf(lead && lead.to <= node.from ? lead : node);
     const el = renderer.element(node);
     // as in the old editor, Insert Left / Right also put the text cursor at the block's start / end
     ed.view.dispatch({

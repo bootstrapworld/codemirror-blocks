@@ -401,11 +401,23 @@ describe.each(LANGS)("comment on a node (attached): %s", (l) => {
     expect(ed.focusedNode()!.kind).not.toBe("comment");
     ok(ed);
   });
-  test("(i) old: inserting a node before an owner puts it above the owner's comment; here it goes between the comment and the owner, so it takes the comment", () => {
+  test("(i)(k) old: a node inserted before an owner (paste before, Ctrl-[) goes above the owner's comment; here the same (fixed, twenty-first round)", () => {
     const { ed, f } = own(l);
     ed.pasteText(f, CFG[l].call2, true);
-    expect(D(ed).startsWith(`${MARK[l]} mine\n${CFG[l].call2}\n`)).toBe(true);
+    expect(
+      D(ed).startsWith(`${CFG[l].call2}\n${MARK[l]} mine\n${CFG[l].call}`)
+    ).toBe(true);
     ok(ed);
+    const o = own(l);
+    o.ed.focusNode(o.f);
+    o.press("[", { ctrlKey: true });
+    const b = boxOf(o.ed)!;
+    b.value = CFG[l].call2;
+    key(b, "Enter");
+    expect(
+      D(o.ed).startsWith(`${CFG[l].call2}\n${MARK[l]} mine\n${CFG[l].call}`)
+    ).toBe(true);
+    ok(o.ed);
   });
 });
 
