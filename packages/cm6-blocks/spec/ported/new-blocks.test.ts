@@ -1,6 +1,7 @@
 /** @jest-environment jsdom */
 // @ts-nocheck
 // PORTED from packages/codemirror-blocks/spec/new-blocks-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
+// REPLACEMENT: class N/I: block mode on/off is tested by spec/cm6-api.test.ts ('block mode on and off'); the top-level typing cases by spec/toplevel.test.ts
 import CodeMirror from "../compat/codemirror";
 import { act } from "../compat/testing-library";
 import { AST, ASTNode } from "../compat/test-utils";

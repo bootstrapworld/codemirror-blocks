@@ -1,5 +1,6 @@
 /** @jest-environment jsdom */
 // PORTED from packages/codemirror-blocks/spec/api-edit-focus-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
+// REPLACEMENT: class N: the behaviours (a change from code keeps focus on the focused block; a new value that removes it) are tested by spec/cm6-api.test.ts, 'a change from code, while a block has keyboard focus'
 import { act } from "../compat/testing-library";
 import wescheme from "../compat/wescheme";
 import { API } from "../compat/test-utils";

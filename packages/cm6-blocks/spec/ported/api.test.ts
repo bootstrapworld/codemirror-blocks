@@ -1,6 +1,7 @@
 /** @jest-environment jsdom */
 // @ts-nocheck
 // PORTED from packages/codemirror-blocks/spec/api-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
+// REPLACEMENT: class N: the behaviours (selection and focus read, text change from code, undo/redo from code) are tested by spec/cm6-api.test.ts; cursor, bookmarks and the passthroughs have no counterpart
 import wescheme from "../compat/wescheme";
 
 /*eslint no-unused-vars: "off"*/

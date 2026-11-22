@@ -1,6 +1,7 @@
 /** @jest-environment jsdom */
 // @ts-nocheck
 // PORTED from packages/codemirror-blocks/spec/api-selection-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
+// REPLACEMENT: class N: the behaviours (selected blocks read in order, one selection, focus read, replacing a selected block, refusing text that is not whole blocks) are tested by spec/cm6-api.test.ts; extendSelection, markText and runMode have no counterpart
 import wescheme from "../compat/wescheme";
 import { mountCMB, mouseDown, teardown } from "../compat/test-utils";
 import { API } from "../compat/test-utils";

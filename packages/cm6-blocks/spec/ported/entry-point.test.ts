@@ -1,6 +1,7 @@
 /** @jest-environment jsdom */
 // @ts-nocheck
 // PORTED from packages/codemirror-blocks/spec/entry-point-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
+// REPLACEMENT: class N: the entry point and its API object are not built; block mode on/off is tested by spec/cm6-api.test.ts and spec/counterparts.test.ts
 /**
  * `CodeMirrorBlocks(container, options, language)`, the entry point of the
  * editor: the language is a language, or the id of one that has been added.

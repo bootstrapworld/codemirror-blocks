@@ -19,6 +19,7 @@ import {
 describe("focusing,", () => {
   let cmb!: API;
 
+  let expression!: FunctionAppNode;
   let _func!: ASTNode;
   let literal1!: ASTNode;
   let literal2!: ASTNode;
