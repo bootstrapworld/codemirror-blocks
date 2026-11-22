@@ -70,6 +70,7 @@ describe("when testing CM apis,", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.getLineHandle (CM5 line handles))
 
+  // first error (sweep): Error: not in the compat layer: cmb.getLineHandle (CM5 line handles)
   it.skip("those that simply pass through should not throw errors", async () => {
     const domNode = document.createElement("span");
     const pos = { line: 0, ch: 0 };
@@ -208,6 +209,7 @@ describe("when testing CM apis,", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality)
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("getCursor should work as-is for Text", async () => {
     cmb.setSelection({ line: 0, ch: 0 }, { line: 0, ch: 7 });
     expect(cmb.getBlockMode()).toBe(false);
@@ -337,6 +339,7 @@ describe("when testing CM apis,", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toThrow())
 
+  // first error (sweep): Error: expect(received).toThrow()
   it.skip("replaceRange", async () => {
     cmb.setBlockMode(true);
     // blockmode API test
@@ -351,6 +354,7 @@ describe("when testing CM apis,", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toThrow())
 
+  // first error (sweep): Error: expect(received).toThrow()
   it.skip("replaceSelection", async () => {
     cmb.setBlockMode(true);
     // blockmode API test
@@ -390,6 +394,7 @@ describe("when testing CM apis,", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.setBookmark (CM5 bookmarks))
 
+  // first error (sweep): Error: not in the compat layer: cmb.setBookmark (CM5 bookmarks)
   it.skip("setBookmark", async () => {
     const domNode = document.createElement("span");
     cmb.setBlockMode(true);
@@ -404,6 +409,7 @@ describe("when testing CM apis,", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: TypeError: Cannot read properties of undefined (reading 'nid'))
 
+  // first error (sweep): TypeError: Cannot read properties of undefined (reading 'nid')
   it.skip("setCursor should work as-is for text, or activate the containing block", async () => {
     // first test setCursor in text mode
     cmb.setCursor({ line: 1, ch: 1 });
@@ -486,6 +492,7 @@ describe("when testing CM apis,", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality)
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("somethingSelected should work for selected blocks and text ranges", async () => {
     cmb.setBlockMode(true);
     const firstRoot = currentFirstRoot();

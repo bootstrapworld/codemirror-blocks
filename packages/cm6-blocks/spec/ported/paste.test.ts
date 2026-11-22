@@ -56,6 +56,7 @@ describe("copy", () => {
 
   // SKIPPED (D): a comment is its own block here and goes with its block above it (notes, seventh round: cut and copy take the attached comment)
 
+  // first error (sweep): Error: expect(received).toContain(expected) // indexOf
   it.skip("separates a commented node from its neighbours with newlines", () => {
     cmb.setValue("a\n;note\nb\nc");
     select(root(0));
@@ -188,6 +189,7 @@ describe("paste beside a child that isn't selected", () => {
 
 describe("paste that can't be parsed", () => {
   // SKIPPED (D): text that does not parse is accepted and written (interact.ts header; the old editor refuses it and keeps the box open with an error flag)
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("leaves the document and the AST alone", () => {
     cmb.setValue("(f x y)");
     clipboard.text = "(((";
@@ -256,6 +258,7 @@ describe("copying from the toolbar", () => {
 
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
 
+  // first error (sweep): TypeError: Cannot read properties of undefined (reading 'focus')
   it.skip("copies a primitive, ready to paste into the document", () => {
     cmb.setValue("(f x)");
     const sqrt = primitive("sqrt");
@@ -272,6 +275,7 @@ describe("copying from the toolbar", () => {
 
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
 
+  // first error (sweep): TypeError: Cannot read properties of undefined (reading 'focus')
   it.skip("doesn't change the document", () => {
     cmb.setValue("(f x)");
     const sqrt = primitive("sqrt");

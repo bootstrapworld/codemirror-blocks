@@ -31,6 +31,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
     // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
 
+    // first error (sweep): TypeError: cmb.getAllMarks is not a function
     it.skip("should allow you to mark nodes with the markText method", function () {
       cmb.markText(literal1.from, literal1.to, {
         css: "color: red",
@@ -40,6 +41,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
     // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
 
+    // first error (sweep): TypeError: cmb.getAllMarks is not a function
     it.skip("it should allow you to set a className value", function () {
       cmb.markText(expression.from, expression.to, {
         className: "error",
@@ -49,6 +51,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
     // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
 
+    // first error (sweep): TypeError: cmb.getAllMarks is not a function
     it.skip("it should allow you to set a className on a child node", function () {
       const child = expression.fields.args[2];
       cmb.markText(child.from, child.to, { className: "error" });
@@ -58,6 +61,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
     // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
 
+    // first error (sweep): TypeError: cmb.getAllMarks is not a function
     it.skip("it should allow you to set a title value", function () {
       cmb.markText(expression.from, expression.to, {
         title: "woot",
@@ -77,6 +81,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
       // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
 
+      // first error (sweep): TypeError: cmb.getAllMarks is not a function
       it.skip("should return marks with findMarks", function () {
         let marks = cmb.findMarks(literal1.from, literal1.to);
         expect(marks.length).toBe(1);
@@ -86,6 +91,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
       // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
 
+      // first error (sweep): TypeError: cmb.getAllMarks is not a function
       it.skip("should return marks with findMarksAt", function () {
         const marks = cmb.findMarksAt(literal1.from);
         expect(marks.length).toBe(1);
@@ -93,6 +99,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
       // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
 
+      // first error (sweep): TypeError: cmb.getAllMarks is not a function
       it.skip("should return all marks with getAllMarks", function () {
         const marks = cmb.getAllMarks();
         expect(marks.length).toBe(2);
@@ -109,6 +116,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
       // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
 
+      // first error (sweep): TypeError: cmb.getAllMarks is not a function
       it.skip("should expose a clear function to remove the mark", function () {
         act(() => mark.clear());
         expect(literal1.element!.style.color).toBeFalsy();
@@ -117,6 +125,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
       // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
 
+      // first error (sweep): TypeError: cmb.getAllMarks is not a function
       it.skip("should expose a find function", function () {
         expect(mark.find()!.from.line).toEqual(literal1.from.line);
         expect(mark.find()!.from.ch).toEqual(literal1.from.ch);
@@ -139,6 +148,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
     // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.markText (text marks on blocks))
 
+    // first error (sweep): Error: not in the compat layer: cmb.markText (text marks on blocks)
     it.skip("a mark on a block shows on it, and is remembered by the block's id", function () {
       const [first] = cmb.getAst().rootNodes;
       cmb.markText(first.from, first.to, { className: "flagged" });
@@ -148,6 +158,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
     // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.markText (text marks on blocks))
 
+    // first error (sweep): Error: not in the compat layer: cmb.markText (text marks on blocks)
     it.skip("a mark does not outlast its block: deleting the block forgets it", function () {
       const [first] = cmb.getAst().rootNodes;
       cmb.markText(first.from, first.to, { className: "flagged" });
@@ -158,6 +169,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
     // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.markText (text marks on blocks))
 
+    // first error (sweep): Error: not in the compat layer: cmb.markText (text marks on blocks)
     it.skip("a mark stays while other blocks are edited", function () {
       const [first] = cmb.getAst().rootNodes;
       cmb.markText(first.from, first.to, { className: "flagged" });
@@ -169,6 +181,7 @@ describe("The CodeMirrorBlocks Class", function () {
     // made on a block is a real mark in text mode (on the text, with no block
     // to show it on), and is on the block again when blocks come back.
     // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.markText (text marks on blocks))
+    // first error (sweep): Error: not in the compat layer: cmb.markText (text marks on blocks)
     it.skip("a mark survives switching to text and back", function () {
       const [first] = cmb.getAst().rootNodes;
       cmb.markText(first.from, first.to, { className: "flagged" });
@@ -186,6 +199,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
     // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.markText (text marks on blocks))
 
+    // first error (sweep): Error: not in the compat layer: cmb.markText (text marks on blocks)
     it.skip("a mark moves with the text edited in text mode", function () {
       const [, second] = cmb.getAst().rootNodes;
       cmb.markText(second.from, second.to, { className: "flagged" });

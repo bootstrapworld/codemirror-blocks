@@ -61,6 +61,7 @@ describe("a change through the API, while a block has keyboard focus", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality)
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("setValue that keeps the block leaves focus on it", async () => {
     const id = await focusInSecondRoot();
     cmb.setValue("(a bb c)\n(+ 1 2 3)");
@@ -73,6 +74,7 @@ describe("a change through the API, while a block has keyboard focus", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: TypeError: Cannot read properties of undefined (reading 'has'))
 
+  // first error (sweep): TypeError: Cannot read properties of undefined (reading 'has')
   it.skip("setValue that removes the block moves focus to the first root, as before", async () => {
     await focusInSecondRoot();
     cmb.setValue("(z)\n(y)");
@@ -82,6 +84,7 @@ describe("a change through the API, while a block has keyboard focus", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality)
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("with no block focused, focus goes to the first root, as before", async () => {
     cmb.replaceRange("(a bb c)", { line: 0, ch: 0 }, { line: 0, ch: 5 });
     await frames();

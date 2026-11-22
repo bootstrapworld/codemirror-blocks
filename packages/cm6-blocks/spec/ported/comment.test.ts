@@ -38,6 +38,7 @@ describe("When editing and moving commented nodes", () => {
 
     // SKIPPED (D): text/blocks toggling does not rewrite comments here (there is no text mode switch of the text); the comment stays as written (notes, sixth round 4)
 
+    // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
     it.skip("when the mode is toggled, it should reformat all comments as block comments", () => {
       cmb.setBlockMode(false);
       // the opening whitespace should be removed!
@@ -49,6 +50,7 @@ describe("When editing and moving commented nodes", () => {
 
     // SKIPPED (I): makes a quarantine through the redux store (`actions.setQuarantine`)
 
+    // first error (sweep): Error: not in the compat layer: store.dispatch(actions.setQuarantine(...)) (a quarantine is a redux state of the old editor)
     it.skip("you should be able to insert a commented node after a commented node", () => {
       const commentedNode = cmb.getAst().rootNodes[2];
       expect(commentedNode.toString()).toMatchInlineSnapshot(`
@@ -67,6 +69,7 @@ describe("When editing and moving commented nodes", () => {
 
     // SKIPPED (I): makes a quarantine through the redux store (`actions.setQuarantine`)
 
+    // first error (sweep): Error: not in the compat layer: store.dispatch(actions.setQuarantine(...)) (a quarantine is a redux state of the old editor)
     it.skip("you should be able to insert a commented node after an uncommented node", () => {
       const uncommentedNode = cmb.getAst().rootNodes[0];
       expect(uncommentedNode.toString()).toMatchInlineSnapshot(

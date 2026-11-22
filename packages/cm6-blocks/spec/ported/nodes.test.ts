@@ -106,6 +106,7 @@ const nodes: [string, string, string, RegExp][] = [
 
 describe("what a block says", () => {
   // SKIPPED (I): needs the old node API (`wescheme.buildAST`, `node.shortDescription()`, `describe(level)`), and the expectations are the old words (`f expression, 2 inputs`), which are the table's `call to f with 2 arguments` here (documented, second round D)
+  // first error (sweep): TypeError: _wescheme.default.buildAST is not a function
   it.skip.each(nodes)("%s is a %s: %s", (code, type, short, long) => {
     const node = rootOf(code);
     expect(node.type).toBe(type);
@@ -116,6 +117,7 @@ describe("what a block says", () => {
 
   // SKIPPED (I): uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: _wescheme.default.buildAST is not a function
 
+  // first error (sweep): TypeError: _wescheme.default.buildAST is not a function
   it.skip("describes a literal by its value, and a commented node as the node", () => {
     expect(squash(rootOf("42").describe(0))).toBe("42");
     expect(squash(rootOf(";; note\n(f x)").describe(0))).toBe(
@@ -128,6 +130,7 @@ describe("what a block looks like", () => {
   const forms = [...nodes.map(([code]) => code), "(f x)\n(g y)", "42", '"hi"'];
 
   // SKIPPED (D): the expected labels are the old words (second round D); the labels of the same forms are tested in spec/describe.test.ts
+  // first error (sweep): TypeError: node.shortDescription is not a function
   it.skip.each(forms)("%s is drawn, labelled with what it says", (code) => {
     const { cmb } = mountCMB(wescheme);
     cmb.setValue(code);
@@ -161,12 +164,14 @@ describe("an unrecognised expression with nothing in it", () => {
   // print, and the printer threw on the missing first one
   const pos = { line: 0, ch: 0 };
   // SKIPPED (I): not built / not in the compat layer: Unknown (the old node classes)
+  // first error (sweep): Error: not in the compat layer: Unknown (the old node classes)
   it.skip("prints as empty parentheses", () => {
     expect(Unknown(pos, pos, { elts: [] }).pretty().display(80)).toEqual([
       "()",
     ]);
   });
   // SKIPPED (I): uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: _wescheme.default.buildAST is not a function
+  // first error (sweep): TypeError: _wescheme.default.buildAST is not a function
   it.skip("keeps its other parts when it has some", () => {
     const [a, b] = wescheme.buildAST("a b").rootNodes;
     expect(
@@ -181,6 +186,7 @@ describe("a string literal with a newline in it", () => {
   // (random sequence) the printer refuses text with a newline and threw
   const pos = { line: 0, ch: 0 };
   // SKIPPED (I): not built / not in the compat layer: Literal (the old node classes)
+  // first error (sweep): Error: not in the compat layer: Literal (the old node classes)
   it.skip("prints on one line, with the newline escaped", () => {
     const string = Literal(pos, pos, { value: '"a\nb"', dataType: "string" });
     expect(string.pretty().display(80)).toEqual(['"a\\nb"']);

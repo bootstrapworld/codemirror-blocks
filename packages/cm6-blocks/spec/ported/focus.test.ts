@@ -39,6 +39,7 @@ describe("focusing,", () => {
 
   // SKIPPED (D): node ids are a global counter here, the old ones count from 0 in each parse (an id is a label, not a position)
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("tabbing to the editor for the first time should activate node 0", async () => {
     cmb.focus();
     expect(cmb.getFocusedNode()!.nid).toBe(0);
@@ -55,6 +56,7 @@ describe("focusing,", () => {
 
   // SKIPPED (D): focus after a delete goes to the node now at the same index, else the one before, else the owner (notes, second round A3); the old editor's rule differs
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("deleting the first node should shift focus to the parent", async () => {
     mouseDown(literal1);
     expect(document.activeElement).toBe(literal1.element);
@@ -66,6 +68,7 @@ describe("focusing,", () => {
 
   // SKIPPED (D): focus after a delete goes to the node now at the same index, else the one before, else the owner (notes, second round A3); the old editor's rule differs
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("deleting the nth node should shift focus to n-1", async () => {
     mouseDown(literal2);
     expect(document.activeElement).toBe(literal2.element);
@@ -88,6 +91,7 @@ describe("focusing,", () => {
 
   // SKIPPED (M): the test inserts through the CM5 passthrough `replaceRange` and reads `getFocusedNode().value`: a text change from outside does not focus the new block here
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("inserting a node should put focus on the new node", async () => {
     mouseDown(literal1);
     keyDown("]", { ctrlKey: true });
@@ -102,6 +106,7 @@ describe("focusing,", () => {
 
   // SKIPPED (M): as above
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("inserting multiple nodes should put focus on the last of the new nodes", async () => {
     mouseDown(literal1);
     keyDown("]", { ctrlKey: true });

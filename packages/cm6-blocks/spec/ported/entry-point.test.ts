@@ -20,6 +20,7 @@ const container = () => {
 
 describe("CodeMirrorBlocks()", () => {
   // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
+  // first error (sweep): Error: not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
   it.skip("opens an editor for a language said by its id", () => {
     let editor: ReturnType<typeof CodeMirrorBlocks>;
     act(() => {
@@ -30,6 +31,7 @@ describe("CodeMirrorBlocks()", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
 
+  // first error (sweep): Error: expect(received).toThrow(expected)
   it.skip("says which languages there are when the id is not one of them", () => {
     expect(() => CodeMirrorBlocks(container(), {}, "no-such-language")).toThrow(
       /There is no language "no-such-language".*example/
@@ -38,6 +40,7 @@ describe("CodeMirrorBlocks()", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: Error: Hooks cannot be defined inside tests. Hook of type "afterEach" is nested within "says that none have be)
 
+  // first error (sweep): Error: Hooks cannot be defined inside tests. Hook of type "afterEach" is nested within "says that none have been added, when none have".
   it.skip("says that none have been added, when none have", () => {
     jest.isolateModules(() => {
       const fresh = require("../compat/test-utils").default;
@@ -49,6 +52,7 @@ describe("CodeMirrorBlocks()", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
 
+  // first error (sweep): Error: not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
   it.skip("returns the editor that a container has when it is called again, and does not make a second", () => {
     const div = container();
     let first!: ReturnType<typeof CodeMirrorBlocks>;
@@ -78,6 +82,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
 
+  // first error (sweep): Error: not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
   it.skip("has every method in text mode, and is in text mode at first", () => {
     const editor = open();
     expect(editor.getBlockMode()).toBe(false);
@@ -88,6 +93,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
   });
 
   // SKIPPED (N): CM5 API, out of scope on this branch (iterates the old API module's `blockModeOnlyMethods` (not in the compat layer; also text mode, which is not built))
+  // first error (sweep): Error: not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
   it.skip.each(["x"])(
     "%s() throws an Error that says it needs block mode, in text mode",
     (name) => {
@@ -100,6 +106,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: TypeError: Cannot read properties of undefined (reading 'example'))
 
+  // first error (sweep): TypeError: Cannot read properties of undefined (reading 'example')
   it.skip("has a method for each one that block mode has", () => {
     const language = Languages.LANGUAGES["example"];
     const store = createAppStore("(+ 1 2)");
@@ -117,6 +124,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
 
+  // first error (sweep): Error: not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
   it.skip("is the same object in block mode and back, and answers for the mode that shows", () => {
     const editor = open();
     const methods = Object.keys(editor);
@@ -141,6 +149,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
 
   // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
 
+  // first error (sweep): Error: not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
   it.skip("keeps the methods that block mode restricts restricted, and those that text mode does, in the mode that shows", () => {
     const editor = open();
     // (not supported in the block editor)

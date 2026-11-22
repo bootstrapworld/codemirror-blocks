@@ -97,3 +97,4 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): a popup does not take the pointer from what it is over, and a comment block of its own does take it => Error: expect(received).toBe(expected) // Object.is equality

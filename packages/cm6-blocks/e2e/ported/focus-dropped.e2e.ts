@@ -50,3 +50,4 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): focus goes to the focused block once it is back on the page => Error: page.evaluate: TypeError: window.cmb.getCM is not a function

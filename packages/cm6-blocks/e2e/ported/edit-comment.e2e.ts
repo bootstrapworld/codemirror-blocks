@@ -366,3 +366,18 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): a drop with a comment box that cannot be saved still open leaves focus on a block => Error: expect(received).toBeNull()
+// first error (sweep): the comment box of a collapsed block is shown and has focus => Error: expect(received).toMatchObject(expected)
+// first error (sweep): editing a comment from the keyboard › adds a comment to a block that has none => Error: expect(received).toMatchObject(expected)
+// first error (sweep): editing a comment from the keyboard › opens the text of an existing comment, selected, and replaces it => Error: expect(received).toEqual(expected) // deep equality
+// first error (sweep): editing a comment from the keyboard › works on a block inside another => Error: expect(received).toBe(expected) // Object.is equality
+// first error (sweep): a comment that goes with no block › is a block of its own that can be focused and read => Test timeout of 20000ms exceeded.
+// first error (sweep): a comment that goes with no block › is edited with Enter, not with the comment shortcut => Test timeout of 20000ms exceeded.
+// first error (sweep): a comment that goes with no block › is deleted like any other block => Test timeout of 20000ms exceeded.
+// first error (sweep): a comment that goes with no block › a block's own comment is a popup while it is active, not a stop of its own => Error: expect(locator).toHaveAttribute(expected) failed
+// first error (sweep): a comment that goes with no block › a collapsed comment block hides its words and keeps its emoji => Test timeout of 20000ms exceeded.
+// first error (sweep): a comment that goes with no block › a comment popup that would go off the bottom of the editor grows upwards => Error: page.evaluate: TypeError: Cannot read properties of null (reading 'CodeMirror')
+// first error (sweep): a comment that goes with no block › the box a comment is typed in grows upwards when its text would take it below the editor => Error: page.evaluate: TypeError: Cannot read properties of null (reading 'CodeMirror')
+// first error (sweep): a comment that goes with no block › pasting into the box a comment is typed in leaves the caret after the text => Error: expect(locator).toBeVisible() failed
+// first error (sweep): a comment that goes with no block › a comment popup that has room below hangs from the top of its block => Error: expect(locator).toBeVisible() failed
+// first error (sweep): a comment that goes with no block › is left behind when the block it was above is deleted => Error: expect(locator).toBeVisible() failed

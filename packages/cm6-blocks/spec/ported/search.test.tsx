@@ -70,6 +70,7 @@ describe("the Search Settings dialog", () => {
 
   // SKIPPED (D): Escape returns the focus to the block that had it before the dialog (notes, eighth round); the old test compares with the focus left in the dialog
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("closes with Escape, and goes nowhere", () => {
     cmb.setCursor({ line: 0, ch: 0 });
     press("F3");
@@ -193,6 +194,7 @@ describe("searching by block type", () => {
 
   // SKIPPED (D): block types and spoken labels are the table's (`call`, `number`, `symbol`), not the old node types (`functionApp`, `literal`): notes, second round D and eighth round search table
 
+  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
   it.skip("lists the types of block there are", () => {
     press("F3");
     fireEvent.click(screen.getByRole("tab", { name: "Search by block" }));
@@ -216,6 +218,7 @@ describe("searching by block type", () => {
 
 describe("a searcher that does not move on", () => {
   // SKIPPED (I): spies on the old ByBlock searcher object
+  // first error (sweep): Error: expect(received).toBeGreaterThan(expected)
   it.skip("cannot make PageDown loop for ever", () => {
     // as happened on a lambda AST whose blocks overlap: the focused block comes
     // back again and again, with a cursor that is where the search started
@@ -280,6 +283,7 @@ describe("the search rotor", () => {
 
   // SKIPPED (D): block types and spoken labels are the table's (`call`, `number`, `symbol`), not the old node types (`functionApp`, `literal`): notes, second round D and eighth round search table
 
+  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
   it.skip("starts at the first type, and goes forwards with a wrap", () => {
     next();
     next();
@@ -293,6 +297,7 @@ describe("the search rotor", () => {
 
   // SKIPPED (D): block types and spoken labels are the table's (`call`, `number`, `symbol`), not the old node types (`functionApp`, `literal`): notes, second round D and eighth round search table
 
+  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
   it.skip("goes backwards with a wrap, from the last entry", () => {
     previous();
     previous();
@@ -306,6 +311,7 @@ describe("the search rotor", () => {
 
   // SKIPPED (D): block types and spoken labels are the table's (`call`, `number`, `symbol`), not the old node types (`functionApp`, `literal`): notes, second round D and eighth round search table
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("makes PageDown go to the next block of the chosen type", () => {
     next(); // function app
     press("PageDown");
@@ -317,6 +323,7 @@ describe("the search rotor", () => {
 
   // SKIPPED (D): block types and spoken labels are the table's (`call`, `number`, `symbol`), not the old node types (`functionApp`, `literal`): notes, second round D and eighth round search table
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("makes a text search from the dialog the last entry, and lands on it", () => {
     searchFor("xy");
     say.mockClear();
@@ -344,6 +351,7 @@ describe("the search rotor", () => {
 
   // SKIPPED (D): block types and spoken labels are the table's (`call`, `number`, `symbol`), not the old node types (`functionApp`, `literal`): notes, second round D and eighth round search table
 
+  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
   it.skip("follows the document", () => {
     cmb.setValue("(f x)");
     cmb.setValue("f");
@@ -368,6 +376,7 @@ describe("the search rotor", () => {
 
   // SKIPPED (M): the page's text/blocks mode toggle button and text mode
 
+  // first error (sweep): TypeError: Cannot read properties of null (reading 'element')
   it.skip("does nothing in text mode", () => {
     cmb.setBlockMode(false);
     say.mockClear();

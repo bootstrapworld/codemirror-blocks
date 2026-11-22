@@ -28,6 +28,7 @@ const searchToolbar = (text: string) =>
 
 describe("searching the toolbar, then using the result", () => {
   // SKIPPED (M): the old toolbar of primitives and its search box are not built (a page makes the toolbar)
+  // first error (sweep): TestingLibraryElementError: Unable to find an element with the placeholder text of: Search functions
   it.skip("narrows the toolbar to the matching primitives", () => {
     searchToolbar("sqr");
     expect(primitives().map((e) => e.textContent)).toEqual(["sqr", "sqrt"]);
@@ -35,6 +36,7 @@ describe("searching the toolbar, then using the result", () => {
 
   // SKIPPED (M): the old toolbar of primitives and its search box are not built (a page makes the toolbar)
 
+  // first error (sweep): TestingLibraryElementError: Unable to find an element with the placeholder text of: Search functions
   it.skip("selects a primitive that is clicked (focused) among the results", () => {
     searchToolbar("+");
     const plus = primitive("+");
@@ -45,6 +47,7 @@ describe("searching the toolbar, then using the result", () => {
 
   // SKIPPED (M): the old toolbar of primitives and its search box are not built (a page makes the toolbar)
 
+  // first error (sweep): TestingLibraryElementError: Unable to find an element with the placeholder text of: Search functions
   it.skip("drags a found primitive into the editor", () => {
     cmb.setValue("(f x y)");
     searchToolbar("sqrt");
@@ -54,6 +57,7 @@ describe("searching the toolbar, then using the result", () => {
 
   // SKIPPED (M): the old toolbar of primitives and its search box are not built (a page makes the toolbar)
 
+  // first error (sweep): TestingLibraryElementError: Unable to find an element with the placeholder text of: Search functions
   it.skip("still drags after the search is cleared", () => {
     cmb.setValue("(f x y)");
     searchToolbar("sqrt");
@@ -85,6 +89,7 @@ describe("dragging from the toolbar repeatedly", () => {
 
 describe("a toolbar drag that is released without dropping", () => {
   // SKIPPED (M): the old toolbar of primitives and its search box are not built (a page makes the toolbar)
+  // first error (sweep): Error: expect(received).toHaveLength(expected)
   it.skip("does not change the document and leaves the toolbar intact", () => {
     cmb.setValue("(f x y)");
     const before = primitives().length;

@@ -163,6 +163,7 @@ describe("switching to block mode", () => {
 
   // SKIPPED (M): the page's text/blocks mode toggle button and text mode
 
+  // first error (sweep): TestingLibraryElementError: Unable to find an accessible element with the role "button" and name `/Switch to blocks mode/`
   it.skip("should not change the focused element", () => {
     const blockModeBtn = screen.getByRole("button", {
       name: /Switch to blocks mode/,

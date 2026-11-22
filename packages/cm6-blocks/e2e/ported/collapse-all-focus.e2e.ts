@@ -76,3 +76,6 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): collapse all keeps keyboard focus on a root (small document) => Error: expect(received).toMatchObject(expected)
+// first error (sweep): collapse all keeps keyboard focus on a root (medium document) => Error: expect(received).toMatchObject(expected)
+// first error (sweep): collapse all keeps keyboard focus on a root (large document) => Error: expect(received).toMatchObject(expected)

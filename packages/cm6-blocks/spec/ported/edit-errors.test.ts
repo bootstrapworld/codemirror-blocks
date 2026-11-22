@@ -130,6 +130,7 @@ describe("editing a block whose parent is rebuilt as another kind of block", () 
 
   // SKIPPED (I): reads the redux store (`store.getState()`)
 
+  // first error (sweep): TypeError: store.getState is not a function
   it.skip("takes the only block of an expression, a placeholder, for two blocks", () => {
     replaceChild("(...)", 0, "foo bar");
     expect(cmb.getValue()).toBe("(foo bar)");
@@ -139,6 +140,7 @@ describe("editing a block whose parent is rebuilt as another kind of block", () 
 
   // SKIPPED (I): reads the redux store (`store.getState()`)
 
+  // first error (sweep): TypeError: store.getState is not a function
   it.skip("takes the operator of an expression that wasn't a valid call", () => {
     // an `if` with four arguments is not an `if`; without it, it is a call
     replaceChild("(if foo bar a b) c", 0, '"hi"');
@@ -158,15 +160,14 @@ describe("editing in place with a value that can't be parsed", () => {
     keyDown("Enter");
   });
 
-  // SKIPPED (D): text that does not parse is accepted and written (interact.ts header; the old editor refuses it and keeps the box open with an error flag)
-
-  it.skip("leaves the document alone", () => {
+  it("leaves the document alone", () => {
     expect(cmb.getValue()).toBe("42\n(f x y)");
     expect(undoSteps()).toBe(0);
   });
 
   // SKIPPED (D): text that does not parse is accepted and written (interact.ts header; the old editor refuses it and keeps the box open with an error flag)
 
+  // first error (sweep): Error: expect(element).toHaveAttribute("contenteditable", "true") // element.getAttribute("contenteditable") === "true"
   it.skip("stays in edit mode and flags the error", () => {
     expect(editing(root())).toHaveAttribute("contenteditable", "true");
     expect(editing(root())).toHaveClass("blocks-error");
@@ -175,6 +176,7 @@ describe("editing in place with a value that can't be parsed", () => {
 
   // SKIPPED (D): text that does not parse is accepted and written (interact.ts header; the old editor refuses it and keeps the box open with an error flag)
 
+  // first error (sweep): TypeError: store.getState is not a function
   it.skip("clears the error once a valid value is saved", () => {
     setEditableText("8");
     keyDown("Enter");
@@ -184,6 +186,7 @@ describe("editing in place with a value that can't be parsed", () => {
 
   // SKIPPED (D): text that does not parse is accepted and written (interact.ts header; the old editor refuses it and keeps the box open with an error flag)
 
+  // first error (sweep): TypeError: store.getState is not a function
   it.skip("clears the error when the edit is cancelled with Escape", () => {
     keyDown("Escape");
     expect(cmb.getValue()).toBe("42\n(f x y)");
@@ -236,6 +239,7 @@ describe("inserting beside a child with Ctrl-] / Ctrl-[", () => {
 
   // SKIPPED (D): text that does not parse is accepted and written (interact.ts header; the old editor refuses it and keeps the box open with an error flag)
 
+  // first error (sweep): TypeError: store.getState is not a function
   it.skip("rejects an unparseable insertion and stays open", () => {
     allowConsoleErrors();
     const x = argsOf(root())[0];
@@ -256,6 +260,7 @@ describe("edits made through the API that would break the document", () => {
 
   // SKIPPED (D): an API text change is applied as text; nothing is rejected (the text is the truth)
 
+  // first error (sweep): Error: expect(received).toThrow()
   it.skip("replaceRange with unparseable text is rejected", () => {
     allowConsoleErrors();
     expect(() =>
@@ -287,6 +292,7 @@ describe("switching modes with text that can't be converted", () => {
 
   // SKIPPED (M): the page's text/blocks mode toggle button and text mode
 
+  // first error (sweep): TestingLibraryElementError: Unable to find an accessible element with the role "button" and name `/switch to text mode/i`
   it.skip("stays in text mode and explains why", () => {
     allowConsoleErrors();
     toggle(/switch to text mode/i);
@@ -299,6 +305,7 @@ describe("switching modes with text that can't be converted", () => {
 
   // SKIPPED (M): the page's text/blocks mode toggle button and text mode
 
+  // first error (sweep): TestingLibraryElementError: Unable to find an accessible element with the role "button" and name `/switch to text mode/i`
   it.skip("switches once the text is fixed", () => {
     allowConsoleErrors();
     toggle(/switch to text mode/i);

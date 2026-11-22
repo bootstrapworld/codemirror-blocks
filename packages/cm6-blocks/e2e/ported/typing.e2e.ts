@@ -82,3 +82,4 @@ test.describe("editing a literal in place", () => {
     expect((await snapshot(page)).roots).toEqual(["42", "11"]);
   });
 });
+// first error (sweep): clicking elsewhere in the editor stops the edit and keeps the text => Error: expect(locator).toHaveCount(expected) failed

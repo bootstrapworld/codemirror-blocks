@@ -92,7 +92,7 @@ test("past the last match, the search goes on from the first", async ({
 
 // FIXME (M): the demo page has a second combobox (the language chooser), so `getByRole("combobox")` is ambiguous: a page difference, not the editor
 
-test.fixme("search by block type finds the next call", async ({ page }) => {
+test("search by block type finds the next call", async ({ page }) => {
   await page.keyboard.press("F3");
   await page.getByRole("tab", { name: "Search by block" }).click();
   await page.getByRole("combobox").selectOption("call");

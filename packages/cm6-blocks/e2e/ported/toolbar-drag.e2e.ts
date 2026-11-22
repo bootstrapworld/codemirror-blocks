@@ -59,3 +59,5 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): dragging a block from the toolbar into the editor with the mouse › leaves keyboard focus in the editor, not on the toolbar => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging a block from the toolbar into the editor with the mouse › so that Ctrl/Cmd-Z undoes the drop => Test timeout of 20000ms exceeded while running "beforeEach" hook.

@@ -229,3 +229,4 @@ async function runSequence(page: Page, seed: number) {
 for (const seed of SEEDS) {
   test(`motion sequence, seed ${seed}`, ({ page }) => runSequence(page, seed));
 }
+// first error (sweep): (whole file) => Test timeout of 20000ms exceeded.

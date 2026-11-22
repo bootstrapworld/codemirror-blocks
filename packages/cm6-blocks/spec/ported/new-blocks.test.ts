@@ -48,6 +48,7 @@ describe("The CodeMirrorBlocks Class", function () {
 
     // SKIPPED (N): CM5 API (`cmb.setBlockMode`); the behaviour is tested through `setBlockMode` of this editor's own interface (spec/cm6-api.test.ts)
 
+    // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
     it.skip("should set block mode to false", function () {
       cmb.setBlockMode(false);
       expect(cmb.getBlockMode()).toBe(false);
@@ -65,6 +66,7 @@ describe("The CodeMirrorBlocks Class", function () {
         cmb.setValue("42\n11");
       });
       // SKIPPED (I): not built / not in the compat layer: store.dispatch(actions.setQuarantine(...)) (a quarantine is a redux state of the old editor)
+      // first error (sweep): Error: not in the compat layer: store.dispatch(actions.setQuarantine(...)) (a quarantine is a redux state of the old editor)
       it.skip("typing at the end of a line", async function () {
         act(() => {
           setQuarantine(
@@ -87,6 +89,7 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cmb.getValue()).toEqual("42\n9\n11");
       });
       // SKIPPED (I): not built / not in the compat layer: store.dispatch(actions.setQuarantine(...)) (a quarantine is a redux state of the old editor)
+      // first error (sweep): Error: not in the compat layer: store.dispatch(actions.setQuarantine(...)) (a quarantine is a redux state of the old editor)
       it.skip("typing at the beginning of a line", async function () {
         setQuarantine(
           { line: 0, ch: 0, xRel: 0 } as CodeMirror.Position,
@@ -97,6 +100,7 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cmb.getValue()).toEqual("9\n42\n11");
       });
       // SKIPPED (I): not built / not in the compat layer: store.dispatch(actions.setQuarantine(...)) (a quarantine is a redux state of the old editor)
+      // first error (sweep): Error: not in the compat layer: store.dispatch(actions.setQuarantine(...)) (a quarantine is a redux state of the old editor)
       it.skip("typing between two blocks on a line", async function () {
         setQuarantine(
           { line: 0, ch: 3, xRel: 0 } as CodeMirror.Position,
@@ -110,6 +114,7 @@ describe("The CodeMirrorBlocks Class", function () {
       // TODO: figure out how to fire a paste event
     });
     // SKIPPED (D): `()` is an empty call here, with no invented blank for the function name; nothing to protect from deletion
+    // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
     it.skip("should not allow required blanks to be deleted", async function () {
       cmb.setValue("()");
       // the parser fills in the missing function name with a blank
@@ -210,6 +215,7 @@ describe("The CodeMirrorBlocks Class", function () {
       });
 
       // SKIPPED (U): in `(+)` Ctrl-] on the function name opens no insertion here (focus stays on the name)
+      // first error (sweep): Error: expect(received).toBeInstanceOf(expected)
       it.skip("Ctrl-] should open an insertion in the first arg position", async function () {
         mouseDown(blank.fields.func.element!);
         keyDown("]", { ctrlKey: true }, blank.fields.func.element!);

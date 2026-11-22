@@ -37,3 +37,5 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): Control+] beside a top-level block inserts a new top-level form => Error: expect(locator).toBeFocused() failed
+// first error (sweep): Control+[ beside a top-level block inserts a new top-level form => Error: expect(locator).toBeFocused() failed

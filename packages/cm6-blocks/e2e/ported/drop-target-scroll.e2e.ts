@@ -158,3 +158,12 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): a click on a drop target between the calls of a tall block opens it for typing => Test timeout of 20000ms exceeded.
+// first error (sweep): a click on a drop target between arguments opens it for typing => Test timeout of 20000ms exceeded.
+// first error (sweep): a click on a drop target in an empty list opens it for typing => Test timeout of 20000ms exceeded.
+// first error (sweep): after scrolling, a click on a drop target between the calls of a tall block opens it for typing => Test timeout of 20000ms exceeded.
+// first error (sweep): after scrolling, a click on a drop target between arguments opens it for typing => Test timeout of 20000ms exceeded.
+// first error (sweep): after scrolling, a click on a drop target in an empty list opens it for typing => Test timeout of 20000ms exceeded.
+// first error (sweep): after scrolling, cancelling the box of a drop target between the calls of a tall block leaves the page where it is => Test timeout of 20000ms exceeded.
+// first error (sweep): after scrolling, cancelling the box of a drop target between arguments leaves the page where it is => Test timeout of 20000ms exceeded.
+// first error (sweep): after scrolling, cancelling the box of a drop target in an empty list leaves the page where it is => Test timeout of 20000ms exceeded.

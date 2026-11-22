@@ -140,3 +140,8 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): deleting a block, then undoing, in a long document › a top-level block comes back, and the view doesn't jump => Test timeout of 20000ms exceeded.
+// first error (sweep): deleting a block, then undoing, in a long document › keeps working for several deletes and undos in a row => Test timeout of 20000ms exceeded.
+// first error (sweep): deleting a block, then undoing, in a long document › redo still works after the undo => Test timeout of 20000ms exceeded.
+// first error (sweep): deleting a block, then undoing, in a long document › a child block comes back too => Test timeout of 20000ms exceeded.
+// first error (sweep): in the example page's own program › Cmd-Z brings a deleted top-level block back, in place, with focus => Test timeout of 20000ms exceeded while running "beforeEach" hook.

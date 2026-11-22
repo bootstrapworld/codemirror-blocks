@@ -74,12 +74,8 @@ test.describe("dragging a block onto the trash can", () => {
 
 // FIXME-BEGIN (thirteenth round: M: the trash can is not built)
 const FIXME = new Set<string>([
-  "dragging a block onto the trash can › deletes it, and the text and AST agree",
-  "dragging a block onto the trash can › works again and again",
-  "dragging a block onto the trash can › works right after switching to block mode with the button",
   "dragging a block onto the trash can › works after switching to text mode and back",
   "dragging a block onto the trash can › can be undone",
-  "dragging a block onto the trash can › leaves a block focused for the keyboard",
 ]);
 test.beforeEach(({}, ti) => {
   test.fixme(
@@ -88,3 +84,5 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): dragging a block onto the trash can › works after switching to text mode and back => Test timeout of 20000ms exceeded.
+// first error (sweep): dragging a block onto the trash can › can be undone => Error: expect(received).toBe(expected) // Object.is equality

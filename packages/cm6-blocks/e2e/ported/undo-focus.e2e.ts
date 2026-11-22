@@ -129,3 +129,6 @@ test.describe("undoing and redoing an edit made on the first block", () => {
     expect(errors).toEqual([]);
   });
 });
+// first error (sweep): undo focuses the deleted block again, redo the one before it => Error: expect(received).toMatch(expected)
+// first error (sweep): undo goes back, redo to the typed one, without errors => Error: expect(received).toMatch(expected)
+// first error (sweep): undo focuses that first block, not the one at the pasted position => Error: expect(received).toMatch(expected)

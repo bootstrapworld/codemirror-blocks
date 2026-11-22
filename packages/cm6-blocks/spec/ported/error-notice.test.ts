@@ -27,6 +27,7 @@ describe("the notice that offers to report an error", () => {
 
   // SKIPPED (M): not built / not in the compat layer: logResults (the error notice that offers to report an error is not built)
 
+  // first error (sweep): Error: not in the compat layer: logResults (the error notice that offers to report an error is not built)
   it.skip("appears, and is spoken, when an error is recorded", () => {
     expect(screen.queryByRole("alert")).toBeNull();
     act(() => {
@@ -42,6 +43,7 @@ describe("the notice that offers to report an error", () => {
 
   // SKIPPED (M): not built / not in the compat layer: logResults (the error notice that offers to report an error is not built)
 
+  // first error (sweep): Error: not in the compat layer: logResults (the error notice that offers to report an error is not built)
   it.skip("is not spoken again while it is still showing", () => {
     act(() => {
       logResults(new Error("one"));
@@ -54,6 +56,7 @@ describe("the notice that offers to report an error", () => {
 
   // SKIPPED (M): not built / not in the compat layer: logResults (the error notice that offers to report an error is not built)
 
+  // first error (sweep): Error: not in the compat layer: logResults (the error notice that offers to report an error is not built)
   it.skip("opens a report with the error and the recorded actions, and goes away", () => {
     act(() => {
       logResults(new Error("boom"));
@@ -68,6 +71,7 @@ describe("the notice that offers to report an error", () => {
 
   // SKIPPED (M): not built / not in the compat layer: logResults (the error notice that offers to report an error is not built)
 
+  // first error (sweep): Error: not in the compat layer: logResults (the error notice that offers to report an error is not built)
   it.skip("can be dismissed without sending anything", () => {
     act(() => {
       logResults(new Error("boom"));
@@ -79,6 +83,7 @@ describe("the notice that offers to report an error", () => {
 
   // SKIPPED (M): the error notice that offers to report an error is not built
 
+  // first error (sweep): Error: late
   it.skip("counts an uncaught error right after the editor was used", () => {
     act(() => {
       window.dispatchEvent(
@@ -90,6 +95,7 @@ describe("the notice that offers to report an error", () => {
 
   // SKIPPED (M): the error notice that offers to report an error is not built
 
+  // first error (sweep): Error: not ours
   it.skip("ignores an uncaught error long after the editor was used", () => {
     const now = Date.now();
     jest.spyOn(Date, "now").mockReturnValue(now + 60_000);

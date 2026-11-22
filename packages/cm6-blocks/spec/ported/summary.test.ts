@@ -13,6 +13,7 @@ const summary = (code: string) =>
 
 describe("summarizeProgram", () => {
   // SKIPPED (I): uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: _wescheme.default.parse is not a function
+  // first error (sweep): TypeError: _wescheme.default.parse is not a function
   it.skip("counts the kinds of node that are at the top level", () => {
     const code = [
       "(define (f x) x)",
@@ -30,6 +31,7 @@ describe("summarizeProgram", () => {
 
   // SKIPPED (I): uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: _wescheme.default.parse is not a function
 
+  // first error (sweep): TypeError: _wescheme.default.parse is not a function
   it.skip("only names the kinds that are there", () => {
     expect(summary("(define y 1) (define z 2)")).toBe(
       "At the top level, this program contains 2 value definitions."
@@ -41,6 +43,7 @@ describe("summarizeProgram", () => {
 
   // SKIPPED (M): not built / not in the compat layer: summarizeProgram (the summary module: the summary read on first opening is not built)
 
+  // first error (sweep): Error: not in the compat layer: summarizeProgram (the summary module: the summary read on first opening is not built)
   it.skip("names each kind by what its type declares, with no list of them here", () => {
     const nodes = (...kinds: [string, string, string?][]) =>
       kinds.map(([type, label, pluralLabel]) => ({
@@ -69,6 +72,7 @@ describe("summarizeProgram", () => {
 
   // SKIPPED (I): uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: _wescheme.default.parse is not a function
 
+  // first error (sweep): TypeError: _wescheme.default.parse is not a function
   it.skip("says nothing about an empty program", () => {
     expect(summary("")).toBeNull();
   });
@@ -85,6 +89,7 @@ describe("describeKinds", () => {
 
   // SKIPPED (M): not built / not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
 
+  // first error (sweep): Error: not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
   it.skip("counts the kinds, as part of a sentence", () => {
     expect(describeKinds(nodes(["a", "gizmo"], ["a", "gizmo"]))).toBe(
       "2 gizmos"
@@ -94,6 +99,7 @@ describe("describeKinds", () => {
 
   // SKIPPED (M): not built / not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
 
+  // first error (sweep): Error: not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
   it.skip("joins two with and, and three or more with commas and a last and", () => {
     expect(describeKinds(nodes(["a", "gizmo"], ["b", "thing"]))).toBe(
       "1 gizmo and 1 thing"
@@ -107,6 +113,7 @@ describe("describeKinds", () => {
 
   // SKIPPED (M): not built / not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
 
+  // first error (sweep): Error: not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
   it.skip("names the kinds in the order they come, and each by its own type", () => {
     // (two types with one label are two kinds)
     expect(
@@ -116,6 +123,7 @@ describe("describeKinds", () => {
 
   // SKIPPED (M): not built / not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
 
+  // first error (sweep): Error: not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
   it.skip("leaves out the comments that go with no node, unless they are asked for", () => {
     const list = nodes(["a", "gizmo"], ["c", "comment", "comments", true]);
     expect(describeKinds(list)).toBe("1 gizmo");
@@ -126,6 +134,7 @@ describe("describeKinds", () => {
 
   // SKIPPED (M): not built / not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
 
+  // first error (sweep): Error: not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
   it.skip("is nothing for no nodes, or only comments that are left out", () => {
     expect(describeKinds([])).toBe("nothing");
     expect(describeKinds(nodes(["c", "comment", "comments", true]))).toBe(
@@ -142,6 +151,7 @@ describe("the summary on first opening a program as blocks", () => {
 
   // SKIPPED (D): the summary is said when blocks are first drawn with content (construction, or block mode switched on); text a host sets into an empty editor later is not announced (an API load after mount was the first draw in the old editor)
 
+  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
   it.skip("is said once, and not again after switching modes", async () => {
     const say = jest.spyOn(announcer, "say");
     const { cmb } = mountCMB(wescheme);

@@ -267,3 +267,11 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): (whole file) => Test timeout of 20000ms exceeded.
+// first error (sweep): with motion › the words of the text float into the blocks, and back => Test timeout of 20000ms exceeded.
+// first error (sweep): with motion › the words really move: a word ends up away from where it began => Test timeout of 20000ms exceeded.
+// first error (sweep): with motion › the words can be seen: the layer they are on has a size, and they are in what it shows => Test timeout of 20000ms exceeded.
+// first error (sweep): with motion › the toolbar opens first, then the words float; going back the words float, then it closes => Test timeout of 20000ms exceeded.
+// first error (sweep): with motion › a click while the toolbar is opening makes the switch at once => Test timeout of 20000ms exceeded.
+// first error (sweep): with motion › a key pressed in the middle of it ends it at once => Test timeout of 20000ms exceeded.
+// first error (sweep): with reduced motion › nothing floats: the switch is made at once => Test timeout of 20000ms exceeded.

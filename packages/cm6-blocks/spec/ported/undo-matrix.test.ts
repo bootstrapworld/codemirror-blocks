@@ -300,8 +300,7 @@ eachVariant("$name", ({ code, run, afterModeSwitch }) => {
 });
 
 describe("undo and redo with nothing to undo or redo", () => {
-  // SKIPPED (M): clearHistory cannot drop CodeMirror 6 history steps: the first undo takes the setValue back
-  it.skip("do nothing, and don't throw", () => {
+  it("do nothing, and don't throw", () => {
     cmb.setValue("(f x)");
     cmb.clearHistory();
     mouseDown(root());

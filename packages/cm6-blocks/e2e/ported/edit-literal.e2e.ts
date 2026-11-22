@@ -53,3 +53,5 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): editing a literal › a click opens its text, selected, the first time => Error: expect(received).toEqual(expected) // deep equality
+// first error (sweep): editing a literal › Enter on a selected literal opens its text, selected => Error: expect(received).toEqual(expected) // deep equality

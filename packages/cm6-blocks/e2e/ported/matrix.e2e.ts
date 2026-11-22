@@ -242,13 +242,10 @@ const FIXME = new Set<string>([
   "Cut › is undone by the keyboard",
   "Paste over a selection › is undone by the keyboard",
   "Paste beside a root › is undone by the keyboard",
-  "editing a literal in place › changes the document and keeps it consistent",
   "editing a literal in place › is undone by the keyboard",
-  "editing a literal in place › is redone by the keyboard",
   "inserting beside a child › changes the document and keeps it consistent",
   "inserting beside a child › is undone by the keyboard",
   "inserting beside a child › is redone by the keyboard",
-  // (eighteenth round: the two top-level variants run now; their undo/redo variants undo past the page's own first program, as the literal-edit and insert variants above do: `undoAll` is not stopped by this editor's history)
   "typing at the top level › is undone by the keyboard",
   "pasting at the top level › is undone by the keyboard",
   "dragging a node onto a node › changes the document and keeps it consistent",
@@ -263,9 +260,7 @@ const FIXME = new Set<string>([
   "dragging from the toolbar onto a node › changes the document and keeps it consistent",
   "dragging from the toolbar onto a node › is undone by the keyboard",
   "dragging from the toolbar onto a node › is redone by the keyboard",
-  "dragging a node to the trash can › changes the document and keeps it consistent",
   "dragging a node to the trash can › is undone by the keyboard",
-  "dragging a node to the trash can › is redone by the keyboard",
 ]);
 test.beforeEach(({}, ti) => {
   test.fixme(
@@ -274,3 +269,27 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): Delete on a selected root › is undone by the keyboard => Error: expect(received).toBe(expected) // Object.is equality
+// first error (sweep): Backspace on a selected child › is undone by the keyboard => Error: expect(received).toBe(expected) // Object.is equality
+// first error (sweep): Cut › is undone by the keyboard => Error: expect(received).toBe(expected) // Object.is equality
+// first error (sweep): Paste over a selection › is undone by the keyboard => Error: expect(received).toBe(expected) // Object.is equality
+// first error (sweep): Paste beside a root › is undone by the keyboard => Error: expect(received).toBe(expected) // Object.is equality
+// first error (sweep): editing a literal in place › is undone by the keyboard => Error: expect(received).toBe(expected) // Object.is equality
+// first error (sweep): inserting beside a child › changes the document and keeps it consistent => Error: the operation should have changed the document
+// first error (sweep): inserting beside a child › is undone by the keyboard => Error: the operation should have changed the document
+// first error (sweep): inserting beside a child › is redone by the keyboard => Error: the operation should have changed the document
+// first error (sweep): typing at the top level › is undone by the keyboard => Error: expect(received).toBe(expected) // Object.is equality
+// first error (sweep): pasting at the top level › is undone by the keyboard => Error: expect(received).toBe(expected) // Object.is equality
+// first error (sweep): dragging a node onto a node › changes the document and keeps it consistent => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging a node onto a node › is undone by the keyboard => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging a node onto a node › is redone by the keyboard => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging a node onto a drop target › changes the document and keeps it consistent => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging a node onto a drop target › is undone by the keyboard => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging a node onto a drop target › is redone by the keyboard => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging a node onto whitespace › changes the document and keeps it consistent => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging a node onto whitespace › is undone by the keyboard => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging a node onto whitespace › is redone by the keyboard => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging from the toolbar onto a node › changes the document and keeps it consistent => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging from the toolbar onto a node › is undone by the keyboard => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging from the toolbar onto a node › is redone by the keyboard => Test timeout of 20000ms exceeded while running "beforeEach" hook.
+// first error (sweep): dragging a node to the trash can › is undone by the keyboard => Error: expect(received).toBe(expected) // Object.is equality

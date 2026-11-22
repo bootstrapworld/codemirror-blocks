@@ -137,6 +137,7 @@ describe("Delete and Backspace", () => {
 
     // SKIPPED (D): the words announced are the table's describe templates (notes, second round D; UNDID / REDID added)
 
+    // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
     it.skip("announces the expression once, not each block inside it", () => {
       deleteRoot("(f x y) z");
       expect(said().filter((s) => s.startsWith("deleted"))).toEqual([
@@ -218,6 +219,7 @@ describe("Help (Shift-Ctrl-/)", () => {
 
   // SKIPPED (D): the help dialog lists the key table's own descriptions, not the old editor's names (`Next Block`)
 
+  // first error (sweep): TestingLibraryElementError: Unable to find an element with the text: Next Block. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your tex
   it.skip("opens the keyboard shortcuts dialog", () => {
     openHelp();
     expect(screen.getByText("Keyboard Shortcuts")).toBeInTheDocument();
@@ -246,6 +248,7 @@ describe("Help (Shift-Ctrl-/)", () => {
 
 describe("Shift-Tab", () => {
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
+  // first error (sweep): TypeError: Cannot read properties of null (reading 'contains')
   it.skip("moves keyboard focus to the toolbar", () => {
     cmb.setValue("42");
     mouseDown(root());

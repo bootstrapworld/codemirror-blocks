@@ -64,6 +64,7 @@ describe("undoing and redoing a delete", () => {
 
   // SKIPPED (D): focus after a delete goes to the node now at the same index, else the one before, else the owner (notes, second round A3); the old editor's rule differs
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("starts with focus on the block before the deleted one", () => {
     expect(cmb.getValue()).toBe("(f y)");
     expect(focused()).toBe("f");
@@ -77,6 +78,7 @@ describe("undoing and redoing a delete", () => {
 
   // SKIPPED (D): the focus a delete leaves is the node at the same index here (notes, second round A3), the old editor's the block before; undo is the same in both
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("redo puts focus where the delete left it, not on whatever now has x's position", () => {
     undo();
     redo();
@@ -104,6 +106,7 @@ describe("a delete that shifts the positions of the blocks after it", () => {
 
   // SKIPPED (D): focus after a delete goes to the node now at the same index, else the one before, else the owner (notes, second round A3); the old editor's rule differs
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("redo goes to the first block, which took focus after the delete", () => {
     undo();
     redo();
@@ -186,6 +189,7 @@ describe("two quick edits that CodeMirror undoes as one", () => {
 
   // SKIPPED (M): uses the CM5 `getCM().replaceRange(..., origin)`
 
+  // first error (sweep): TypeError: cmb.getCM(...).replaceRange is not a function
   it.skip("undo restores the text, and focus goes back to d, which had it before", () => {
     undo();
     expect(cmb.getValue()).toBe("a b c d");
@@ -194,6 +198,7 @@ describe("two quick edits that CodeMirror undoes as one", () => {
 
   // SKIPPED (M): uses the CM5 `getCM().replaceRange(..., origin)`
 
+  // first error (sweep): TypeError: cmb.getCM(...).replaceRange is not a function
   it.skip("redo restores the text and puts focus where the edits left it", () => {
     undo();
     redo();
@@ -203,6 +208,7 @@ describe("two quick edits that CodeMirror undoes as one", () => {
 
   // SKIPPED (M): uses the CM5 `getCM().replaceRange(..., origin)`
 
+  // first error (sweep): TypeError: cmb.getCM(...).replaceRange is not a function
   it.skip("undo and redo work again the second time round", () => {
     undo();
     redo();
@@ -219,6 +225,7 @@ describe("undoing through the API instead of the keyboard", () => {
   // the same saved blocks: the deleted block comes back with focus, and a redo
   // focuses the block before it.
   // SKIPPED (D): the redo half: the focus a delete leaves differs (as above); the undo half passes
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("brings the AST back and focuses the same blocks as the keyboard", () => {
     cmb.setValue("(f x y)");
     cmb.clearHistory();
@@ -262,6 +269,7 @@ describe("when the saved block can't be found", () => {
 
 describe("a block inside a collapsed block", () => {
   // SKIPPED (D): a block inside a collapsed block is not drawn here, so the test cannot find it (notes, sixth round 2)
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("undo puts focus on the collapsed block that contains it", () => {
     cmb.setValue("(f x y) z");
     cmb.clearHistory();

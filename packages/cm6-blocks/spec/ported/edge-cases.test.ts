@@ -83,12 +83,14 @@ describe("dragging one of several selected blocks", () => {
 
   // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("moves just the block that was grabbed, onto the target", () => {
     expect(cmb.getValue()).toBe("b c a");
   });
 
   // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("leaves the other selected block where it was, still selected", () => {
     expect(cmb.getSelectedNodes().map(String)).toContain("b");
     expect(texts()[0]).toBe("b");
@@ -96,6 +98,7 @@ describe("dragging one of several selected blocks", () => {
 
   // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("is one undo step", () => {
     undo();
     expect(cmb.getValue()).toBe("a b c d");
@@ -143,6 +146,7 @@ describe("undo after switching modes", () => {
   // which block mode could not undo to, so editing as text starts the history
   // over on the way back to blocks.
   // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
+  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
   it.skip("starts the history over when the text was edited in text mode", () => {
     cmb.setBlockMode(false);
     cmb.replaceRange("\n42", { line: 1, ch: 5 });
@@ -189,6 +193,7 @@ describe("unmounting the editor", () => {
 
   // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
 
+  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("is fine while a block is being edited in place", () => {
     cmb = mountCMB(wescheme).cmb;
     cmb.setValue("(f x)");
@@ -207,6 +212,7 @@ describe("unmounting the editor", () => {
 
 describe("mounting again with a different language", () => {
   // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
+  // first error (sweep): Error: expect(received).toBeGreaterThan(expected)
   it.skip("shows only the new language's blocks and toolbar", () => {
     cmb = mountCMB(wescheme).cmb;
     cmb.setValue("(f x y)");
@@ -229,6 +235,7 @@ describe("mounting again with a different language", () => {
 
   // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
 
+  // first error (sweep): TypeError: Cannot read properties of undefined (reading 'id')
   it.skip("goes back to the first language with nothing left over", () => {
     cmb = mountCMB(lambda).cmb;
     cmb.setValue("1 + 2");
@@ -258,6 +265,7 @@ describe("the lambda program block", () => {
 
   // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
 
+  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
   it.skip("spans everything it holds, so that it gets a block and its children fit inside", () => {
     cmb.setValue("lambda (x) x + 1");
     const [prog] = cmb.getAst().rootNodes;

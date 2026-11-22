@@ -264,3 +264,11 @@ test.beforeEach(({}, ti) => {
   );
 });
 // FIXME-END
+// first error (sweep): dragging with a finger › a long press then a drag moves a block to the trash can => Error: expect(locator).toHaveClass(expected) failed
+// first error (sweep): dragging with a finger › a long press then a drag moves a block onto an insertion gap => Error: Test timeout of 20000ms exceeded
+// first error (sweep): dragging with a finger › moving before the long press ends scrolls instead of dragging => Test timeout of 20000ms exceeded.
+// first error (sweep): dragging with a finger › a quick tap still activates a block, as a click does => Error: Test timeout of 20000ms exceeded
+// first error (sweep): editing with a finger › a tap on an insertion gap opens it for typing, and Enter adds the block => Error: Test timeout of 20000ms exceeded
+// first error (sweep): editing with a finger › a tap on the faded else of a lambda if opens it for typing => Error: expect(locator).toHaveClass(expected) failed
+// first error (sweep): editing with a finger › a tap on a gap far down a long program opens it, without the page jumping => Test timeout of 20000ms exceeded.
+// first error (sweep): editing with a finger › a tap on a leaf opens it for typing, and Enter replaces it => Error: Test timeout of 20000ms exceeded

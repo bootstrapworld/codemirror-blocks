@@ -34,3 +34,4 @@ test.describe("switching modes", () => {
     await expect.poll(() => scrollTop(page)).toBeGreaterThan(before - 200);
   });
 });
+// first error (sweep): (whole file) => Error: page.evaluate: TypeError: window.cmb.getCM is not a function

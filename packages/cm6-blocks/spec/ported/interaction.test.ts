@@ -49,6 +49,7 @@ describe("clicking", () => {
 
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
 
+  // first error (sweep): TypeError: Cannot read properties of undefined (reading 'element')
   it.skip("a block in the toolbar neither edits it nor touches the document", () => {
     const sqrt = [...document.querySelectorAll(".Primitive")].find(
       (el) => el.textContent === "sqrt"
@@ -110,6 +111,7 @@ describe("collapsing", () => {
 
   // SKIPPED (I): reads the redux store (`store.getState()`)
 
+  // first error (sweep): TypeError: store.getState is not a function
   it.skip("is forgotten for a node that is deleted", () => {
     cmb.setValue("(f x)\n(g y)");
     doubleClick(root(0));
@@ -156,6 +158,7 @@ describe("selection", () => {
 
   // SKIPPED (I): reads the redux store (`store.getState()`)
 
+  // first error (sweep): TypeError: store.getState is not a function
   it.skip("is dropped for a node that an edit removes", () => {
     select(root(1));
     expect(cmb.getSelectedNodes()).toHaveLength(1);
@@ -203,6 +206,7 @@ describe("moving focus between the editor and the toolbar", () => {
 
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
 
+  // first error (sweep): TestingLibraryElementError: Unable to find an element with the placeholder text of: Search functions
   it.skip("Shift-Tab goes to the search box", () => {
     mouseDown(root());
     keyDown("Tab", { shiftKey: true }, root());
@@ -211,6 +215,7 @@ describe("moving focus between the editor and the toolbar", () => {
 
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
 
+  // first error (sweep): TestingLibraryElementError: Unable to find an element with the placeholder text of: Search functions
   it.skip("Down from the search box focuses the first block, and Down again moves on", () => {
     act(() => search().focus());
     fireEvent.keyDown(search(), { key: "ArrowDown", keyCode: 40 });
@@ -224,6 +229,7 @@ describe("moving focus between the editor and the toolbar", () => {
 
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
 
+  // first error (sweep): TypeError: Cannot read properties of undefined (reading 'focus')
   it.skip("Escape in the list returns to the search box", () => {
     act(() => primitive("sqrt").focus());
     keyDown("Escape", {}, primitive("sqrt"));
@@ -232,6 +238,7 @@ describe("moving focus between the editor and the toolbar", () => {
 
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
 
+  // first error (sweep): TestingLibraryElementError: Unable to find an element with the placeholder text of: Search functions
   it.skip("typing in the search box filters the blocks", () => {
     fireEvent.change(search(), { target: { value: "sqr" } });
     const names = [...document.querySelectorAll(".Primitive")].map(
@@ -243,6 +250,7 @@ describe("moving focus between the editor and the toolbar", () => {
 
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
 
+  // first error (sweep): TestingLibraryElementError: Unable to find an element with the placeholder text of: Search functions
   it.skip("the toolbar is not reachable in text mode", () => {
     cmb.setBlockMode(false);
     expect(search()).toBeDisabled();
