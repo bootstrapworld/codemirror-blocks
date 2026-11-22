@@ -22,7 +22,6 @@ test("the comment shortcut on a comment block and on a block with a comment", as
   });
   const apart = page.getByRole("treeitem", { name: /; apart, a comment/ });
   await apart.click({ position: { x: 4, y: 4 } });
-  await page.keyboard.press("Escape"); // (a click on a comment, as on a literal, opens its text)
   await expect(apart).toBeFocused();
   await page.keyboard.press("Shift+Control+]");
   const box = page.locator("input.blocks-edit");

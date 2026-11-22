@@ -1553,6 +1553,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
       !touch &&
       node.slots.length === 0 &&
       node.kind !== "program" &&
+      node.kind !== "comment" && // (a comment block is only focused by a click: `normallyEditable` is false for it; Enter edits it)
       e.detail <= 1 &&
       !(e.shiftKey || e.ctrlKey || e.metaKey || e.altKey)
     ) {

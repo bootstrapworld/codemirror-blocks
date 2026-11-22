@@ -162,7 +162,7 @@ test.describe("a comment that goes with no block", () => {
   }) => {
     await openInBlockMode(page, "#| apart words |#\n\n(g y)");
     const c = page.getByRole("treeitem", { name: /apart.*, a comment$/ });
-    await c.focus(); // (a click here opens the comment for editing)
+    await c.click();
     await page.keyboard.press("ArrowLeft");
     await expect(c).toHaveAttribute("aria-expanded", "false");
     await expect(c.locator(".blocks-comment-text")).toBeHidden();

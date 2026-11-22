@@ -84,3 +84,48 @@ describe.each(LANGS)("click edits a literal: %s", (l) => {
     expect(ed.view.dom.querySelector(".blocks-edit")).toBeNull();
   });
 });
+
+const CM: Record<string, { src: string; mark: string }> = {
+  scheme: { src: "(f 1)\n\n; apart\n\n(g 2)\n", mark: "; apart" },
+  javascript: { src: "f(1);\n\n// apart\n\ng(2);\n", mark: "// apart" },
+  python: { src: "f(1)\n\n# apart\n\ng(2)\n", mark: "# apart" },
+};
+describe.each(LANGS)(
+  "click on a comment block (the old editor: only activates it): %s",
+  (l) => {
+    const rig = () => {
+      const ed = make(l, CM[l].src);
+      const c = ed.roots().find((r) => r.kind === "comment")!;
+      return { ed, c };
+    };
+    test("a click focuses it and opens nothing; Enter opens its box", () => {
+      const { ed, c } = rig();
+      click(ed.renderer.element(c));
+      expect(ed.focusedNode()).toBe(c);
+      expect(input(ed)).toBeNull();
+      expect(text(ed)).toBe(CM[l].src);
+      ed.renderer.element(c).dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Enter",
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+      expect(input(ed)).not.toBeNull();
+    });
+    test("a click on a block that has a comment focuses that block; a click on its comment popup does the same", () => {
+      const ed = make(
+        l,
+        CM[l].src
+          .replace("\n\n(g", "\n(g")
+          .replace("; apart\n", "; mine\n")
+          .replace("// apart\n", "// mine\n")
+          .replace("# apart\n", "# mine\n")
+      );
+      const host = ed.roots().find((r) => r.kind !== "comment" && r.from > 8);
+      expect(host).toBeDefined();
+      click(ed.renderer.element(host!));
+      expect(ed.focusedNode()).toBe(host);
+    });
+  }
+);
