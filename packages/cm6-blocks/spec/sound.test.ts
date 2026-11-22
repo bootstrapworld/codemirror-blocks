@@ -289,21 +289,6 @@ describe.each(LANGS)("sounds: %s", (l) => {
     expect(heard).toEqual([["beep", "paste-refused"]]);
   });
 
-  test("Shift-Ctrl-] on a comment block beeps", () => {
-    const { ed, heard } = rig(
-      l,
-      l === "scheme"
-        ? "; hi\n(f 1)\n"
-        : l === "javascript"
-          ? "// hi\nf(1);\n"
-          : "# hi\nf(1)\n"
-    );
-    const c = all(ed).find((n) => n.kind === "comment")!;
-    expect(c).toBeDefined();
-    press(ed, c, "}", { ctrlKey: true, shiftKey: true, code: "BracketRight" });
-    expect(heard).toEqual([["beep", "comment-of-comment"]]);
-  });
-
   test("a block let go over the editor where nothing takes it beeps; one let go outside does not", () => {
     const { ed, heard } = rig(l);
     const el = ed.renderer.element(lit(ed, "4"));

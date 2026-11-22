@@ -21,7 +21,7 @@ export type SoundName = "beep" | "wrap";
  *  - "delete-nothing": Delete or Backspace with nothing selected (here only: the old editor says "Nothing selected" without a sound)
  *  - "cut-nothing": Ctrl/Cmd-X with no block selected (CHANGED from the old editor, which only says "Nothing selected")
  *  - "paste-refused": a paste where the block's list cannot take it ("Cannot paste after this node.")
- *  - "comment-of-comment": Shift-Ctrl-] on a comment block
+ *  - "comment-of-comment": (no longer used: Shift-Ctrl-] on a comment block edits it)
  *  - "left-blank": an edit that deletes a block that has to be there (a "one" slot) and leaves a hole
  *  - "drop-nowhere" / "drop-refused": a drag let go where nothing can take it / where the editor refused it
  *  - "no-match": search found nothing, or there is nothing to search for yet

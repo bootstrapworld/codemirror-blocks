@@ -1887,10 +1887,9 @@ export function createLezerBlockEditor(
     },
     setComment(node, words) {
       live(node);
-      if (node.kind === "comment")
-        throw new Error("a comment block is edited like any block");
-      const host = ed.commentHost(node);
-      const c = commentOf(host);
+      // (a comment block is its own comment: the shortcut edits it, and emptying the box removes it)
+      const host = node.kind === "comment" ? node : ed.commentHost(node);
+      const c = node.kind === "comment" ? node : commentOf(host);
       const t = words.replace(/\s+/g, " ").trim();
       const prefix = table.lineComment ?? "#";
       if (c) {

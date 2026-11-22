@@ -395,14 +395,10 @@ export function attachInteraction(ed: LezerBlockEditor): {
 
   /** Shift-Ctrl-]: a box for the comment of a block (the old editor's "Edit Comment") */
   function editComment(node: BNode): void {
-    if (node.kind === "comment") {
-      ed.say("Press Enter to edit a comment block");
-      beep("comment-of-comment");
-      return;
-    }
-    const host = ed.commentHost(node);
+    // (a comment block is its own comment: the same box, on the words, and emptying it removes the block)
+    const host = node.kind === "comment" ? node : ed.commentHost(node);
     if (renderer.isCollapsed(host)) ed.collapse(host, false);
-    const c = ed.commentOf(host);
+    const c = node.kind === "comment" ? node : ed.commentOf(host);
     const raw = c ? view.state.doc.sliceString(c.from, c.to) : "";
     const words = c ? plainComment(raw) : "";
     ed.say(
