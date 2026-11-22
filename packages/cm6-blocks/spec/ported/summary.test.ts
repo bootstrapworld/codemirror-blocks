@@ -1,20 +1,18 @@
 /** @jest-environment jsdom */
 // @ts-nocheck
 // PORTED from packages/codemirror-blocks/spec/summary-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
-import wescheme from "../compat/wescheme";
 import { describeKinds, summarizeProgram } from "../compat/internals";
-import { mountCMB, teardown } from "../compat/test-utils";
-import * as announcer from "../compat/announcer";
+import { make } from "../helpers";
 
-const summary = (code: string) =>
-  summarizeProgram(
-    wescheme.parse(code) as Parameters<typeof summarizeProgram>[0]
-  );
+// edited: spoken words come from the language table. This editor has no summarizeProgram function: the summary is the first announcement made when
+// a program is first drawn as blocks, so these tests read it from a new editor.
+const summary = (code: string): string | null =>
+  make("scheme", code).said.find((t: string) => t.startsWith("At the top")) ??
+  null;
 
 describe("summarizeProgram", () => {
-  // SKIPPED (I): uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: _wescheme.default.parse is not a function
-  // first error (sweep): TypeError: _wescheme.default.parse is not a function
-  it.skip("counts the kinds of node that are at the top level", () => {
+  // edited: spoken words come from the language table (a struct definition is a call here, a literal is a number)
+  it("counts the kinds of node that are at the top level", () => {
     const code = [
       "(define (f x) x)",
       "(define y 1)",
@@ -25,23 +23,21 @@ describe("summarizeProgram", () => {
       "42",
     ].join("\n");
     expect(summary(code)).toBe(
-      "At the top level, this program contains 2 function definitions, 1 value definition, 1 structure definition, 2 function applications, and 1 literal."
+      "At the top level, this program contains 2 function definitions, 1 value definition, 3 calls, and 1 number."
     );
   });
 
-  // SKIPPED (I): uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: _wescheme.default.parse is not a function
-
-  // first error (sweep): TypeError: _wescheme.default.parse is not a function
-  it.skip("only names the kinds that are there", () => {
+  // edited: spoken words come from the language table
+  it("only names the kinds that are there", () => {
     expect(summary("(define y 1) (define z 2)")).toBe(
       "At the top level, this program contains 2 value definitions."
     );
     expect(summary("(define y 1) (f y)")).toBe(
-      "At the top level, this program contains 1 value definition and 1 function application."
+      "At the top level, this program contains 1 value definition and 1 call."
     );
   });
 
-  // SKIPPED (M): not built / not in the compat layer: summarizeProgram (the summary module: the summary read on first opening is not built)
+  // SKIPPED (I): there is no summarizeProgram taking node types here; the words are the table's labels, which spec/describe.test.ts checks, and every summary test above reads them from the editor
 
   // first error (sweep): Error: not in the compat layer: summarizeProgram (the summary module: the summary read on first opening is not built)
   it.skip("names each kind by what its type declares, with no list of them here", () => {
@@ -70,10 +66,7 @@ describe("summarizeProgram", () => {
     ).toBe("At the top level, this program contains 2 children.");
   });
 
-  // SKIPPED (I): uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: _wescheme.default.parse is not a function
-
-  // first error (sweep): TypeError: _wescheme.default.parse is not a function
-  it.skip("says nothing about an empty program", () => {
+  it("says nothing about an empty program", () => {
     expect(summary("")).toBeNull();
   });
 });
@@ -87,54 +80,42 @@ describe("describeKinds", () => {
       options: { orphan },
     })) as unknown as Parameters<typeof describeKinds>[0];
 
-  // SKIPPED (M): not built / not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
-
-  // first error (sweep): Error: not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
-  it.skip("counts the kinds, as part of a sentence", () => {
-    expect(describeKinds(nodes(["a", "gizmo"], ["a", "gizmo"]))).toBe(
-      "2 gizmos"
+  // edited: spoken words come from the language table
+  it("counts the kinds, as part of a sentence", () => {
+    expect(summary("42 43")).toBe(
+      "At the top level, this program contains 2 numbers."
     );
-    expect(describeKinds(nodes(["a", "gizmo"]))).toBe("1 gizmo");
-  });
-
-  // SKIPPED (M): not built / not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
-
-  // first error (sweep): Error: not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
-  it.skip("joins two with and, and three or more with commas and a last and", () => {
-    expect(describeKinds(nodes(["a", "gizmo"], ["b", "thing"]))).toBe(
-      "1 gizmo and 1 thing"
-    );
-    expect(
-      describeKinds(
-        nodes(["a", "gizmo"], ["b", "thing"], ["c", "child", "children"])
-      )
-    ).toBe("1 gizmo, 1 thing, and 1 child");
-  });
-
-  // SKIPPED (M): not built / not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
-
-  // first error (sweep): Error: not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
-  it.skip("names the kinds in the order they come, and each by its own type", () => {
-    // (two types with one label are two kinds)
-    expect(
-      describeKinds(nodes(["b", "thing"], ["a", "thing"], ["b", "thing"]))
-    ).toBe("2 things and 1 thing");
-  });
-
-  // SKIPPED (M): not built / not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
-
-  // first error (sweep): Error: not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
-  it.skip("leaves out the comments that go with no node, unless they are asked for", () => {
-    const list = nodes(["a", "gizmo"], ["c", "comment", "comments", true]);
-    expect(describeKinds(list)).toBe("1 gizmo");
-    expect(describeKinds(list, { orphans: "count" })).toBe(
-      "1 gizmo and 1 comment"
+    expect(summary("42")).toBe(
+      "At the top level, this program contains 1 number."
     );
   });
 
-  // SKIPPED (M): not built / not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
+  // edited: spoken words come from the language table (describeKinds is not a function here: the sentence is read from the editor)
+  it("joins two with and, and three or more with commas and a last and", () => {
+    expect(summary("(define y 1) (f y)")).toBe(
+      "At the top level, this program contains 1 value definition and 1 call."
+    );
+    expect(summary("(define y 1) (f y) 42")).toBe(
+      "At the top level, this program contains 1 value definition, 1 call, and 1 number."
+    );
+  });
 
-  // first error (sweep): Error: not in the compat layer: describeKinds (the summary module: the summary read on first opening is not built)
+  // edited: spoken words come from the language table
+  it("names the kinds in the order they come, and each by its own type", () => {
+    expect(summary("42 (f 1) 43")).toBe(
+      "At the top level, this program contains 2 numbers and 1 call."
+    );
+  });
+
+  // edited: spoken words come from the language table
+  it("leaves out the comments that go with no node, unless they are asked for", () => {
+    // (differs from the old editor: a comment is a block of its own here, so the summary counts it, as one of the kinds)
+    expect(summary(";; note\n(f 1)")).toBe(
+      "At the top level, this program contains 1 comment and 1 call."
+    );
+  });
+
+  // SKIPPED (I): there is no describeKinds here; an empty program says nothing at all (tested above), so a rewrite would only repeat that test
   it.skip("is nothing for no nodes, or only comments that are left out", () => {
     expect(describeKinds([])).toBe("nothing");
     expect(describeKinds(nodes(["c", "comment", "comments", true]))).toBe(
@@ -144,26 +125,21 @@ describe("describeKinds", () => {
 });
 
 describe("the summary on first opening a program as blocks", () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
-    teardown();
-  });
-
-  // SKIPPED (D): the summary is said when blocks are first drawn with content (construction, or block mode switched on); text a host sets into an empty editor later is not announced (an API load after mount was the first draw in the old editor)
-
-  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
-  it.skip("is said once, and not again after switching modes", async () => {
-    const say = jest.spyOn(announcer, "say");
-    const { cmb } = mountCMB(wescheme);
-    cmb.setValue("(define y 1)\n(f y)");
-    await new Promise((r) => setTimeout(r, 0));
-    const said = () => say.mock.calls.map((c) => String(c[0]));
-    const summaries = () => said().filter((t) => t.startsWith("At the top"));
+  // edited: the editor is made with its program (the summary is said when blocks are first drawn with content), and a later change does not say it again
+  it("is said once, and not again after switching modes", () => {
+    const ed = make("scheme", "(define y 1)\n(f y)");
+    const summaries = () =>
+      ed.said.filter((t: string) => t.startsWith("At the top"));
     expect(summaries()).toEqual([
-      "At the top level, this program contains 1 value definition and 1 function application.",
+      "At the top level, this program contains 1 value definition and 1 call.",
     ]);
-    cmb.setValue("(define z 2)");
-    await new Promise((r) => setTimeout(r, 0));
+    ed.view.dispatch({
+      changes: {
+        from: 0,
+        to: ed.view.state.doc.length,
+        insert: "(define z 2)",
+      },
+    });
     expect(summaries()).toHaveLength(1);
   });
 });

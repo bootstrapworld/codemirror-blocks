@@ -127,24 +127,46 @@ describe("what a block says", () => {
 });
 
 describe("what a block looks like", () => {
-  const forms = [...nodes.map(([code]) => code), "(f x)\n(g y)", "42", '"hi"'];
+  // edited: spoken words come from the language table (the old test compared with node.shortDescription(), which is the old words)
+  const labels: Record<string, string[]> = {
+    "(f x y)": ["call to f with 2 arguments"],
+    "(f x)": ["call to f with 1 argument"],
+    "(f (g (h (i 1))))": ["call to f with 1 argument"],
+    "(define x 5)": ["x: value definition"],
+    "(define x (f 1))": ["x: value definition"],
+    "(define (f a b) (+ a b))": [
+      "f: function definition with 2 arguments: a and b",
+    ],
+    "(lambda (x y) (+ x y))": ["function of (x y) returning (+ x y)"],
+    "(cond [(> 1 2) 3] [else 4])": ["cond with 2 clauses"],
+    "(if 1 2 3)": ["if 1, then 2, else 3"],
+    "(begin 1 2)": ["call to begin with 2 arguments"],
+    "(when 1 2)": ["call to when with 2 arguments"],
+    "(unless 1 2)": ["call to unless with 2 arguments"],
+    "(let ([a 1]) a)": ["call to let with 2 arguments"],
+    "(define-struct p (x y))": ["call to define-struct with 2 arguments"],
+    "...": ["..., a blank"],
+    "(lambda x x)": ["function of x returning x"],
+    "(else)": ["call to else with 0 arguments"],
+    "(f x)\n(g y)": ["call to f with 1 argument", "call to g with 1 argument"],
+    "42": ["42, a number"],
+    '"hi"': ['"hi", a string'],
+  };
 
-  // SKIPPED (D): the expected labels are the old words (second round D); the labels of the same forms are tested in spec/describe.test.ts
-  // first error (sweep): TypeError: node.shortDescription is not a function
-  it.skip.each(forms)("%s is drawn, labelled with what it says", (code) => {
-    const { cmb } = mountCMB(wescheme);
-    cmb.setValue(code);
-    const roots = cmb.getAst().rootNodes;
-    expect(roots.length).toBeGreaterThan(0);
-    for (const node of roots) {
-      const element = document.getElementById(`block-node-${node.id}`);
-      expect(element).toBeTruthy();
-      expect(element?.getAttribute("aria-label")).toBe(
-        `${node.shortDescription()},`
+  it.each(Object.keys(labels))(
+    "%s is drawn, labelled with what it says",
+    (code) => {
+      const { cmb } = mountCMB(wescheme);
+      cmb.setValue(code);
+      const roots = [
+        ...document.querySelectorAll('[role="treeitem"][aria-level="1"]'),
+      ];
+      expect(roots.map((e) => e.getAttribute("aria-label"))).toEqual(
+        labels[code]
       );
+      teardown();
     }
-    teardown();
-  });
+  );
 
   // EDITED (b): the old table drew a cond as `.blocks-cond-table` with `.blocks-cond-row`s; here a cond is `.blocks-cond` with `.blocks-clause` children (the parts are still inside it)
 
