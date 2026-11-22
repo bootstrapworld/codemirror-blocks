@@ -253,12 +253,14 @@ describe.each(LANGS)("comment blocks, orphan: %s", (l) => {
     ok(ed2);
   });
 
-  test("(f) old: the comment can be dragged (it is a node) and dropped in a gap, staying an orphan (printed with a blank line after); here it is moved but is a plain line over the next block", () => {
+  test("(f) old: the comment can be dragged (it is a node) and dropped in a gap, staying an orphan (printed with a blank line after); here the same (fixed, twenty-first round)", () => {
     const { ed, c, call } = rig(l);
     const slot = ed.doc.program.slots[0];
     ed.moveNode(c, { slot, index: 0 });
-    expect(D(ed).startsWith(CFG[l].forms[0])).toBe(true);
-    expect(D(ed)).toContain(CFG[l].forms[0] + "\n" + call);
+    expect(D(ed).startsWith(CFG[l].forms[0] + "\n\n" + call)).toBe(true);
+    expect(
+      ed.commentOf(ed.roots().find((r) => r.kind !== "comment")!)
+    ).toBeNull();
     ok(ed);
   });
   test("(f) old: a node cannot be dropped ON a comment (only in gaps); here the comment is replaced by the block", () => {
@@ -389,10 +391,14 @@ describe.each(LANGS)("comment on a node (attached): %s", (l) => {
     ).toBeNull();
     ok(ed);
   });
-  test("(p)(i) old: moving the node takes its comment along (a drop where the next line is another node carries the comment above); here the comment stays where it was", () => {
+  test("(p)(i) old: moving the node takes its comment along; here the same (fixed, twenty-first round)", () => {
     const { ed, f } = own(l);
-    ed.moveNode(f, { slot: ed.doc.program.slots[0], index: 3 });
-    expect(D(ed).startsWith(`${MARK[l]} mine\n\n`)).toBe(true);
+    ed.moveNode(f, { slot: ed.doc.program.slots[0], index: 4 });
+    expect(D(ed)).not.toContain("mine\n\n");
+    expect(D(ed).trimEnd().endsWith(`${MARK[l]} mine\n${CFG[l].call}`)).toBe(
+      true
+    );
+    expect(ed.focusedNode()!.kind).not.toBe("comment");
     ok(ed);
   });
   test("(i) old: inserting a node before an owner puts it above the owner's comment; here it goes between the comment and the owner, so it takes the comment", () => {

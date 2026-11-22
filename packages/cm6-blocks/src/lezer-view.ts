@@ -2095,20 +2095,29 @@ export function createLezerBlockEditor(
         if ("blank" in target && target.blank === node) return;
       }
       const t = currentText();
-      const snippets = sorted.map((n) =>
+      // (a comment directly above a block goes with it, as in the old editor; into a gap only)
+      const moved = [...sorted];
+      if ("slot" in target)
+        for (const n of sorted) {
+          const c = commentOf(n);
+          if (c && c.slot && c.to <= n.from && !moved.includes(c))
+            moved.push(c);
+        }
+      moved.sort((x, y) => x.from - y.from || x.to - y.to);
+      const snippets = moved.map((n) =>
         dedent(t.slice(n.from, n.to), indentAt(n.from)).replace(/\s+$/, "")
       );
       const inList = (n: BNode): boolean =>
         n.slot!.kind !== "one" && !n.slot!.pieces;
       const gone = mergeChanges([
-        ...sorted
+        ...moved
           .filter((n) => !inList(n))
           .map((n): TextChange => ({
             from: n.from,
             to: n.to,
             insert: table.blank ?? "...",
           })),
-        ...removeChanges(sorted.filter(inList), t),
+        ...removeChanges(moved.filter(inList), t),
       ]);
       let put: TextChange;
       if ("blank" in target)
@@ -2121,12 +2130,22 @@ export function createLezerBlockEditor(
         const ref =
           sl.nodes[Math.min(target.index, sl.nodes.length - 1)] ?? null;
         const ind = ref ? indentAt(ref.from) : "";
+        const sep = separatorFor(table, t, sl);
         put = changeFor(
           sl,
           target.index,
           snippets
-            .map((x) => x.replace(/\n/g, "\n" + ind))
-            .join(separatorFor(table, t, sl))
+            .map(
+              (x, i) =>
+                x.replace(/\n/g, "\n" + ind) +
+                // (a comment block of its own keeps a blank line after it, or it would go with the block below)
+                (moved[i].kind === "comment" &&
+                !(moved[i + 1] && commentOf(moved[i + 1]) === moved[i]) &&
+                sep.includes("\n")
+                  ? "\n"
+                  : "")
+            )
+            .join(sep)
         );
       }
       for (const g of gone)
@@ -2148,9 +2167,11 @@ export function createLezerBlockEditor(
       let shift = 0;
       for (const g of gone)
         if (g.from < put.from) shift += g.insert.length - (g.to - g.from);
+      const j = moved.indexOf(sorted[0]);
+      const upTo = j === 0 ? 0 : put.insert.indexOf(snippets[j - 1]) + 1;
       const at =
-        put.from + shift + put.insert.indexOf(snippets[0].split("\n")[0]);
-      const found = blockAt(at, snippets[0].length);
+        put.from + shift + put.insert.indexOf(snippets[j].split("\n")[0], upTo);
+      const found = blockAt(at, snippets[j].length);
       if (found) ed.focusNode(found);
     },
     change: dispatch,
