@@ -6,11 +6,16 @@ import { openInBlockMode } from "../compat/helpers";
 
 /** What the editing box holds, and what is selected in it */
 const editing = (page: Page) =>
-  page.evaluate(() => ({
-    editable: document.activeElement?.getAttribute("contenteditable"),
-    text: document.activeElement?.textContent,
-    selected: window.getSelection()?.toString(),
-  }));
+  // edited: the box is an input (or a textarea), not a contenteditable
+  page.evaluate(() => {
+    const a = document.activeElement as HTMLInputElement | null;
+    const box = !!a && /^(INPUT|TEXTAREA)$/.test(a.tagName);
+    return {
+      editable: box ? "true" : "false",
+      text: box ? a.value : undefined,
+      selected: box ? a.value.slice(a.selectionStart!, a.selectionEnd!) : "",
+    };
+  });
 
 test.describe("editing a literal", () => {
   test("a click opens its text, selected, the first time", async ({ page }) => {
@@ -40,18 +45,3 @@ test.describe("editing a literal", () => {
       });
   });
 });
-
-// FIXME-BEGIN (thirteenth round: D: the edit box is an input here, the old one a contenteditable (interact.ts header))
-const FIXME = new Set<string>([
-  "editing a literal › a click opens its text, selected, the first time",
-  "editing a literal › Enter on a selected literal opens its text, selected",
-]);
-test.beforeEach(({}, ti) => {
-  test.fixme(
-    FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "D: the edit box is an input here, the old one a contenteditable (interact.ts header)"
-  );
-});
-// FIXME-END
-// first error (sweep): editing a literal › a click opens its text, selected, the first time => Error: expect(received).toEqual(expected) // deep equality
-// first error (sweep): editing a literal › Enter on a selected literal opens its text, selected => Error: expect(received).toEqual(expected) // deep equality

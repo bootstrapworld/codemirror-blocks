@@ -15,7 +15,8 @@ for (const [key, expected] of [
     await openInBlockMode(page, "(f x y)\n(g z)");
     await block(page, /call to f /).click({ position: { x: 4, y: 4 } });
     await page.keyboard.press(key);
-    await expect(page.locator("[contenteditable=true]")).toBeFocused();
+    // edited: the box is an input, not a contenteditable
+    await expect(page.locator("input.blocks-edit")).toBeFocused();
     await page.keyboard.type("q");
     await page.keyboard.press("Enter");
     await expect
@@ -24,18 +25,3 @@ for (const [key, expected] of [
     expect((await snapshot(page)).reparsed).toEqual(expected);
   });
 }
-
-// FIXME-BEGIN (thirteenth round: D: the insertion box is an input here, the old one a contenteditable (`[contenteditable=true]`))
-const FIXME = new Set<string>([
-  "Control+] beside a top-level block inserts a new top-level form",
-  "Control+[ beside a top-level block inserts a new top-level form",
-]);
-test.beforeEach(({}, ti) => {
-  test.fixme(
-    FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "D: the insertion box is an input here, the old one a contenteditable (`[contenteditable=true]`)"
-  );
-});
-// FIXME-END
-// first error (sweep): Control+] beside a top-level block inserts a new top-level form => Error: expect(locator).toBeFocused() failed
-// first error (sweep): Control+[ beside a top-level block inserts a new top-level form => Error: expect(locator).toBeFocused() failed
