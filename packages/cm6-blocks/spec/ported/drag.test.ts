@@ -126,7 +126,7 @@ describe("when dragging a node over a drop target", () => {
 
 // SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
 
-// SKIPPED (U): the dropped collapsed root arrives expanded (aria-expanded stays "true"); collapsed state is not carried through a move
+// SKIPPED (U): the dropped collapsed root arrives expanded (aria-expanded stays "true"). Cause: carryMarks (lezer-view.ts) re-collapses a replaced block only at the same place, and a moved block lands at another; a fix has to map the moved block through moveBlocks (more than 30 lines)
 // first error (sweep): the dropped collapsed root arrives expanded (needs: collapsed state carried through a move)
 it.skip("saves collapsed state when dragging a root node to be the last child of the next root node", async () => {
   cmb.setValue("(collapse me)\n(add 1 2)");
