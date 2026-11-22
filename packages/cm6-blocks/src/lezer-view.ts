@@ -438,8 +438,19 @@ export function createLezerBlockEditor(
     const ok = (x: BNode | undefined): x is BNode =>
       !!x && x.kind !== "comment" && x.kind !== "error" && !!x.slot;
     const prev = sibs[j - 1];
-    if (ok(prev) && trailing(prev, c)) return prev;
     const next = sibs[j + 1];
+    if (table.attach) {
+      const r = table.attach({
+        comment: c,
+        before: ok(prev) ? prev : null,
+        after: ok(next) ? next : null,
+        siblings: sibs,
+        text: { length: curDoc.length, slice: (a, b) => curDoc.slice(a, b) },
+      });
+      if (r === null) return null;
+      if (r !== "default") return ok(r) && sibs.includes(r) ? r : null;
+    }
+    if (ok(prev) && trailing(prev, c)) return prev;
     if (ok(next) && /^[ \t]*\r?\n[ \t]*$/.test(curDoc.slice(c.to, next.from)))
       return next;
     return null;
@@ -450,12 +461,25 @@ export function createLezerBlockEditor(
     const sibs = sibsOf(n);
     if (!sibs) return [];
     const i = sibs.indexOf(n);
-    return [sibs[i - 1], sibs[i + 1]].filter(
-      (c) => c && c.kind === "comment" && ownerOf(c) === n
-    );
+    // (a rule may attach a comment to a block that is not next to it: every comment of the list is asked)
+    const near = table.attach ? sibs : [sibs[i - 1], sibs[i + 1]];
+    return near.filter((c) => c && c.kind === "comment" && ownerOf(c) === n);
   };
   /** the first of them (the one a block shows and edits) */
   const commentOf = (n: BNode): BNode | null => commentsOf(n)[0] ?? null;
+  /** the last node of a block and its comments, not counting a comment after the block on its line (a paste goes before that) */
+  const tailOf = (n: BNode): BNode => {
+    const ns = groupOf(n).nodes.filter(
+      (c) => c === n || curDoc.slice(n.to, c.from).includes("\n")
+    );
+    return ns[ns.length - 1];
+  };
+  /** a block with the comments that go with it (those in a list: made-up ones are in its text already): the text range and the nodes */
+  const groupOf = (n: BNode): { from: number; to: number; nodes: BNode[] } => {
+    const cs = commentsOf(n).filter((c) => c.slot);
+    const nodes = [...cs, n].sort((a, b) => a.from - b.from);
+    return { from: nodes[0].from, to: nodes[nodes.length - 1].to, nodes };
+  };
   renderer.attached = commentOf;
   renderer.mayHaveStrays = hasStrays;
   const stats: LezerStats = {
@@ -1469,11 +1493,9 @@ export function createLezerBlockEditor(
       if (n.slot && n.slot.kind === "list" && !n.slot.pieces) {
         slot = n.slot;
         ref = n;
-        // (before a block that has a comment above it is above the comment, which goes with the block)
-        const lead = before && n === anchor ? commentOf(n) : null;
-        index =
-          n.slot.nodes.indexOf(lead && lead.to <= n.from ? lead : n) +
-          (before ? 0 : 1);
+        // (before a block that has a comment is above it, after is below it: the comments go with the block)
+        const at = n !== anchor ? n : before ? groupOf(n).nodes[0] : tailOf(n);
+        index = n.slot.nodes.indexOf(at) + (before ? 0 : 1);
         break;
       }
       if (n === anchor && n.slot && n.slot.kind === "one" && n.parent) {
@@ -1507,12 +1529,7 @@ export function createLezerBlockEditor(
     snippet: string
   ): TextChange {
     const t = currentText();
-    const above = before ? commentOf(anchor) : null;
-    const pos = before
-      ? above && above.to <= anchor.from
-        ? above.from
-        : anchor.from
-      : anchor.to;
+    const pos = before ? groupOf(anchor).from : tailOf(anchor).to;
     const ls = t.lastIndexOf("\n", pos - 1) + 1;
     let le = t.indexOf("\n", pos);
     if (le < 0) le = t.length;
@@ -1788,8 +1805,8 @@ export function createLezerBlockEditor(
       if (withComments) {
         // (cut takes the comment that goes with a block; delete leaves it, as the old editor does)
         const more = nodes
-          .map((n) => commentOf(n))
-          .filter((c): c is BNode => !!c && !nodes.includes(c));
+          .flatMap((n) => commentsOf(n))
+          .filter((c) => !nodes.includes(c));
         nodes = [...nodes, ...new Set(more)];
       }
       const sorted = [...nodes].sort((x, y) => x.from - y.from || x.to - y.to);
@@ -2045,15 +2062,18 @@ export function createLezerBlockEditor(
         view.state.doc.sliceString(node.from, node.to),
         indentAt(node.from)
       ).replace(/\s+$/, "");
-      const c = withComment ? commentOf(node) : null;
-      return c
-        ? dedent(
-            view.state.doc.sliceString(c.from, c.to),
-            indentAt(c.from)
-          ).replace(/\s+$/, "") +
-            "\n" +
-            own
-        : own;
+      if (!withComment) return own;
+      // (the comments go first, trailing ones too, as the old editor copies them)
+      return [...commentsOf(node), node]
+        .map((c) =>
+          c === node
+            ? own
+            : dedent(
+                view.state.doc.sliceString(c.from, c.to),
+                indentAt(c.from)
+              ).replace(/\s+$/, "")
+        )
+        .join("\n");
     },
     pasteText(anchor, text, before) {
       if (anchor) live(anchor);
@@ -2124,9 +2144,8 @@ export function createLezerBlockEditor(
       const moved = [...sorted];
       if ("slot" in target)
         for (const n of sorted) {
-          const c = commentOf(n);
-          if (c && c.slot && c.to <= n.from && !moved.includes(c))
-            moved.push(c);
+          for (const c of commentsOf(n))
+            if (c.slot && !moved.includes(c)) moved.push(c);
         }
       moved.sort((x, y) => x.from - y.from || x.to - y.to);
       const snippets = moved.map((n) =>
@@ -2134,6 +2153,15 @@ export function createLezerBlockEditor(
       );
       const inList = (n: BNode): boolean =>
         n.slot!.kind !== "one" && !n.slot!.pieces;
+      // (the comment after a block on its line goes after it on that line)
+      const glue = (i: number): string | null =>
+        moved[i + 1] &&
+        moved[i + 1].kind === "comment" &&
+        ownerOf(moved[i + 1]) === moved[i] &&
+        moved[i + 1].from >= moved[i].to &&
+        !t.slice(moved[i].to, moved[i + 1].from).includes("\n")
+          ? " "
+          : null;
       const gone = mergeChanges([
         ...moved
           .filter((n) => !inList(n))
@@ -2165,12 +2193,12 @@ export function createLezerBlockEditor(
                 x.replace(/\n/g, "\n" + ind) +
                 // (a comment block of its own keeps a blank line after it, or it would go with the block below)
                 (moved[i].kind === "comment" &&
-                ownerOf(moved[i]) !== moved[i + 1] &&
+                !moved.includes(ownerOf(moved[i]) as BNode) &&
                 sep.includes("\n")
                   ? "\n"
                   : "")
             )
-            .join(sep)
+            .reduce((a, x, i) => a + (glue(i - 1) ?? sep) + x)
         );
       }
       for (const g of gone)

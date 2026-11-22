@@ -8,7 +8,7 @@
  */
 import type { Parser, SyntaxNode, Tree } from "@lezer/common";
 import { makeNode } from "./node";
-import type { BNode, Language, Slot, TextChange } from "./types";
+import type { BNode, Language, Slot, TextChange, TextSource } from "./types";
 
 export interface BlockRow {
   kind: string; // BNode.kind
@@ -90,6 +90,20 @@ export interface BlockTable {
   blank?: string;
   /** the sign that starts a line comment (`;`, `//`, `#`): used to write a comment above a block */
   lineComment?: string;
+  /**
+   * OPTIONAL: which block a comment goes with. Absent, the generic rule holds: a comment after a block on its line goes with that block, else
+   * a comment directly above a block (only a line break between) goes with the block below; a blank line breaks it. The rule is asked for
+   * every comment block (not the made-up comments inside a block that has no list); `before` / `after` are the siblings next to the comment
+   * when they are blocks (not comments or errors), `siblings` all of the list. Return the sibling it goes with, `null` for none, or
+   * "default" for the generic rule. Association is derived from the tree and the text, so drawing, editing, move, cut, copy and paste follow it.
+   */
+  attach?: (ctx: {
+    comment: BNode;
+    before: BNode | null;
+    after: BNode | null;
+    siblings: readonly BNode[];
+    text: TextSource;
+  }) => BNode | null | "default";
   /** how elements of a list are separated, by list-slot name or node kind */
   separators?: Record<string, string>;
   /**
@@ -787,7 +801,11 @@ export function rootRemovals(
     while (to > from && (text[to - 1] === "\n" || text[to - 1] === "\r")) to--;
     // (a comment that goes with the next block: one piece, the line break between them goes too)
     const nx = sorted[k + 1];
-    if (n.kind === "comment" && nx && !/\S/.test(text.slice(n.to, nx.from))) {
+    if (
+      nx &&
+      (n.kind === "comment" || nx.kind === "comment") &&
+      !/\S/.test(text.slice(n.to, nx.from))
+    ) {
       out.set(n, { from, to: from, insert: "" });
       gone.push([from, from]);
       continue;
@@ -795,7 +813,7 @@ export function rootRemovals(
     const prev = sorted[k - 1];
     if (
       prev &&
-      prev.kind === "comment" &&
+      (prev.kind === "comment" || n.kind === "comment") &&
       !/\S/.test(text.slice(prev.to, n.from))
     )
       from = prev.from;
