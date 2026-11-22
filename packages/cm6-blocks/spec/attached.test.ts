@@ -118,7 +118,8 @@ describe.each(LANGS)("comments that go with a block: %s", (l) => {
     expect(text(ed)).not.toContain("trailing");
     ok(ed);
   });
-  test("Escape cancels; a comment block is edited like any block", () => {
+  // edited (twentieth round): the shortcut on a comment block opens the box on that comment (spec/comment-edit.test.ts); Escape closes it
+  test("Escape cancels; the shortcut on a comment block opens its box", () => {
     const ed = make(l, TEXTS[l]);
     const input = editKey(ed, root(ed, "g"))!;
     input.value = "zzz";
@@ -130,7 +131,10 @@ describe.each(LANGS)("comments that go with a block: %s", (l) => {
       shiftKey: true,
       code: "BracketRight",
     });
-    expect(ed.view.dom.querySelector("input.blocks-edit")).toBeNull();
+    const box = ed.view.dom.querySelector("input.blocks-edit")!;
+    expect(box).not.toBeNull();
+    key(box, "Escape");
+    expect(text(ed)).toBe(TEXTS[l]);
     ok(ed);
   });
   test("a comment inside a block goes with the block under it; the box on an inner expression comments the outermost block that starts there", () => {
