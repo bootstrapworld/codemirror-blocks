@@ -355,13 +355,15 @@ function own(l: string) {
 }
 
 describe.each(LANGS)("comment on a node (attached): %s", (l) => {
-  test("(n)(l) old: a popup beside the node while it is active, aria-hidden, and `with comment: <text>` in the node's name; here a marker, data-comment and the label, no popup (MISSING: popup)", () => {
+  test("(n)(l) old: a popup beside the node while it is active, aria-hidden, and `with comment: <text>` in the node's name; here the same, and a marker, data-comment and the label too", () => {
     const { ed, f, el } = own(l);
     expect(ed.commentOf(f)!.kind).toBe("comment");
     expect(el(f).getAttribute("aria-label")).toContain("with comment: mine");
     expect(el(f).getAttribute("data-comment")).toBe("mine");
     expect(el(f).classList.contains("blocks-has-comment")).toBe(true);
-    expect(el(f).querySelector(".blocks-comment")).toBeNull();
+    const pop = el(f).querySelector(":scope > .blocks-comment");
+    expect(pop?.getAttribute("aria-hidden")).toBe("true");
+    expect(pop?.textContent).toBe("mine");
   });
   test("(o) old: Shift-Ctrl-] edits it in a box on the words, an empty commit removes it; here the same", () => {
     const { ed, f, press } = own(l);

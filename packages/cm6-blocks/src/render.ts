@@ -87,9 +87,21 @@ export class Renderer {
       const t = plainComment(c.value ?? "");
       this.setAttr(el, "data-comment", t);
       this.setAttr(el, "title", t);
+      // (the popup: shown while the block has focus, hidden from a screen reader, which has the words in the block's label)
+      let pop = Array.from(el.children).find((k) =>
+        k.classList.contains("blocks-comment")
+      ) as HTMLElement | undefined;
+      if (!pop) {
+        pop = this.create("span", "blocks-comment");
+        pop.setAttribute("aria-hidden", "true");
+        el.prepend(pop);
+      }
+      if (pop.textContent !== t) pop.textContent = t;
     } else if (el.hasAttribute("data-comment")) {
       el.removeAttribute("data-comment");
       el.removeAttribute("title");
+      for (const k of Array.from(el.children))
+        if (k.classList.contains("blocks-comment")) k.remove();
     }
   }
 

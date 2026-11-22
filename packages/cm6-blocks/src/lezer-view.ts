@@ -2434,12 +2434,34 @@ export function createLezerBlockEditor(
     if (!to || !renderer.nodeOf(to) || !view.contentDOM.contains(to))
       setActive(null);
   });
+  /**
+   * The popup with a block's comment hangs from the top of the block; where that would put it below the bottom of the editor it is held at
+   * the block's bottom edge instead and grows upwards (unless that leaves it above the top too). Placed when a block gets focus, and again
+   * a frame later and when the editor scrolls.
+   */
+  const placePopup = (): void => {
+    const el = view.contentDOM.ownerDocument.activeElement;
+    const pop = el?.querySelector?.(
+      ":scope > .blocks-comment"
+    ) as HTMLElement | null;
+    if (!pop) return;
+    pop.classList.remove("blocks-comment-above");
+    const room = view.dom.getBoundingClientRect();
+    if (pop.getBoundingClientRect().bottom > room.bottom) {
+      pop.classList.add("blocks-comment-above");
+      if (pop.getBoundingClientRect().top < room.top)
+        pop.classList.remove("blocks-comment-above");
+    }
+  };
+  view.scrollDOM.addEventListener("scroll", placePopup);
   view.dom.addEventListener("focusin", (e) => {
     const n = renderer.nodeOf(e.target as Element);
     if (n) lastNode = n;
     const block = (e.target as Element).closest?.(".blocks-node[data-id]");
     setActive(n && block && view.contentDOM.contains(block) ? block.id : null);
     unqueue();
+    placePopup();
+    requestAnimationFrame(placePopup);
     // the old editor: a block that can be edited in place says so, after a moment, unless something else is said or the focus moves
     if (
       n &&
