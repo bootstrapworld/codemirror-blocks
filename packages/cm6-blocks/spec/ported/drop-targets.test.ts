@@ -166,13 +166,10 @@ describe("drops that should do nothing", () => {
 });
 
 describe("dragging nodes that carry extra state", () => {
-  // SKIPPED (D): the comment is its own block here: it moves with the block only when both are selected (notes, sixth round 4)
   it("a node with a comment moves together with its comment", () => {
     cmb.setValue(";note\n(f x)\n(g y)");
     const target = dropTargets(getNodeLabeled(/call to g /))[0];
-    // edited: the comment is a block of its own: it travels with its node only when both are selected
-    mouseDown(cmb.getAst().rootNodes[0]);
-    keyDown(" ");
+    // (twenty-first round: the comment travels with its node, as in the old editor, without being selected)
     mouseDown(getNodeLabeled(/call to f /));
     keyDown(" ");
     drag(getNodeLabeled(/call to f /)).dropOnto(target);
