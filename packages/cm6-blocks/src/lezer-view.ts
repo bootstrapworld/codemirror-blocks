@@ -263,6 +263,8 @@ export interface LezerBlockEditor {
   soundsOn(): boolean;
   /** announce `text` to a screen reader (a live region next to the editor); also kept in `said` */
   say(text: string): void;
+  /** an error an action of the editor caught: a dismissible notice (role="alert") next to the editor, spoken once while it shows */
+  reportError(error: unknown): void;
   /** what was announced, newest last (the last 50) */
   said: string[];
   /** Move several blocks (none inside another) to a gap, in document order: ONE text change, one undo step. */
@@ -1605,6 +1607,23 @@ export function createLezerBlockEditor(
     }, 50);
   }
 
+  let notice: HTMLElement | null = null;
+  function reportError(error: unknown): void {
+    if (notice?.isConnected) return; // (said once while it is showing)
+    const doc = parent.ownerDocument;
+    const n = (notice = doc.createElement("div"));
+    n.className = "blocks-error-notice";
+    n.setAttribute("role", "alert");
+    const text = `Something went wrong: ${error instanceof Error ? error.message : String(error)}`;
+    n.append(text + " ");
+    const b = doc.createElement("button");
+    b.textContent = "Dismiss";
+    b.addEventListener("click", () => n.remove());
+    n.append(b);
+    parent.appendChild(n);
+    say(text);
+  }
+
   const done: string[] = [];
   const undone: string[] = [];
   /** the words of an edit, as the old editor says them: "inserted x", "changed x", "deleted x" (one for each change, joined by "and") */
@@ -1891,6 +1910,7 @@ export function createLezerBlockEditor(
     exportActivity: () => recorder.export(),
     said,
     say,
+    reportError,
     sound(name, event) {
       if (soundOn) (options.playSound ?? defaultPlayer)(name, event); // (the option is read each time: a page may set it later)
     },

@@ -474,3 +474,10 @@
 .blocks-lang-scheme .blocks-drop-target.blocks-drop-replace {
   background: red !important;
 }
+/* the notice shown when an action of the editor met an error (role="alert", with a Dismiss button) */
+.blocks-error-notice {
+  padding: 4px 8px;
+  border: 1px solid #b00020;
+  background: #fff0f0;
+  color: #700;
+}

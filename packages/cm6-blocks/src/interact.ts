@@ -1567,7 +1567,15 @@ export function attachInteraction(ed: LezerBlockEditor): {
     }
   }
 
-  dom.addEventListener("keydown", onKey, true);
+  // an error in a key's action is shown as a notice, and the key is left as handled by nothing else
+  const onKeyGuarded = (e: KeyboardEvent): void => {
+    try {
+      onKey(e);
+    } catch (err) {
+      ed.reportError(err);
+    }
+  };
+  dom.addEventListener("keydown", onKeyGuarded, true);
   function onDblClick(e: MouseEvent): void {
     const t = e.target as Element;
     if (t.closest?.(".blocks-edit")) return;
@@ -1596,7 +1604,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
       doc.removeEventListener("touchmove", holdScroll, true);
       doc.removeEventListener("keydown", onEscape, true);
       auto.stop();
-      dom.removeEventListener("keydown", onKey, true);
+      dom.removeEventListener("keydown", onKeyGuarded, true);
       dom.removeEventListener("click", onClick, true);
       dom.removeEventListener("dblclick", onDblClick, true);
       dom.removeEventListener("copy", onCopyEv, true);

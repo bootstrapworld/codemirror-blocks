@@ -17,6 +17,8 @@ const SHIM = () => {
     setValue: (t: string) =>
       ed.view.dispatch({ changes: { from: 0, to: doc().length, insert: t } }),
     clearHistory: () => {},
+    // (the page cannot read the undo depth: the text the last setValue left is the floor undoAll stops at)
+    base: "",
   };
 };
 
@@ -46,7 +48,10 @@ export async function openInBlockMode(
       );
     });
   await page.evaluate(SHIM);
-  await page.evaluate((c) => (window as any).cmb.setValue(c), code);
+  await page.evaluate((c) => {
+    (window as any).cmb.setValue(c);
+    (window as any).cmb.base = (window as any).cmb.getValue();
+  }, code);
   await expect(page.getByRole("treeitem").first()).toBeVisible();
 }
 
@@ -100,7 +105,13 @@ export async function expectConsistent(page: Page) {
 }
 /** (the old helpers press until the history is empty; the page cannot say, so a fixed number of presses) */
 export async function undoAll(page: Page) {
-  for (let i = 0; i < 10; i++) await page.keyboard.press(`${MOD}+z`);
+  // only the test's own edits: stop when the text is the one the program was loaded with
+  const atBase = () =>
+    page.evaluate(
+      () => (window as any).cmb.getValue() === (window as any).cmb.base
+    );
+  for (let i = 0; i < 10 && !(await atBase()); i++)
+    await page.keyboard.press(`${MOD}+z`);
 }
 export async function redoAll(page: Page) {
   for (let i = 0; i < 10; i++) await page.keyboard.press(`${MOD}+Shift+z`);
