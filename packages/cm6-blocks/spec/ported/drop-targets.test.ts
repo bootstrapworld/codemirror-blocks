@@ -167,16 +167,20 @@ describe("drops that should do nothing", () => {
 
 describe("dragging nodes that carry extra state", () => {
   // SKIPPED (D): the comment is its own block here: it moves with the block only when both are selected (notes, sixth round 4)
-  // first error (sweep): Error: expect(received).toHaveLength(expected)
-  it.skip("a node with a comment moves together with its comment", () => {
+  it("a node with a comment moves together with its comment", () => {
     cmb.setValue(";note\n(f x)\n(g y)");
     const target = dropTargets(getNodeLabeled(/call to g /))[0];
+    // edited: the comment is a block of its own: it travels with its node only when both are selected
+    mouseDown(cmb.getAst().rootNodes[0]);
+    keyDown(" ");
+    mouseDown(getNodeLabeled(/call to f /));
+    keyDown(" ");
     drag(getNodeLabeled(/call to f /)).dropOnto(target);
     // the comment travels with its node, into (g ...)
     expect(cmb.getAst().rootNodes.map((n) => n.toString())).toHaveLength(1);
     const text = cmb.getValue();
-    expect(text).toContain("#| note |#");
-    expect(text.indexOf("#| note |#")).toBeLessThan(text.indexOf("(f x)"));
+    expect(text).toContain(";note");
+    expect(text.indexOf(";note")).toBeLessThan(text.indexOf("(f x)"));
     expect(text.indexOf("(f x)")).toBeLessThan(text.indexOf("y"));
   });
 

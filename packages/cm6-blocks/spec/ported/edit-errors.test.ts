@@ -165,33 +165,27 @@ describe("editing in place with a value that can't be parsed", () => {
     expect(undoSteps()).toBe(0);
   });
 
-  // SKIPPED (D): text that does not parse is accepted and written (interact.ts header; the old editor refuses it and keeps the box open with an error flag)
-
-  // first error (sweep): Error: expect(element).toHaveAttribute("contenteditable", "true") // element.getAttribute("contenteditable") === "true"
-  it.skip("stays in edit mode and flags the error", () => {
-    expect(editing(root())).toHaveAttribute("contenteditable", "true");
-    expect(editing(root())).toHaveClass("blocks-error");
-    expect(store.getState().errorId).toBe(root().id);
+  it("stays in edit mode and flags the error", () => {
+    // edited: the box is an input that stays open, red, with the parser's message as its title (no redux errorId)
+    const box = editing(root()).querySelector("input.blocks-edit");
+    expect(box).not.toBeNull();
+    expect(box).toHaveClass("blocks-error");
+    expect((box as HTMLInputElement).title).not.toBe("");
   });
 
-  // SKIPPED (D): text that does not parse is accepted and written (interact.ts header; the old editor refuses it and keeps the box open with an error flag)
-
-  // first error (sweep): TypeError: store.getState is not a function
-  it.skip("clears the error once a valid value is saved", () => {
+  it("clears the error once a valid value is saved", () => {
     setEditableText("8");
     keyDown("Enter");
     expect(cmb.getValue()).toBe("8\n(f x y)");
-    expect(store.getState().errorId).toBe("");
+    // edited: no redux errorId; the box is gone
+    expect(editing(root()).querySelector("input.blocks-edit")).toBeNull();
   });
 
-  // SKIPPED (D): text that does not parse is accepted and written (interact.ts header; the old editor refuses it and keeps the box open with an error flag)
-
-  // first error (sweep): TypeError: store.getState is not a function
-  it.skip("clears the error when the edit is cancelled with Escape", () => {
+  it("clears the error when the edit is cancelled with Escape", () => {
     keyDown("Escape");
     expect(cmb.getValue()).toBe("42\n(f x y)");
-    expect(store.getState().errorId).toBe("");
-    expect(editing(root())).not.toHaveAttribute("contenteditable", "true");
+    // edited: no redux errorId; the box is gone
+    expect(editing(root()).querySelector("input.blocks-edit")).toBeNull();
   });
 });
 
@@ -237,10 +231,7 @@ describe("inserting beside a child with Ctrl-] / Ctrl-[", () => {
     expect(undoSteps()).toBe(0);
   });
 
-  // SKIPPED (D): text that does not parse is accepted and written (interact.ts header; the old editor refuses it and keeps the box open with an error flag)
-
-  // first error (sweep): TypeError: store.getState is not a function
-  it.skip("rejects an unparseable insertion and stays open", () => {
+  it("rejects an unparseable insertion and stays open", () => {
     allowConsoleErrors();
     const x = argsOf(root())[0];
     mouseDown(x);
@@ -248,7 +239,9 @@ describe("inserting beside a child with Ctrl-] / Ctrl-[", () => {
     setEditableText("(((");
     keyDown("Enter");
     expect(cmb.getValue()).toBe("(f x y)");
-    expect(store.getState().errorId).not.toBe("");
+    // edited: the box stays open and red (no redux errorId)
+    const box = document.activeElement as HTMLInputElement;
+    expect(box.classList.contains("blocks-error")).toBe(true);
   });
 });
 
@@ -258,16 +251,11 @@ describe("edits made through the API that would break the document", () => {
     cmb.clearHistory();
   });
 
-  // SKIPPED (D): an API text change is applied as text; nothing is rejected (the text is the truth)
-
-  // first error (sweep): Error: expect(received).toThrow()
-  it.skip("replaceRange with unparseable text is rejected", () => {
-    allowConsoleErrors();
-    expect(() =>
-      cmb.replaceRange("(", { line: 0, ch: 0 }, { line: 0, ch: 0 })
-    ).toThrow();
-    expect(cmb.getValue()).toBe("(f x y)");
-    expect(undoSteps()).toBe(0);
+  // edited: the text is the truth here: a text change from code is applied even when it does not parse (the document then has an error node), where the old editor threw and kept the document. What it proves changed.
+  it("replaceRange with unparseable text is applied, as text", () => {
+    cmb.replaceRange("(", { line: 0, ch: 0 }, { line: 0, ch: 0 });
+    expect(cmb.getValue()).toBe("((f x y)");
+    expect(undoSteps()).toBe(1);
   });
 
   it("replaceRange with parseable text is accepted", () => {

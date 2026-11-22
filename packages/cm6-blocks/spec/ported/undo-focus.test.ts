@@ -62,12 +62,10 @@ describe("undoing and redoing a delete", () => {
     deleteSelected(kids(root())[1]); // x
   });
 
-  // SKIPPED (D): focus after a delete goes to the node now at the same index, else the one before, else the owner (notes, second round A3); the old editor's rule differs
-
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("starts with focus on the block before the deleted one", () => {
+  it("starts with focus on the block before the deleted one", () => {
     expect(cmb.getValue()).toBe("(f y)");
-    expect(focused()).toBe("f");
+    // edited: focus goes to the node now at the same place ("y"), the old editor's rule was the block before (second round A3)
+    expect(focused()).toBe("y");
   });
 
   it("undo puts focus back on the block that had it before the delete", () => {
@@ -76,14 +74,12 @@ describe("undoing and redoing a delete", () => {
     expect(focused()).toBe("x");
   });
 
-  // SKIPPED (D): the focus a delete leaves is the node at the same index here (notes, second round A3), the old editor's the block before; undo is the same in both
-
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("redo puts focus where the delete left it, not on whatever now has x's position", () => {
+  it("redo puts focus where the delete left it, not on whatever now has x's position", () => {
     undo();
     redo();
     expect(cmb.getValue()).toBe("(f y)");
-    expect(focused()).toBe("f");
+    // edited: the delete leaves focus on "y" (see above), and redo leaves it there
+    expect(focused()).toBe("y");
   });
 });
 
@@ -104,13 +100,11 @@ describe("a delete that shifts the positions of the blocks after it", () => {
     expect(focused()).toBe("d");
   });
 
-  // SKIPPED (D): focus after a delete goes to the node now at the same index, else the one before, else the owner (notes, second round A3); the old editor's rule differs
-
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("redo goes to the first block, which took focus after the delete", () => {
+  it("redo goes to the first block, which took focus after the delete", () => {
     undo();
     redo();
-    expect(focused()).toBe("b");
+    // edited: the delete leaves focus on the node at the same place, which is "d" here (the old editor: the first block)
+    expect(focused()).toBe("d");
   });
 });
 
@@ -225,8 +219,7 @@ describe("undoing through the API instead of the keyboard", () => {
   // the same saved blocks: the deleted block comes back with focus, and a redo
   // focuses the block before it.
   // SKIPPED (D): the redo half: the focus a delete leaves differs (as above); the undo half passes
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("brings the AST back and focuses the same blocks as the keyboard", () => {
+  it("brings the AST back and focuses the same blocks as the keyboard", () => {
     cmb.setValue("(f x y)");
     cmb.clearHistory();
     deleteSelected(kids(root())[1]); // x
@@ -238,7 +231,8 @@ describe("undoing through the API instead of the keyboard", () => {
     cmb.redo();
     expect(cmb.getValue()).toBe("(f y)");
     expect(cmb.getAst().rootNodes.map(String)).toEqual(["(f y)"]);
-    expect(focused()).toBe("f");
+    // edited: the delete leaves focus on "y" (second round A3)
+    expect(focused()).toBe("y");
   });
 
   it("does nothing when there is nothing to undo or redo", () => {
@@ -269,8 +263,7 @@ describe("when the saved block can't be found", () => {
 
 describe("a block inside a collapsed block", () => {
   // SKIPPED (D): a block inside a collapsed block is not drawn here, so the test cannot find it (notes, sixth round 2)
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("undo puts focus on the collapsed block that contains it", () => {
+  it("undo puts focus on the collapsed block that contains it", () => {
     cmb.setValue("(f x y) z");
     cmb.clearHistory();
     const x = kids(root())[1];
@@ -282,6 +275,7 @@ describe("a block inside a collapsed block", () => {
     expect(cmb.getValue()).toBe("(f y) z");
     undo();
     expect(cmb.getValue()).toBe("(f x y) z");
-    expect(focused()).toBe("(f x y)");
+    // edited: x is not drawn inside a collapsed block here; what the user can reach is the collapsed block, which must have the DOM focus
+    expect(root().element.contains(document.activeElement)).toBe(true);
   });
 });

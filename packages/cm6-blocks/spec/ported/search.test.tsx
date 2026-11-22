@@ -68,14 +68,12 @@ describe("the Search Settings dialog", () => {
     expect(dialog()).toBeNull();
   });
 
-  // SKIPPED (D): Escape returns the focus to the block that had it before the dialog (notes, eighth round); the old test compares with the focus left in the dialog
-
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("closes with Escape, and goes nowhere", () => {
-    cmb.setCursor({ line: 0, ch: 0 });
+  it("closes with Escape, and goes nowhere", () => {
+    mouseDown(block("x"));
+    // edited: a block is clicked first (setCursor does not focus one here); the focus to compare with is the block's before the dialog opened: Escape gives it back (the old test took the focus left in the dialog)
+    const before = focused();
     press("F3");
     fireEvent.change(searchInput(), { target: { value: "x" } });
-    const before = focused();
     fireEvent.keyDown(searchInput(), { key: "Escape" });
     expect(dialog()).toBeNull();
     expect(focused()).toBe(before);
@@ -192,17 +190,12 @@ describe("searching by block type", () => {
     fireEvent.keyDown(select, { key: "Enter" });
   };
 
-  // SKIPPED (D): block types and spoken labels are the table's (`call`, `number`, `symbol`), not the old node types (`functionApp`, `literal`): notes, second round D and eighth round search table
-
-  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
-  it.skip("lists the types of block there are", () => {
+  // edited: the table's type name of x and f is `symbol` (the old node type was `literal`)
+  it("lists the types of block there are", () => {
     press("F3");
     fireEvent.click(screen.getByRole("tab", { name: "Search by block" }));
     const select = screen.getByRole("combobox") as HTMLSelectElement;
-    expect([...select.options].map((o) => o.value)).toEqual([
-      "call",
-      "literal",
-    ]);
+    expect([...select.options].map((o) => o.value)).toEqual(["call", "symbol"]);
   });
 
   it("goes to the next block of the type, and on from the end", () => {
@@ -281,50 +274,46 @@ describe("the search rotor", () => {
     say = jest.spyOn(announcer, "say");
   });
 
-  // SKIPPED (D): block types and spoken labels are the table's (`call`, `number`, `symbol`), not the old node types (`functionApp`, `literal`): notes, second round D and eighth round search table
-
-  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
-  it.skip("starts at the first type, and goes forwards with a wrap", () => {
+  // edited: the table's type name of x and f is `symbol` (the old node type was `literal`)
+  it("starts at the first type, and goes forwards with a wrap", () => {
     next();
     next();
     next();
     expect(said()).toEqual([
       "Searching by call, 1 of 2",
-      "Searching by literal, 2 of 2",
+      "Searching by symbol, 2 of 2",
       "Searching by call, 1 of 2",
     ]);
   });
 
-  // SKIPPED (D): block types and spoken labels are the table's (`call`, `number`, `symbol`), not the old node types (`functionApp`, `literal`): notes, second round D and eighth round search table
-
-  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
-  it.skip("goes backwards with a wrap, from the last entry", () => {
+  // edited: the table's type name of x and f is `symbol` (the old node type was `literal`)
+  it("goes backwards with a wrap, from the last entry", () => {
     previous();
     previous();
     previous();
     expect(said()).toEqual([
-      "Searching by literal, 2 of 2",
+      "Searching by symbol, 2 of 2",
       "Searching by call, 1 of 2",
-      "Searching by literal, 2 of 2",
+      "Searching by symbol, 2 of 2",
     ]);
   });
 
-  // SKIPPED (D): block types and spoken labels are the table's (`call`, `number`, `symbol`), not the old node types (`functionApp`, `literal`): notes, second round D and eighth round search table
-
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("makes PageDown go to the next block of the chosen type", () => {
+  // edited: the table's type name of x and f is `symbol` (the old node type was `literal`)
+  it("makes PageDown go to the next block of the chosen type", () => {
     next(); // function app
     press("PageDown");
-    expect(focused()).toBe("(g xy x)");
-    next(); // literal
+    // edited: nothing has focus yet, so the first call comes first; the next PageDown reaches the old test's block
+    expect(focused()).toBe("(f x)");
     press("PageDown");
+    expect(focused()).toBe("(g xy x)");
+    next(); // symbol
+    press("PageDown");
+    // edited: the compat layer's node type of a symbol is still `literal`
     expect(cmb.getFocusedNode()?.type).toBe("literal");
   });
 
-  // SKIPPED (D): block types and spoken labels are the table's (`call`, `number`, `symbol`), not the old node types (`functionApp`, `literal`): notes, second round D and eighth round search table
-
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("makes a text search from the dialog the last entry, and lands on it", () => {
+  // edited: the table's type name of x and f is `symbol` (the old node type was `literal`)
+  it("makes a text search from the dialog the last entry, and lands on it", () => {
     searchFor("xy");
     say.mockClear();
     next(); // from the text search, on to the first type
@@ -334,7 +323,7 @@ describe("the search rotor", () => {
       "Searching for text 'xy', 3 of 3",
     ]);
     previous();
-    expect(said().pop()).toBe("Searching by literal, 2 of 3");
+    expect(said().pop()).toBe("Searching by symbol, 2 of 3");
   });
 
   it("is moved by choosing a block type in the dialog", () => {
@@ -349,17 +338,15 @@ describe("the search rotor", () => {
     expect(said().pop()).toBe("Searching by call, 1 of 2");
   });
 
-  // SKIPPED (D): block types and spoken labels are the table's (`call`, `number`, `symbol`), not the old node types (`functionApp`, `literal`): notes, second round D and eighth round search table
-
-  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
-  it.skip("follows the document", () => {
+  // edited: the table's type name of x and f is `symbol` (the old node type was `literal`)
+  it("follows the document", () => {
     cmb.setValue("(f x)");
     cmb.setValue("f");
     next();
     next();
     expect(said()).toEqual([
-      "Searching by literal, 1 of 1",
-      "Searching by literal, 1 of 1",
+      "Searching by symbol, 1 of 1",
+      "Searching by symbol, 1 of 1",
     ]);
   });
 

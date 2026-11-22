@@ -135,13 +135,11 @@ describe("Delete and Backspace", () => {
       expect(cmb.getValue()).toBe("(define (f ...) a)");
     });
 
-    // SKIPPED (D): the words announced are the table's describe templates (notes, second round D; UNDID / REDID added)
-
-    // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
-    it.skip("announces the expression once, not each block inside it", () => {
+    it("announces the expression once, not each block inside it", () => {
       deleteRoot("(f x y) z");
       expect(said().filter((s) => s.startsWith("deleted"))).toEqual([
-        "deleted f expression, 2 inputs",
+        // edited: the words are the table's describe template for a call
+        "deleted call to f with 2 arguments",
       ]);
     });
   });
@@ -217,14 +215,17 @@ describe("Help (Shift-Ctrl-/)", () => {
     keyDown("/", { shiftKey: true, ctrlKey: true }, root());
   };
 
-  // SKIPPED (D): the help dialog lists the key table's own descriptions, not the old editor's names (`Next Block`)
-
-  // first error (sweep): TestingLibraryElementError: Unable to find an element with the text: Next Block. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your tex
-  it.skip("opens the keyboard shortcuts dialog", () => {
+  it("opens the keyboard shortcuts dialog", () => {
     openHelp();
     expect(screen.getByText("Keyboard Shortcuts")).toBeInTheDocument();
     // every documented command appears in the table
-    for (const command of ["Next Block", "Delete Nodes", "Undo", "Paste"]) {
+    // edited: this editor lists the key table's own descriptions, not the old editor's names
+    for (const command of [
+      "Next block",
+      "Undo",
+      "Redo",
+      "Paste before the block",
+    ]) {
       expect(screen.getByText(command)).toBeInTheDocument();
     }
   });

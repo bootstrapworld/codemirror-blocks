@@ -19,8 +19,7 @@ import {
 describe("focusing,", () => {
   let cmb!: API;
 
-  let expression!: FunctionAppNode;
-  let func!: ASTNode;
+  let _func!: ASTNode;
   let literal1!: ASTNode;
   let literal2!: ASTNode;
   let literal3!: ASTNode;
@@ -29,7 +28,7 @@ describe("focusing,", () => {
     cmb = mountCMB(wescheme).cmb;
     cmb.setValue("(+ 1 2 3)");
     expression = cmb.getAst().rootNodes[0] as FunctionAppNode;
-    func = expression.fields.func;
+    _func = expression.fields.func;
     literal1 = expression.fields.args[0];
     literal2 = expression.fields.args[1];
     literal3 = expression.fields.args[2];
@@ -37,12 +36,10 @@ describe("focusing,", () => {
 
   afterEach(teardown);
 
-  // SKIPPED (D): node ids are a global counter here, the old ones count from 0 in each parse (an id is a label, not a position)
-
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("tabbing to the editor for the first time should activate node 0", async () => {
+  it("tabbing to the editor for the first time should activate node 0", async () => {
     cmb.focus();
-    expect(cmb.getFocusedNode()!.nid).toBe(0);
+    // edited: ids are a global counter here, not 0 for the first node of each parse; the first node is the first root
+    expect(cmb.getFocusedNode()!.toString()).toBe("(+ 1 2 3)");
   });
 
   it("deleting the last node should shift focus to the next-to-last", async () => {
@@ -54,28 +51,24 @@ describe("focusing,", () => {
     expect(cmb.getFocusedNode()!.id).toBe(literal2.id);
   });
 
-  // SKIPPED (D): focus after a delete goes to the node now at the same index, else the one before, else the owner (notes, second round A3); the old editor's rule differs
-
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("deleting the first node should shift focus to the parent", async () => {
+  it("deleting the first node should shift focus to the parent", async () => {
     mouseDown(literal1);
     expect(document.activeElement).toBe(literal1.element);
     keyDown(" ");
     keyDown("Delete");
     expect(cmb.getValue()).toBe("(+ 2 3)");
-    expect(cmb.getFocusedNode()!.id).toBe(func.id);
+    // edited: focus goes to the node now at the same place ("2"), where the old editor moved it to the parent (second round A3)
+    expect(cmb.getFocusedNode()!.toString()).toBe("2");
   });
 
-  // SKIPPED (D): focus after a delete goes to the node now at the same index, else the one before, else the owner (notes, second round A3); the old editor's rule differs
-
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("deleting the nth node should shift focus to n-1", async () => {
+  it("deleting the nth node should shift focus to n-1", async () => {
     mouseDown(literal2);
     expect(document.activeElement).toBe(literal2.element);
     keyDown(" ");
     keyDown("Delete");
     expect(cmb.getValue()).toBe("(+ 1 3)");
-    expect(cmb.getFocusedNode()!.id).toBe(literal1.id);
+    // edited: focus goes to the node now at the same place ("3"), where the old editor moved it to the one before (second round A3)
+    expect(cmb.getFocusedNode()!.toString()).toBe("3");
   });
 
   it("deleting multiple nodes should shift focus to the one before", async () => {
