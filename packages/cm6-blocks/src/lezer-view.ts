@@ -412,34 +412,50 @@ export function createLezerBlockEditor(
   };
   /** does this block have a comment of the kind above in its own text (the renderer repaints the children of such a block after an edit)? */
   const hasStrays = (o: BNode): boolean => strayComments(o).length > 0;
-  const commentOf = (n: BNode): BNode | null => {
-    if (!n.slot || n.kind === "comment" || n.kind === "error") return null;
-    let sibs = n.slot.nodes;
+  /** the siblings of a block or comment, in order (the made-up comments of an all-"one" owner among them) */
+  const sibsOf = (n: BNode): BNode[] | null => {
     const owner = n.parent;
     if (owner && allOne(owner)) {
       const st = strayComments(owner);
       if (!st.length) return null;
-      sibs = [...owner.slots.flatMap((s) => s.nodes), ...st].sort(
+      return [...owner.slots.flatMap((s) => s.nodes), ...st].sort(
         (a, b) => a.from - b.from
       );
     }
-    const i = sibs.indexOf(n);
-    const trailing = (a: BNode | undefined, c: BNode): boolean =>
-      !!a &&
-      a.kind !== "comment" &&
-      /^[ \t,]*$/.test(curDoc.slice(a.to, c.from));
-    const prev = sibs[i - 1];
-    if (
-      prev &&
-      prev.kind === "comment" &&
-      /^[ \t]*\r?\n[ \t]*$/.test(curDoc.slice(prev.to, n.from)) &&
-      !trailing(sibs[i - 2], prev)
-    )
-      return prev;
-    const next = sibs[i + 1];
-    if (next && next.kind === "comment" && trailing(n, next)) return next;
+    return n.slot ? n.slot.nodes : null;
+  };
+  const trailing = (a: BNode | undefined, c: BNode): boolean =>
+    !!a && a.kind !== "comment" && /^[ \t,]*$/.test(curDoc.slice(a.to, c.from));
+  /**
+   * The ONE place that says which block a comment goes with (everything else asks `ownerOf` / `commentsOf`): the generic rule is the block
+   * before it when the comment is after that block on its line, else the block directly after it (only a line break and indentation between).
+   */
+  const ownerOf = (c: BNode): BNode | null => {
+    if (c.kind !== "comment") return null;
+    const sibs = sibsOf(c);
+    if (!sibs) return null;
+    const j = sibs.indexOf(c);
+    const ok = (x: BNode | undefined): x is BNode =>
+      !!x && x.kind !== "comment" && x.kind !== "error" && !!x.slot;
+    const prev = sibs[j - 1];
+    if (ok(prev) && trailing(prev, c)) return prev;
+    const next = sibs[j + 1];
+    if (ok(next) && /^[ \t]*\r?\n[ \t]*$/.test(curDoc.slice(c.to, next.from)))
+      return next;
     return null;
   };
+  /** the comments that go with a block, in text order (the one above it, then the one after it on its line) */
+  const commentsOf = (n: BNode): BNode[] => {
+    if (!n.slot || n.kind === "comment" || n.kind === "error") return [];
+    const sibs = sibsOf(n);
+    if (!sibs) return [];
+    const i = sibs.indexOf(n);
+    return [sibs[i - 1], sibs[i + 1]].filter(
+      (c) => c && c.kind === "comment" && ownerOf(c) === n
+    );
+  };
+  /** the first of them (the one a block shows and edits) */
+  const commentOf = (n: BNode): BNode | null => commentsOf(n)[0] ?? null;
   renderer.attached = commentOf;
   renderer.mayHaveStrays = hasStrays;
   const stats: LezerStats = {
@@ -1955,7 +1971,7 @@ export function createLezerBlockEditor(
           (n) =>
             !(
               n.kind === "comment" &&
-              nodes.some((m) => m !== n && commentOf(m) === n)
+              nodes.some((m) => m !== n && ownerOf(n) === m)
             )
         )
         .map((n) => ed.copyText(n, true)),
@@ -2149,7 +2165,7 @@ export function createLezerBlockEditor(
                 x.replace(/\n/g, "\n" + ind) +
                 // (a comment block of its own keeps a blank line after it, or it would go with the block below)
                 (moved[i].kind === "comment" &&
-                !(moved[i + 1] && commentOf(moved[i + 1]) === moved[i]) &&
+                ownerOf(moved[i]) !== moved[i + 1] &&
                 sep.includes("\n")
                   ? "\n"
                   : "")
