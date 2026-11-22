@@ -108,7 +108,7 @@ describe.each(LANGS)("comment blocks, orphan: %s", (l) => {
     press("End");
     expect(ed.focusedNode()!.from).toBeGreaterThan(c.to);
   });
-  test("(a)(m) old: Left collapses the comment (aria-expanded=false), Right on a collapsed one expands; here the same (reversed in the twenty-second round)", () => {
+  test("(a)(m) old: Left collapses the comment (aria-expanded=false), Right on a collapsed one expands; here the same (checked against the old collapse code in the twenty-third round: an orphan comment is expandable)", () => {
     const { ed, c, el, focus, press } = rig(l);
     focus(c);
     expect(el(c).getAttribute("aria-expanded")).toBe("true");

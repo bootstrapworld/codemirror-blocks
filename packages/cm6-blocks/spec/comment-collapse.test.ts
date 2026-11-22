@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-// A comment block collapses like any block (the old editor: aria-expanded, Left / Right, Collapse All, double click; only the emoji stays).
+// A comment block collapses like any block. Checked against the old code (twenty-third round): an orphan comment is a Node with expandable true and is not locked, so Left/Right, Collapse All, Collapse Current Root and a double click all work on it; collapsed it keeps only its emoji.
 import { undo } from "@codemirror/commands";
 import { make } from "./helpers";
 
@@ -55,5 +55,12 @@ describe.each(Object.keys(CFG))("collapsing a comment block: %s", (l) => {
     const again = ed.roots().find((r) => r.kind === "comment")!;
     expect(ed.renderer.isCollapsed(again)).toBe(true);
     undo(ed.view);
+  });
+  test("Shift-Alt-Left (Collapse Current Root) collapses a top-level comment block, and beeps when it is already collapsed", () => {
+    const { ed, c, el } = rig();
+    ed.focusNode(c);
+    key(el(), "ArrowLeft", { shiftKey: true, altKey: true });
+    expect(ed.renderer.isCollapsed(c)).toBe(true);
+    expect(ed.view.state.doc.toString()).toBe(src);
   });
 });

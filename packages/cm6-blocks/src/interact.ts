@@ -603,11 +603,12 @@ export function attachInteraction(ed: LezerBlockEditor): {
     },
     collapseRoot: (n, _e, handled) => {
       handled();
-      // (the old editor: a top-level block that is collapsed already or has nothing in it only beeps)
+      // (the old editor: a top-level block that is collapsed already or has nothing in it only beeps; a comment block is expandable, so it collapses)
       if (
         n.parent &&
         n.parent.kind === "program" &&
-        (renderer.isCollapsed(n) || n.slots.length === 0)
+        (renderer.isCollapsed(n) ||
+          (n.slots.length === 0 && n.kind !== "comment"))
       )
         return beep("collapse-root");
       ed.collapseRoot(rootsOf(n), true);
