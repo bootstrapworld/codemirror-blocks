@@ -6,13 +6,13 @@
   "main": "./src/index.ts",
   "scripts": {
     "typecheck": "tsc -p . --noEmit",
-    "build": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --loader:.css=text --outfile=demo/demo.js",
+    "build": "npm run build:min && npm run build:min:scheme && npm run build:min:javascript && npm run build:min:python",
     "build:min": "esbuild demo/demo.ts --bundle --format=iife --minify --loader:.css=text --outfile=demo/demo.js",
     "serve": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --loader:.css=text --outfile=demo/demo.js --servedir=demo --serve=8177",
     "build:min:scheme": "esbuild demo/scheme-only.ts --bundle --format=iife --minify --loader:.css=text --outfile=demo/scheme-only.js",
-    "build:css": "node scripts/build-css.cjs && prettier --write src/css",
-    "build:min:javascript": "esbuild demo/javascript-only.ts --bundle --format=iife --minify --outfile=demo/javascript-only.js",
-    "build:min:python": "esbuild demo/python-only.ts --bundle --format=iife --minify --outfile=demo/python-only.js"
+    "build:min:javascript": "esbuild demo/javascript-only.ts --bundle --format=iife --minify --loader:.css=text --outfile=demo/javascript-only.js",
+    "build:min:python": "esbuild demo/python-only.ts --bundle --format=iife --minify --loader:.css=text --outfile=demo/python-only.js",
+    "build:dev": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --loader:.css=text --outfile=demo/demo.js"
   },
   "devDependencies": {
     "esbuild": "^0.28.2"

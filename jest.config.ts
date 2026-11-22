@@ -29,6 +29,8 @@ const sharedConfig = {
   testEnvironment: "jsdom",
   // A map from regular expressions to paths to transformers
   transform: {
+    // (a stylesheet is imported as text, as the bundler's text loader does)
+    "\\.css$": "<rootDir>/scripts/jest-css-text.cjs",
     "\\.[jt]sx?$": [
       "babel-jest",
       { configFile: "./packages/codemirror-blocks/.babelrc.js" },

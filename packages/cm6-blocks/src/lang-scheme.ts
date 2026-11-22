@@ -1,6 +1,6 @@
 // EXPERIMENT: Scheme blocks from the Lezer grammar `cm6-lezer-scheme-common-lang`.
 import { place } from "./explain";
-import schemeCss from "./css/scheme-css";
+import schemeCss from "./css/scheme.css";
 import { parser } from "cm6-lezer-scheme-common-lang";
 import { lezerLanguage, BlockRow, BlockTable } from "./lezer";
 

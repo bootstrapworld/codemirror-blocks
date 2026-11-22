@@ -1,7 +1,7 @@
 // EXPERIMENT: JavaScript blocks from @lezer/javascript. Raw trees: spec/lezer.test.ts "raw trees".
 import { parser } from "@lezer/javascript";
 import type { SyntaxNode } from "@lezer/common";
-import statementsCss from "./css/statements-css";
+import statementsCss from "./css/statements.css";
 import { lezerLanguage, BlockRow, BlockTable, lineSeparator } from "./lezer";
 
 const leaf = (kind: string, label: string): BlockRow => ({

@@ -76,7 +76,7 @@ import { contentHash } from "./hash";
 import { refusal } from "./explain";
 import { Bail, compatible, reconcile, ReconcileEnv } from "./reconcile";
 import type { BNode, Doc, Slot, TextChange } from "./types";
-import coreCss from "./css/core-css";
+import coreCss from "./css/core.css";
 
 /**
  * The editor's sheets go into the root its element is in (the document, or a shadow root), once each: a `<style data-cm6-blocks="core">` and
