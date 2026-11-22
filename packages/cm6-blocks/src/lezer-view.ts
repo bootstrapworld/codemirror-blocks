@@ -2713,6 +2713,8 @@ export function checkLezerEditor(ed: LezerBlockEditor): string[] {
       freshR.attached = ed.renderer.attached;
       freshR.adoptSelection(ed.renderer);
     }
+    // (an open edit box, or the refusal under it, is in the block's DOM and not in a fresh drawing)
+    if (el.querySelector(".blocks-edit")) continue;
     if (!freshR.element(r).isEqualNode(el))
       say(
         `root ${r.id}: its DOM is not what a fresh drawing gives (${domDiff(el, freshR.element(r))})`
