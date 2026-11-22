@@ -2544,7 +2544,7 @@ The old editor (CodeMirror 5 + React): a comment that goes with no node is an OR
 1. Moving a block takes the comment above it (`moveNodes`: the comment is added to the moved set when the target is a gap); a moved comment block keeps a blank line after it, unless it is the comment of the block moved after it.
 2. A block inserted before a commented block (paste before, Ctrl-[) goes above the comment (`pasteSpot`, `rootPasteChange`, `siblingBox`).
 
-Tally of the 25 rows: SAME 14, FIXED 3 (drag of an orphan, insert before an owner, move of an owner), DECIDED 4 (no collapse, the comment shortcut, spoken label wording, the popup... see below), DIFFERENT and left 3 (`\` at the top level, Shift-`\` words, drop onto a comment through the API), MISSING 1 (popup).
+Tally of the 28 rows: SAME 17, DIFFERENT and FIXED 3 (drag of an orphan, insert before an owner, move of an owner), DECIDED 4 (no collapse, the comment shortcut, the spoken label, the Left / Right keys), DIFFERENT and left 3 (`\` at the top level, Shift-`\` words, drop onto a comment through the API), MISSING 1 (the popup).
 
 ### Bigger gaps, with cost and old tests each would free
 
