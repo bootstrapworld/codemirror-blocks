@@ -2565,3 +2565,17 @@ Movable (eligible = without EXCLUDED-I and EXCLUDED-N): jest 502 of 607 = **82.7
 
 Step 1 (where association is decided): only in `commentOf` in lezer-view.ts (position rule over the sibling list, strays of all-"one" owners included). Users: render.ts (`attached`: marker class, title, "with comment" label), interact.ts (Shift-Ctrl-] edit, paste/insert above the comment), lezer-view.ts (paste-before and Ctrl-[ above the comment, cut takes it, copyTexts, move takes it, blank line after a moved comment block, `commentHost`, editor interface `commentOf`). Delete leaves the comment (old editor). Search and announcements go through the label. One function already, but only the owner-to-comment direction existed, and the inverse was guessed by `commentOf(m) === n` at two places.
 Step 2: `ownerOf(comment)` and `commentsOf(block)` now exist once in lezer-view.ts; `commentOf` is the first of `commentsOf`.
+Step 3: `BlockTable.attach?(ctx: { comment, before, after, siblings, text }) => BNode | null | "default"` (lezer.ts). `ownerOf` asks it per comment (a result that is not a non-comment sibling is "none"); absent or "default" gives the generic rule: the block before it when the comment follows it on its line, else the block directly below with only a line break between. `commentsOf` scans the whole list when a rule exists (the comment need not be next to its block). Move, paste before/after (`groupOf` / `tailOf`), copy, cut, the removal of a moved group (`rootRemovals`) work for a comment above, after on its line, or on a later line. Tests: `spec/comment-attach.test.ts` (a Scheme table whose comments go with the block BEFORE them).
+Example of a language using it (Python: a comment line above `elif` / `else` belongs to the branch that follows, which the generic rule does when the branch is a sibling; a language whose branches are nested needs it):
+
+```ts
+const table = {
+  ...pythonTable,
+  attach: ({ after }) =>
+    after && /^(elif|else|except)\b/.test(after.value ?? "")
+      ? after
+      : "default",
+};
+```
+
+Step 4: a trailing same-line comment is moved, cut and copied with its block by the generic code (it was the move path that assumed "above"): `spec/comment-trailing.test.ts` (Scheme, JavaScript, Python, one undo). No language needs a rule yet: the old editor's `cond`/`else` and `elif` cases are unverified here (cost: about 10 lines each plus a test; the structure in each table decides whether the branch is a sibling of the comment).
