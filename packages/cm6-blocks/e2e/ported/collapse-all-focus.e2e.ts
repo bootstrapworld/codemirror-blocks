@@ -62,20 +62,3 @@ for (const [name, forms, downs] of [
     expect((await focus(page)).tag).toBe("SPAN");
   });
 }
-
-// FIXME-BEGIN (thirteenth round: U: after Collapse All the focus is in an input (an edit box) here, a block's element there: not examined)
-const FIXME = new Set<string>([
-  "collapse all keeps keyboard focus on a root (small document)",
-  "collapse all keeps keyboard focus on a root (medium document)",
-  "collapse all keeps keyboard focus on a root (large document)",
-]);
-test.beforeEach(({}, ti) => {
-  test.fixme(
-    FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "U: after Collapse All the focus is in an input (an edit box) here, a block's element there: not examined"
-  );
-});
-// FIXME-END
-// first error (sweep): collapse all keeps keyboard focus on a root (small document) => Error: expect(received).toMatchObject(expected)
-// first error (sweep): collapse all keeps keyboard focus on a root (medium document) => Error: expect(received).toMatchObject(expected)
-// first error (sweep): collapse all keeps keyboard focus on a root (large document) => Error: expect(received).toMatchObject(expected)
