@@ -209,18 +209,11 @@ const variants = [false, true].flatMap((afterModeSwitch) =>
   }))
 );
 
-// SKIPPED variants (the whole block of each is skipped): a drop onto bare whitespace (M: not built).
-// (A drop onto a node replaces it now; typing and pasting at the top level work, through the pending box.)
-const SKIPPED_VARIANTS = /onto whitespace/;
+// (A drop onto bare whitespace, onto a node, typing and pasting at the top level all work now: no variant is skipped.)
 const eachVariant = (
   _name: string,
   fn: (v: (typeof variants)[number]) => void
-) =>
-  variants.forEach((v) =>
-    (SKIPPED_VARIANTS.test(v.name) ? describe.skip : describe)(v.name, () =>
-      fn(v)
-    )
-  );
+) => variants.forEach((v) => describe(v.name, () => fn(v)));
 eachVariant("$name", ({ code, run, afterModeSwitch }) => {
   let before: { text: string; roots: string[] };
   let after: { text: string; roots: string[] };

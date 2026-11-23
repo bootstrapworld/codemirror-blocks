@@ -43,7 +43,7 @@ const dropOnWhitespace = (src: Element, loc: { line: number; ch: number }) => {
 describe("dropping a node onto bare editor whitespace", () => {
   // SKIPPED (M): a drop on bare editor whitespace moves the block to that line in the old editor; here a drop over the editor where nothing takes it beeps and does nothing
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("moves a root to that spot", () => {
+  it("moves a root to that spot", () => {
     cmb.setValue("a\n\n\nb");
     dropOnWhitespace(getNodeLabeled(/^a\b|symbol a$/), { line: 2, ch: 0 });
     expect(cmb.getAst().rootNodes.map((n) => n.toString())).toEqual(["a", "b"]);
@@ -53,7 +53,7 @@ describe("dropping a node onto bare editor whitespace", () => {
   // SKIPPED (M): drop on bare whitespace (as above)
 
   // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
-  it.skip("moves a child out of its parent to the top level", () => {
+  it("moves a child out of its parent to the top level", () => {
     cmb.setValue("(f x y)\n\n");
     dropOnWhitespace(getNodeLabeled(/^x\b|symbol x$/), { line: 2, ch: 0 });
     expect(cmb.getAst().rootNodes.map((n) => n.toString())).toEqual([
@@ -65,7 +65,7 @@ describe("dropping a node onto bare editor whitespace", () => {
   // SKIPPED (M): drop on bare whitespace (as above)
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("can be undone", () => {
+  it("can be undone", () => {
     cmb.setValue("a\n\n\nb");
     dropOnWhitespace(getNodeLabeled(/^a\b|symbol a$/), { line: 2, ch: 0 });
     undo();
@@ -104,7 +104,7 @@ describe("dragging from the toolbar", () => {
   // SKIPPED (M): the old toolbar of primitives (`.Primitive`, search box); this editor draws no toolbar of its own, a page makes one
 
   // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
-  it.skip("inserts at the top level when dropped on whitespace", () => {
+  it("inserts at the top level when dropped on whitespace", () => {
     cmb.setValue("a\n\n\nb");
     dropOnWhitespace(toolbarPrimitive("sqrt"), { line: 2, ch: 0 });
     expect(cmb.getAst().rootNodes.map((n) => n.toString())).toEqual([
