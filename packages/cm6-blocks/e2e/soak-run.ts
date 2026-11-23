@@ -278,11 +278,6 @@ export async function runChromium(
         const rush = rushedFor(s);
         await page.locator(".blocks-toggle-btn").click();
         toolbarOk = true;
-        // (going back to blocks after text edits starts the undo history over: the check of undo-all is not made then)
-        if (!blocks && textEditedInText && (await mode()) === "blocks") {
-          historyReset = true;
-          textEditedInText = false;
-        }
         if (rush) {
           rushed = true;
           await page.waitForTimeout(40 + Math.floor(Number(s.a) * 200));
@@ -672,20 +667,39 @@ export async function runChromium(
 
   try {
     await settle();
+    let lastMode = await mode();
+    const noteReturnToBlocks = async (): Promise<void> => {
+      const m = await mode();
+      if (m === "blocks" && lastMode === "text" && textEditedInText) {
+        historyReset = true;
+        textEditedInText = false;
+      }
+      lastMode = m;
+    };
     const initial = await text();
     const first = await check(-1, "initial");
     if (first) return close(first);
     for (let i = 0; i < seq.steps.length; i++) {
       const s = seq.steps[i];
+      // (the editor's rule: going back to blocks after the text was edited in text mode starts the undo history over, and ONLY then. A
+      // step that begins in text mode and leaves another text is an edit made as text, whatever it was (typing, a replaced document, an
+      // undo, a paste); the return to blocks may come after the step (a switch in the middle of the morph): the mode is read after each
+      // step, rushed or not, and at the end)
+      const m0 = await mode();
+      const t0 = m0 === "text" ? await text() : "";
       const g = await guarded(s, i);
       if (g) return close(g);
+      if (m0 === "text" && (await text()) !== t0) textEditedInText = true;
+      await noteReturnToBlocks();
       if (!rushed) await settle();
+      await noteReturnToBlocks();
       if (rushed) continue; // (the next step is made in the middle of the morph; the invariants are read after that one)
       await o.onStep?.(page, i);
       const v = await check(i, s.op);
       if (v) return close(v);
     }
     await settle();
+    await noteReturnToBlocks();
     // ---- undo everything, redo everything (not after a return to blocks that cleared the history: textEditedInText says so) ----
     if (
       editsMade > 0 &&

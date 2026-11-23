@@ -246,3 +246,31 @@ test("seed 579: dragging a selection of three blocks into a comparison chain (a 
   );
   expect(v).toBeNull();
 });
+
+test("seed 1042: a document replaced while the editor is in text mode is an edit made as text: going back to blocks starts the undo history over (the soak did not model it; the editor did it as decided)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 1042,
+      language: "python",
+      code: "x = 1 + 2\nf(x, 3)\nwhile x < 9:\n    x = x + 1\n    g(x)\ny = 2",
+      steps: [
+        { op: "focus", a: 0.790508302859962 },
+        { op: "toggleMode", a: 0.8631290695630014, rush: 0.38 },
+        {
+          op: "replaceDoc",
+          text: 'fact = "s7"\n\nfact = f(total(), lambda acc: "s3", "s1")\nif lambda h: 41:\n    lambda n: total - y(x)\n    while n(n, 65, "s6") == total("s4", None):\n        lst = None\n        "s8"\n    lst() + f()',
+        },
+        { op: "select", a: 0.06514712166972458 },
+        { op: "toggleMode", a: 0.9001689238939434, rush: 0.08 },
+        { op: "focus", a: 0.6229245853610337 },
+      ],
+      motion: "reduced",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});
