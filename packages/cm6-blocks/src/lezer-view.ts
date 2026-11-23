@@ -247,6 +247,8 @@ export interface LezerBlockEditor extends ViewSurface {
   commentOf(node: BNode): BNode | null;
   /** is `node` a comment that goes with a block? (Such a comment is not drawn as a block: it is the popup of its block.) */
   isAttachedComment(node: BNode): boolean;
+  /** a block's height changed without a document change (an edit box opened or closed): tell CodeMirror to read the line heights again (the gutter's) */
+  remeasureHeights(): void;
   /** the block a comment written for `node` goes with: the outermost block that starts where `node` does and is first on its line */
   commentHost(node: BNode): BNode;
   /** set the words of the comment of a block: writes a line comment above it if there is none; empty text removes the comment */
@@ -2172,6 +2174,7 @@ export function createLezerBlockEditor(
     },
     commentOf: (n) => commentOf(n),
     isAttachedComment: (n) => isAttached(n),
+    remeasureHeights,
     commentHost(n) {
       if (commentOf(n)) return n; // (a block that has a comment already is where it is edited, wherever it stands on its line)
       let c = n;

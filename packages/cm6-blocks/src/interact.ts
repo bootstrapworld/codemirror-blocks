@@ -211,6 +211,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     // (and shown as a small red line under the box: `blocks-error-message`, aria-hidden since the message is spoken)
     let line: HTMLElement | null = null;
     const clearRefusal = () => {
+      if (line) ed.remeasureHeights();
       line?.remove();
       line = null;
       input.classList.remove("blocks-error");
@@ -228,10 +229,12 @@ export function attachInteraction(ed: LezerBlockEditor): {
         input.insertAdjacentElement("afterend", line);
       }
       line.textContent = message;
+      ed.remeasureHeights();
       ed.say(message);
     };
     input.addEventListener("input", () => {
       fit();
+      ed.remeasureHeights(); // (a box that grows with what is typed makes its line taller)
       clearRefusal();
     });
     let finished = false;
@@ -242,6 +245,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
       line?.remove();
       input.remove();
       done();
+      ed.remeasureHeights(); // (the block was taller with the box in it: the line numbers must follow)
     };
     // (commit: what a drag does to an open box: what was typed is written first, as when the box loses focus)
     const self = {
@@ -298,6 +302,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
       if (to && to.isConnected && to.focus) to.focus();
     });
     put(input);
+    ed.remeasureHeights();
     open = self;
     input.focus();
     if (select) input.select();
