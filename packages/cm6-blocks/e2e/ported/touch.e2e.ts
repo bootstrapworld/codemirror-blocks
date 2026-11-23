@@ -257,7 +257,7 @@ const FIXME = new Map<string, string>([
   ],
   [
     "editing with a finger › a tap on a gap far down a long program opens it, without the page jumping",
-    "D: there is no `lambda` language, and the places between top-level statements are bare whitespace here, not gap elements (the gaps of a long function body are tested in drop-target-scroll.e2e.ts)",
+    "D: there is no `lambda` language, and the places between the statements of a whole program are bare whitespace here, not gap elements (the gaps of a long function body are tested in drop-target-scroll.e2e.ts)",
   ],
   [
     "editing with a finger › a tap on a leaf opens it for typing, and Enter replaces it",
