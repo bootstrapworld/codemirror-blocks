@@ -739,11 +739,34 @@ export function createLezerBlockEditor(
       // A document with no Lezer error before the change: the errors of the new tree are found in the roots that are built again (the others are
       // the old ones, which had none), instead of walking the whole tree after the change; a change that makes errors in roots it does not touch
       // is not seen by this (the slow path below sees it; the fuzzers compare with a fresh parse).
-      const noErrs = options.fastErrors !== false && v.errs.length === 0;
-      let errs: [number, number][] = [];
       let lastError = -1;
       let lastAffected = -1;
       affected.forEach((k) => (lastAffected = Math.max(lastAffected, k)));
+      // (an error that the change makes in the roots it touches can make the parser read the text after them differently, with no change
+      // there: zero-width error nodes where it recovers. The touched part of the new tree is looked at, which is small; no error in it, and
+      // none before: the rest is the old text read the same)
+      const touchedErr = (): boolean => {
+        let lo = firstChange;
+        let hi = 0;
+        for (const c of cr) hi = Math.max(hi, c.toB);
+        for (const k of affected) {
+          lo = Math.min(lo, tr.changes.mapPos(rs[k].from, 1));
+          hi = Math.max(hi, tr.changes.mapPos(rs[k].to, -1));
+        }
+        let found = false;
+        tree.iterate({
+          from: lo,
+          to: hi,
+          enter: (n) => {
+            if (n.type.isError) found = true;
+            return !found;
+          },
+        });
+        return found;
+      };
+      const noErrs =
+        options.fastErrors !== false && v.errs.length === 0 && !touchedErr();
+      let errs: [number, number][] = [];
       if (!noErrs) {
         const merged = new Map<string, [number, number]>();
         for (const e of [

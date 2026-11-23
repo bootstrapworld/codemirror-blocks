@@ -227,3 +227,24 @@ it("seed 51015: a pasted text and a template in a comparison chain: the same anc
     } as Sequence)
   ).toBeNull();
 });
+
+it("seed 25711: an error that an edit makes in the roots it touches makes the parser recover with zero-width error nodes in a root after them, whose text did not change: that root is not kept as it was (the errors of the touched roots are looked at even when the old tree had none)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 25711,
+      language: "python",
+      code: 'y = acc(96, y(total.g("s8")), total())\nn = []\nfor f in lst(None, True):\n    while {"s2": [acc]}:\n        n = f(lst(y, 51, 96))\n        67\n# a b c\ndef g(y, h):\n    total = []\nfact = n(True, [])\n# a b c\nlambda n: [x, h(True), []]\nif h(None):\n    None\nelse:\n    None < n(None, 11) * []\n    for total in total():\n        acc = x.x()\n',
+      steps: [
+        { op: "replaceText", a: 0.20500417286530137, text: "g(2)" },
+        {
+          op: "insertText",
+          a: 0.2864064467139542,
+          b: 0.28833368909545243,
+          text: "1",
+        },
+      ],
+      motion: "full",
+    } as Sequence)
+  ).toBeNull();
+});
