@@ -39,14 +39,44 @@ test("focus goes to the focused block once it is back on the page", async ({
     .toBe("treeitem");
 });
 
-// FIXME-BEGIN (thirty-third round, a question: the test takes the focused block's element out of the page and puts a clone back, then asks CodeMirror 5 to `refresh`; CM6 has no refresh (`requestMeasure` did not give focus back), and the renderer owns the block elements, so a clone is not its block. Whether the editor should take focus back to the focused block when the view drops its element (a viewport change) is a decision)
+// SKIPPED (N): the test takes the focused block's element out of the page by hand and puts a clone back, then calls the CM5 `refresh`: no edit, no API call
+// and no transaction happens, so nothing in CM6 could notice (an element that leaves the page fires no event that the editor hears), and the renderer owns the
+// block elements, so a clone is not its block. The rule that was decided (2026-11-23) is about edits: when an API call changes the focused block's contents, the
+// block that replaces it gets the focus. That rule is tested below (a dispatch inside the focused block, a replaced document) and in spec/focus-api.test.ts.
+test("focus goes to the block that replaces the focused one when an API edit changes it", async ({
+  page,
+}) => {
+  // edited: the CM6 form of the test above: the page's own code changes the focused block's text (a dispatch), then replaces the whole document
+  await openInBlockMode(page, "(f x y)\n(g z)");
+  await block(page, /a f expression /).click({ position: { x: 4, y: 4 } });
+  await page.evaluate(() => {
+    const v = (window as any).demo.ed.view;
+    v.dispatch({ changes: { from: 4, to: 5, insert: "xx" } }); // inside the focused call
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => document.activeElement?.getAttribute("role"))
+    )
+    .toBe("treeitem");
+  await page.evaluate(() => {
+    const v = (window as any).demo.ed.view;
+    v.dispatch({
+      changes: { from: 0, to: v.state.doc.length, insert: "(f x y)\n(g w)" },
+    });
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => document.activeElement?.getAttribute("role"))
+    )
+    .toBe("treeitem");
+});
+
 const FIXME = new Set<string>([
   "focus goes to the focused block once it is back on the page",
 ]);
 test.beforeEach(({}, ti) => {
   test.fixme(
     FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "Q: the test drops the focused element and puts a clone back, then calls the CM5 refresh; whether focus should come back is a decision (see above)"
+    "N: the test removes the focused element by hand and puts a clone back, then calls the CM5 refresh; no edit happens, so the editor cannot know. The decided rule (focus follows a block that an API edit replaces) is tested by the next test and by spec/focus-api.test.ts"
   );
 });
-// FIXME-END

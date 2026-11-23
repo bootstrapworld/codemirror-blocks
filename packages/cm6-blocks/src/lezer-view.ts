@@ -1153,6 +1153,8 @@ export function createLezerBlockEditor(
     sel: { node: BNode; place: Step[] }[];
     /** the outermost collapsed blocks, each with its place */
     folded: { node: BNode; place: Step[] }[];
+    /** the focus was in a box that is no block's (the pending box of top-level typing): where it was; an edit that removes the box gives the focus to a block there */
+    boxPos?: number;
   }
   function placeOf(node: BNode): Step[] {
     const steps: Step[] = [];
@@ -1229,19 +1231,25 @@ export function createLezerBlockEditor(
         ? renderer.nodeOf(active)
         : null;
     const f = node && doc.byId.get(node.id) === node ? node : null;
+    const boxPos =
+      !node && active && view.dom.contains(active) && active !== view.contentDOM
+        ? (ed.pendingAt() ?? undefined)
+        : undefined;
     const sel = renderer.selected().length
       ? outermost(renderer.selected())
       : [];
     const folded = renderer.collapsedNodes().length
       ? outermost(renderer.collapsedNodes())
       : [];
-    if (!f && !sel.length && !folded.length) return null;
+    if (!f && !sel.length && !folded.length && boxPos === undefined)
+      return null;
     return {
       node: f as BNode,
       pos: f ? f.from : 0,
       place: f ? placeOf(f) : [],
       sel,
       folded,
+      boxPos,
     };
   }
 
@@ -1300,7 +1308,7 @@ export function createLezerBlockEditor(
    * screen reader user hears the editor vanish. Every way the last block can go ends here: it is a net under the transaction.
    */
   function keepFocusInEditor(s: Snap | null): void {
-    if (!s || !s.node || gone || !blockMode) return;
+    if (!s || (!s.node && s.boxPos === undefined) || gone || !blockMode) return;
     const doc_ = view.dom.ownerDocument;
     const active = doc_.activeElement;
     if (active && active !== doc_.body && view.dom.contains(active)) return;
@@ -1417,7 +1425,18 @@ export function createLezerBlockEditor(
     const active = view.dom.ownerDocument.activeElement;
     if (active && view.contentDOM.contains(active) && renderer.nodeOf(active))
       return;
-    if (!s.node) return;
+    if (!s.node) {
+      // the focus was in a box of the editor that is not a block's (the pending box): if the edit took the box away, a block at its place has it now
+      if (s.boxPos === undefined || (active && view.dom.contains(active)))
+        return;
+      let pos = s.boxPos;
+      for (const t of trs) pos = t.changes.mapPos(pos, 1);
+      const to = nearestDrawn(deepestAt(pos));
+      if (!to || to.kind === "program") return;
+      stats.focusRestores++;
+      renderer.element(to).focus();
+      return;
+    }
     let target: BNode | null;
     if (doc.byId.get(s.node.id) === s.node) target = s.node;
     else {
