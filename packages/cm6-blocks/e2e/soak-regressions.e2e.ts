@@ -192,3 +192,32 @@ test("seed 102: a replaced document whose first root is a comment that goes with
   );
   expect(v).toBeNull();
 });
+
+test("seed 223: a switch back to blocks that is refused (text that does not parse) leaves its message open: the harness closes it before the undo-all, and the history is whole (nothing is cleared without an edit made as text)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 223,
+      language: "python",
+      code: '"""distutils.command\n\nPackage containing implementation of all the standard Distutils\ncommands."""\n\n',
+      steps: [
+        { op: "focus", a: 0.7516330345533788 },
+        {
+          op: "topLevelType",
+          a: 0.414593217195943,
+          text: "(f 1)",
+          accept: false,
+          how: "paste",
+        },
+        { op: "toggleMode", a: 0.3219862685073167, rush: 0.83 },
+        { op: "toggleMode", a: 0.05625365348532796, rush: 0 },
+      ],
+      motion: "full",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});

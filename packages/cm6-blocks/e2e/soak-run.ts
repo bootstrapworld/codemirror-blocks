@@ -24,6 +24,14 @@ const keyName = (k: string): string =>
   KEYMAP[k] ??
   k.replace(/^Mod\+/, "ControlOrMeta+").replace("+Mod+", "+ControlOrMeta+");
 
+/** where two texts first differ (the 80-character excerpts of a message may be equal), as ` (they differ from character N: "..." / "...")` */
+function firstDifference(a: string, b: string): string {
+  let i = 0;
+  while (i < a.length && i < b.length && a[i] === b[i]) i++;
+  const from = Math.max(0, i - 10);
+  return ` (they differ from character ${i}: ${JSON.stringify(a.slice(from, i + 30))} / ${JSON.stringify(b.slice(from, i + 30))})`;
+}
+
 export interface ChromiumOptions {
   baseURL: string;
   /** a step that takes longer (ms) is "stuck" (default 30000) */
@@ -688,6 +696,16 @@ export async function runChromium(
     ) {
       const final = await text();
       if (await boxOpen().count()) await page.keyboard.press("Escape");
+      // (the message of a refused switch to blocks is a modal dialog: the page is inert, the keys of the undo would go nowhere. It is
+      // the step's own state, not the editor's: close it first)
+      for (
+        let k = 0;
+        k < 3 && (await page.locator("[role=dialog]").count());
+        k++
+      ) {
+        await page.locator("[role=dialog] .closeDialog").first().click();
+        await page.waitForTimeout(50);
+      }
       await evaluate(() => {
         const ed = (window as any).demo.ed;
         if (ed.mode === "blocks") ed.focusEditor();
@@ -709,7 +727,7 @@ export async function runChromium(
       if (last !== initial)
         return close({
           invariant: "undo-all",
-          message: `undoing every step left ${JSON.stringify(last.slice(0, 80))}, not the start ${JSON.stringify(initial.slice(0, 80))}`,
+          message: `undoing every step left ${JSON.stringify(last.slice(0, 80))}, not the start ${JSON.stringify(initial.slice(0, 80))}${firstDifference(last, initial)}`,
           step: seq.steps.length,
           op: "undo-all",
         });
