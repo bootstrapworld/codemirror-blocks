@@ -49,6 +49,7 @@ import {
 import { Tree, TreeFragment } from "@lezer/common";
 import type { Parser } from "@lezer/common";
 import { walk } from "./doc";
+import { userMarks } from "./user-marks";
 import { forwardView, ViewSurface } from "./view-surface";
 import {
   InnerCand,
@@ -1059,8 +1060,16 @@ export function createLezerBlockEditor(
     },
     provide: (f) => EditorView.decorations.from(f),
   });
+  /** the page's own marks on whole blocks (user-marks.ts); drawn again after each update of the view */
+  const marks = userMarks(
+    () => view,
+    renderer,
+    () => rootsSlot.nodes,
+    () => [view.state.field(field).decos, view.state.field(pendingField)]
+  );
   const blockExtension: Extension = [
     pendingField,
+    EditorView.updateListener.of(() => marks()),
     // typing or pasting at the top level (no block under the change) is held in a pending box, not written: nothing half-typed
     // reaches the document or the undo history
     EditorState.transactionFilter.of((tr) => {
@@ -2756,6 +2765,7 @@ export function createLezerBlockEditor(
   });
   summarize();
   if (options.collapseAll) ed.collapseAll(true);
+  marks();
   internals.set(whole, { field, blockMode: () => blockMode });
   return whole;
 }

@@ -12,8 +12,17 @@ import {
   EditorState,
   Facet,
   StateEffect,
+  StateField,
 } from "@codemirror/state";
-import { EditorView, keymap, lineNumbers } from "@codemirror/view";
+import {
+  Decoration,
+  EditorView,
+  gutter,
+  GutterMarker,
+  keymap,
+  lineNumbers,
+  WidgetType,
+} from "@codemirror/view";
 import {
   checkLezerEditor,
   createLezerBlockEditor,
@@ -380,5 +389,113 @@ describe("CodeMirror 6's own configuration: {parent, doc, extensions} (entry-poi
     });
     expect(ed.dom.querySelector(".cm-gutters")).not.toBeNull();
     ed.destroy();
+  });
+});
+
+describe("decorations of the page (markText, setBookmark, addLineWidget, gutters; by decision: the CodeMirror 6 way)", () => {
+  class Tag extends WidgetType {
+    toDOM(): HTMLElement {
+      const s = document.createElement("span");
+      s.className = "page-widget";
+      return s;
+    }
+  }
+  class Star extends GutterMarker {
+    toDOM(): Node {
+      return document.createTextNode("*");
+    }
+  }
+  const add = StateEffect.define<{ from: number; to: number; cls: string }>();
+  const marksField = StateField.define({
+    create: () => Decoration.none,
+    update(d, tr) {
+      d = d.map(tr.changes);
+      for (const e of tr.effects)
+        if (e.is(add))
+          d = d.update({
+            add: [
+              Decoration.mark({
+                class: e.value.cls,
+                attributes: { title: "t", style: "color: red" },
+              }).range(e.value.from, e.value.to),
+            ],
+          });
+      return d;
+    },
+    provide: (f) => EditorView.decorations.from(f),
+  });
+  const mk = () => make("scheme", SRC, { extensions: [marksField] });
+
+  test("a mark on exactly one block's range styles that block: class, style, title (markText)", () => {
+    const ed = mk();
+    ed.dispatch({ effects: add.of({ from: 6, to: 11, cls: "hot" }) });
+    const el = ed.renderer.element(ed.roots()[1]);
+    expect(el.classList.contains("hot")).toBe(true);
+    expect(el.style.color).toBe("red");
+    expect(el.getAttribute("title")).toBe("t");
+    expect(ed.dom.querySelectorAll(".hot").length).toBe(1);
+  });
+
+  test("a mark on a block inside a root styles that block", () => {
+    const ed = mk();
+    const inner = ed.roots()[0].slots[1].nodes[0];
+    ed.dispatch({
+      effects: add.of({ from: inner.from, to: inner.to, cls: "in" }),
+    });
+    expect(ed.renderer.element(inner).classList.contains("in")).toBe(true);
+  });
+
+  test("the mark moves with the text, and is forgotten with the block that is deleted", () => {
+    const ed = mk();
+    ed.dispatch({ effects: add.of({ from: 6, to: 11, cls: "hot" }) });
+    ed.dispatch({ changes: { from: 0, insert: "(z 0)\n" } });
+    const el = ed.dom.querySelector(".hot") as HTMLElement;
+    expect(ed.state.sliceDoc(12, 17)).toBe("(b 2)");
+    expect(ed.renderer.element(ed.roots()[2])).toBe(el);
+    ed.removeNode(ed.roots()[2]);
+    expect(ed.dom.querySelector(".hot")).toBeNull();
+  });
+
+  test("a mark is taken off when the extension is gone, and a mark that is not one whole block styles nothing", () => {
+    const ed = mk();
+    ed.dispatch({ effects: add.of({ from: 7, to: 9, cls: "part" }) });
+    expect(ed.dom.querySelector(".part")).toBeNull();
+    ed.dispatch({ effects: add.of({ from: 0, to: 5, cls: "hot" }) });
+    expect(ed.dom.querySelector(".hot")).not.toBeNull();
+    ed.reconfigure([]);
+    expect(ed.dom.querySelector(".hot")).toBeNull();
+  });
+
+  test("the mark shows in text mode as CodeMirror draws it, and in block mode on the block, after a switch back and forth", () => {
+    const ed = mk();
+    ed.dispatch({ effects: add.of({ from: 0, to: 5, cls: "hot" }) });
+    ed.setMode("text");
+    expect(ed.dom.querySelector(".blocks-node")).toBeNull();
+    expect(ed.dom.querySelector(".hot")).not.toBeNull();
+    ed.setMode("blocks");
+    const hot = ed.dom.querySelectorAll(".hot");
+    expect(hot.length).toBe(1);
+    expect(hot[0].classList.contains("blocks-node")).toBe(true);
+  });
+
+  test("widgets, line decorations and gutters of the page work as in CodeMirror 6", () => {
+    const f = StateField.define({
+      create: () =>
+        Decoration.set(
+          [
+            Decoration.widget({ widget: new Tag(), side: 1 }).range(5),
+            Decoration.line({ class: "page-line" }).range(6),
+          ],
+          true
+        ),
+      update: (d, tr) => d.map(tr.changes),
+      provide: (x) => EditorView.decorations.from(x),
+    });
+    const ed = make("scheme", SRC, {
+      extensions: [f, gutter({ lineMarker: () => new Star() })],
+    });
+    expect(ed.dom.querySelectorAll(".page-widget").length).toBe(1);
+    expect(ed.dom.querySelector(".cm-line.page-line")).not.toBeNull();
+    expect(ed.dom.querySelector(".cm-gutters")?.textContent).toContain("*");
   });
 });
