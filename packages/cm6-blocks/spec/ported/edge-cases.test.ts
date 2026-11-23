@@ -67,7 +67,7 @@ describe("dragging while a top-level quarantine is open", () => {
 });
 
 describe("dragging one of several selected blocks", () => {
-  // The drag carries only the block that was grabbed: the rest of the
+  // (old editor) The drag carries only the block that was grabbed: the rest of the
   // selection is neither moved nor deselected.
   beforeEach(() => {
     cmb = mountCMB(wescheme).cmb;
@@ -79,14 +79,14 @@ describe("dragging one of several selected blocks", () => {
     dragOnto(elementForNode(root(0))!, elementForNode(root(3))!);
   });
 
-  // SKIPPED (Q): design question, not a bug and not the compat helper: here dragging a selected block moves the WHOLE selection (interact.ts `group`, chosen by the owner; DIFFERENT from the old editor, which moves only the grabbed block); dropping two blocks on the value `d` is then refused ("a hole takes one block"), so the text stays `a b c d`
+  // SKIPPED (D): by decision (user, 2026-11-23): dragging any block of a selection drags the WHOLE selection (interact.ts `group`; DIFFERENT from the old editor, which moves only the grabbed block); dropping two blocks on the value `d` is then refused ("a hole takes one block"), so the text stays `a b c d`
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("moves just the block that was grabbed, onto the target", () => {
     expect(cmb.getValue()).toBe("b c a");
   });
 
-  // SKIPPED (Q): design question, not a bug and not the compat helper: here dragging a selected block moves the WHOLE selection (interact.ts `group`, chosen by the owner; DIFFERENT from the old editor, which moves only the grabbed block); dropping two blocks on the value `d` is then refused ("a hole takes one block"), so the text stays `a b c d`
+  // SKIPPED (D): by decision (user, 2026-11-23): dragging any block of a selection drags the WHOLE selection (interact.ts `group`; DIFFERENT from the old editor, which moves only the grabbed block); dropping two blocks on the value `d` is then refused ("a hole takes one block"), so the text stays `a b c d`
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("leaves the other selected block where it was, still selected", () => {
@@ -94,7 +94,7 @@ describe("dragging one of several selected blocks", () => {
     expect(texts()[0]).toBe("b");
   });
 
-  // SKIPPED (Q): design question, not a bug and not the compat helper: here dragging a selected block moves the WHOLE selection (interact.ts `group`, chosen by the owner; DIFFERENT from the old editor, which moves only the grabbed block); dropping two blocks on the value `d` is then refused ("a hole takes one block"), so the text stays `a b c d`
+  // SKIPPED (D): by decision (user, 2026-11-23): dragging any block of a selection drags the WHOLE selection (interact.ts `group`; DIFFERENT from the old editor, which moves only the grabbed block); dropping two blocks on the value `d` is then refused ("a hole takes one block"), so the text stays `a b c d`
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("is one undo step", () => {
