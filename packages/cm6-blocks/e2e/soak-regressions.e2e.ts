@@ -394,3 +394,63 @@ test("seed 300005: a program taller than the window has only some of its roots d
   );
   expect(v).toBeNull();
 });
+
+test("seed 400082: a root whose widget CodeMirror replaced by the widget of the same node (an edit before it) is still watched for its height: the old widget does not unwatch the element the new one took", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 400082,
+      language: "javascript",
+      code: "resp.on('done', function() {\n  console.log('Done.');\n});\n\n",
+      steps: [
+        { op: "comment", a: 0.1218994373921305, text: "x; y", accept: true },
+        {
+          op: "dragSelection",
+          a: 0.1637473765294999,
+          b: 0.8612903871107846,
+          n: 3,
+        },
+      ],
+      motion: "full",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});
+
+test("seed 400454: the same (a template, a drag, a collapse and a drag of two blocks): the gutter follows a root that changes height while a block is dragged over it", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 400454,
+      language: "python",
+      code: "x = 1 + 2\nf(x, 3)\nwhile x < 9:\n    x = x + 1\n    g(x)\ny = 2",
+      steps: [
+        { op: "clickTemplate", t: 0.061207139398902655 },
+        {
+          op: "dragBlock",
+          a: 0.23575315880589187,
+          b: 0.13785666739568114,
+          where: "whitespace",
+        },
+        { op: "collapse", a: 0.6928395961876959, on: false },
+        {
+          op: "dragSelection",
+          a: 0.27944621653296053,
+          b: 0.7344680898822844,
+          n: 2,
+        },
+        { op: "click", a: 0.38587670866400003, shift: false },
+      ],
+      motion: "full",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});

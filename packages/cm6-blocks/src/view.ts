@@ -140,8 +140,11 @@ export class RootWidget extends WidgetType {
     return true;
   }
   destroy(dom: HTMLElement): void {
-    /* the renderer owns the element */
-    this.renderer.unwatch?.(dom);
+    /* the renderer owns the element. CodeMirror builds the new widget of the same node (which takes the same element, and watches it) before it
+       destroys the old one: the element is let go only if it is not in the page when the update is over */
+    queueMicrotask(() => {
+      if (!dom.isConnected) this.renderer.unwatch?.(dom);
+    });
   }
 }
 
