@@ -164,12 +164,30 @@ for (const lang of Object.keys(SMALL)) {
         )
       ).toBe(true);
       expect(await check(page)).toEqual([]);
-      // text that does not parse is accepted
+      // edited: text that does not parse is refused; see the next test
+    });
+
+    // edited: an edit box refuses text that does not parse (stays open, red); Escape cancels
+    test(`${EDIT} refuses text that does not parse; Escape cancels`, async ({
+      page,
+    }) => {
+      await load(page, SMALL[lang]);
+      await page
+        .locator(".cm-content .blocks-node.blocks-literal", { hasText: /^g$/ })
+        .first()
+        .click({ modifiers: ["Shift"] });
+      await page.keyboard.press("ArrowLeft");
       await page.keyboard.press(EDIT);
+      const ta = page.locator("textarea.blocks-edit");
       await page.keyboard.press("ControlOrMeta+a");
       await page.keyboard.type("(((");
       await page.keyboard.press("Enter");
-      expect(await text(page)).toContain("(((");
+      expect(await ta.count()).toBe(1);
+      await expect(ta).toHaveClass(/blocks-error/);
+      expect(await text(page)).toBe(SMALL[lang]);
+      await page.keyboard.press("Escape");
+      expect(await ta.count()).toBe(0);
+      expect(await text(page)).toBe(SMALL[lang]);
       expect(await check(page)).toEqual([]);
     });
 
