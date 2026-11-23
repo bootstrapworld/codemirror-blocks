@@ -2593,10 +2593,22 @@ export function createLezerBlockEditor(
       unqueue();
       region.remove();
       interaction.detach();
+      heightWatch?.disconnect();
       view.destroy();
     },
   };
 
+  // a line's height can change without a document change (a box opens in a block, the mouse is over a gap that grows, a block takes the focus):
+  // CodeMirror's own observer does not see it (the editor box has a fixed height, so the content's size does not change), and the gutter
+  // would keep the old heights. Each drawn root is watched.
+  let heightWatch: ResizeObserver | null = null;
+  if (typeof ResizeObserver !== "undefined") {
+    heightWatch = new ResizeObserver(() => {
+      if (!gone) remeasureHeights();
+    });
+    renderer.watch = (el) => heightWatch?.observe(el);
+    renderer.unwatch = (el) => heightWatch?.unobserve(el);
+  }
   view = new EditorView({
     parent,
     state: EditorState.create({
@@ -2667,6 +2679,7 @@ export function createLezerBlockEditor(
     },
   });
   injectSheets(view.dom, table);
+
   // the next key or touch of the pointer settles which block an edit left focused (a redo goes back to it)
   for (const type of ["keydown", "pointerdown", "mousedown", "touchstart"])
     view.dom.addEventListener(type, settleHistoryFocus, true);

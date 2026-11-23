@@ -74,3 +74,27 @@ test("seed 1385: an open leaf box and a replaced document", async ({
   );
   expect(v).toBeNull();
 });
+test("seed 410: a gap that grows under the mouse (a drop target) makes its line taller: the line numbers follow (every root is watched for its height)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 410,
+      language: "python",
+      code: '# a comment\ntotal = 0\nfor x in [1, 2, 3]:\n    total = total + x\nprint(total, "done")\n',
+      steps: [
+        {
+          op: "dragSelection",
+          a: 0.8571280292235315,
+          b: 0.8411686394829303,
+          n: 4,
+        },
+      ],
+      motion: "full",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});

@@ -126,7 +126,9 @@ export class RootWidget extends WidgetType {
   }
   toDOM(): HTMLElement {
     if (this.counters) this.counters.widgetsBuilt++;
-    return this.renderer.element(this.node);
+    const el = this.renderer.element(this.node);
+    this.renderer.watch?.(el);
+    return el;
   }
   /** our element is already right (the renderer patched it); true only for OUR element */
   updateDOM(dom: HTMLElement): boolean {
@@ -137,8 +139,9 @@ export class RootWidget extends WidgetType {
   ignoreEvent(): boolean {
     return true;
   }
-  destroy(): void {
+  destroy(dom: HTMLElement): void {
     /* the renderer owns the element */
+    this.renderer.unwatch?.(dom);
   }
 }
 

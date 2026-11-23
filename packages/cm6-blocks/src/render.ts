@@ -58,6 +58,9 @@ export class Renderer {
   isAttached: (node: BNode) => boolean = () => false;
   /** does the block hold comments that are no blocks (it has no list to hold them)? Its children are repainted after each edit. */
   mayHaveStrays: (node: BNode) => boolean = () => false;
+  /** a root's element is drawn / taken out of the page: the editor watches its height (see `heightWatch` in lezer-view.ts) */
+  watch?: (el: HTMLElement) => void;
+  unwatch?: (el: HTMLElement) => void;
   private els = new Map<BNode, HTMLElement>();
   private byId = new Map<number, BNode>();
   private stats: RenderStats = { created: 0, removed: 0, attrWrites: 0 };
