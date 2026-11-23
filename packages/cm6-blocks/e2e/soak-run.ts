@@ -75,7 +75,11 @@ export async function runChromium(
   try {
     await page.goto(`/index.html?lang=${seq.language}`);
     await page.waitForFunction(() => !!(window as any).demo);
-    await evaluate((code: string) => (window as any).demo.show(code), seq.code);
+    // (the demo's own program is replaced by the sequence's: that replacement is not a step to undo)
+    await evaluate((code: string) => {
+      (window as any).demo.show(code);
+      (window as any).demo.ed.clearHistory?.();
+    }, seq.code);
     cdp = await context.newCDPSession(page);
     await cdp.send("Accessibility.enable");
   } catch (e) {
@@ -219,11 +223,12 @@ export async function runChromium(
   const exec = async (s: Step): Promise<void> => {
     const m = await mode();
     const blocks = m === "blocks";
-    // (focus that is already on a toolbar button, or the mode button, stays there until a step moves it)
+    // (focus that is already on a toolbar button, or the mode button, stays there until a step moves it; one that is in a dialog (the
+    // message of a refused switch to blocks) goes back to the button that opened it when the dialog closes)
     toolbarOk = await evaluate(
       () =>
         !!document.activeElement?.closest(
-          "#templates, .blocks-toolbar, .blocks-toggle-btn"
+          "#templates, .blocks-toolbar, .blocks-toggle-btn, .blocks-search, .blocks-help, [role=dialog], dialog"
         )
     );
     rushed = false;
