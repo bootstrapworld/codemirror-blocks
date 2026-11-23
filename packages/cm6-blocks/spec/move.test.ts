@@ -170,6 +170,42 @@ describe.each(LANGS)("moving blocks: %s", (l) => {
     ok(ed);
     expect(ed.lastError).toBeNull();
   });
+  test("a block let go on a value replaces it, even in the root's top edge zone", () => {
+    const ed = make(l);
+    const before = text(ed);
+    const roots = ed.roots().length;
+    const three = lit(ed, "3");
+    const one = lit(ed, "1");
+    const root = (n: BNode): BNode => (n.parent?.parent ? root(n.parent) : n);
+    const rootEl = ed.renderer.element(root(one));
+    // (jsdom has no layout: the root is 100 px tall and the pointer is at its top, inside the 30% zone)
+    rootEl.getBoundingClientRect = () =>
+      ({
+        top: 0,
+        bottom: 100,
+        height: 100,
+        left: 0,
+        right: 100,
+        width: 100,
+      }) as DOMRect;
+    document.elementFromPoint = () => ed.renderer.element(one);
+    const fire = (el: Element, type: string, x: number, y: number) =>
+      el.dispatchEvent(
+        new MouseEvent(type, {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          clientX: x,
+          clientY: y,
+        })
+      );
+    fire(ed.renderer.element(three), "pointerdown", 10, 90);
+    fire(document.body, "pointermove", 100, 5);
+    fire(document.body, "pointerup", 100, 5);
+    expect(text(ed)).not.toBe(before);
+    expect(ed.roots().length).toBe(roots);
+    ok(ed);
+  });
 });
 
 describe("moving statements (Python): indentation follows the target", () => {

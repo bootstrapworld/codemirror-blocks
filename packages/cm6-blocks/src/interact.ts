@@ -1071,6 +1071,15 @@ export function attachInteraction(ed: LezerBlockEditor): {
     if (ed.isBlank(hit) && hit !== node)
       return { target: { blank: hit }, mark: renderer.element(hit) };
     const root = rootsOf(hit);
+    // (edited: checked before the edge zones, so a value takes the drop even in the root's top or bottom 30%) a drop on a value inside a top-level block replaces it: in the old editor only the nodes that are "normally editable" (a literal, a blank) are drop targets, a compound block is not; the top-level block itself takes drops at its edges only
+    if (
+      hit !== root &&
+      hit !== node &&
+      hit.slots.length === 0 &&
+      hit.kind !== "comment" &&
+      !(node && isInside(hit, node))
+    )
+      return { target: { blank: hit }, mark: renderer.element(hit) };
     if (root !== node && root.parent && root.slot) {
       const r = renderer.element(root).getBoundingClientRect();
       const i = root.slot.nodes.indexOf(root);
@@ -1085,15 +1094,6 @@ export function attachInteraction(ed: LezerBlockEditor): {
           mark: renderer.element(root),
         };
     }
-    // a drop on a value inside a top-level block replaces it: in the old editor only the nodes that are "normally editable" (a literal, a blank) are drop targets, a compound block is not; the top-level block itself takes drops at its edges only
-    if (
-      hit !== root &&
-      hit !== node &&
-      hit.slots.length === 0 &&
-      hit.kind !== "comment" &&
-      !(node && isInside(hit, node))
-    )
-      return { target: { blank: hit }, mark: renderer.element(hit) };
     return null;
   }
   const isInside = (n: BNode, of: BNode): boolean => {

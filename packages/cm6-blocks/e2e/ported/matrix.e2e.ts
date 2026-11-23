@@ -44,6 +44,8 @@ type Operation = {
   name: string;
   program: string;
   run: (page: Page) => Promise<void>;
+  /** edited: an extra check on the result (the roots before and after) */
+  verify?: (before: string[], after: string[]) => void;
 };
 
 const operations: Operation[] = [
@@ -179,6 +181,8 @@ const operations: Operation[] = [
         block(page, /^x, /)
       );
     },
+    // edited: the value is replaced, not written beside the call as a new root (the root's edge zones do not take it)
+    verify: (before, after) => expect(after.length).toBe(before.length),
   },
   {
     name: "dragging a node to the trash can",
@@ -214,6 +218,7 @@ for (const op of operations) {
 
     test("changes the document and keeps it consistent", async () => {
       expect(after.text).not.toBe(before.text);
+      op.verify?.(before.roots, after.roots);
     });
 
     test("is undone by the keyboard", async ({ page }) => {
