@@ -61,3 +61,41 @@ it("seed 12743: Escape on an insert box whose block an undo removed gives the fo
     } as Sequence)
   ).toBeNull();
 });
+it("seed 41877: focus moves out of an edit box that commits and rewrites its target (jsdom's focus() ended on the detached block: the harness now acts as Chrome does)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 41877,
+      language: "python",
+      code: 'lambda y: total(g * 59, y, lambda y: "s7")\n',
+      steps: [
+        { op: "editBox", a: 0.9107803255319595, text: "(((", accept: true },
+        { op: "insertTemplate", t: 0.35886684618890285, a: 0.9274827176705003 },
+      ],
+      motion: "reduced",
+    } as Sequence)
+  ).toBeNull();
+});
+
+it("seed 11575: a pending top-level box that commits when the focus leaves it", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 11575,
+      language: "python",
+      code: "x = 1 + 2\nf(x, 3)\nwhile x < 9:\n    x = x + 1\n    g(x)\ny = 2",
+      steps: [
+        {
+          op: "topLevelType",
+          a: 0.18612669711001217,
+          text: "(",
+          accept: true,
+          how: "type",
+        },
+        { op: "textEdit", a: 0.3408974742051214, len: 3, w: ")" },
+        { op: "focus", a: 0.5597523967735469 },
+      ],
+      motion: "full",
+    } as Sequence)
+  ).toBeNull();
+});

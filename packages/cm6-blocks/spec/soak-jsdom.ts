@@ -37,6 +37,38 @@ if (!Range.prototype.getClientRects)
 if (!Range.prototype.getBoundingClientRect)
   Range.prototype.getBoundingClientRect = () => zeroRect as DOMRect;
 
+/*
+ * jsdom's focus() differs from Chrome's in one way that matters here: when a blur handler moves the focus itself (the edit box that commits
+ * and writes the text when focus leaves it, then focuses the block at that place), Chrome keeps where the handler put it, and gives up the
+ * move it was making when its target left the document; jsdom finishes the move and ends with the focus on a detached element (the page
+ * body). Without this, every focus move out of an open box that rewrites its target is reported as a lost focus (soak, triage of round 38).
+ */
+{
+  const realFocus = HTMLElement.prototype.focus;
+  let depth = 0;
+  let inner: HTMLElement | null = null;
+  const focusing = (el: HTMLElement, args: Parameters<typeof realFocus>) => {
+    if (depth === 0) inner = null;
+    depth++;
+    try {
+      realFocus.apply(el, args);
+    } finally {
+      depth--;
+    }
+    if (depth > 0) {
+      inner = el;
+      return;
+    }
+    const moved = inner as HTMLElement | null;
+    inner = null;
+    if (moved && moved !== el && moved.isConnected && !el.isConnected)
+      realFocus.call(moved);
+  };
+  HTMLElement.prototype.focus = function (this: HTMLElement, ...args) {
+    focusing(this, args);
+  };
+}
+
 /** what a call may throw on purpose (the documented refusals of the editor's API): not a finding */
 const REFUSALS =
   /cannot|can't|no place|inside|overlap|refus|only available|not between blocks|no closing bracket|does not go there|takes one block|needs a list|does not parse|would not parse|template string|no slot|not a list|unparse/i;
