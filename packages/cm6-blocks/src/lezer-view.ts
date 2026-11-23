@@ -1860,6 +1860,8 @@ export function createLezerBlockEditor(
       selection: !on && had ? EditorSelection.cursor(had.from) : undefined,
     });
     if (on && editedAsText) clearHistory();
+    // (edits made as text may have brought a comment next to a block that stayed drawn)
+    if (on) renderer.refreshComments(true);
     editedAsText = false;
     if (inEditor && !on) view.focus();
     sayLater(`${on ? "Block" : "Text"} Mode Enabled`, 500);

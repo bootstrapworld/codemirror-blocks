@@ -84,8 +84,9 @@ export class Renderer {
   private marked = new Set<BNode>();
 
   /** after an edit: the drawn blocks next to a comment, and those that had a marker, may have changed (a kept block is not repainted otherwise) */
-  refreshComments(): void {
-    const todo = new Set<BNode>(this.marked);
+  refreshComments(all = false): void {
+    // (`all`: after a stay in text mode, where a comment that came with an edit had no element, so no neighbour was found through it)
+    const todo = new Set<BNode>(all ? this.els.keys() : this.marked);
     for (const n of this.els.keys()) {
       if (n.kind === "comment") todo.add(n); // (it may have come to go with a block, or stopped)
       if (n.slots.length && this.mayHaveStrays(n))

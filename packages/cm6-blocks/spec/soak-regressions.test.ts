@@ -22,3 +22,21 @@ it("seed 18334: an open edit box among the children of a list does not shift the
     } as Sequence)
   ).toBeNull();
 });
+it("seed 16791: a comment that text edits brought next to a block that stayed drawn is shown after the return to blocks (marker, label)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 16791,
+      language: "scheme",
+      code: "(define (total n) (cond [#t #f] [else (g)]))\nfact\n",
+      steps: [
+        { op: "setComment", a: 0.4706993780564517, text: "note" },
+        { op: "moveNode", a: 0.000825150404125452, b: 0.413669912610203 },
+        { op: "toggleMode", a: 0.2818378147203475 },
+        { op: "undo" },
+        { op: "toggleMode", a: 0.5272719168569893 },
+      ],
+      motion: "reduced",
+    } as Sequence)
+  ).toBeNull();
+});
