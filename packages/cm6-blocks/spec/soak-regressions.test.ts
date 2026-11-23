@@ -3,6 +3,8 @@
  * Regressions found by the soak runner (scripts/soak.js): each case is a shrunk sequence of steps, replayed with every invariant checked
  * after every step (spec/soak-jsdom.ts). `npm run soak -w @bootstrapworld/cm6-blocks -- --promote <seed>` prints a case.
  */
+import { createLezerBlockEditor } from "../src/lezer-view";
+import { LANGS } from "./steps";
 import { runJsdom } from "./soak-jsdom";
 import type { Sequence } from "./soak-gen";
 
@@ -151,4 +153,20 @@ it("seed 10316: focusNode on a block inside a collapsed block focuses the collap
       motion: "full",
     } as Sequence)
   ).toBeNull();
+});
+
+it("a multi-line string edited in its box keeps its line breaks when the box is left (a textarea, not an input)", () => {
+  const code = '"""first line\n\nsecond line"""\n';
+  const parent = document.createElement("div");
+  document.body.appendChild(parent);
+  const ed = createLezerBlockEditor(parent, code, LANGS.python.opts);
+  let leaf = ed.roots()[0];
+  while (leaf.slots.length) leaf = leaf.slots[0].nodes[0];
+  ed.edit(leaf);
+  const box = parent.querySelector(".blocks-edit") as HTMLTextAreaElement;
+  expect(box.tagName).toBe("TEXTAREA");
+  expect(box.value).toContain("\n\n");
+  box.dispatchEvent(new FocusEvent("blur"));
+  expect(ed.view.state.doc.toString()).toBe(code);
+  ed.destroy();
 });
