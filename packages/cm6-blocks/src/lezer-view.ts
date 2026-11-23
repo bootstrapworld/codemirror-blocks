@@ -1901,13 +1901,14 @@ export function createLezerBlockEditor(
       view.dispatch({ effects: setPending.of({ pos, el }) });
       return el;
     },
+    // (the pending field is a part of the block extension: in text mode it is not in the state, and a box that the switch removed is closing)
     clearPending() {
-      if (view.state.field(pendingField).size > 0)
+      if ((view.state.field(pendingField, false)?.size ?? 0) > 0)
         view.dispatch({ effects: setPending.of(null) });
     },
     pendingAt() {
-      const it = view.state.field(pendingField).iter();
-      return it.value ? it.from : null;
+      const it = view.state.field(pendingField, false)?.iter();
+      return it?.value ? it.from : null;
     },
     refuseInsert(slot, index, snippet) {
       try {
