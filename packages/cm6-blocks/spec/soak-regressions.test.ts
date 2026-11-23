@@ -131,3 +131,24 @@ it("seed 27851: closing the box of a template's hole that is piece of text that 
     } as Sequence)
   ).toBeNull();
 });
+it("seed 10316: focusNode on a block inside a collapsed block focuses the collapsed block that holds it (a hidden element cannot take the focus in a browser)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 10316,
+      language: "scheme",
+      code: '(define x fact)\n"s4"\n#f\n(define (lst n) (lambda (g) (* (lst "s6" total \'a) (lst))))\n; note\n(cond [(cond [(* (cond [30 #t] [else y]) (acc #t y)) (total (= #f "s0") (lambda (acc) \'a) "s5")] [else (n (let ([f "s3"]) "s8") (f lst 51) "s1")]) (fact (if (f total #f #f) (x \'a f) #t) (< (+ x f) (lst y)))] [else #t])\n\n(define g #t)',
+      steps: [
+        { op: "collapseAll", on: true },
+        {
+          op: "insertTemplateAt",
+          t: 0.020534857641905546,
+          a: 0.8344515082426369,
+          b: 0.13734120456501842,
+        },
+        { op: "editBox", a: 0.28765273932367563, text: "foo", accept: false },
+      ],
+      motion: "full",
+    } as Sequence)
+  ).toBeNull();
+});

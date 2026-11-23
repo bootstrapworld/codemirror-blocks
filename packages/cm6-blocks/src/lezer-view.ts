@@ -2567,7 +2567,8 @@ export function createLezerBlockEditor(
       if (alive(node) && isAttached(node)) node = ownerOf(node) ?? node;
       // (a block that an edit has taken out of the tree, such as the one an edit box was opened at, or a piece of text that did not parse,
       // which is no block: focus goes to the block at its place)
-      if (!alive(node) || !drawn(node)) {
+      // (or one inside a collapsed block, which has no place to be focused: the collapsed block that holds it)
+      if (!alive(node) || !drawn(node) || hiddenByFold(node)) {
         const near = nearestDrawn(
           alive(node) ? node : resolvePlace(placeOf(node)).node
         );
