@@ -72,17 +72,15 @@ test.describe("dragging a block onto the trash can", () => {
   });
 });
 
-// FIXME-BEGIN (thirteenth round: M: the trash can is not built)
+// FIXME-BEGIN (twenty-seventh round: M: text mode, and the toggle button, are not built; the trash can is)
 const FIXME = new Set<string>([
   "dragging a block onto the trash can › works after switching to text mode and back",
-  "dragging a block onto the trash can › can be undone",
 ]);
 test.beforeEach(({}, ti) => {
   test.fixme(
     FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "M: the trash can is not built"
+    "M: the page toggle between text and blocks (and text mode) is not built"
   );
 });
 // FIXME-END
 // first error (sweep): dragging a block onto the trash can › works after switching to text mode and back => Test timeout of 20000ms exceeded.
-// first error (sweep): dragging a block onto the trash can › can be undone => Error: expect(received).toBe(expected) // Object.is equality

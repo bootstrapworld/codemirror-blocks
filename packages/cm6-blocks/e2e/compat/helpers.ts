@@ -110,6 +110,11 @@ export async function undoAll(page: Page) {
     page.evaluate(
       () => (window as any).cmb.getValue() === (window as any).cmb.base
     );
+  // (a template dropped on the page opens its first hole for typing: the keys then go to the box's own undo, so leave the box first, as a user does)
+  if (
+    await page.evaluate(() => !!document.activeElement?.matches(".blocks-edit"))
+  )
+    await page.keyboard.press("Escape");
   for (let i = 0; i < 10 && !(await atBase()); i++)
     await page.keyboard.press(`${MOD}+z`);
 }

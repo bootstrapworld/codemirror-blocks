@@ -69,7 +69,8 @@ const settled = async (l: Locator) => {
 const grip = async (l: Locator): Promise<Pt> => {
   await settled(l);
   const b = (await l.boundingBox())!;
-  return { x: b.x + 2, y: b.y + b.height / 2 };
+  // edited: the block's own padding, at its top left corner (a call's left edge here is covered by its first gap)
+  return { x: b.x + 4, y: b.y + 4 };
 };
 
 /** Press, wait for the app to start the drag, and slide onto the target. */
@@ -83,7 +84,8 @@ const longPressDrag = async (
   await f.down(from);
   // the app starts the drag after its long-press delay (250ms, LONG_PRESS_MS
   // in dnd.ts); wait for it to say so rather than for a guessed time
-  await expect(page.locator("body")).toHaveClass(/cmb-dragging/);
+  // edited: the editor says `blocks-dragging` on itself, not `cmb-dragging` on the body
+  await expect(page.locator(".blocks-dragging")).not.toHaveCount(0);
   await f.slide(from, to, steps);
   return f.up;
 };
@@ -98,12 +100,12 @@ test.describe("dragging with a finger", () => {
     const from = await grip(block(page, /call to g /));
     const to = await settled(trashCan(page));
     const release = await longPressDrag(page, from, to);
-    await expect(page.locator(".cmb-drag-preview")).toHaveCount(1);
-    await expect(trashCan(page)).toHaveClass(/over/);
+    await expect(page.locator(".blocks-drag-preview")).toHaveCount(1);
+    await expect(trashCan(page)).toHaveClass(/blocks-drop-target/);
     await release();
     const s = await expectConsistent(page);
     expect(s.roots).toEqual(["(f x y)", "(h w)"]);
-    await expect(page.locator(".cmb-drag-preview")).toHaveCount(0);
+    await expect(page.locator(".blocks-drag-preview")).toHaveCount(0);
   });
 
   test("a long press then a drag moves a block onto an insertion gap", async ({
@@ -111,12 +113,11 @@ test.describe("dragging with a finger", () => {
   }) => {
     await openInBlockMode(page, program);
     const from = await grip(block(page, /call to h /));
-    const gap = page
-      .locator("[id^=block-drop-target-]", { hasNot: page.locator("*") })
-      .first();
+    // edited: the first insertion place is the first `.blocks-gap` (the old one was `[id^=block-drop-target-]`)
+    const gap = page.locator(".cm-content .blocks-gap").first();
     const to = await settled(gap);
     const release = await longPressDrag(page, from, to, 14);
-    await expect(gap).toHaveClass(/blocks-over-target/);
+    await expect(gap).toHaveClass(/blocks-drop-target/);
     await release();
     const s = await expectConsistent(page);
     // (h w) moved into the first gap of (f x y)
@@ -128,13 +129,13 @@ test.describe("dragging with a finger", () => {
   }) => {
     const lines = Array.from({ length: 120 }, (_, i) => `(f ${i} y)`);
     await openInBlockMode(page, lines.join("\n"));
-    const scroller = page.locator(".CodeMirror-scroll");
+    const scroller = page.locator(".cm-scroller");
     const before = await scroller.evaluate((e) => e.scrollTop);
     const f = await finger(page);
     const from = await center(block(page, /call to f /));
     await f.down(from);
     await f.slide(from, { x: from.x, y: from.y - 120 }, 12);
-    await expect(page.locator(".cmb-drag-preview")).toHaveCount(0);
+    await expect(page.locator(".blocks-drag-preview")).toHaveCount(0);
     await f.up();
     // (the page or the editor scrolled, and nothing was dropped anywhere)
     const after = await scroller.evaluate((e) => e.scrollTop);
@@ -148,7 +149,7 @@ test.describe("dragging with a finger", () => {
   }) => {
     await openInBlockMode(page, program);
     // a leaf: tapping the middle of a bigger block lands on a child
-    const target = block(page, /^symbol g\b/);
+    const target = block(page, /^g, /);
     // the blocks shift sideways while the page's fonts load, so tap only once
     // the block holds still
     let x = -1;
@@ -162,8 +163,8 @@ test.describe("dragging with a finger", () => {
     await page.touchscreen.tap(p.x, p.y);
     // (a leaf opens for editing when clicked, so focus is inside the editor
     // rather than on the block itself)
-    await expect(page.locator(".CodeMirror :focus")).toHaveCount(1);
-    await expect(page.locator(".cmb-drag-preview")).toHaveCount(0);
+    await expect(page.locator(".cm-editor :focus")).toHaveCount(1);
+    await expect(page.locator(".blocks-drag-preview")).toHaveCount(0);
   });
 });
 
@@ -172,8 +173,11 @@ const tap = async (page: Page, l: Locator) => {
   const p = await settled(l);
   await page.touchscreen.tap(p.x, p.y);
 };
+// edited: the edit box is an input (`.blocks-edit`), not a contenteditable; the answer keeps the old "true"
 const editing = (page: Page) =>
-  page.evaluate(() => document.activeElement?.getAttribute("contenteditable"));
+  page.evaluate(() =>
+    document.activeElement?.matches(".blocks-edit") ? "true" : "false"
+  );
 const text = (page: Page) =>
   page.evaluate(() =>
     (window as unknown as { cmb: { getValue(): string } }).cmb.getValue()
@@ -184,9 +188,8 @@ test.describe("editing with a finger", () => {
     page,
   }) => {
     await openInBlockMode(page, program);
-    const gap = page
-      .locator("[id^=block-drop-target-]", { hasNot: page.locator("*") })
-      .first();
+    // edited: the first insertion place is the first `.blocks-gap` (the old one was `[id^=block-drop-target-]`)
+    const gap = page.locator(".cm-content .blocks-gap").first();
     await tap(page, gap);
     await expect.poll(() => editing(page)).toBe("true");
     await page.keyboard.type("z");
@@ -214,7 +217,7 @@ test.describe("editing with a finger", () => {
   }) => {
     const lines = Array.from({ length: 100 }, (_, i) => `f${i}(a, b)`);
     await openInBlockMode(page, lines.join(";\n"), "lambda");
-    const scroller = page.locator(".CodeMirror-scroll");
+    const scroller = page.locator(".cm-scroller");
     await scroller.evaluate((e) => (e.scrollTop = e.scrollHeight * 0.8));
     await page.waitForTimeout(300);
     const gap = page
@@ -236,7 +239,7 @@ test.describe("editing with a finger", () => {
     page,
   }) => {
     await openInBlockMode(page, program);
-    await tap(page, block(page, /^symbol g\b/));
+    await tap(page, block(page, /^g, /));
     await expect.poll(() => editing(page)).toBe("true");
     await page.keyboard.press("ControlOrMeta+a");
     await page.keyboard.type("k");
@@ -246,29 +249,23 @@ test.describe("editing with a finger", () => {
   });
 });
 
-// FIXME-BEGIN (thirteenth round: M: needs the trash can, the old page's `.CodeMirror` and `.blocks-if-else` selectors, or the old insertion box: not built here (touch drags have their own tests: e2e/touch*.e2e.ts))
-const FIXME = new Set<string>([
-  "dragging with a finger › a long press then a drag moves a block to the trash can",
-  "dragging with a finger › a long press then a drag moves a block onto an insertion gap",
-  "dragging with a finger › moving before the long press ends scrolls instead of dragging",
-  "dragging with a finger › a quick tap still activates a block, as a click does",
-  "editing with a finger › a tap on an insertion gap opens it for typing, and Enter adds the block",
-  "editing with a finger › a tap on the faded else of a lambda if opens it for typing",
-  "editing with a finger › a tap on a gap far down a long program opens it, without the page jumping",
-  "editing with a finger › a tap on a leaf opens it for typing, and Enter replaces it",
+// FIXME-BEGIN (twenty-seventh round: D: three tests are about parts of the old editor, or a rule of it, that this one does not have)
+const FIXME = new Map<string, string>([
+  [
+    "editing with a finger › a tap on the faded else of a lambda if opens it for typing",
+    "D: there is no `lambda` language and no faded (not live) else of an if here",
+  ],
+  [
+    "editing with a finger › a tap on a gap far down a long program opens it, without the page jumping",
+    "D: there is no `lambda` language, and the places between top-level statements are bare whitespace here, not gap elements (the gaps of a long function body are tested in drop-target-scroll.e2e.ts)",
+  ],
+  [
+    "editing with a finger › a tap on a leaf opens it for typing, and Enter replaces it",
+    "D: a first tap on a block only focuses it here, and a second tap on the focused block edits it (a finger has no Enter key; tested in e2e/touch.e2e.ts and jsdom); the old editor opened a leaf at once",
+  ],
 ]);
 test.beforeEach(({}, ti) => {
-  test.fixme(
-    FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "M: needs the trash can, the old page's `.CodeMirror` and `.blocks-if-else` selectors, or the old insertion box: not built here (touch drags have their own tests: e2e/touch*.e2e.ts)"
-  );
+  const why = FIXME.get(ti.titlePath.slice(1).join(" › "));
+  test.fixme(!!why, why ?? "");
 });
 // FIXME-END
-// first error (sweep): dragging with a finger › a long press then a drag moves a block to the trash can => Error: expect(locator).toHaveClass(expected) failed
-// first error (sweep): dragging with a finger › a long press then a drag moves a block onto an insertion gap => Error: Test timeout of 20000ms exceeded
-// first error (sweep): dragging with a finger › moving before the long press ends scrolls instead of dragging => Test timeout of 20000ms exceeded.
-// first error (sweep): dragging with a finger › a quick tap still activates a block, as a click does => Error: Test timeout of 20000ms exceeded
-// first error (sweep): editing with a finger › a tap on an insertion gap opens it for typing, and Enter adds the block => Error: Test timeout of 20000ms exceeded
-// first error (sweep): editing with a finger › a tap on the faded else of a lambda if opens it for typing => Error: expect(locator).toHaveClass(expected) failed
-// first error (sweep): editing with a finger › a tap on a gap far down a long program opens it, without the page jumping => Test timeout of 20000ms exceeded.
-// first error (sweep): editing with a finger › a tap on a leaf opens it for typing, and Enter replaces it => Error: Test timeout of 20000ms exceeded

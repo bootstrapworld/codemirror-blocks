@@ -1517,6 +1517,9 @@ export function attachInteraction(ed: LezerBlockEditor): {
               d.group.filter((n) => renderer.has(n)),
               true
             );
+            // (a finger's long press focuses no block: with nothing focused afterwards, focus goes to the block that had it last, or the first)
+            if (!doc.activeElement || doc.activeElement === doc.body)
+              ed.focusEditor();
           } else if (to) {
             try {
               ed.moveNodes(d.group, to);
