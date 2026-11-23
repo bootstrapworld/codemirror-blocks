@@ -99,3 +99,15 @@ it("seed 11575: a pending top-level box that commits when the focus leaves it", 
     } as Sequence)
   ).toBeNull();
 });
+it("seed 21535: a block of half-typed text whose parts are all empty still has a label", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 21535,
+      language: "python",
+      code: "import sys\nimport importlib.util\nimport py_compile\nimport struct\n\n",
+      steps: [{ op: "textEdit", a: 0.8710412695072591, len: 0, w: ":" }],
+      motion: "reduced",
+    } as Sequence)
+  ).toBeNull();
+});

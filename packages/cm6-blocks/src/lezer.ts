@@ -667,7 +667,7 @@ export function lezerLanguage(
         return t.length > 28 ? t.slice(0, 27) + "..." : t;
       };
       if (row?.describe) {
-        return row.describe
+        const said = row.describe
           .replace(
             /\$\{(\w+)(\.length|\.describe|\.and)?(?:\|([^|}]*)\|([^}]*))?\}/g,
             (_m, name: string, len?: string, one?: string, many?: string) => {
@@ -699,6 +699,8 @@ export function lezerLanguage(
             }
           )
           .replace(/:\s*$/, "");
+        // (a block whose parts are all empty, as in a half-typed program, still says what it is)
+        return said.trim() ? said : label;
       }
       // a value reads as the value first and then what it is: "1, a number"
       if (node.slots.length === 0)
