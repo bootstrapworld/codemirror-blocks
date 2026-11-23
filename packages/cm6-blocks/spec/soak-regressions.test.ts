@@ -40,3 +40,24 @@ it("seed 16791: a comment that text edits brought next to a block that stayed dr
     } as Sequence)
   ).toBeNull();
 });
+it("seed 12743: Escape on an insert box whose block an undo removed gives the focus to the block at its place (not the page body)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 12743,
+      language: "javascript",
+      code: '// note\nif ((total) => g ? "s6" : true) {\n  const x = true;\n  if (null) {\n    const x = null;\n    const n = null;\n    (h) => [];\n  } else {\n    x = true;\n    var acc = 67 ? null : acc("s9");\n    let fact = h;\n  }\n  true ? {a: 75, b: true} : lst + f();\n}\n// a b c\nwhile (55) {\n  const lst = 40;\n}\nf();\n"s2";',
+      steps: [
+        {
+          op: "pasteText",
+          a: 0.45194285246543586,
+          text: "{a: 1}",
+          before: false,
+        },
+        { op: "key", key: "Control+[", a: 0.7378016810398549 },
+        { op: "undo" },
+      ],
+      motion: "full",
+    } as Sequence)
+  ).toBeNull();
+});

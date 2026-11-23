@@ -2552,6 +2552,12 @@ export function createLezerBlockEditor(
     },
     change: dispatch,
     focusNode(node) {
+      // (a block that an edit has taken out of the tree, such as the one an edit box was opened at: focus goes to the block at its place)
+      if (!alive(node)) {
+        const near = nearestDrawn(resolvePlace(placeOf(node)).node);
+        if (!near) return;
+        node = near;
+      }
       if (!isDrawn(node)) return;
       const el = renderer.element(node);
       el.focus();
