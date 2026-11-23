@@ -1,7 +1,7 @@
 /** @jest-environment jsdom */
 /*
- * Real programs (step 3 of the third round). Gated: `CMB_CORPUS=coverage npx jest packages/cm6-blocks/spec/corpus`
- * measures coverage only; `CMB_CORPUS=full` also runs the oracle on sampled files and times edits.
+ * Real programs (step 3 of the third round). Gated: `CMB6_PROFILE=1 npx jest packages/cm6-blocks/spec/corpus`
+ * measures coverage only; `CMB6_PROFILE=1 CMB_CORPUS=full` also runs the oracle on sampled files and times edits.
  * `CMB_STEP=<label>` names the row written to e2e/corpus-results.json.
  */
 import * as fs from "fs";
@@ -24,7 +24,10 @@ import {
 } from "../scripts/corpus-lib";
 import type { BNode } from "../src/types";
 
-const mode = process.env.CMB_CORPUS;
+const PROFILE = process.env.CMB6_PROFILE === "1";
+const mode = PROFILE ? (process.env.CMB_CORPUS ?? "coverage") : undefined;
+if (!PROFILE)
+  test.skip("set CMB6_PROFILE=1 to run (slow; measures corpus files / reuse timing)", () => {});
 const MODES: Record<string, [any, any]> = {
   scheme: [sp, schemeTable],
   javascript: [jp, javascriptTable],

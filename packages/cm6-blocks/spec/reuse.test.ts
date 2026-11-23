@@ -1,7 +1,7 @@
 /** @jest-environment jsdom */
 /*
  * Node-level reuse (fourth round, step 2). Ungated tests: a touched root keeps the nodes and
- * elements that did not change. Gated measurement (`CMB_REUSE=1 npx jest packages/cm6-blocks/spec/reuse`):
+ * elements that did not change. Gated measurement (`CMB6_PROFILE=1 npx jest packages/cm6-blocks/spec/reuse`):
  * the cost of an edit inside a big root with and without reconcile.ts (`reconcile: false` is the old
  * rebuild-the-root path); written to e2e/reuse-results.json.
  */
@@ -156,7 +156,9 @@ describe.each(Object.keys(OPTS))("node-level reuse: %s", (name) => {
   });
 });
 
-(process.env.CMB_REUSE ? describe : describe.skip)("measure", () => {
+if (process.env.CMB6_PROFILE !== "1")
+  test.skip("set CMB6_PROFILE=1 to run (slow; measures corpus files / reuse timing)", () => {});
+(process.env.CMB6_PROFILE === "1" ? describe : describe.skip)("measure", () => {
   const OUT = path.join(__dirname, "..", "e2e", "reuse-results.json");
   const results: Record<string, unknown> = fs.existsSync(OUT)
     ? JSON.parse(fs.readFileSync(OUT, "utf8"))
