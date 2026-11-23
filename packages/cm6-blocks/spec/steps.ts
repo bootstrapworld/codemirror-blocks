@@ -150,12 +150,12 @@ export function removeOracle(
         REMOVABLE.includes(n.slot.name)
     );
   const text = ed.view.state.doc.toString();
-  // (a Python `{x}` that loses its last element is `{}`: another thing, an empty dict; the same kind of language fact as Scheme's)
+  // (a Python `{x}` that loses its element is `{}`: an empty dict, another thing; the table has no block for a set, its elements show in the
+  // parent's list, so the removal leaves braces with nothing between them: the same kind of language fact as Scheme's)
   const emptiesBraces = gone.some(
     (n) =>
-      n.slot &&
-      n.slot.nodes.every((c) => gone.includes(c)) &&
-      text[n.slot.owner.from] === "{"
+      text.slice(0, n.from).trimEnd().endsWith("{") &&
+      text.slice(n.to).trimStart().startsWith("}")
   );
   const before =
     check && shapes && !emptiesBraces
