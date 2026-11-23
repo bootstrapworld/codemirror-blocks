@@ -1,5 +1,6 @@
 // EXPERIMENT: a page that runs the Lezer block editor in a browser.
 import { redo, undo } from "@codemirror/commands";
+import { lineNumbers } from "@codemirror/view";
 import {
   checkLezerEditor,
   createLezerBlockEditor,
@@ -85,6 +86,7 @@ function show(text: string, reconcile = true, anchors = true): void {
   const t0 = performance.now();
   ed = createLezerBlockEditor($("editor"), text, {
     ...LANGS[lang].opts,
+    extensions: [lineNumbers()],
     reconcile,
     anchors,
     focusToolbar: () =>
