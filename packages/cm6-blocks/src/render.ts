@@ -27,7 +27,12 @@ export function plainComment(raw: string): string {
     .trim();
 }
 
-const FLAGS = ["blocks-collapsed", "blocks-has-comment", "blocks-selected"];
+const FLAGS = [
+  "blocks-collapsed",
+  "blocks-has-comment",
+  "blocks-selected",
+  "blocks-attached",
+];
 /** switch one of the state classes, keeping them in one order (the checker compares the class attribute as a string) */
 function flagClass(el: Element, name: string, on: boolean): void {
   const state = FLAGS.map((f) => (f === name ? on : el.classList.contains(f)));
@@ -36,19 +41,21 @@ function flagClass(el: Element, name: string, on: boolean): void {
 }
 
 /**
- * The nodes of a slot that are drawn, which are the ones that count in aria-setsize / aria-posinset. A top-level piece of text that did not
- * parse (an `error` root) is not drawn (it stays text); a comment is a block like any other, drawn also when it goes with a block (that one
- * shows it as well).
+ * The nodes of a slot that count in aria-setsize / aria-posinset: no comment counts (one that goes with a block is not drawn as a block, one
+ * that goes with none is drawn but is not counted), and a top-level piece of text that did not parse (an `error` root) is not drawn.
  */
 function drawnIn(slot: Slot): BNode[] {
-  return slot.owner.kind === "program"
-    ? slot.nodes.filter((n) => n.kind !== "error")
-    : slot.nodes;
+  const top = slot.owner.kind === "program";
+  return slot.nodes.filter(
+    (n) => n.kind !== "comment" && !(top && n.kind === "error")
+  );
 }
 
 export class Renderer {
   /** the comment that goes with a block (the editor says which: see `commentOf` in lezer-view.ts) */
   attached: (node: BNode) => BNode | null = () => null;
+  /** is the node a comment that goes with a block? It is not drawn as a block (no treeitem): the block shows it as a popup. */
+  isAttached: (node: BNode) => boolean = () => false;
   /** does the block hold comments that are no blocks (it has no list to hold them)? Its children are repainted after each edit. */
   mayHaveStrays: (node: BNode) => boolean = () => false;
   private els = new Map<BNode, HTMLElement>();
@@ -68,6 +75,7 @@ export class Renderer {
   relabel(node: BNode): void {
     const el = this.els.get(node);
     if (!el) return;
+    if (node.kind === "comment") return this.paintAttached(el, node);
     this.setAttr(el, "aria-label", this.labelOf(node));
     this.paintComment(el, node);
   }
@@ -79,6 +87,7 @@ export class Renderer {
   refreshComments(): void {
     const todo = new Set<BNode>(this.marked);
     for (const n of this.els.keys()) {
+      if (n.kind === "comment") todo.add(n); // (it may have come to go with a block, or stopped)
       if (n.slots.length && this.mayHaveStrays(n))
         for (const s of n.slots) for (const c of s.nodes) todo.add(c);
       if (n.kind !== "comment" || !n.slot) continue;
@@ -87,6 +96,43 @@ export class Renderer {
         if (m) todo.add(m);
     }
     for (const n of todo) if (this.els.has(n)) this.relabel(n);
+  }
+
+  /**
+   * A comment that goes with a block is not a block: no role, not focusable, not counted, hidden (the block shows its words as a popup). One
+   * that goes with none is a block of its own (a treeitem, not counted in the set sizes). Both are the same element: only its attributes differ.
+   */
+  private paintAttached(el: HTMLElement, node: BNode): void {
+    const hidden = this.isAttached(node);
+    flagClass(el, "blocks-attached", hidden);
+    if (hidden) {
+      for (const a of [
+        "role",
+        "tabindex",
+        "aria-label",
+        "aria-selected",
+        "aria-level",
+        "aria-expanded",
+      ])
+        if (el.hasAttribute(a)) el.removeAttribute(a);
+      flagClass(el, "blocks-selected", false);
+      flagClass(el, "blocks-collapsed", false);
+      this.setAttr(el, "aria-hidden", "true");
+      return;
+    }
+    if (el.hasAttribute("aria-hidden")) el.removeAttribute("aria-hidden");
+    this.setAttr(el, "role", "treeitem");
+    this.setAttr(el, "tabindex", "-1");
+    this.setAttr(el, "aria-label", this.labelOf(node));
+    this.setAttr(
+      el,
+      "aria-selected",
+      this.selection.has(node) ? "true" : "false"
+    );
+    flagClass(el, "blocks-selected", this.selection.has(node));
+    this.setAttr(el, "aria-level", String(this.level(node)));
+    this.setAttr(el, "aria-expanded", "true");
+    this.paintCollapsed(el, node);
   }
 
   private paintComment(el: HTMLElement, node: BNode): void {
@@ -178,6 +224,7 @@ export class Renderer {
 
   private paintCollapsed(el: HTMLElement, node: BNode): void {
     if (node.slots.length === 0 && node.kind !== "comment") return;
+    if (el.classList.contains("blocks-attached")) return;
     const on = this.folded.has(node);
     this.setAttr(el, "aria-expanded", on ? "false" : "true");
     flagClass(el, "blocks-collapsed", on);
@@ -190,6 +237,7 @@ export class Renderer {
   }
 
   private paintSelected(el: HTMLElement, on: boolean): void {
+    if (el.classList.contains("blocks-attached")) return;
     this.setAttr(el, "aria-selected", on ? "true" : "false");
     flagClass(el, "blocks-selected", on);
   }
@@ -242,6 +290,9 @@ export class Renderer {
         const el = this.element(change.node);
         oldEl.replaceWith(el);
       }
+      // (a comment is not counted: a block that became a comment, or the other way round, changes the numbers around it)
+      if (change.old.kind === "comment" || change.node.kind === "comment")
+        this.renumber(slot, 0);
     } else if (change.type === "insert") {
       if (isRoot) {
         this.renumber(slot, 0);
@@ -330,7 +381,8 @@ export class Renderer {
   /** the spoken label of a drawn node, after what is inside it changed */
   refresh(node: BNode): void {
     const el = this.els.get(node);
-    if (el) {
+    if (el && node.kind === "comment") this.paintAttached(el, node);
+    else if (el) {
       this.setAttr(el, "aria-label", this.labelOf(node));
       this.paintComment(el, node);
       this.repaintPieces(node);
@@ -389,12 +441,15 @@ export class Renderer {
     );
     if (this.selection.has(node)) flagClass(el, "blocks-selected", true);
     el.setAttribute("aria-level", String(this.level(node)));
-    const siblings = node.slot ? drawnIn(node.slot) : [node];
-    el.setAttribute("aria-setsize", String(siblings.length));
-    el.setAttribute(
-      "aria-posinset",
-      String(Math.max(0, siblings.indexOf(node)) + 1)
-    );
+    if (node.kind !== "comment") {
+      // (a comment is not counted: it has no set size and no position)
+      const siblings = node.slot ? drawnIn(node.slot) : [node];
+      el.setAttribute("aria-setsize", String(siblings.length));
+      el.setAttribute(
+        "aria-posinset",
+        String(Math.max(0, siblings.indexOf(node)) + 1)
+      );
+    }
     if (!compound) {
       const text = this.create(
         "span",
@@ -408,6 +463,7 @@ export class Renderer {
       if (node.kind === "comment") {
         el.setAttribute("aria-expanded", "true");
         if (this.folded.has(node)) this.paintCollapsed(el, node);
+        this.paintAttached(el, node);
       }
       return el;
     }
@@ -477,10 +533,10 @@ export class Renderer {
   /** setsize on every sibling, posinset on those from `from` on */
   private renumber(slot: Slot, from: number): void {
     const top = slot.owner.kind === "program";
-    const n = top ? drawnIn(slot).length : slot.nodes.length;
+    const n = drawnIn(slot).length;
     let pos = 0;
     slot.nodes.forEach((c, i) => {
-      if (top && c.kind === "error") return;
+      if (c.kind === "comment" || (top && c.kind === "error")) return;
       pos++;
       const el = this.els.get(c);
       if (!el) return;

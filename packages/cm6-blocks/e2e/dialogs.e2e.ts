@@ -14,7 +14,7 @@ for (const lang of Object.keys(SRC)) {
   test.describe(`dialogs hide the page: ${lang}`, () => {
     test.beforeEach(async ({ page }) => {
       await page.goto(`/index.html?lang=${lang}`);
-      await page.waitForSelector(".cm-content .blocks-node");
+      await page.waitForSelector(".cm-content [role=treeitem]");
       await page.evaluate((t) => {
         const d = (window as any).demo;
         d.ed.view.dispatch({

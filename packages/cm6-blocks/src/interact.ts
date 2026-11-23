@@ -34,6 +34,9 @@ import type { SoundEvent } from "./sound";
 const kids = (n: BNode): BNode[] => n.slots.flatMap((s) => s.nodes);
 const drawable = (n: BNode): boolean =>
   n.kind !== "error" && n.kind !== "program";
+/** the blocks the keyboard reaches: drawn, and not a comment that goes with a block (it is shown as a popup on that block) */
+type Hide = (n: BNode) => boolean;
+const none: Hide = () => false;
 /** the platform of the old editor's key map: Cmd-Enter on a Mac, Ctrl-Enter elsewhere */
 const isMac = (): boolean =>
   typeof navigator !== "undefined" &&
@@ -48,20 +51,22 @@ const isMac = (): boolean =>
 export function blockNearCursor(
   roots: BNode[],
   cur: number,
-  forward: boolean
+  forward: boolean,
+  hide: Hide = none
 ): BNode | null {
+  const shown = (n: BNode): boolean => drawable(n) && !hide(n);
   const loop = (nodes: BNode[], fallback: BNode | null): BNode | null => {
-    const ns = nodes.filter(drawable);
+    const ns = nodes.filter(shown);
     if (forward) {
       const n = ns.find((x) => x.to > cur);
       if (!n) return fallback;
       if (n.from >= cur) return n;
-      const k = kids(n).filter(drawable);
+      const k = kids(n).filter(shown);
       return k.length === 0 ? n : loop(k, n);
     }
     const n = [...ns].reverse().find((x) => x.from < cur);
     if (!n) return fallback;
-    const k = kids(n).filter(drawable);
+    const k = kids(n).filter(shown);
     return k.length === 0 ? n : loop(k, n);
   };
   return loop(roots, null);
@@ -69,13 +74,16 @@ export function blockNearCursor(
 
 export function lastBlock(
   roots: BNode[],
-  closed: (n: BNode) => boolean = () => false
+  closed: (n: BNode) => boolean = () => false,
+  hide: Hide = none
 ): BNode | null {
-  let n: BNode | null = [...roots].reverse().find(drawable) ?? null;
+  const vis = (x: BNode): BNode[] => kids(x).filter((c) => !hide(c));
+  let n: BNode | null =
+    [...roots].reverse().find((x) => drawable(x) && !hide(x)) ?? null;
   for (
-    let k = n && !closed(n) ? kids(n) : [];
+    let k = n && !closed(n) ? vis(n) : [];
     k.length;
-    k = closed(n) ? [] : kids(n)
+    k = closed(n) ? [] : vis(n)
   )
     n = k[k.length - 1];
   return n;
@@ -83,7 +91,8 @@ export function lastBlock(
 
 export function nextBlock(
   n: BNode,
-  closed: (n: BNode) => boolean = () => false
+  closed: (n: BNode) => boolean = () => false,
+  hide: Hide = none
 ): BNode | null {
   let c: BNode | null = n;
   while (c) {
@@ -98,14 +107,15 @@ export function nextBlock(
       }
     }
     c = r;
-    if (c && drawable(c)) return c;
+    if (c && drawable(c) && !hide(c)) return c;
   }
   return null;
 }
 
 export function prevBlock(
   n: BNode,
-  closed: (n: BNode) => boolean = () => false
+  closed: (n: BNode) => boolean = () => false,
+  hide: Hide = none
 ): BNode | null {
   let c: BNode | null = n;
   while (c) {
@@ -125,7 +135,7 @@ export function prevBlock(
     } else r = p;
     c = r;
     if (c && c.kind === "program") return null;
-    if (c && drawable(c)) return c;
+    if (c && drawable(c) && !hide(c)) return c;
   }
   return null;
 }
@@ -142,6 +152,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
   const dom = view.dom;
   let open: { cancel(): void; commit(): void } | null = null;
   const isClosed = (n: BNode): boolean => renderer.isCollapsed(n);
+  const hid = (n: BNode): boolean => ed.isAttachedComment(n);
 
   function focusSoon(n: BNode): void {
     ed.focusNode(n);
@@ -689,7 +700,10 @@ export function attachInteraction(ed: LezerBlockEditor): {
     },
     readChildren: (n, _e, handled) => {
       handled();
-      const c = kids(n).map((k) => ed.language.describe(k));
+      // (comments are not counted among the children)
+      const c = kids(n)
+        .filter((k) => k.kind !== "comment")
+        .map((k) => ed.language.describe(k));
       ed.say(c.length ? c.join(", ") : "no children");
     },
     toggleSelection: (n, _e, handled) => {
@@ -706,23 +720,23 @@ export function attachInteraction(ed: LezerBlockEditor): {
     },
     first: (_n, _e, handled) => {
       handled();
-      const f = ed.roots().find(drawable);
+      const f = ed.roots().find((x) => drawable(x) && !hid(x));
       if (f) focusSoon(f);
     },
     last: (_n, _e, handled) => {
       handled();
-      const l = lastBlock(ed.roots(), isClosed);
+      const l = lastBlock(ed.roots(), isClosed, hid);
       if (l) focusSoon(l);
     },
     next: (n, _e, handled) => {
       handled();
-      const x = nextBlock(n, isClosed);
+      const x = nextBlock(n, isClosed, hid);
       if (x) focusSoon(x);
       else beep("no-next");
     },
     previous: (n, _e, handled) => {
       handled();
-      const x = prevBlock(n, isClosed);
+      const x = prevBlock(n, isClosed, hid);
       if (x) focusSoon(x);
       else beep("no-previous");
     },
@@ -827,7 +841,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
       const found = blockNearCursor(
         ed.roots(),
         view.state.selection.main.head,
-        forward
+        forward,
+        hid
       );
       ed.act(
         forward ? "next" : "previous",

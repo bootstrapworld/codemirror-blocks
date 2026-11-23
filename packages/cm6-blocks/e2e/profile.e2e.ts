@@ -7,7 +7,7 @@ import * as fs from "fs";
 for (const lang of ["scheme", "javascript", "python"]) {
   test(`profile: ${lang}`, async ({ page }) => {
     await page.goto(`/index.html?lang=${lang}&big=1`);
-    await page.waitForSelector(".cm-content .blocks-node");
+    await page.waitForSelector(".cm-content [role=treeitem]");
     await page.waitForFunction(() => (window as any).demo.paintedMs > 0);
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Profiler.enable");

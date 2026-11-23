@@ -106,7 +106,9 @@ export function createSearch(
   function all(): { node: BNode; hidden: boolean }[] {
     const out: { node: BNode; hidden: boolean }[] = [];
     const go = (n: BNode, hidden: boolean): void => {
-      if (drawable(n)) out.push({ node: n, hidden });
+      // (a comment that goes with a block is shown as that block's popup: not a block to find)
+      if (drawable(n) && !ed.isAttachedComment(n))
+        out.push({ node: n, hidden });
       const h = hidden || (drawable(n) && ed.renderer.isCollapsed(n));
       for (const k of kids(n)) go(k, h);
     };
@@ -124,7 +126,7 @@ export function createSearch(
       if (!c) break;
       n = c;
     }
-    return drawable(n) ? n : null;
+    return drawable(n) && !ed.isAttachedComment(n) ? n : null;
   }
 
   function candidates(): { node: BNode; key: number }[] {

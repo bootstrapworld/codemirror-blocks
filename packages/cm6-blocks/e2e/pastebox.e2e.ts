@@ -12,14 +12,14 @@ test("pasting text that does not parse shows a red box and its message", async (
     .grantPermissions(["clipboard-read", "clipboard-write"])
     .catch(() => {});
   await page.goto("/index.html?lang=scheme");
-  await page.waitForSelector(".cm-content .blocks-node");
+  await page.waitForSelector(".cm-content [role=treeitem]");
   await page.evaluate(() => {
     const d = (window as any).demo;
     d.ed.view.dispatch({
       changes: { from: 0, to: d.ed.view.state.doc.length, insert: "(f 1)\n" },
     });
   });
-  await page.waitForSelector(".cm-content .blocks-node");
+  await page.waitForSelector(".cm-content [role=treeitem]");
   await page.evaluate(() => navigator.clipboard.writeText("(h 3"));
   await page.evaluate(() => {
     const d = (window as any).demo;

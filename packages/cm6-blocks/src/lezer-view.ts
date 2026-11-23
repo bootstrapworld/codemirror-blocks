@@ -245,6 +245,8 @@ export interface LezerBlockEditor extends ViewSurface {
   clearSelection(): void;
   /** the comment block that goes with a block (directly above it, or after it on its line), if any */
   commentOf(node: BNode): BNode | null;
+  /** is `node` a comment that goes with a block? (Such a comment is not drawn as a block: it is the popup of its block.) */
+  isAttachedComment(node: BNode): boolean;
   /** the block a comment written for `node` goes with: the outermost block that starts where `node` does and is first on its line */
   commentHost(node: BNode): BNode;
   /** set the words of the comment of a block: writes a line comment above it if there is none; empty text removes the comment */
@@ -566,7 +568,11 @@ export function createLezerBlockEditor(
     const nodes = [...cs, n].sort((a, b) => a.from - b.from);
     return { from: nodes[0].from, to: nodes[nodes.length - 1].to, nodes };
   };
+  /** a comment that goes with a block: it is drawn only as that block's popup */
+  const isAttached = (n: BNode): boolean =>
+    n.kind === "comment" && !!n.slot && ownerOf(n) !== null;
   renderer.attached = commentOf;
+  renderer.isAttached = isAttached;
   renderer.mayHaveStrays = hasStrays;
   const stats: LezerStats = {
     edits: 0,
@@ -1777,10 +1783,12 @@ export function createLezerBlockEditor(
   /** the first time the program is drawn as blocks: what is at its top level ("At the top level, this program contains 2 definitions and 1 call.") */
   let summarized = false;
   function summarize(): void {
-    if (summarized || !rootsSlot.nodes.length) return;
+    // (comments are not counted)
+    const counted = rootsSlot.nodes.filter((r) => r.kind !== "comment");
+    if (summarized || !counted.length) return;
     summarized = true;
     const counts = new Map<string, number>();
-    for (const r of rootsSlot.nodes) {
+    for (const r of counted) {
       const label =
         (r.kind === "error"
           ? "unparsed text"
@@ -2161,6 +2169,7 @@ export function createLezerBlockEditor(
       return "selected";
     },
     commentOf: (n) => commentOf(n),
+    isAttachedComment: (n) => isAttached(n),
     commentHost(n) {
       if (commentOf(n)) return n; // (a block that has a comment already is where it is edited, wherever it stands on its line)
       let c = n;
@@ -3016,6 +3025,7 @@ export function checkLezerEditor(ed: LezerBlockEditor): string[] {
     if (!freshR) {
       freshR = new Renderer(ed.language);
       freshR.attached = ed.renderer.attached;
+      freshR.isAttached = ed.renderer.isAttached;
       freshR.adoptSelection(ed.renderer);
     }
     // (an open edit box, or the refusal under it, is in the block's DOM and not in a fresh drawing)

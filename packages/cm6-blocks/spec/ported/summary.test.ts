@@ -108,9 +108,9 @@ describe("describeKinds", () => {
 
   // edited: spoken words come from the language table
   it("leaves out the comments that go with no node, unless they are asked for", () => {
-    // (differs from the old editor: a comment is a block of its own here, so the summary counts it, as one of the kinds)
+    // edited (thirty-seventh round): a comment is not counted in the summary (the old editor counted a comment that goes with no node, as a kind)
     expect(summary(";; note\n(f 1)")).toBe(
-      "At the top level, this program contains 1 comment and 1 call."
+      "At the top level, this program contains 1 call."
     );
   });
 

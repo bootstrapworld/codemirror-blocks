@@ -14,7 +14,7 @@ const SRC = "f(1, g(2), 3);\nh(4);\n";
 test.describe("touch (JavaScript)", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`/index.html?lang=javascript`);
-    await page.waitForSelector(".cm-content .blocks-node");
+    await page.waitForSelector(".cm-content [role=treeitem]");
     await page.evaluate((t) => {
       const d = (window as any).demo;
       d.ed.view.dispatch({
@@ -115,7 +115,7 @@ test.describe("touch (JavaScript)", () => {
   }) => {
     // a long document, so there is something to scroll
     await page.evaluate(() => (window as any).demo.loadBig());
-    await page.waitForSelector(".cm-content .blocks-node");
+    await page.waitForSelector(".cm-content [role=treeitem]");
     const before = await page.evaluate(
       () => (window as any).demo.ed.view.scrollDOM.scrollTop
     );

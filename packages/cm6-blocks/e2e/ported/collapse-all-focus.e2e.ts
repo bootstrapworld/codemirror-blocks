@@ -41,7 +41,11 @@ for (const [name, forms, downs] of [
       page,
       Array.from({ length: forms }, (_, i) => form(i)).join("\n")
     );
-    await page.getByRole("treeitem").first().click();
+    // EDITED (thirty-seventh round): the comment above a form is no block now, so the first block is the form itself: it is clicked at its corner, not in its middle (that is a literal inside it)
+    await page
+      .getByRole("treeitem")
+      .first()
+      .click({ position: { x: 3, y: 3 } });
     for (let i = 0; i < downs; i++) await page.keyboard.press("ArrowDown");
     const before = await focus(page);
     expect(before.level).not.toBe("1"); // deep inside a later root

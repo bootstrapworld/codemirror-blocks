@@ -16,7 +16,7 @@ for (const lang of Object.keys(ONE)) {
         .grantPermissions(["clipboard-read", "clipboard-write"])
         .catch(() => {});
       await page.goto(`/index.html?lang=${lang}`);
-      await page.waitForSelector(".cm-content .blocks-node");
+      await page.waitForSelector(".cm-content [role=treeitem]");
       await page.evaluate((t) => {
         const d = (window as any).demo;
         d.ed.view.dispatch({

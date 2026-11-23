@@ -109,8 +109,9 @@ test.describe("a comment that goes with no block", () => {
     await expect(apart(page)).toBeFocused();
     // (it is a block like the others: its place among them is checked in the
     // jest tests of navigation)
-    await expect(apart(page)).toHaveAttribute("aria-posinset", "2");
-    await expect(apart(page)).toHaveAttribute("aria-setsize", "3");
+    // EDITED (thirty-seventh round): a comment is not counted: no position, no set size (the blocks around it are 1 of 2 and 2 of 2)
+    await expect(apart(page)).not.toHaveAttribute("aria-posinset", /.*/);
+    await expect(apart(page)).not.toHaveAttribute("aria-setsize", /.*/);
   });
 
   // edited: the comment shortcut edits a comment block too (the words, without the marks; emptying the box removes the comment)
@@ -199,12 +200,13 @@ test.describe("a comment that goes with no block", () => {
     await expect(popup).toBeVisible();
     await expect(popup).toHaveClass(/blocks-comment-above/);
     // (it is all in the editor)
-    expect(await edge(".blocks-comment", "bottom")).toBeLessThanOrEqual(
-      await edge(".cm-editor", "bottom")
-    );
-    expect(await edge(".blocks-comment", "top")).toBeGreaterThanOrEqual(
-      await edge(".cm-editor", "top")
-    );
+    // EDITED (thirty-seventh round): the comment block above g is hidden now (it has no box), so the popup is asked for by where it is
+    expect(
+      await edge(".blocks-has-comment > .blocks-comment", "bottom")
+    ).toBeLessThanOrEqual(await edge(".cm-editor", "bottom"));
+    expect(
+      await edge(".blocks-has-comment > .blocks-comment", "top")
+    ).toBeGreaterThanOrEqual(await edge(".cm-editor", "top"));
   });
 
   // edited: the box is placed like the other edit boxes (no popup placement): it hangs at the top of its block, which grows to make room, and it is in the editor

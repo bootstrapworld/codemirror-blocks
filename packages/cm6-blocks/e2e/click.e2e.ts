@@ -10,7 +10,7 @@ const SMALL: Record<string, string> = {
 for (const lang of Object.keys(SMALL)) {
   test(`click edits a literal: ${lang}`, async ({ page }) => {
     await page.goto(`/index.html?lang=${lang}`);
-    await page.waitForSelector(".cm-content .blocks-node");
+    await page.waitForSelector(".cm-content [role=treeitem]");
     await page.evaluate((t: string) => {
       const d = (window as any).demo;
       d.ed.view.dispatch({
@@ -59,7 +59,7 @@ const PRE: Record<string, string> = {
 for (const lang of Object.keys(SMALL)) {
   test(`comment of a block: ${lang}`, async ({ page }) => {
     await page.goto(`/index.html?lang=${lang}`);
-    await page.waitForSelector(".cm-content .blocks-node");
+    await page.waitForSelector(".cm-content [role=treeitem]");
     await page.evaluate((t: string) => {
       const d = (window as any).demo;
       d.ed.view.dispatch({

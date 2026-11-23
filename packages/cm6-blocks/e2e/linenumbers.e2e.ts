@@ -62,7 +62,7 @@ async function check(page: Page, what: string) {
 for (const lang of Object.keys(DOCS)) {
   test(`line numbers line up: ${lang}`, async ({ page }) => {
     await page.goto(`/index.html?lang=${lang}`);
-    await page.waitForSelector(".cm-content .blocks-node");
+    await page.waitForSelector(".cm-content [role=treeitem]");
     await page.evaluate((t: string) => {
       const d = (window as any).demo;
       d.ed.view.dispatch({
@@ -125,7 +125,7 @@ for (const lang of Object.keys(DOCS)) {
       await page.evaluate(() => (window as any).demo.ed.view.state.doc.lines)
     ).toBeGreaterThan(5);
     await page.evaluate(() => (window as any).demo.ed.setMode("blocks"));
-    await page.waitForSelector(".cm-content .blocks-node");
+    await page.waitForSelector(".cm-content [role=treeitem]");
     await page.waitForTimeout(100);
     await check(page, "back in block mode");
   });

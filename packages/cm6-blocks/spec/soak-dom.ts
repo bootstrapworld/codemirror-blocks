@@ -11,8 +11,24 @@ export function a11yProblems(): string[] {
   const items = Array.from(
     content.querySelectorAll("[role=treeitem]")
   ) as HTMLElement[];
+  // (the block of a comment, not the popup a block shows: that one is a span inside the block and has no role)
+  const isComment = (el: Element): boolean =>
+    el.classList.contains("blocks-comment");
+  for (const h of Array.from(content.querySelectorAll(".blocks-attached")))
+    if (h.hasAttribute("role") || h.getAttribute("aria-hidden") !== "true")
+      out.push(
+        "a comment that goes with a block is a treeitem or is not hidden"
+      );
   const groups = new Map<Element, HTMLElement[]>();
   for (const it of items) {
+    // (a comment is not counted: not in the set size, not in the positions; a comment that goes with a block is not a treeitem at all)
+    if (it.classList.contains("blocks-node") && isComment(it)) {
+      if (it.hasAttribute("aria-posinset") || it.hasAttribute("aria-setsize"))
+        out.push(
+          `a comment has a count (${it.getAttribute("aria-posinset")} of ${it.getAttribute("aria-setsize")}) @ ${it.getAttribute("aria-label")}`
+        );
+      continue;
+    }
     const parentItem = it.parentElement?.closest("[role=treeitem]") ?? null;
     const holder = parentItem
       ? ((it.parentElement as Element).closest("[data-slot]") ?? parentItem)

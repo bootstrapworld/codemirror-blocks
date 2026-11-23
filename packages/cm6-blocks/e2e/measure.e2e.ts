@@ -13,7 +13,7 @@ for (const lang of ["scheme", "javascript", "python"]) {
     page.on("pageerror", (e) => errors.push(String(e)));
     const t0 = Date.now();
     await page.goto(`/index.html?lang=${lang}&big=1`);
-    await page.waitForSelector(".cm-content .blocks-node");
+    await page.waitForSelector(".cm-content [role=treeitem]");
     const waitMs = Date.now() - t0;
     await page.waitForFunction(() => (window as any).demo.paintedMs > 0);
 

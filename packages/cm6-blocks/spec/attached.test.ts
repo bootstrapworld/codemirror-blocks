@@ -1,5 +1,6 @@
 /** @jest-environment jsdom */
-/* Sixth round, step 4: a comment directly above a block (or after it on its line) goes with that block; Shift-Ctrl-] edits it. */
+/* Sixth round, step 4: a comment directly above a block (or after it on its line) goes with that block; Shift-Ctrl-] edits it.
+   Thirty-seventh round: such a comment is not drawn as a block (no treeitem, not counted); the block shows it as a popup. */
 import { checkLezerEditor, LezerBlockEditor } from "../src/lezer-view";
 import { make } from "./helpers";
 import type { BNode } from "../src/types";
@@ -65,8 +66,54 @@ describe.each(LANGS)("comments that go with a block: %s", (l) => {
       expect(el.classList.contains("blocks-has-comment")).toBe(false);
       expect(el.getAttribute("aria-label")).not.toContain("with comment");
     }
-    // the comments are still blocks of their own
-    expect(ed.roots().filter((r) => r.kind === "comment").length).toBe(2);
+    // edited (thirty-seventh round): the comments are still nodes of the tree, but not drawn as blocks: no treeitem, hidden, not counted
+    const cs = ed.roots().filter((r) => r.kind === "comment");
+    expect(cs.length).toBe(2);
+    for (const c of cs) {
+      expect(ed.isAttachedComment(c)).toBe(true);
+      const el = ed.renderer.element(c);
+      expect(el.hasAttribute("role")).toBe(false);
+      expect(el.getAttribute("aria-hidden")).toBe("true");
+      expect(el.hasAttribute("aria-setsize")).toBe(false);
+    }
+    const items = ed.view.dom.querySelectorAll(
+      ".cm-content > .cm-line > [role=treeitem]"
+    );
+    expect(items.length).toBe(4);
+    expect(items[0].getAttribute("aria-setsize")).toBe("4");
+    // the words are the popup of the block, and are not spoken twice
+    const pop = f.querySelector(":scope > span.blocks-comment")!;
+    expect(pop.textContent).toBe("first");
+    expect(pop.getAttribute("aria-hidden")).toBe("true");
+    ok(ed);
+  });
+  test("the keyboard does not reach a comment that goes with a block; the tree reads the blocks without it", () => {
+    const ed = make(l, TEXTS[l]);
+    const names = ["f", "g", "h", "k"];
+    // Home goes to the first block that is drawn (not the comment above f); Up from it goes nowhere
+    ed.focusNode(root(ed, "h"));
+    key(ed.renderer.element(root(ed, "h")), "Home");
+    expect(ed.focusedNode()).toBe(root(ed, "f"));
+    key(ed.renderer.element(root(ed, "f")), "ArrowUp");
+    expect(ed.focusedNode()).toBe(root(ed, "f"));
+    // Down walks the roots in order, past the comment after h on its line
+    const seen: BNode[] = [];
+    const roots = names.map((n) => root(ed, n));
+    for (const r of roots) {
+      ed.focusNode(r);
+      // (the last block inside a root: its next is the next root)
+      let last = r;
+      while (last.slots.flatMap((s) => s.nodes).length)
+        last = last.slots.flatMap((s) => s.nodes).slice(-1)[0];
+      ed.focusNode(last);
+      key(ed.renderer.element(last), "ArrowDown");
+      if (ed.focusedNode() !== last) seen.push(ed.focusedNode()!);
+    }
+    expect(seen.map((n) => n.kind === "comment")).not.toContain(true);
+    expect(seen).toEqual(roots.slice(1));
+    ed.focusNode(root(ed, "k"));
+    key(ed.renderer.element(root(ed, "k")), "End");
+    expect(ed.focusedNode()!.from).toBeGreaterThanOrEqual(root(ed, "k").from);
     ok(ed);
   });
   test("Shift-Ctrl-] on a block without a comment writes one above it, in the language's syntax; undo takes it away", () => {

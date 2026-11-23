@@ -136,12 +136,15 @@ describe.each(LANGS)("comment blocks, orphan: %s", (l) => {
       "" + `${CFG[l].forms[0]}, a comment`
     );
     expect(el(c).getAttribute("role")).toBe("treeitem");
-    expect(el(c).getAttribute("aria-posinset")).toBe("2");
-    expect(el(c).getAttribute("aria-setsize")).toBe("3");
+    // edited (thirty-seventh round): a comment is not counted: it has no position and no set size
+    expect(el(c).hasAttribute("aria-posinset")).toBe(false);
+    expect(el(c).hasAttribute("aria-setsize")).toBe(false);
   });
-  test("(l) old: the summary counts comments (`1 comment`); here the same", () => {
+  // edited (thirty-seventh round): the summary does not count comments
+  test("(l) old: the summary counts comments (`1 comment`); here it does not", () => {
     const { ed } = rig(l);
-    expect(ed.said[0]).toMatch(/and 1 comment\.$/);
+    expect(ed.said[0]).toMatch(/^At the top level, this program contains /);
+    expect(ed.said[0]).not.toMatch(/comment/);
   });
 
   test("(b) old: Space selects the comment, Delete removes only what is selected; here the same", () => {

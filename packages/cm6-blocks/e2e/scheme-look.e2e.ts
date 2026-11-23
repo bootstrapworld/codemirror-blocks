@@ -11,13 +11,13 @@ async function shot(
   out: string
 ) {
   await page.goto("/index.html?lang=scheme");
-  await page.waitForSelector(".cm-content .blocks-node");
+  await page.waitForSelector(".cm-content [role=treeitem]");
   await page.evaluate(
     (c: string) =>
       (window as unknown as { demo: { show(c: string): void } }).demo.show(c),
     code
   );
-  await page.waitForSelector(".cm-content .blocks-node");
+  await page.waitForSelector(".cm-content [role=treeitem]");
   await page.waitForTimeout(500);
   await page.screenshot({ path: out });
 }
@@ -36,13 +36,13 @@ test("scheme look: ast-test.rkt", async ({ page }) => {
 // the same states as cm5-ref.cm5.ts: focused (f), selected (g, with Space), collapsed (h, with Left), a blank (k); the comment of x while it has focus; an edit box
 test("scheme look: states", async ({ page }) => {
   await page.goto("/index.html?lang=scheme");
-  await page.waitForSelector(".cm-content .blocks-node");
+  await page.waitForSelector(".cm-content [role=treeitem]");
   await page.evaluate(
     (c: string) =>
       (window as unknown as { demo: { show(c: string): void } }).demo.show(c),
     STATES
   );
-  await page.waitForSelector(".cm-content .blocks-node");
+  await page.waitForSelector(".cm-content [role=treeitem]");
   const root = (head: string) =>
     page
       .locator(".cm-content > .cm-line > .blocks-node", {

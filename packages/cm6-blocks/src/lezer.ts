@@ -703,7 +703,7 @@ export function lezerLanguage(
       // a value reads as the value first and then what it is: "1, a number"
       if (node.slots.length === 0)
         return node.value ? `${node.value}, ${withArticle(label)}` : label;
-      return `${label} with ${node.slots.map((s) => `${s.nodes.length} ${s.name}`).join(", ")}`;
+      return `${label} with ${node.slots.map((s) => `${s.nodes.filter((q) => q.kind !== "comment").length} ${s.name}`).join(", ")}`;
     },
   };
   return lang;

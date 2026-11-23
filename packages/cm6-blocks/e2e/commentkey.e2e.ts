@@ -9,7 +9,7 @@ test("the comment shortcut on a comment block and on a block with a comment", as
   page,
 }) => {
   await page.goto("/index.html?lang=scheme");
-  await page.waitForSelector(".cm-content .blocks-node");
+  await page.waitForSelector(".cm-content [role=treeitem]");
   await page.evaluate(() => {
     const d = (window as any).demo;
     d.ed.view.dispatch({

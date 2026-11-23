@@ -571,3 +571,14 @@
     animation: none !important;
   }
 }
+
+/* a comment that goes with a block is not drawn as a block: its words are the popup of that block (the text it stands for is hidden) */
+.blocks-node.blocks-attached {
+  display: none !important;
+}
+/* a line that holds only such a comment (a comment on a line of its own) takes no room */
+.cm-line:has(> .blocks-attached):not(
+    :has(> :not(.blocks-attached):not(.cm-widgetBuffer))
+  ) {
+  display: none;
+}

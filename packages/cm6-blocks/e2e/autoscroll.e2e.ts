@@ -32,7 +32,7 @@ const ARGS_GAP = (i: number) =>
 
 async function load(page: any, lang: string) {
   await page.goto(`/index.html?lang=${lang}`);
-  await page.waitForSelector(".cm-content .blocks-node");
+  await page.waitForSelector(".cm-content [role=treeitem]");
   const text = LONG[lang]();
   await page.evaluate((t: string) => {
     const d = (window as any).demo;

@@ -27,7 +27,7 @@ type AX = {
 for (const lang of Object.keys(SMALL)) {
   test(`accessibility: ${lang}`, async ({ page, context }) => {
     await page.goto(`/index.html?lang=${lang}`);
-    await page.waitForSelector(".cm-content .blocks-node");
+    await page.waitForSelector(".cm-content [role=treeitem]");
     const load = (t: string) =>
       page.evaluate((t) => {
         const d = (window as any).demo;
@@ -118,6 +118,17 @@ for (const lang of Object.keys(SMALL)) {
         ) as HTMLElement[];
         const groups = new Map<Element, HTMLElement[]>();
         for (const it of items) {
+          // (a comment is not counted: no set size, no position; one that goes with a block is not a treeitem at all)
+          if (it.classList.contains("blocks-comment")) {
+            if (
+              it.hasAttribute("aria-posinset") ||
+              it.hasAttribute("aria-setsize")
+            )
+              out.push(
+                `${it.getAttribute("aria-label")}: a comment has a count`
+              );
+            continue;
+          }
           const parentItem =
             it.parentElement?.closest("[role=treeitem]") ?? null;
           const holder = parentItem
@@ -142,7 +153,9 @@ for (const lang of Object.keys(SMALL)) {
           });
         }
         for (const it of items) {
-          const compound = it.classList.contains("blocks-compound");
+          const compound =
+            it.classList.contains("blocks-compound") ||
+            it.classList.contains("blocks-comment");
           if (compound !== it.hasAttribute("aria-expanded"))
             out.push(
               `${it.getAttribute("aria-label")}: aria-expanded ${it.getAttribute("aria-expanded")} on a ${compound ? "compound" : "leaf"} block`
@@ -160,7 +173,7 @@ for (const lang of Object.keys(SMALL)) {
     /** the same text in a fresh editor (a second page), with the same blocks selected: its outline must be the live one (nothing stale, nothing twice) */
     const page2 = await context.newPage();
     await page2.goto(`/index.html?lang=${lang}`);
-    await page2.waitForSelector(".cm-content .blocks-node");
+    await page2.waitForSelector(".cm-content [role=treeitem]");
     const cdp2 = await context.newCDPSession(page2);
     await cdp2.send("Accessibility.enable");
     const freshOutline = async (): Promise<string[]> => {
@@ -187,7 +200,7 @@ for (const lang of Object.keys(SMALL)) {
           if (hit) d.ed.toggleSelect(hit);
         }
       }, state);
-      await page2.waitForSelector(".cm-content .blocks-node");
+      await page2.waitForSelector(".cm-content [role=treeitem]");
       await page.bringToFront();
       return (await outlineOf(cdp2)).lines;
     };

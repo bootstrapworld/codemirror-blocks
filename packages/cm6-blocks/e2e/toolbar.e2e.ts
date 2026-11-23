@@ -17,7 +17,7 @@ for (const lang of Object.keys(SMALL)) {
   test.describe(`toolbar: ${lang}`, () => {
     test.beforeEach(async ({ page }) => {
       await page.goto(`/index.html?lang=${lang}`);
-      await page.waitForSelector(".cm-content .blocks-node");
+      await page.waitForSelector(".cm-content [role=treeitem]");
       await page.evaluate((t) => {
         const d = (window as any).demo;
         d.ed.view.dispatch({
@@ -105,7 +105,7 @@ test.describe("keyboard: Shift-Tab to the toolbar and Tab back", () => {
   for (const lang of Object.keys(SMALL)) {
     test(`${lang}`, async ({ page }) => {
       await page.goto(`/index.html?lang=${lang}`);
-      await page.waitForSelector(".cm-content .blocks-node");
+      await page.waitForSelector(".cm-content [role=treeitem]");
       await page.evaluate((t) => {
         const d = (window as any).demo;
         d.ed.view.dispatch({
@@ -141,7 +141,7 @@ test("the help dialog opens with Shift-Ctrl-/ in a real browser, lists the keys,
   page,
 }) => {
   await page.goto(`/index.html?lang=scheme`);
-  await page.waitForSelector(".cm-content .blocks-node");
+  await page.waitForSelector(".cm-content [role=treeitem]");
   await page
     .locator(".cm-content .blocks-literal")
     .first()

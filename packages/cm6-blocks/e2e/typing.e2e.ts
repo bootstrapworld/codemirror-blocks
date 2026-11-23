@@ -23,7 +23,7 @@ for (const lang of Object.keys(START)) {
     page,
   }) => {
     await page.goto(`/index.html?lang=${lang}`);
-    await page.waitForSelector(".cm-content .blocks-node");
+    await page.waitForSelector(".cm-content [role=treeitem]");
     const text = () =>
       page.evaluate(() => (window as any).demo.ed.view.state.doc.toString());
     await page.evaluate((t) => {
@@ -61,7 +61,7 @@ for (const lang of Object.keys(START)) {
     page,
   }) => {
     await page.goto(`/index.html?lang=${lang}`);
-    await page.waitForSelector(".cm-content .blocks-node");
+    await page.waitForSelector(".cm-content [role=treeitem]");
     const text = () =>
       page.evaluate(() => (window as any).demo.ed.view.state.doc.toString());
     await page.evaluate((t) => {

@@ -25,7 +25,7 @@ for (const lang of Object.keys(SMALL)) {
   test.describe(`touch, toolbar drag: ${lang}`, () => {
     const load = async (page: any, src: string) => {
       await page.goto(`/index.html?lang=${lang}`);
-      await page.waitForSelector(".cm-content .blocks-node");
+      await page.waitForSelector(".cm-content [role=treeitem]");
       await page.evaluate((t: string) => {
         const d = (window as any).demo;
         d.ed.view.dispatch({

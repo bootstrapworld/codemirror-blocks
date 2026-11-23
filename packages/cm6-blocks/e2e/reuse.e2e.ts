@@ -26,7 +26,7 @@ const cases: [string, string, () => string][] = [
 for (const [lang, label, text] of cases) {
   test(`reuse: ${label}`, async ({ page }) => {
     await page.goto(`/index.html?lang=${lang}`);
-    await page.waitForSelector(".cm-content .blocks-node");
+    await page.waitForSelector(".cm-content [role=treeitem]");
     const src = text();
     const out: any = { lines: src.split("\n").length };
     for (const mode of ["rebuild", "reconcile", "anchors"] as const) {
