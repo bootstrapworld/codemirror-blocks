@@ -436,6 +436,22 @@ export function createLezerBlockEditor(
     ).viewState.mustMeasureContent = true;
     view.requestMeasure();
   };
+  /**
+   * After an edit the heights are read again two frames later. A block that a drop or a removal moved is, for a frame, laid out without the
+   * space of something that comes back (a gap under the mouse): CodeMirror measures that frame, and the observer of the roots may not report
+   * the size that follows (the soak: a number of the gutter 20 px off until the next edit).
+   */
+  let laterPending = false;
+  const remeasureLater = (): void => {
+    if (laterPending || typeof requestAnimationFrame === "undefined") return;
+    laterPending = true;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        laterPending = false;
+        if (!gone) remeasureHeights();
+      })
+    );
+  };
   /** the text of the document as the tree stands now (the renderer asks where a comment sits) */
   let curDoc = text;
   /**
@@ -2665,6 +2681,9 @@ export function createLezerBlockEditor(
       // (a comment that has the focus may come to go with a block, and is then hidden: the focus goes to that block)
       const hadFocus = trs.some((t) => t.docChanged) ? focusedBlock() : null;
       v.update(trs);
+      // (a line next to a changed range that CodeMirror estimates again, and whose block did not change size, is not told about by the
+      // observer of the roots: its height is read again once the page is laid out)
+      if (blockMode && snap) remeasureLater();
       const histTarget = trackHistory(trs, before, focusBefore, v.state);
       if (histPending) queueMicrotask(settleHistoryFocus);
       // what undo and redo say they undid or redid: the words of the edit ("changed 22"), kept in two stacks in step with the history
