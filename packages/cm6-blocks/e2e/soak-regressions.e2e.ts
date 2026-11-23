@@ -98,3 +98,22 @@ test("seed 410: a gap that grows under the mouse (a drop target) makes its line 
   );
   expect(v).toBeNull();
 });
+test("seed 594: a comment block that has the focus and comes to go with a block (an undo) is hidden: the focus goes to that block, not the page body", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 594,
+      language: "python",
+      code: '# a b c\ng = "s2"\n',
+      steps: [
+        { op: "removeNode", a: 0.40681146341376007, b: 0.7477828704286367 },
+      ],
+      motion: "reduced",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});

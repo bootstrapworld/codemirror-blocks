@@ -2628,6 +2628,8 @@ export function createLezerBlockEditor(
       const snap = trs.some((t) => t.docChanged) ? takeSnapshot() : null;
       const focusBefore = snap && snap.node ? pathOf(snap.node) : null;
       const before = v.state;
+      // (a comment that has the focus may come to go with a block, and is then hidden: the focus goes to that block)
+      const hadFocus = trs.some((t) => t.docChanged) ? focusedBlock() : null;
       v.update(trs);
       const histTarget = trackHistory(trs, before, focusBefore, v.state);
       if (histPending) queueMicrotask(settleHistoryFocus);
@@ -2653,6 +2655,10 @@ export function createLezerBlockEditor(
         for (const n of renderer.selected())
           if (doc.byId.get(n.id) !== n) renderer.setSelected(n, false);
       if (trs.some((t) => t.docChanged)) renderer.refreshComments();
+      if (hadFocus && hadFocus.kind === "comment" && alive(hadFocus)) {
+        const owner = isAttached(hadFocus) ? ownerOf(hadFocus) : null;
+        if (owner && isDrawn(owner)) ed.focusNode(owner);
+      }
       carryMarks(snap);
       // blocks that are new inside a selected block are selected with it
       if (trs.some((t) => t.docChanged))
