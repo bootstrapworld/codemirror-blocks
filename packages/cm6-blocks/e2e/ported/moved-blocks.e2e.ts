@@ -42,13 +42,11 @@ test("a block that moved can be edited, in the right place", async ({
   page,
 }) => {
   await insertAtTop(page);
-  const number = page.getByRole("treeitem", { name: /^111,?$/ }).first();
+  // edited: this editor's label of a number is "111, a number" (the table's), not "111"
+  const number = page.getByRole("treeitem", { name: /^111,/ }).first();
   await number.click();
-  if (
-    (await page.evaluate(() =>
-      document.activeElement?.getAttribute("role")
-    )) !== "textbox"
-  ) {
+  // edited: the edit box is an input (`.blocks-edit`, no `role` attribute), and a click on a number already opens it
+  if (!(await page.locator("input.blocks-edit").count())) {
     await page.keyboard.press("Enter");
   }
   await page.keyboard.press(`${MOD}+a`);
@@ -108,16 +106,3 @@ test("blocks keep working after several inserts and deletes above them", async (
     )
     .toMatch(/^f11:/);
 });
-
-// FIXME-BEGIN (thirteenth round: D: the edit box is an input here, the old one a contenteditable)
-const FIXME = new Set<string>([
-  "a block that moved can be edited, in the right place",
-]);
-test.beforeEach(({}, ti) => {
-  test.fixme(
-    FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "D: the edit box is an input here, the old one a contenteditable"
-  );
-});
-// FIXME-END
-// first error (sweep): a block that moved can be edited, in the right place => Test timeout of 20000ms exceeded.

@@ -1,10 +1,12 @@
 // PORTED from packages/codemirror-blocks/e2e/delete-undo.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, thirteenth round.
+// edited (thirty-third round): `show expression` is `call to show ` here
 // EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `call to f `, `symbol g`
 import { expect, test } from "@playwright/test";
 import {
   MOD,
   block,
   expectConsistent,
+  openDemo,
   openInBlockMode,
   snapshot,
 } from "../compat/helpers";
@@ -24,7 +26,7 @@ test.describe("deleting a block, then undoing, in a long document", () => {
   test("a top-level block comes back, and the view doesn't jump", async ({
     page,
   }) => {
-    const first = block(page, /show expression/);
+    const first = block(page, /call to show /);
     await first.click({ position: { x: 4, y: 4 } });
     const { scrollTop: before } = await snapshot(page);
     await page.keyboard.press("Space");
@@ -41,14 +43,14 @@ test.describe("deleting a block, then undoing, in a long document", () => {
     expect(afterUndo.roots).toHaveLength(60);
     expect(afterUndo.text).toBe(longProgram);
     expect(Math.abs(afterUndo.scrollTop - before)).toBeLessThan(40);
-    await expect(block(page, /show expression/)).toBeVisible();
+    await expect(block(page, /call to show /)).toBeVisible();
   });
 
   test("keeps working for several deletes and undos in a row", async ({
     page,
   }) => {
     for (let i = 0; i < 3; i++) {
-      await block(page, /show expression/).click({ position: { x: 4, y: 4 } });
+      await block(page, /call to show /).click({ position: { x: 4, y: 4 } });
       await page.keyboard.press("Space");
       await page.keyboard.press("Delete");
       await expectConsistent(page);
@@ -62,7 +64,7 @@ test.describe("deleting a block, then undoing, in a long document", () => {
   });
 
   test("redo still works after the undo", async ({ page }) => {
-    await block(page, /show expression/).click({ position: { x: 4, y: 4 } });
+    await block(page, /call to show /).click({ position: { x: 4, y: 4 } });
     await page.keyboard.press("Space");
     await page.keyboard.press("Delete");
     await expectConsistent(page);
@@ -80,7 +82,7 @@ test.describe("deleting a block, then undoing, in a long document", () => {
       .click({ position: { x: 2, y: 2 } })
       .catch(() => undefined); // clicking a literal starts editing it
     await page.keyboard.press("Escape");
-    const first = block(page, /show expression/);
+    const first = block(page, /call to show /);
     await first.click({ position: { x: 4, y: 4 } });
     await page.keyboard.press("ArrowRight"); // into the first child
     await page.keyboard.press("Space");
@@ -97,17 +99,16 @@ test.describe("in the example page's own program", () => {
   // the hidden text area and scroll the view to the end of the document, so the
   // block that had just come back was out of sight and keys went nowhere.
   test.beforeEach(async ({ page }) => {
-    await page.goto("/");
-    await page.waitForFunction(() => !!(window as { cmb?: unknown }).cmb);
-    await page.getByRole("button", { name: /switch to blocks mode/i }).click();
-    await block(page, /print expression/).waitFor();
+    // edited: the demo page opens in blocks mode with its own sample (`window.cmb` is the shim's); the sample has `(fact 5)`, a call to fact, for the old `print`
+    await openDemo(page);
+    await block(page, /call to fact /).waitFor();
   });
 
   test("Cmd-Z brings a deleted top-level block back, in place, with focus", async ({
     page,
   }) => {
     const original = (await snapshot(page)).text;
-    await block(page, /print expression/).click({ position: { x: 6, y: 6 } });
+    await block(page, /call to fact /).click({ position: { x: 6, y: 6 } });
     const { scrollTop: before } = await snapshot(page);
     await page.keyboard.press("Space");
     await page.keyboard.press("Delete");
@@ -121,27 +122,6 @@ test.describe("in the example page's own program", () => {
     expect(afterUndo.text).toBe(original);
     expect(afterUndo.focus.role).toBe("treeitem");
     expect(Math.abs(afterUndo.scrollTop - before)).toBeLessThan(150);
-    await expect(block(page, /print expression/)).toBeInViewport();
+    await expect(block(page, /call to fact /)).toBeInViewport();
   });
 });
-
-// FIXME-BEGIN (thirteenth round: I: waits for the old page's DOM (`.CodeMirror`, contenteditable, gutters): not found on the demo page)
-const FIXME = new Set<string>([
-  "deleting a block, then undoing, in a long document › a top-level block comes back, and the view doesn't jump",
-  "deleting a block, then undoing, in a long document › keeps working for several deletes and undos in a row",
-  "deleting a block, then undoing, in a long document › redo still works after the undo",
-  "deleting a block, then undoing, in a long document › a child block comes back too",
-  "in the example page's own program › Cmd-Z brings a deleted top-level block back, in place, with focus",
-]);
-test.beforeEach(({}, ti) => {
-  test.fixme(
-    FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "I: waits for the old page's DOM (`.CodeMirror`, contenteditable, gutters): not found on the demo page"
-  );
-});
-// FIXME-END
-// first error (sweep): deleting a block, then undoing, in a long document › a top-level block comes back, and the view doesn't jump => Test timeout of 20000ms exceeded.
-// first error (sweep): deleting a block, then undoing, in a long document › keeps working for several deletes and undos in a row => Test timeout of 20000ms exceeded.
-// first error (sweep): deleting a block, then undoing, in a long document › redo still works after the undo => Test timeout of 20000ms exceeded.
-// first error (sweep): deleting a block, then undoing, in a long document › a child block comes back too => Test timeout of 20000ms exceeded.
-// first error (sweep): in the example page's own program › Cmd-Z brings a deleted top-level block back, in place, with focus => Test timeout of 20000ms exceeded while running "beforeEach" hook.

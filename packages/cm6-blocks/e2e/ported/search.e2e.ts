@@ -90,8 +90,6 @@ test("past the last match, the search goes on from the first", async ({
   expect(await focusedTop(page)).toBe(first);
 });
 
-// FIXME (M): the demo page has a second combobox (the language chooser), so `getByRole("combobox")` is ambiguous: a page difference, not the editor
-
 test("search by block type finds the next call", async ({ page }) => {
   await page.keyboard.press("F3");
   await page.getByRole("tab", { name: "Search by block" }).click();
