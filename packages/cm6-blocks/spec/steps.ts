@@ -127,7 +127,7 @@ const clean = (ed: LezerBlockEditor): boolean => {
  */
 // (lists of arguments, parameters, elements, statements: not the operands and operators of an expression, which are not a list of things)
 const REMOVABLE = ["args", "params", "elements", "properties"];
-function removeOracle(
+export function removeOracle(
   ed: LezerBlockEditor,
   gone: BNode[],
   log: string[],

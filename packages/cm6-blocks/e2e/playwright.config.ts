@@ -6,7 +6,7 @@ const port = process.env.CMB6_PORT || "8177";
 export default defineConfig({
   testDir: ".",
   testMatch: /.*\.e2e\.ts/,
-  testIgnore: /profile\.e2e\.ts/,
+  testIgnore: /(profile|soak)\.e2e\.ts/,
   timeout: 120000,
   workers: 1,
   reporter: [["list"]],

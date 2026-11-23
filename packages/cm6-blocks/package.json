@@ -6,6 +6,7 @@
   "main": "./src/index.ts",
   "scripts": {
     "typecheck": "tsc -p . --noEmit",
+    "soak": "node scripts/soak.js",
     "build": "npm run build:min && npm run build:min:scheme && npm run build:min:javascript && npm run build:min:python",
     "build:min": "esbuild demo/demo.ts --bundle --format=iife --minify --loader:.css=text --outfile=demo/demo.js",
     "serve": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --loader:.css=text --outfile=demo/demo.js --servedir=demo --serve=8177",

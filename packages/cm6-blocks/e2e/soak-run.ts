@@ -1,0 +1,747 @@
+/*
+ * The soak runner's Chromium engine (scripts/soak.js, e2e/soak.e2e.ts): one sequence of steps (spec/soak-gen.ts) with REAL input (keys, the mouse,
+ * the clipboard) in the demo page, the invariants checked after every step. `runChromium` returns the first violation, or null.
+ */
+import type { Browser, CDPSession } from "@playwright/test";
+import { a11yProblems, focusProblem } from "../spec/soak-dom";
+import {
+  at,
+  makeSequence,
+  Sequence,
+  shrink,
+  Step,
+  Violation,
+} from "../spec/soak-gen";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const KEYMAP: Record<string, string> = {
+  "Control+[": "Control+BracketLeft",
+  "Control+]": "Control+BracketRight",
+  "Shift+<": "Shift+Comma",
+  "Shift+|": "Shift+Backslash",
+};
+const keyName = (k: string): string =>
+  KEYMAP[k] ??
+  k.replace(/^Mod\+/, "ControlOrMeta+").replace("+Mod+", "+ControlOrMeta+");
+
+export interface ChromiumOptions {
+  baseURL: string;
+  /** a step that takes longer (ms) is "stuck" (default 30000) */
+  stepTimeoutMs?: number;
+  /** one click, read or wait (ms; default 5000) */
+  actionMs?: number;
+  /** invariants not to check (a known finding that hides others) */
+  skip?: string[];
+}
+
+/** the sequence's step `s` as a function of the page; returns when the step has been made (the page may still be settling) */
+export async function runChromium(
+  browser: Browser,
+  seq: Sequence,
+  o: ChromiumOptions
+): Promise<Violation | null> {
+  const actionMs = o.actionMs ?? 5000;
+  const stepMs = o.stepTimeoutMs ?? 30000;
+  const skip = new Set(o.skip ?? []);
+  const context = await browser.newContext({
+    baseURL: o.baseURL,
+    viewport: { width: 1100, height: 800 },
+    reducedMotion: seq.motion === "reduced" ? "reduce" : "no-preference",
+    permissions: ["clipboard-read", "clipboard-write"],
+  });
+  const page = await context.newPage();
+  page.setDefaultTimeout(actionMs);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(`uncaught: ${e.message}`));
+  page.on("console", (m) => {
+    if (m.type() === "error" && !/Failed to load resource/.test(m.text()))
+      errors.push(`console.error: ${m.text().slice(0, 300)}`);
+  });
+  let cdp: CDPSession | null = null;
+  const close = async (v: Violation | null): Promise<Violation | null> => {
+    await context.close().catch(() => undefined);
+    return v;
+  };
+  const evaluate = <T, A = undefined>(fn: (a: A) => T, arg?: A): Promise<T> =>
+    page.evaluate(fn as any, arg) as Promise<T>;
+  const frozen = async (): Promise<boolean> =>
+    (await Promise.race([
+      page.evaluate(() => 1).then(() => false),
+      new Promise<boolean>((r) => setTimeout(() => r(true), actionMs)),
+    ])) as boolean;
+
+  try {
+    await page.goto(`/index.html?lang=${seq.language}`);
+    await page.waitForFunction(() => !!(window as any).demo);
+    await evaluate((code: string) => (window as any).demo.show(code), seq.code);
+    cdp = await context.newCDPSession(page);
+    await cdp.send("Accessibility.enable");
+  } catch (e) {
+    return close({
+      invariant: "exception",
+      message: `opening the page: ${(e as Error).message.split("\n")[0]}`,
+      step: -1,
+      op: "open",
+    });
+  }
+
+  const settle = async (): Promise<void> => {
+    await page
+      .waitForFunction(
+        () =>
+          !document.querySelector(".cmb-morph-layer") &&
+          document.getAnimations().length === 0,
+        undefined,
+        { timeout: 8000 }
+      )
+      .catch(() => undefined);
+    await evaluate(
+      () =>
+        new Promise<void>((r) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => r()))
+        )
+    );
+  };
+  const text = (): Promise<string> =>
+    evaluate(() => (window as any).demo.ed.view.state.doc.toString());
+  const mode = (): Promise<"blocks" | "text"> =>
+    evaluate(() => (window as any).demo.ed.mode);
+  const items = () => page.locator(".cm-content [role=treeitem]");
+  /** the box of block `a` (a fraction) among those drawn, scrolled into view; null if there is none or it has no size */
+  const blockBox = async (a: unknown) => {
+    const n = await items().count();
+    const i = at(a, n);
+    if (i < 0) return null;
+    const el = items().nth(i);
+    await el.scrollIntoViewIfNeeded().catch(() => undefined);
+    const b = await el.boundingBox();
+    return b && b.width > 1 && b.height > 1 ? { el, box: b } : null;
+  };
+  const clickBlock = async (a: unknown, modifiers: "Shift"[] = []) => {
+    const t = await blockBox(a);
+    if (!t) return false;
+    // (the left edge of a block is its own: a click in the middle may land on a block inside it)
+    if (modifiers.length) await page.keyboard.down("Shift");
+    await page.mouse.click(
+      t.box.x + 3,
+      t.box.y + Math.min(t.box.height / 2, 8)
+    );
+    if (modifiers.length) await page.keyboard.up("Shift");
+    return true;
+  };
+  const press = (k: string) => page.keyboard.press(keyName(k));
+  const boxOpen = () => page.locator(".blocks-edit").first();
+  const fillBox = async (t: string, accept: boolean) => {
+    const b = boxOpen();
+    if (!(await b.count())) return;
+    await page.keyboard.press("ControlOrMeta+a");
+    if (t === "") await page.keyboard.press("Backspace");
+    else await page.keyboard.type(t);
+    await page.keyboard.press(accept ? "Enter" : "Escape");
+  };
+  const drag = async (
+    from: { x: number; y: number },
+    to: { x: number; y: number }
+  ) => {
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(from.x + 6, from.y + 6, { steps: 3 });
+    await page.mouse.move(to.x, to.y, { steps: 8 });
+    await page.mouse.up();
+  };
+  /** where a drag `where` ends, for the fraction b */
+  const target = async (
+    where: string,
+    b: unknown
+  ): Promise<{ x: number; y: number } | null> => {
+    if (where === "trash") {
+      const t = await page.locator(".TrashCan").boundingBox();
+      return t ? { x: t.x + t.width / 2, y: t.y + t.height / 2 } : null;
+    }
+    const sc = await page.locator(".cm-scroller").first().boundingBox();
+    if (!sc) return null;
+    if (where === "end") return { x: sc.x + 60, y: sc.y + sc.height - 6 };
+    if (where === "whitespace")
+      return {
+        x: sc.x + 8,
+        y: sc.y + 10 + Number(b) * Math.max(10, sc.height - 20),
+      };
+    if (where === "block") {
+      const t = await blockBox(b);
+      return t
+        ? { x: t.box.x + t.box.width / 2, y: t.box.y + t.box.height / 2 }
+        : null;
+    }
+    const gaps = page.locator(".cm-content .blocks-gap");
+    const n = await gaps.count();
+    const i = at(b, n);
+    if (i < 0) return null;
+    await gaps
+      .nth(i)
+      .scrollIntoViewIfNeeded()
+      .catch(() => undefined);
+    const gb = await gaps.nth(i).boundingBox();
+    return gb && gb.height > 0
+      ? { x: gb.x + gb.width / 2, y: gb.y + gb.height / 2 }
+      : null;
+  };
+
+  let armed = false;
+  let toolbarOk = false;
+  let textEditedInText = false;
+  let historyReset = false;
+  let editsMade = 0;
+  let rushed = false;
+
+  const exec = async (s: Step): Promise<void> => {
+    const m = await mode();
+    const blocks = m === "blocks";
+    // (focus that is already on a toolbar button, or the mode button, stays there until a step moves it)
+    toolbarOk = await evaluate(
+      () =>
+        !!document.activeElement?.closest(
+          "#templates, .blocks-toolbar, .blocks-toggle-btn"
+        )
+    );
+    rushed = false;
+    switch (s.op) {
+      case "focus":
+      case "click":
+        if (blocks) await clickBlock(s.a, s.shift ? ["Shift"] : []);
+        return;
+      case "key":
+        if (!blocks && !/^Mod\+/.test(String(s.key))) return;
+        await press(String(s.key));
+        return;
+      case "editBox":
+      case "typeIntoBlock": {
+        if (!blocks || !(await clickBlock(s.a))) return;
+        await press(s.op === "editBox" ? "Enter" : String(s.text)[0]);
+        if (s.op === "typeIntoBlock" && (await boxOpen().count())) {
+          await page.keyboard.type(String(s.text).slice(1));
+          await page.keyboard.press(s.accept ? "Enter" : "Escape");
+        } else await fillBox(String(s.text), !!s.accept);
+        editsMade++;
+        return;
+      }
+      case "comment": {
+        if (!blocks || !(await clickBlock(s.a))) return;
+        await page.keyboard.press("Control+Shift+BracketRight");
+        await fillBox(String(s.text), !!s.accept);
+        editsMade++;
+        return;
+      }
+      case "collapse":
+        if (blocks && (await clickBlock(s.a)))
+          await press(s.on ? "ArrowLeft" : "ArrowRight");
+        return;
+      case "collapseAll":
+        if (blocks) await press(s.on ? "Shift+ArrowLeft" : "Shift+ArrowRight");
+        return;
+      case "toggleMode": {
+        const rush = rushedFor(s);
+        await page.locator(".blocks-toggle-btn").click();
+        toolbarOk = true;
+        // (going back to blocks after text edits starts the undo history over: the check of undo-all is not made then)
+        if (!blocks && textEditedInText && (await mode()) === "blocks") {
+          historyReset = true;
+          textEditedInText = false;
+        }
+        if (rush) {
+          rushed = true;
+          await page.waitForTimeout(40 + Math.floor(Number(s.a) * 200));
+        }
+        return;
+      }
+      case "undo":
+        await press("Mod+z");
+        return;
+      case "redo":
+        await press("Mod+Shift+z");
+        return;
+      case "search": {
+        if (!blocks) return;
+        await press("F3");
+        const input = page.locator(".blocks-search input[type=text]").first();
+        if (await input.count()) {
+          await input.fill(String(s.text));
+          await page.keyboard.press("Enter");
+          if (s.next) await page.keyboard.press("PageDown");
+          await page.keyboard.press("Escape");
+        }
+        return;
+      }
+      case "textEdit": {
+        if (blocks) {
+          // (an API edit: a page's own code, or another tab)
+          await evaluate((a: any) => {
+            const v = (window as any).demo.ed.view;
+            const len = v.state.doc.length;
+            const from = Math.min(len, Math.floor(a.a * (len + 1)));
+            v.dispatch({
+              changes: { from, to: Math.min(len, from + a.len), insert: a.w },
+            });
+          }, s as any);
+        } else {
+          // text mode: the caret and real typing
+          await evaluate((a: any) => {
+            const v = (window as any).demo.ed.view;
+            const len = v.state.doc.length;
+            const from = Math.min(len, Math.floor(a.a * (len + 1)));
+            v.focus();
+            v.dispatch({
+              selection: { anchor: from, head: Math.min(len, from + a.len) },
+            });
+          }, s as any);
+          if (s.w === "") await page.keyboard.press("Backspace");
+          else await page.keyboard.type(String(s.w));
+          textEditedInText = true;
+        }
+        editsMade++;
+        return;
+      }
+      case "select":
+        if (blocks && (await clickBlock(s.a)))
+          await page.keyboard.press("Space");
+        return;
+      case "clearSelection":
+        if (blocks) await page.keyboard.press("Escape");
+        return;
+      case "topLevelType": {
+        if (!blocks) return;
+        const placed = await evaluate((a: any) => {
+          const ed = (window as any).demo.ed;
+          const len = ed.view.state.doc.length;
+          let pos = Math.min(len, Math.floor(a.a * (len + 1)));
+          while (pos <= len && !ed.isWhitespaceAt(pos)) pos++;
+          if (pos > len) return false;
+          ed.view.focus();
+          ed.view.dispatch({ selection: { anchor: pos } });
+          return true;
+        }, s as any);
+        if (!placed) return;
+        if (s.how === "paste") {
+          await evaluate(
+            (t: string) => navigator.clipboard.writeText(t),
+            String(s.text)
+          );
+          await press("Mod+v");
+        } else await page.keyboard.type(String(s.text));
+        await page.waitForTimeout(30);
+        if (await page.locator(".blocks-pending .blocks-edit").count()) {
+          await page.keyboard.press(s.accept ? "Enter" : "Escape");
+        }
+        editsMade++;
+        return;
+      }
+      case "dragBlock": {
+        if (!blocks) return;
+        const src = await blockBox(s.a);
+        const dst = await target(String(s.where), s.b);
+        if (!src || !dst) return;
+        await drag(
+          { x: src.box.x + 3, y: src.box.y + Math.min(src.box.height / 2, 8) },
+          dst
+        );
+        editsMade++;
+        return;
+      }
+      case "dragTemplate": {
+        if (!blocks) return;
+        const btns = page.locator("#templates button[data-template]");
+        const i = at(s.t, await btns.count());
+        const dst = await target(String(s.where), s.b);
+        const bb = i >= 0 ? await btns.nth(i).boundingBox() : null;
+        if (!bb || !dst) return;
+        await drag({ x: bb.x + bb.width / 2, y: bb.y + bb.height / 2 }, dst);
+        editsMade++;
+        return;
+      }
+      case "dragSelection": {
+        if (!blocks) return;
+        let first: { x: number; y: number } | null = null;
+        for (let k = 0; k < Number(s.n); k++) {
+          const a = (Number(s.a) + k * 0.137) % 1;
+          if (await clickBlock(a)) {
+            await page.keyboard.press("Space");
+            const t = await blockBox(a);
+            if (t && !first)
+              first = {
+                x: t.box.x + 3,
+                y: t.box.y + Math.min(t.box.height / 2, 8),
+              };
+          }
+        }
+        const dst = await target("gap", s.b);
+        if (first && dst) await drag(first, dst);
+        editsMade++;
+        return;
+      }
+      case "clickTemplate": {
+        if (!blocks) return;
+        const btns = page.locator("#templates button[data-template]");
+        const i = at(s.t, await btns.count());
+        if (i >= 0) await btns.nth(i).click();
+        editsMade++;
+        return;
+      }
+      case "scroll":
+        await evaluate((a: number) => {
+          const sd = (window as any).demo.ed.view.scrollDOM as HTMLElement;
+          sd.scrollTop = a * sd.scrollHeight;
+        }, Number(s.a));
+        return;
+      case "insertText":
+        if (blocks)
+          await evaluate((a: any) => {
+            const ed = (window as any).demo.ed;
+            const slots: any[] = [];
+            const walk = (n: any) => {
+              n.slots.forEach((q: any) => {
+                if (q.kind === "list" && !q.pieces) slots.push(q);
+                q.nodes.forEach(walk);
+              });
+            };
+            ed.roots().forEach(walk);
+            if (!slots.length) return;
+            const q =
+              slots[Math.min(slots.length - 1, Math.floor(a.a * slots.length))];
+            try {
+              ed.insertText(q, Math.floor(a.b * (q.nodes.length + 1)), a.text);
+            } catch (e) {
+              if (!/cannot|closing bracket|refus|inside/i.test(String(e)))
+                throw e;
+            }
+          }, s as any);
+        editsMade++;
+        return;
+      case "removeNode":
+        if (blocks)
+          await evaluate((a: any) => {
+            const ed = (window as any).demo.ed;
+            const lists: any[] = [];
+            const walk = (n: any) => {
+              n.slots.forEach((q: any) => {
+                if (q.kind === "list" && q.nodes.length) lists.push(q);
+                q.nodes.forEach(walk);
+              });
+            };
+            ed.roots().forEach(walk);
+            if (!lists.length) return;
+            const q =
+              lists[Math.min(lists.length - 1, Math.floor(a.a * lists.length))];
+            ed.removeNode(
+              q.nodes[
+                Math.min(q.nodes.length - 1, Math.floor(a.b * q.nodes.length))
+              ]
+            );
+          }, s as any);
+        editsMade++;
+        return;
+      case "replaceDoc":
+        await evaluate((t: string) => {
+          const v = (window as any).demo.ed.view;
+          v.dispatch({
+            changes: { from: 0, to: v.state.doc.length, insert: t },
+          });
+        }, String(s.text));
+        editsMade++;
+        return;
+      default:
+        throw new Error(`unknown step ${s.op}`);
+    }
+  };
+  const rushedFor = (s: Step): boolean =>
+    seq.motion === "full" && Number(s.rush ?? 1) < 0.35;
+
+  // ---- the invariants ----
+  const axProblems = async (): Promise<string[]> => {
+    const { nodes } = (await cdp!.send("Accessibility.getFullAXTree")) as {
+      nodes: any[];
+    };
+    const byId = new Map(nodes.map((n) => [n.nodeId, n]));
+    const prop = (n: any, k: string) =>
+      n.properties?.find((p: any) => p.name === k)?.value.value;
+    const tree = nodes.find((n) => n.role?.value === "tree");
+    const out: string[] = [];
+    if (!tree) return ["no tree in the accessibility tree"];
+    const walk = (n: any, depth: number): void => {
+      if (!n) return;
+      let d = depth;
+      if (!n.ignored && n.role?.value === "treeitem") {
+        d = depth + 1;
+        if (!n.name?.value) out.push("a treeitem has no name");
+        if (prop(n, "level") !== d)
+          out.push(
+            `treeitem level ${prop(n, "level")} but nesting depth ${d} @ ${n.name?.value}`
+          );
+      }
+      for (const c of n.childIds ?? []) walk(byId.get(c), d);
+    };
+    for (const c of tree.childIds ?? []) walk(byId.get(c), 0);
+    return out.slice(0, 5);
+  };
+  const lineNumberProblems = (): Promise<string[]> =>
+    evaluate(() => {
+      const ed = (window as any).demo.ed;
+      const view = ed.view;
+      const out: string[] = [];
+      const els = Array.from(
+        view.dom.querySelectorAll(".cm-lineNumbers .cm-gutterElement")
+      ) as HTMLElement[];
+      for (const e of els) {
+        if (!/^\d+$/.test(e.textContent ?? "") || e.offsetHeight <= 0) continue;
+        const n = Number(e.textContent);
+        if (n > view.state.doc.lines) {
+          out.push(
+            `line number ${n} but the document has ${view.state.doc.lines} lines`
+          );
+          continue;
+        }
+        const g = e.getBoundingClientRect();
+        const line = view.state.doc.line(n);
+        let dom: any;
+        try {
+          dom = view.domAtPos(line.from);
+        } catch (_) {
+          continue;
+        }
+        const lineEl = (
+          dom.node.nodeType === 3 ? dom.node.parentElement : dom.node
+        )?.closest?.(".cm-line") as HTMLElement | null;
+        const first = lineEl?.querySelector(
+          ".blocks-node, .blocks-comment, .blocks-edit"
+        ) as HTMLElement | null;
+        const box = (first ?? lineEl)?.getBoundingClientRect();
+        if (!box || !box.height) continue;
+        if (Math.abs(g.top - box.top) > 2)
+          out.push(
+            `line ${n}: its number is ${Math.round(g.top)} px from the top, its first block ${Math.round(box.top)}`
+          );
+      }
+      return out.slice(0, 3);
+    });
+
+  const check = async (
+    stepIndex: number,
+    op: string
+  ): Promise<Violation | null> => {
+    const v = (invariant: string, message: string): Violation | null =>
+      skip.has(invariant) ? null : { invariant, message, step: stepIndex, op };
+    if (errors.length) {
+      const hit = v("exception", errors.splice(0).join(" | "));
+      if (hit) return hit;
+    }
+    const m = await mode();
+    if (m === "blocks") {
+      const problems: string[] = await evaluate(() =>
+        (window as any).demo.check()
+      );
+      if (problems.length) {
+        const hit = v("consistency", problems.slice(0, 3).join(" | "));
+        if (hit) return hit;
+      }
+      const sel: string | null = await evaluate(() => {
+        const ed = (window as any).demo.ed;
+        const live = new Set<any>();
+        const walk = (n: any) => {
+          live.add(n);
+          n.slots.forEach((q: any) => q.nodes.forEach(walk));
+        };
+        ed.roots().forEach(walk);
+        const bad = ed.selection().find((n: any) => !live.has(n));
+        if (bad)
+          return `a selected ${bad.kind} [${bad.from},${bad.to}) is not in the tree`;
+        const f = ed.focusedNode();
+        return f && !live.has(f)
+          ? `the focused ${f.kind} [${f.from},${f.to}) is not in the tree`
+          : null;
+      });
+      if (sel) {
+        const hit = v("selection", sel);
+        if (hit) return hit;
+      }
+      const a11y = await evaluate(a11yProblems);
+      if (a11y.length) {
+        const hit = v("a11y", a11y.join(" | "));
+        if (hit) return hit;
+      }
+      if (stepIndex % 3 === 0) {
+        const ax = await axProblems();
+        if (ax.length) {
+          const hit = v("a11y", `accessibility tree: ${ax.join(" | ")}`);
+          if (hit) return hit;
+        }
+      }
+    }
+    // (CodeMirror measures the gutter a frame after a change: look again a few times before calling it wrong)
+    let ln = await lineNumberProblems();
+    for (let k = 0; k < 5 && ln.length; k++) {
+      await page.waitForTimeout(120);
+      await settle();
+      ln = await lineNumberProblems();
+    }
+    if (ln.length) {
+      const hit = v("line-numbers", ln.join(" | "));
+      if (hit) return hit;
+    }
+    if (await evaluate(() => !!document.activeElement?.closest(".cm-editor")))
+      armed = true;
+    if (armed) {
+      const fp = await evaluate(focusProblem as any, toolbarOk);
+      if (fp) {
+        const hit = v("focus", String(fp));
+        if (hit) return hit;
+      }
+    }
+    return null;
+  };
+
+  /** one step with its timeout; the exceptions that are not the editor's become "stuck" only when the page does not answer */
+  const guarded = async (s: Step, i: number): Promise<Violation | null> => {
+    const timer = new Promise<"timeout">((r) =>
+      setTimeout(() => r("timeout"), stepMs)
+    );
+    try {
+      const r = await Promise.race([exec(s).then(() => "ok" as const), timer]);
+      if (r === "timeout")
+        return {
+          invariant: "stuck",
+          message: `the step took more than ${stepMs} ms`,
+          step: i,
+          op: s.op,
+        };
+    } catch (e) {
+      const msg = String((e as Error).message ?? e).split("\n")[0];
+      if (await frozen())
+        return {
+          invariant: "stuck",
+          message: `the page does not answer (${msg})`,
+          step: i,
+          op: s.op,
+        };
+      if (
+        !/Timeout|not visible|detached|intercepts|not attached|outside of the viewport|Target page|Execution context|navigat/i.test(
+          msg
+        )
+      )
+        return { invariant: "exception", message: msg, step: i, op: s.op };
+    }
+    return null;
+  };
+
+  try {
+    await settle();
+    const initial = await text();
+    const first = await check(-1, "initial");
+    if (first) return close(first);
+    for (let i = 0; i < seq.steps.length; i++) {
+      const s = seq.steps[i];
+      const g = await guarded(s, i);
+      if (g) return close(g);
+      if (!rushed) await settle();
+      if (rushed) continue; // (the next step is made in the middle of the morph; the invariants are read after that one)
+      const v = await check(i, s.op);
+      if (v) return close(v);
+    }
+    await settle();
+    // ---- undo everything, redo everything (not after a return to blocks that cleared the history: textEditedInText says so) ----
+    if (
+      editsMade > 0 &&
+      editsMade < 90 &&
+      !historyReset &&
+      !textEditedInText &&
+      !skip.has("undo-all")
+    ) {
+      const final = await text();
+      if (await boxOpen().count()) await page.keyboard.press("Escape");
+      await evaluate(() => {
+        const ed = (window as any).demo.ed;
+        if (ed.mode === "blocks") ed.focusEditor();
+        else ed.view.focus();
+      });
+      let presses = 0;
+      let same = 0;
+      let last = final;
+      while (presses < 150 && same < 4) {
+        await page.keyboard.press("ControlOrMeta+z");
+        presses++;
+        const t = await text();
+        same = t === last ? same + 1 : 0;
+        last = t;
+        if (t === initial) break;
+      }
+      if (last !== initial)
+        return close({
+          invariant: "undo-all",
+          message: `undoing every step left ${JSON.stringify(last.slice(0, 80))}, not the start ${JSON.stringify(initial.slice(0, 80))}`,
+          step: seq.steps.length,
+          op: "undo-all",
+        });
+      for (let k = 0; k < presses; k++)
+        await page.keyboard.press("ControlOrMeta+Shift+z");
+      const after = await text();
+      if (after !== final)
+        return close({
+          invariant: "redo-all",
+          message: `redoing everything left ${JSON.stringify(after.slice(0, 80))}, not ${JSON.stringify(final.slice(0, 80))}`,
+          step: seq.steps.length,
+          op: "redo-all",
+        });
+      const v = await check(seq.steps.length, "after undo/redo");
+      if (v) return close(v);
+    }
+    return close(null);
+  } catch (e) {
+    return close({
+      invariant: "exception",
+      message: `the harness: ${String((e as Error).message).split("\n")[0]}`,
+      step: -1,
+      op: "harness",
+    });
+  }
+}
+
+export interface ChromiumRecord extends Sequence {
+  invariant: string;
+  message: string;
+  step: number;
+  op: string;
+  originalSteps: number;
+}
+
+/** run seed `seed`; on a violation, shrink the steps (same invariant, a few tries: each is a browser session) and return the record */
+export async function soakSeedChromium(
+  browser: Browser,
+  seed: number,
+  nSteps: number,
+  o: ChromiumOptions & {
+    language?: Sequence["language"];
+    shrinkRuns?: number;
+    motion?: boolean;
+  }
+): Promise<ChromiumRecord | null> {
+  const seq = makeSequence("chromium", seed, nSteps, o);
+  // (a step that rushes the morph needs the fraction `rush`: make it from the seed's own numbers)
+  seq.steps.forEach((s, i) => {
+    if (s.op === "toggleMode" && s.rush === undefined)
+      s.rush = ((seed * 31 + i * 17) % 100) / 100;
+  });
+  const v = await runChromium(browser, seq, o);
+  if (!v) return null;
+  let steps =
+    v.step >= 0 && v.step < seq.steps.length
+      ? seq.steps.slice(0, v.step + 1)
+      : seq.steps;
+  let found = v;
+  steps = await shrink(
+    steps,
+    async (cand) => {
+      const c = await runChromium(browser, { ...seq, steps: cand }, o);
+      if (c && c.invariant === v.invariant) found = c;
+      return !!c && c.invariant === v.invariant;
+    },
+    o.shrinkRuns ?? 12
+  );
+  return { ...seq, steps, ...found, originalSteps: seq.steps.length };
+}
