@@ -238,6 +238,9 @@ export function attachInteraction(ed: LezerBlockEditor): {
       clearRefusal();
     });
     let finished = false;
+    // (an edit made elsewhere, or a replaced document, may take the block the box belongs to out of the tree: what is typed has nowhere to go)
+    const dead = (): boolean =>
+      !!log.target && ed.doc.byId.get(log.target.id) !== log.target;
     const finish = (): void => {
       if (finished) return;
       finished = true;
@@ -263,6 +266,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
           return;
         }
         finish();
+        if (dead()) return;
         // an emptied box does nothing, as in the old editor (`NodeEditable`: "no insertion value": the box closes, the block stays) and as
         // the blur below: the same for a leaf's box, the Cmd/Ctrl-Enter box and an insertion box (the comment box keeps its own rule: see `emptyEnterCommits`)
         if (t.trim() === "" && !log.emptyEnterCommits)
@@ -295,7 +299,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
         return;
       }
       finish();
-      if (t.trim() !== "")
+      if (t.trim() !== "" && !dead())
         ed.act(log.action, log.target, { how: "blur", text: t }, () =>
           commit(t)
         );
