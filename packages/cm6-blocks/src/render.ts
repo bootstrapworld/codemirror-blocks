@@ -35,6 +35,17 @@ function flagClass(el: Element, name: string, on: boolean): void {
   FLAGS.forEach((f, i) => state[i] && el.classList.add(f));
 }
 
+/**
+ * The nodes of a slot that are drawn, which are the ones that count in aria-setsize / aria-posinset. A top-level piece of text that did not
+ * parse (an `error` root) is not drawn (it stays text); a comment is a block like any other, drawn also when it goes with a block (that one
+ * shows it as well).
+ */
+function drawnIn(slot: Slot): BNode[] {
+  return slot.owner.kind === "program"
+    ? slot.nodes.filter((n) => n.kind !== "error")
+    : slot.nodes;
+}
+
 export class Renderer {
   /** the comment that goes with a block (the editor says which: see `commentOf` in lezer-view.ts) */
   attached: (node: BNode) => BNode | null = () => null;
@@ -378,7 +389,7 @@ export class Renderer {
     );
     if (this.selection.has(node)) flagClass(el, "blocks-selected", true);
     el.setAttribute("aria-level", String(this.level(node)));
-    const siblings = node.slot ? node.slot.nodes : [node];
+    const siblings = node.slot ? drawnIn(node.slot) : [node];
     el.setAttribute("aria-setsize", String(siblings.length));
     el.setAttribute(
       "aria-posinset",
@@ -465,12 +476,16 @@ export class Renderer {
 
   /** setsize on every sibling, posinset on those from `from` on */
   private renumber(slot: Slot, from: number): void {
-    const n = slot.nodes.length;
+    const top = slot.owner.kind === "program";
+    const n = top ? drawnIn(slot).length : slot.nodes.length;
+    let pos = 0;
     slot.nodes.forEach((c, i) => {
+      if (top && c.kind === "error") return;
+      pos++;
       const el = this.els.get(c);
       if (!el) return;
       this.setAttr(el, "aria-setsize", String(n));
-      if (i >= from) this.setAttr(el, "aria-posinset", String(i + 1));
+      if (i >= from) this.setAttr(el, "aria-posinset", String(pos));
     });
   }
 
