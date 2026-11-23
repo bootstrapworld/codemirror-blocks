@@ -111,3 +111,23 @@ it("seed 21535: a block of half-typed text whose parts are all empty still has a
     } as Sequence)
   ).toBeNull();
 });
+it("seed 27851: closing the box of a template's hole that is piece of text that did not parse focuses the block next to it (not the page body)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 27851,
+      language: "python",
+      code: 'def x(n, n):\n    x(y(), lambda x: h(59, None, None))\n    None\n    while lst.lst(total(True, 71, 92), g(None, "s6", 15)):\n        return "s8"\n# TODO\nx.g({[True]: True == g})\nwhile lambda fact: "s1":\n    [fact.f(h(h)), [], {fact(None, None): lst("s4")}]\n    g = {65: {9 + "s6": None}}\nfor f in lambda fact: n:\n    "s9"\n    y = h([x(None, True)], h("s3", ["s3"]))',
+      steps: [
+        {
+          op: "insertTemplateAt",
+          t: 0.7935750542674214,
+          a: 0.003906820202246308,
+          b: 0.7777902998495847,
+        },
+        { op: "key", key: "Escape", a: 0.2797254913020879 },
+      ],
+      motion: "reduced",
+    } as Sequence)
+  ).toBeNull();
+});
