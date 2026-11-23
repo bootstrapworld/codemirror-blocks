@@ -100,19 +100,25 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
-/** a block and what is in it as plain data (kind, text, slots), leaving out the blocks in `skip` */
+/**
+ * a block and what is in it as plain data (kind, text, slots), leaving out the blocks in `skip` and the comments (a comment is not counted,
+ * and one left alone in an emptied list is no node at all: `f((a) =>//c` is `f(() =>//c` with the comment gone from the parameters)
+ */
 function shape(n: BNode, skip: Set<BNode>): unknown {
   return [
     n.kind,
     n.value ?? null,
     n.slots.map((sl) => [
       sl.name,
-      sl.nodes.filter((c) => !skip.has(c)).map((c) => shape(c, skip)),
+      sl.nodes
+        .filter((c) => !skip.has(c) && c.kind !== "comment")
+        .map((c) => shape(c, skip)),
     ]),
   ];
 }
 const clean = (ed: LezerBlockEditor): boolean => {
-  let bad = false;
+  // (a text the parser had to recover from is read as the recovery guesses: removing a block can make it guess otherwise)
+  let bad = ed.modeProblem() !== null;
   for (const r of ed.roots())
     walk(r, (n) => {
       if (n.kind === "error") bad = true;
