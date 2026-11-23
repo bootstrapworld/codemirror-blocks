@@ -1178,9 +1178,11 @@ export function createLezerBlockEditor(
     };
   }
 
+  let moving = false;
   /** after an edit: selection and collapsed state follow the blocks an edit replaced */
   function carryMarks(s: Snap | null): void {
     if (!s) return;
+    if (moving) s = { ...s, folded: [] }; // (a move puts the collapsed marks where the blocks went)
     const follow = (
       list: Snap["sel"],
       has: (n: BNode) => boolean,
@@ -1188,6 +1190,9 @@ export function createLezerBlockEditor(
     ): void => {
       for (const m of list) {
         if (doc.byId.get(m.node.id) === m.node) continue; // kept
+        // (a block inside one that is gone has nowhere to follow: its marks do not land on a neighbour of the gone one)
+        if (m.place.length && !alive(m.place[m.place.length - 1].owner))
+          continue;
         const r = resolvePlace(m.place);
         if (r.node && r.exact && !has(r.node)) put(r.node);
       }
@@ -2287,20 +2292,62 @@ export function createLezerBlockEditor(
       for (let i = 1; i < both.length; i++)
         if (both[i - 1].to > both[i].from)
           throw new Error("cannot move a block there");
-      stats.edits++;
-      view.dispatch({
-        changes: both,
-        annotations: [isolateHistory.of("full")],
-        userEvent: "input.block",
-      });
-      // where the first block is now: its text starts where the inserted text does, shifted by what was cut before it
-      let shift = 0;
+      // (the new text starts where the inserted text does, shifted by what was cut before it)
+      let shift0 = 0;
       for (const g of gone)
-        if (g.from < put.from) shift += g.insert.length - (g.to - g.from);
-      const j = moved.indexOf(sorted[0]);
+        if (g.from < put.from) shift0 += g.insert.length - (g.to - g.from);
+      // collapsed blocks inside the moved ones (each with its path down from the moved block) stay collapsed at the new place
+      const pathDown = (top: BNode, n: BNode): number[] => {
+        const p: number[] = [];
+        for (let c: BNode = n; c !== top; c = c.parent as BNode)
+          p.unshift(c.parent!.slots.flatMap((q) => q.nodes).indexOf(c));
+        return p;
+      };
+      const folded = moved.map((m) =>
+        renderer
+          .collapsedNodes()
+          .filter((c) => {
+            for (let a: BNode | null = c; a; a = a.parent)
+              if (a === m) return true;
+            return false;
+          })
+          .map((c) => pathDown(m, c))
+      );
+      stats.edits++;
+      moving = true;
+      try {
+        view.dispatch({
+          changes: both,
+          annotations: [isolateHistory.of("full")],
+          userEvent: "input.block",
+        });
+      } finally {
+        moving = false;
+      }
+      if (folded.some((f) => f.length)) {
+        let cursor = 0;
+        moved.forEach((m, i) => {
+          const at =
+            put.from +
+            shift0 +
+            put.insert.indexOf(snippets[i].split("\n")[0], cursor);
+          cursor = put.insert.indexOf(snippets[i].split("\n")[0], cursor) + 1;
+          const top = blockAt(at, snippets[i].length);
+          if (!top) return;
+          for (const path of folded[i]) {
+            let n: BNode | undefined = top;
+            for (const k of path) n = n?.slots.flatMap((q) => q.nodes)[k];
+            if (n) renderer.setCollapsed(n, true);
+          }
+        });
+      }
+      // focus goes to the last block moved, as in the old editor
+      const j = moved.indexOf(sorted[sorted.length - 1]);
       const upTo = j === 0 ? 0 : put.insert.indexOf(snippets[j - 1]) + 1;
       const at =
-        put.from + shift + put.insert.indexOf(snippets[j].split("\n")[0], upTo);
+        put.from +
+        shift0 +
+        put.insert.indexOf(snippets[j].split("\n")[0], upTo);
       const found = blockAt(at, snippets[j].length);
       if (found) ed.focusNode(found);
     },

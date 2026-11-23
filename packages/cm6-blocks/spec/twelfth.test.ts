@@ -250,4 +250,32 @@ describe("twenty-fifth round: after several blocks go in, focus is on the last",
     expect(textOf(ed2).slice(f.from, f.to)).toBe("y");
     ok(ed2);
   });
+  test("moving several blocks focuses the last of them", () => {
+    const ed = make("scheme", "a b c d");
+    const [a, b, , d] = ed.roots();
+    ed.moveNodes([a, b], { slot: d.slot!, index: 4 });
+    const f = ed.focusedNode()!;
+    expect(textOf(ed).slice(f.from, f.to)).toBe("b");
+    ok(ed);
+  });
+});
+
+describe("twenty-fifth round: a moved collapsed block stays collapsed", () => {
+  test("a dragged collapsed call, and a collapsed call inside a moved one", () => {
+    const ed = make("scheme", "(f 1 2) (g (h 3) 4) x");
+    const [f, g, x] = ed.roots();
+    const h = kids(g)[1];
+    ed.collapse(f, true);
+    ed.collapse(h, true);
+    ed.moveNode(f, { slot: x.slot!, index: 3 });
+    const [g2, x2, f2] = ed.roots();
+    expect(ed.renderer.isCollapsed(f2)).toBe(true);
+    expect(ed.renderer.isCollapsed(kids(g2)[1])).toBe(true);
+    expect(ed.renderer.isCollapsed(x2)).toBe(false);
+    ed.moveNode(g2, { slot: x2.slot!, index: 3 });
+    const g3 = ed.roots()[2];
+    expect(ed.renderer.isCollapsed(kids(g3)[1])).toBe(true);
+    expect(ed.renderer.isCollapsed(g3)).toBe(false);
+    ok(ed);
+  });
 });
