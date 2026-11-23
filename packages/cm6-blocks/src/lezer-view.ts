@@ -1950,6 +1950,14 @@ export function createLezerBlockEditor(
     },
     // (the pending field is a part of the block extension: in text mode it is not in the state, and a box that the switch removed is closing)
     clearPending() {
+      // (the box is taken out of the page by an update that has just removed its widget; Chromium sends its blur while the update is
+      // still going on, and CodeMirror does not take a dispatch then: it is made when the update is over)
+      if ((view as unknown as { updateState: number }).updateState === 2) {
+        queueMicrotask(() => {
+          if (!gone) ed.clearPending();
+        });
+        return;
+      }
       if ((view.state.field(pendingField, false)?.size ?? 0) > 0)
         view.dispatch({ effects: setPending.of(null) });
     },

@@ -341,3 +341,38 @@ test("seed 562: after a replaced document, an undo puts the focus on a block (th
   );
   expect(v).toBeNull();
 });
+
+test("seed 300077: the blur of a top-level box that an update has just taken out of the page does not dispatch inside that update (clearPending waits for it to end)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 300077,
+      language: "python",
+      code: 'lst = 82\n14\nif "s5":\n    if lambda h: None:\n        y = total(g.f(acc()), True, h(None, fact.total(None, y)))\n        lambda x: True\n    g = 46 == lst(True) - y.total(lst())\nelse:\n    {acc("s3" + True): y(None == lst)}\n    []\n    x("s2" * True * lambda lst: 89)\nx = f(True - "s9" * y.total(47, 0), lambda g: x())\n\nlst\nlst = [h(None), x(), lambda x: "s0" + lambda acc: None]\nwhile x() + x.n(None, "s8"):\n    "s0"\n    if 47 * None < fact:\n        []\nacc\n',
+      steps: [
+        {
+          op: "dragTemplate",
+          t: 0.739395682932809,
+          b: 0.36537408106960356,
+          where: "whitespace",
+        },
+        {
+          op: "topLevelType",
+          a: 0.22530993702821434,
+          text: "x",
+          accept: true,
+          how: "paste",
+        },
+        { op: "textEdit", a: 0.2185565046966076, len: 2, w: "if a:\n    b" },
+        { op: "removeNode", a: 0.3816490995232016, b: 0.7682775428984314 },
+        { op: "textEdit", a: 0.24009352084249258, len: 3, w: "" },
+      ],
+      motion: "reduced",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});
