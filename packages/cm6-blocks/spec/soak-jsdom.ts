@@ -84,6 +84,8 @@ export interface JsdomOptions {
   undoAll?: boolean;
   /** invariants not to check (a known finding that hides others) */
   skip?: string[];
+  /** called after each step (for debugging a failure by hand: what the text is, which mode) */
+  onStep?: (i: number, step: Step, ed: LezerBlockEditor) => void;
 }
 
 export function runJsdom(
@@ -490,6 +492,7 @@ export function runJsdom(
         step: i,
         op: step.op,
       });
+    options.onStep?.(i, step, ed);
     const v = check();
     if (v) return done({ ...v, step: i, op: step.op });
   }

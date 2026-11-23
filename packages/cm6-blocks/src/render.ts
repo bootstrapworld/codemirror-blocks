@@ -301,7 +301,7 @@ export class Renderer {
         const el = this.element(change.node);
         if (container && slot.kind === "list") {
           const gap = this.makeGap(slot.name, change.index);
-          const before = container.children[2 * change.index] ?? null;
+          const before = this.gapsOf(container)[change.index] ?? null;
           container.insertBefore(gap, before);
           container.insertBefore(el, before);
           this.renumber(slot, change.index);
@@ -317,7 +317,7 @@ export class Renderer {
       } else if (this.els.has(owner)) {
         const container = this.containerOf(owner, slot);
         if (container && slot.kind === "list" && el) {
-          const gap = container.children[2 * change.index];
+          const gap = this.gapsOf(container)[change.index];
           if (gap) {
             gap.remove();
             this.stats.removed++;
@@ -359,8 +359,9 @@ export class Renderer {
       return;
     }
     const kids = slot.nodes;
+    const gaps = this.gapsOf(container);
     for (let i = 0; i <= kids.length; i++) {
-      const gap = container.children[2 * i];
+      const gap = gaps[i];
       if (!gap) break;
       const a = i === 0 ? owner.from : kids[i - 1].to;
       const b = i < kids.length ? kids[i].from : owner.to;
@@ -547,9 +548,15 @@ export class Renderer {
 
   /** data-index of the gaps from index `from` on */
   private renumberGaps(container: Element, from: number): void {
-    const kids = container.children;
-    for (let j = from; 2 * j < kids.length; j++) {
-      this.setAttr(kids[2 * j], "data-index", String(j));
-    }
+    const gaps = this.gapsOf(container);
+    for (let j = from; j < gaps.length; j++)
+      this.setAttr(gaps[j], "data-index", String(j));
+  }
+
+  /** the gaps of a list, in order (an open edit box is among the children too, so a gap is not at an even position) */
+  private gapsOf(container: Element): Element[] {
+    return Array.from(container.children).filter((c) =>
+      c.classList.contains("blocks-gap")
+    );
   }
 }
