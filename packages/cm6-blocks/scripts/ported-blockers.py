@@ -22,7 +22,8 @@ def dep_of(text):
     return (hits[0] if hits else "UNDOCUMENTED" if re.search(r"\(U\)", text) else "OTHER"), hits[1:]
 def classify(cls, reason):
     t = reason
-    if cls in ("N", "I"): return "EXCLUDED-" + cls, []
+    if cls in ("N", "I", "D"): return "EXCLUDED-" + cls, []
+    if cls == "Q": return "DESIGN-QUESTION", []
     d, rest = dep_of(t)
     if d == "OTHER" and cls == "U": d = "UNDOCUMENTED"
     return d, rest

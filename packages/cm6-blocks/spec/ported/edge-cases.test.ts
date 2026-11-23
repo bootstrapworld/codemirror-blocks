@@ -79,14 +79,14 @@ describe("dragging one of several selected blocks", () => {
     dragOnto(elementForNode(root(0))!, elementForNode(root(3))!);
   });
 
-  // SKIPPED (U): the drop of one of several selected blocks (`dragOnto` of the compat layer) makes no change here: the text stays `a b c d`; not looked into
+  // SKIPPED (Q): design question, not a bug and not the compat helper: here dragging a selected block moves the WHOLE selection (interact.ts `group`, chosen by the owner; DIFFERENT from the old editor, which moves only the grabbed block); dropping two blocks on the value `d` is then refused ("a hole takes one block"), so the text stays `a b c d`
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("moves just the block that was grabbed, onto the target", () => {
     expect(cmb.getValue()).toBe("b c a");
   });
 
-  // SKIPPED (U): the drop of one of several selected blocks (`dragOnto` of the compat layer) makes no change here: the text stays `a b c d`; not looked into
+  // SKIPPED (Q): design question, not a bug and not the compat helper: here dragging a selected block moves the WHOLE selection (interact.ts `group`, chosen by the owner; DIFFERENT from the old editor, which moves only the grabbed block); dropping two blocks on the value `d` is then refused ("a hole takes one block"), so the text stays `a b c d`
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("leaves the other selected block where it was, still selected", () => {
@@ -94,7 +94,7 @@ describe("dragging one of several selected blocks", () => {
     expect(texts()[0]).toBe("b");
   });
 
-  // SKIPPED (U): the drop of one of several selected blocks (`dragOnto` of the compat layer) makes no change here, so there is nothing to undo; not looked into
+  // SKIPPED (Q): design question, not a bug and not the compat helper: here dragging a selected block moves the WHOLE selection (interact.ts `group`, chosen by the owner; DIFFERENT from the old editor, which moves only the grabbed block); dropping two blocks on the value `d` is then refused ("a hole takes one block"), so the text stays `a b c d`
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("is one undo step", () => {
@@ -206,7 +206,7 @@ describe("unmounting the editor", () => {
 });
 
 describe("mounting again with a different language", () => {
-  // SKIPPED (N): the old toolbar of primitives (`.Primitive`), which this editor does not have: its templates are a page's bar
+  // SKIPPED (D): by decision: an editor is mounted once per language here
   // first error (sweep): Error: expect(received).toBeGreaterThan(expected)
   it.skip("shows only the new language's blocks and toolbar", () => {
     cmb = mountCMB(wescheme).cmb;
@@ -228,7 +228,7 @@ describe("mounting again with a different language", () => {
     expect(document.querySelectorAll(".Primitive")).toHaveLength(0);
   });
 
-  // SKIPPED (N): `getAst().language` and the old toolbar of primitives (`.Primitive`) are not in this editor or its compat layer
+  // SKIPPED (D): by decision: an editor is mounted once per language here
 
   // first error (sweep): TypeError: Cannot read properties of undefined (reading 'id')
   it.skip("goes back to the first language with nothing left over", () => {
