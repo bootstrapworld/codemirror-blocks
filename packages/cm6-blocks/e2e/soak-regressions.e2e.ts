@@ -305,3 +305,39 @@ test("seed 1252: a block moved to a gap: the line above a changed range is measu
   );
   expect(v).toBeNull();
 });
+
+test("seed 562: after a replaced document, an undo puts the focus on a block (the path a history item remembers is not the page body)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 562,
+      language: "javascript",
+      code: 'var x = {a: y("s7", total, y), b: null};\n\nwhile ([]) {\n  let acc = "s3";\n}\n',
+      steps: [
+        { op: "key", key: "ArrowUp", a: 0.0004202895797789097 },
+        { op: "typeIntoBlock", a: 0.5316811783704907, text: "(", accept: true },
+        {
+          op: "replaceDoc",
+          text: 'function total(total, f) {\n  for (const y of true + null) {\n    const acc = null * 16 ? f() : [true, true] + h.n();\n    const x = fact() ? "s7" : null;\n    {a: true, b: n(94)};\n  }\n  if (true) {\n    97;\n    total = 24 ? h(true, 40) : f ? g : true;\n  } else {\n    x.f(f);\n    [x(true, f("s5", 36), (y) => g)];\n  }\n}\n[[83, {a: y, b: null}, h(63)]];\n',
+        },
+        { op: "editBox", a: 0.2935687529388815, text: "foo", accept: true },
+        {
+          op: "dragTemplate",
+          t: 0.566902935737744,
+          b: 0.2911756127141416,
+          where: "end",
+        },
+        { op: "key", key: "Escape", a: 0.7866062289103866 },
+        { op: "key", key: "Shift+Alt+ArrowRight", a: 0.4221438674721867 },
+        { op: "key", key: "ArrowLeft", a: 0.5774770581629127 },
+        { op: "undo" },
+      ],
+      motion: "reduced",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});
