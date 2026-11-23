@@ -35,14 +35,24 @@ export function a11yProblems(): string[] {
       : content;
     groups.set(holder, [...(groups.get(holder) ?? []), it]);
   }
-  for (const [, g] of groups) {
+  for (const [holder, g] of groups) {
+    // (the roots of a program that is taller than the window: CodeMirror draws only the lines near the viewport, so fewer roots than the
+    // set size are drawn, from any position on: their positions go up by one and stay within the set. Everything inside a root is drawn)
+    const first = Number(g[0].getAttribute("aria-posinset"));
+    const size = Number(g[0].getAttribute("aria-setsize"));
+    const virtual = holder === content && g.length < size && first >= 1;
     g.forEach((it, i) => {
       const label = it.getAttribute("aria-label");
-      if (Number(it.getAttribute("aria-posinset")) !== i + 1)
+      const want = virtual ? first + i : i + 1;
+      if (Number(it.getAttribute("aria-posinset")) !== want)
         out.push(
-          `posinset ${it.getAttribute("aria-posinset")} but position ${i + 1} @ ${label}`
+          `posinset ${it.getAttribute("aria-posinset")} but position ${want} @ ${label}`
         );
-      if (Number(it.getAttribute("aria-setsize")) !== g.length)
+      if (
+        virtual
+          ? Number(it.getAttribute("aria-setsize")) !== size || want > size
+          : Number(it.getAttribute("aria-setsize")) !== g.length
+      )
         out.push(
           `setsize ${it.getAttribute("aria-setsize")} but ${g.length} siblings drawn @ ${label}`
         );
