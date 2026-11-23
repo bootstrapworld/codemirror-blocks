@@ -1222,6 +1222,7 @@ export function createLezerBlockEditor(
     n.kind !== "program" &&
     renderer.has(n) &&
     renderer.element(n).isConnected &&
+    !isAttached(n) && // (a comment that goes with a block is not shown: it cannot take the focus)
     !hiddenByFold(n);
   /** is the block inside one that is collapsed (its element is in the page but not shown, and cannot take the focus)? */
   function hiddenByFold(n: BNode): boolean {
