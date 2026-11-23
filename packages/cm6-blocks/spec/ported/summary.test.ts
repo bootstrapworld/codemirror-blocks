@@ -37,9 +37,8 @@ describe("summarizeProgram", () => {
     );
   });
 
-  // SKIPPED (I): there is no summarizeProgram taking node types here; the words are the table's labels, which spec/describe.test.ts checks, and every summary test above reads them from the editor
+  // SKIPPED (I): the summary IS built (said when a program is first drawn as blocks; the tests above read it from the editor), but there is no `summarizeProgram` function here that takes node types: the old test calls it with made-up types, and the words are the table's labels (spec/describe.test.ts)
 
-  // first error (sweep): Error: not in the compat layer: summarizeProgram (the summary module: the summary read on first opening is not built)
   it.skip("names each kind by what its type declares, with no list of them here", () => {
     const nodes = (...kinds: [string, string, string?][]) =>
       kinds.map(([type, label, pluralLabel]) => ({
@@ -115,7 +114,7 @@ describe("describeKinds", () => {
     );
   });
 
-  // SKIPPED (I): there is no describeKinds here; an empty program says nothing at all (tested above), so a rewrite would only repeat that test
+  // SKIPPED (I): there is no `describeKinds` function here (the summary is built, but only as the announcement); an empty program says nothing at all (tested above), so a rewrite would only repeat that test
   it.skip("is nothing for no nodes, or only comments that are left out", () => {
     expect(describeKinds([])).toBe("nothing");
     expect(describeKinds(nodes(["c", "comment", "comments", true]))).toBe(

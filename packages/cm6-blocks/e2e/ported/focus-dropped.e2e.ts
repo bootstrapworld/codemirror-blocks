@@ -39,15 +39,14 @@ test("focus goes to the focused block once it is back on the page", async ({
     .toBe("treeitem");
 });
 
-// FIXME-BEGIN (thirteenth round: I: calls the CM5 `window.cmb.getCM()` of the old page)
+// FIXME-BEGIN (thirty-third round, a question: the test takes the focused block's element out of the page and puts a clone back, then asks CodeMirror 5 to `refresh`; CM6 has no refresh (`requestMeasure` did not give focus back), and the renderer owns the block elements, so a clone is not its block. Whether the editor should take focus back to the focused block when the view drops its element (a viewport change) is a decision)
 const FIXME = new Set<string>([
   "focus goes to the focused block once it is back on the page",
 ]);
 test.beforeEach(({}, ti) => {
   test.fixme(
     FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "I: calls the CM5 `window.cmb.getCM()` of the old page"
+    "Q: the test drops the focused element and puts a clone back, then calls the CM5 refresh; whether focus should come back is a decision (see above)"
   );
 });
 // FIXME-END
-// first error (sweep): focus goes to the focused block once it is back on the page => Error: page.evaluate: TypeError: window.cmb.getCM is not a function

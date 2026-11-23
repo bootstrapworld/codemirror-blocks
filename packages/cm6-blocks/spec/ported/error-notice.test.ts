@@ -49,15 +49,15 @@ describe("the notice that offers to report an error", () => {
     expect(notices()).toHaveLength(0);
   });
 
-  // SKIPPED (I): there is no report form here (the notice says what went wrong, with a Dismiss button); sending a report needs somewhere to send it, a decision for later
+  // SKIPPED (I): the error notice is built (it says what went wrong, with a Dismiss button; tested above) but it has no report form; sending a report needs somewhere to send it, a decision for later. The old body is empty (`undefined`), so un-skipping it would pass without checking anything
   it.skip("opens a report with the error and the recorded actions, and goes away", () =>
     undefined);
 
-  // SKIPPED (I): errors nobody caught (window "error" events) are not watched here, and there is no activity log to count "right after the editor was used" against; about 40 more lines and a decision on what an uncaught error is
+  // SKIPPED (I): the notice only shows for the editor's own actions (a key that meets an error); errors nobody caught (window "error" events) are not watched here, and there is no activity log to count "right after the editor was used" against; about 40 more lines and a decision on what an uncaught error is
   it.skip("counts an uncaught error right after the editor was used", () =>
     undefined);
 
-  // SKIPPED (I): as above
+  // SKIPPED (I): as above (the old body is empty too)
   it.skip("ignores an uncaught error long after the editor was used", () =>
     undefined);
 });
