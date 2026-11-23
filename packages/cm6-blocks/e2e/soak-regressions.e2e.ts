@@ -454,3 +454,30 @@ test("seed 400454: the same (a template, a drag, a collapse and a drag of two bl
   );
   expect(v).toBeNull();
 });
+
+test("seed 500200: the blur of an edit box that an update has just removed does not write its text inside that update (an API insert while a leaf box is open)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 500200,
+      language: "javascript",
+      code: 'if (true) {\n  var lst = "s7";\n}\nwhile (h(null, 16) * (acc) => null) {\n  const lst = f([]);\n  total = [x(null, null, 27), x(acc, fact), "s9"];\n  while ([lst(true, f)]) {\n    var h = null;\n  }\n}\nwhile ([{a: true, b: "s7"}, null, 94]) {\n  var acc = [h.f(null) + y(54, 78), true, {a: null, b: []}];\n  n.g("s8");\n}\n\n',
+      steps: [
+        { op: "collapse", a: 0.7540768512990326, on: true },
+        { op: "key", key: "Shift+|", a: 0.523852125974372 },
+        {
+          op: "insertText",
+          a: 0.791007575346157,
+          b: 0.7261613749433309,
+          text: "{a: 1}",
+        },
+      ],
+      motion: "reduced",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});

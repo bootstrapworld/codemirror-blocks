@@ -286,7 +286,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
       }
     }) as EventListener);
     // (blur commits, as in the old editor, unless the text is empty: that cancels. Focus goes where the click put it)
-    input.addEventListener("blur", (e) => {
+    const onBlur = (e: Event): void => {
       if (finished) return;
       const t = input.value;
       const to = (e as FocusEvent).relatedTarget as HTMLElement | null;
@@ -304,6 +304,13 @@ export function attachInteraction(ed: LezerBlockEditor): {
           commit(t)
         );
       if (to && to.isConnected && to.focus) to.focus();
+    };
+    input.addEventListener("blur", (e) => {
+      // (Chromium sends the blur of a focused input that an update has just taken out of the page while that update is still going on, and
+      // CodeMirror takes no dispatch then: the box is closed and its text written when the update is over, if its block is still there)
+      if ((view as unknown as { updateState: number }).updateState === 2)
+        queueMicrotask(() => onBlur(e));
+      else onBlur(e);
     });
     put(input);
     ed.remeasureHeights();
