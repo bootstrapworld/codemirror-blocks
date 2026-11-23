@@ -1221,7 +1221,14 @@ export function createLezerBlockEditor(
     drawn(n) &&
     n.kind !== "program" &&
     renderer.has(n) &&
-    renderer.element(n).isConnected;
+    renderer.element(n).isConnected &&
+    !hiddenByFold(n);
+  /** is the block inside one that is collapsed (its element is in the page but not shown, and cannot take the focus)? */
+  function hiddenByFold(n: BNode): boolean {
+    for (let p = n.parent; p && p.kind !== "program"; p = p.parent)
+      if (renderer.isCollapsed(p)) return true;
+    return false;
+  }
 
   /** the outermost nodes of a set: those whose parent is not in it, each with its place */
   function outermost(set: BNode[]): { node: BNode; place: Step[] }[] {

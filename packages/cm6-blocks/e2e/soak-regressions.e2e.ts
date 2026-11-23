@@ -138,3 +138,34 @@ test("seed 1051: clicking a leaf whose box is already open (a second box in the 
   );
   expect(v).toBeNull();
 });
+test("seed 520: undo with everything collapsed: the focus goes to the collapsed block that holds the restored one, not the page body (the second Ctrl+Z then works)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 520,
+      language: "scheme",
+      code: "; a comment\n(define (fact n)\n  (if (<= n 1)\n      1\n      (* n (fact (- n 1)))))\n(fact 5)\n",
+      steps: [
+        {
+          op: "dragTemplate",
+          t: 0.525558193679899,
+          b: 0.260945892194286,
+          where: "end",
+        },
+        {
+          op: "dragBlock",
+          a: 0.3139909247402102,
+          b: 0.2470884716603905,
+          where: "whitespace",
+        },
+        { op: "collapseAll", on: true },
+      ],
+      motion: "reduced",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});
