@@ -185,3 +185,9 @@ Audit, each row tested in `spec/cm6-api.test.ts` ("the editor object is an Edito
 Block-only methods (decision 8): `ed.roots()`, `ed.focusedNode()`, `ed.selection()` and `ed.selectedBlocks()` throw "... is only available in block mode" in text mode (the tree itself is still kept in text mode: `ed.doc.program`, and `inAnyMode(ed)` for tools and the test shim). The other block methods (`insertText`, `removeNode`, ...) are text changes and keep working in text mode, as before.
 
 Marks are one position-mapped field of the page's own (no persistent block ids, decision 4): the mark follows its text through changes, and goes with the block when the block is deleted, because CodeMirror drops a mark whose range is deleted. No `markText` object exists: the page's field is its own.
+
+## Decisions (user, 2026-11-23)
+
+- **Block methods in text mode.** Only the methods that read the block tree (`roots`, `focusedNode`, `selection`, `selectedBlocks`) throw "only available in block mode" in text mode. The methods that change text by block (`insertText`, `removeNode`, ...) are plain text changes and keep working in text mode.
+- **`setState`.** No block-aware `ed.setState`. A state made elsewhere lacks the block field and is unsupported; replacing the document is `ed.dispatch({changes})`.
+- The CM5 API is not supported; the CM6 API is the supported surface (see the audit section above). No language registry (a language is its parser and table, imported directly).
