@@ -425,6 +425,13 @@ export function createLezerBlockEditor(
   const { parser, table } = options;
   const language = lezerLanguage(parser, table);
   const renderer = new Renderer(language);
+  /** a block's height changed without a document change (collapse, expand): CodeMirror re-reads the line heights only when its content's height changed or a redraw happened, and the editor box has a fixed height, so it is told (`mustMeasureContent`, the flag its own redraw sets) or the gutter's line numbers keep the old heights */
+  const remeasureHeights = (): void => {
+    (
+      view as unknown as { viewState: { mustMeasureContent: unknown } }
+    ).viewState.mustMeasureContent = true;
+    view.requestMeasure();
+  };
   /** the text of the document as the tree stands now (the renderer asks where a comment sits) */
   let curDoc = text;
   /**
@@ -2190,6 +2197,7 @@ export function createLezerBlockEditor(
     collapse(node, on) {
       if (!foldable(node)) return;
       renderer.setCollapsed(node, on);
+      remeasureHeights();
       // focus inside what is now hidden goes to the block that holds it
       const f = ed.focusedNode();
       if (on && f && f !== node)
@@ -2203,6 +2211,7 @@ export function createLezerBlockEditor(
       walk(root, (n) => {
         if (foldable(n)) renderer.setCollapsed(n, on);
       });
+      remeasureHeights();
       const f = ed.focusedNode();
       if (on && f) ed.focusNode(root);
     },
