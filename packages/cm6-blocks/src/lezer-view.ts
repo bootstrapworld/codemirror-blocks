@@ -28,6 +28,7 @@ import {
   Extension,
   StateEffect,
   StateField,
+  Text,
   Transaction,
 } from "@codemirror/state";
 import {
@@ -48,6 +49,7 @@ import {
 import { Tree, TreeFragment } from "@lezer/common";
 import type { Parser } from "@lezer/common";
 import { walk } from "./doc";
+import { forwardView, ViewSurface } from "./view-surface";
 import {
   InnerCand,
   BlockTable,
@@ -108,6 +110,13 @@ export function injectSheets(
 export interface LezerOptions {
   parser: Parser;
   table: BlockTable;
+  /** CodeMirror 6's own configuration (an alternative to the arguments `parent` and `text`): where the editor goes; the program text (`doc`, or `value`, an alias); the extensions the page adds (keymaps, decorations, themes, `lineNumbers()`, ...); see `ed.reconfigure` */
+  parent?: HTMLElement;
+  doc?: string | Text;
+  value?: string;
+  extensions?: Extension;
+  /** start with every block collapsed */
+  collapseAll?: boolean;
   /** lay a touched root over its old nodes (reconcile.ts); false rebuilds it whole, as before the fourth round (for measuring) */
   reconcile?: boolean;
   /** inside a touched root, take old nodes over without building them where the change is not near (the fifth round); false builds the whole root and compares it (for measuring) */
@@ -150,8 +159,14 @@ export interface LezerStats {
   restMs: number;
 }
 
-export interface LezerBlockEditor {
+/**
+ * The editor. It can stand where an `EditorView` is expected (`state`, `dispatch`, `dom`, `focus`, `requestMeasure`, `coordsAtPos`, ...
+ * are the view's: see view-surface.ts); `view` is the real `EditorView`.
+ */
+export interface LezerBlockEditor extends ViewSurface {
   readonly view: EditorView;
+  /** replace the extensions the page gave (the option `extensions`) with `extensions`, as `Compartment.reconfigure` does */
+  reconfigure(extensions: Extension): void;
   readonly doc: Doc;
   readonly language: LezerLanguage;
   readonly renderer: Renderer;
@@ -388,11 +403,24 @@ function shiftTree(n: BNode, d: number): void {
   });
 }
 
+/** `createLezerBlockEditor(parent, text, options)`, or CodeMirror 6's way: `createLezerBlockEditor({parent, doc, extensions, parser, table, ...})` */
 export function createLezerBlockEditor(
   parent: HTMLElement,
   text: string,
   options: LezerOptions
+): LezerBlockEditor;
+export function createLezerBlockEditor(config: LezerOptions): LezerBlockEditor;
+export function createLezerBlockEditor(
+  a: HTMLElement | LezerOptions,
+  b?: string,
+  c?: LezerOptions
 ): LezerBlockEditor {
+  const options = (typeof b === "string" ? c : a) as LezerOptions;
+  const parent =
+    (typeof b === "string" ? (a as HTMLElement) : options.parent) ??
+    document.createElement("div");
+  const text =
+    typeof b === "string" ? b : String(options.doc ?? options.value ?? "");
   const { parser, table } = options;
   const language = lezerLanguage(parser, table);
   const renderer = new Renderer(language);
@@ -992,6 +1020,7 @@ export function createLezerBlockEditor(
   });
 
   const compartment = new Compartment();
+  const userComp = new Compartment();
   const historyComp = new Compartment();
   let held: (() => void) | null = null;
   class PendingWidget extends WidgetType {
@@ -1791,7 +1820,8 @@ export function createLezerBlockEditor(
     return null;
   }
 
-  const ed: LezerBlockEditor = {
+  // (the members of the view are added by `forwardView`, once the view exists)
+  const ed: Omit<LezerBlockEditor, keyof ViewSurface> = {
     get view() {
       return view;
     },
@@ -1799,6 +1829,8 @@ export function createLezerBlockEditor(
     language,
     renderer,
     options,
+    reconfigure: (extensions) =>
+      view.dispatch({ effects: userComp.reconfigure(extensions) }),
     lastError: null,
     roots: () => rootsSlot.nodes,
     insertText(slot, index, snippet) {
@@ -2508,6 +2540,7 @@ export function createLezerBlockEditor(
     state: EditorState.create({
       doc: text,
       extensions: [
+        userComp.of(options.extensions ?? []),
         historyComp.of(history()),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         field,
@@ -2665,7 +2698,8 @@ export function createLezerBlockEditor(
   );
   named("moveNode", () => "moveNodes", ((n: BNode) => n) as never);
   named("setComment", () => "setComment", ((n: BNode) => n) as never);
-  const interaction = attachInteraction(ed);
+  const whole = forwardView(ed, () => view) as LezerBlockEditor;
+  const interaction = attachInteraction(whole);
   // the active block, for assistive technology: the real attribute on the element with role="tree"
   // (cleared when the focus leaves the blocks), and the old editor's misspelling on the scroller
   const setActive = (id: string | null): void => {
@@ -2721,8 +2755,9 @@ export function createLezerBlockEditor(
       sayLater("Use enter to edit", 1250);
   });
   summarize();
-  internals.set(ed, { field, blockMode: () => blockMode });
-  return ed;
+  if (options.collapseAll) ed.collapseAll(true);
+  internals.set(whole, { field, blockMode: () => blockMode });
+  return whole;
 }
 
 const internals = new WeakMap<

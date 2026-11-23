@@ -5,9 +5,22 @@
  * object and its CodeMirror 6 view). One test per behaviour, named after the old test it replaces. The old tests are
  * not ported as API (class N): they point here.
  */
-import { undo, redo } from "@codemirror/commands";
-import { checkLezerEditor, LezerBlockEditor } from "../src/lezer-view";
-import { make } from "./helpers";
+import { undo, redo, indentWithTab } from "@codemirror/commands";
+import {
+  Compartment,
+  EditorSelection,
+  EditorState,
+  Facet,
+  StateEffect,
+} from "@codemirror/state";
+import { EditorView, keymap, lineNumbers } from "@codemirror/view";
+import {
+  checkLezerEditor,
+  createLezerBlockEditor,
+  LezerBlockEditor,
+} from "../src/lezer-view";
+import { VIEW_MEMBERS } from "../src/view-surface";
+import { make, OPTS } from "./helpers";
 import { walk } from "../src/doc";
 import type { BNode } from "../src/types";
 
@@ -190,5 +203,182 @@ describe("block mode on and off (new-blocks-test, entry-point-test)", () => {
     );
     expect(text(ed2)).not.toContain("(a 1)");
     expect(text(ed2)).toContain("(b 2)");
+  });
+});
+
+/*
+ * Thirty-second round: the editor object stands in for a CodeMirror 6 `EditorView` (decision of 2026-11-23: a CM6 user who embeds this editor
+ * instead of plain CM6 changes no supported call). One test per area of the old API that the CM5-shaped tests (class D) covered.
+ */
+describe("the editor object is an EditorView for the CodeMirror 6 calls (entry-point, api tests; by decision)", () => {
+  test("every public member of EditorView is on the editor, and is the view's", () => {
+    const ed = make("scheme", SRC);
+    const e = ed as unknown as Record<string, unknown>;
+    const v = ed.view as unknown as Record<string, unknown>;
+    for (const name of VIEW_MEMBERS) {
+      expect(name in ed).toBe(true);
+      if (typeof v[name] === "function")
+        expect(typeof e[name]).toBe("function");
+      else expect(e[name]).toEqual(v[name]);
+    }
+    expect(ed.state).toBe(ed.view.state);
+    expect(ed.dom).toBe(ed.view.dom);
+    expect(ed.contentDOM).toBe(ed.view.contentDOM);
+    expect(ed.scrollDOM).toBe(ed.view.scrollDOM);
+  });
+
+  test("dispatch, state, update listeners and commands work on the editor as on a view", () => {
+    const ed = make("scheme", SRC);
+    const seen: number[] = [];
+    ed.dispatch({
+      effects: StateEffect.appendConfig.of(
+        EditorView.updateListener.of((u) => {
+          if (u.docChanged) seen.push(u.state.doc.length);
+        })
+      ),
+    });
+    ed.dispatch({ changes: { from: 0, insert: "(z 0)\n" } });
+    expect(seen).toEqual([SRC.length + 6]);
+    expect(ed.state.doc.sliceString(0, 5)).toBe("(z 0)");
+    expect(ed.roots().length).toBe(4);
+    expect(undo(ed)).toBe(true);
+    expect(ed.state.doc.toString()).toBe(SRC);
+    expect(redo(ed)).toBe(true);
+    expect(ed.roots().length).toBe(4);
+    expect(checkLezerEditor(ed)).toEqual([]);
+  });
+
+  test("state methods: selection, sliceDoc, toText, changeByRange, facets, fields", () => {
+    const ed = make("scheme", SRC);
+    ed.dispatch({ selection: EditorSelection.single(1, 3) });
+    expect(ed.state.sliceDoc(1, 3)).toBe("a ");
+    expect(ed.state.selection.main.from).toBe(1);
+    expect(ed.state.toText("x\ny").lines).toBe(2);
+    ed.dispatch(
+      ed.state.changeByRange((r) => ({
+        changes: { from: r.from, to: r.to, insert: "b" },
+        range: EditorSelection.cursor(r.from + 1),
+      }))
+    );
+    expect(ed.state.doc.sliceString(0, 5)).toBe("(b1)\n");
+    const f = Facet.define<number, number>({ combine: (x) => x.length });
+    ed.dispatch({ effects: StateEffect.appendConfig.of(f.of(1)) });
+    expect(ed.state.facet(f)).toBe(1);
+  });
+
+  test("measuring and geometry calls answer (jsdom has no layout: the values are empty)", () => {
+    const ed = make("scheme", SRC);
+    expect(ed.viewport).toEqual({ from: 0, to: SRC.length });
+    expect(ed.visibleRanges.length).toBeGreaterThan(0);
+    expect(ed.lineBlockAt(7).from).toBe(6);
+    expect(ed.hasFocus).toBe(false);
+    expect(ed.posAtDOM(ed.contentDOM, 0)).toBe(0);
+    expect(() => ed.requestMeasure()).not.toThrow();
+    expect(() => ed.coordsAtPos(1)).not.toThrow();
+    expect(() => ed.posAtCoords({ x: 1, y: 1 })).not.toThrow();
+    expect(() => ed.focus()).not.toThrow();
+  });
+
+  test("an unchanged state can be set again (setState); a state made without this editor's extensions is not supported", () => {
+    const ed = make("scheme", SRC);
+    ed.setState(ed.state);
+    expect(ed.roots().length).toBe(3);
+  });
+});
+
+describe("CodeMirror 6's own configuration: {parent, doc, extensions} (entry-point tests; by decision)", () => {
+  const cfg = (extra: object) => {
+    const parent = document.createElement("div");
+    document.body.appendChild(parent);
+    const ed = createLezerBlockEditor({
+      ...OPTS.scheme,
+      parent,
+      ...extra,
+    });
+    return { ed, parent };
+  };
+
+  test("parent and doc replace the host and the text", () => {
+    const { ed, parent } = cfg({ doc: SRC });
+    expect(parent.contains(ed.dom)).toBe(true);
+    expect(ed.state.doc.toString()).toBe(SRC);
+    expect(ed.roots().length).toBe(3);
+    ed.destroy();
+  });
+
+  test("value is an alias of doc, and no doc is an empty program", () => {
+    const a = cfg({ value: SRC }).ed;
+    expect(a.state.doc.toString()).toBe(SRC);
+    const b = cfg({}).ed;
+    expect(b.state.doc.toString()).toBe("");
+    a.destroy();
+    b.destroy();
+  });
+
+  test("a CodeMirror 6 Text works as doc", () => {
+    const { ed } = cfg({ doc: EditorState.create({ doc: SRC }).doc });
+    expect(ed.state.doc.toString()).toBe(SRC);
+    ed.destroy();
+  });
+
+  test("extensions: line numbers, a theme, read-only, an update listener and a key binding all take effect", () => {
+    const changed: boolean[] = [];
+    let hit = 0;
+    const { ed } = cfg({
+      doc: SRC,
+      extensions: [
+        lineNumbers(),
+        EditorView.theme({ ".cm-content": { color: "red" } }),
+        EditorView.updateListener.of((u) => changed.push(u.docChanged)),
+        keymap.of([{ key: "Ctrl-j", run: () => (hit++, true) }, indentWithTab]),
+      ],
+    });
+    expect(ed.dom.querySelector(".cm-gutters")).not.toBeNull();
+    expect(ed.dom.classList.length).toBeGreaterThan(
+      make("scheme", SRC).dom.classList.length
+    );
+    ed.contentDOM.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "j", keyCode: 74, ctrlKey: true })
+    );
+    expect(hit).toBe(1);
+    ed.dispatch({ changes: { from: 0, insert: "1 " } });
+    expect(changed).toContain(true);
+    ed.destroy();
+  });
+
+  test("EditorState.readOnly from the extensions is in the state, as in CodeMirror 6", () => {
+    const { ed } = cfg({ doc: SRC, extensions: EditorState.readOnly.of(true) });
+    expect(ed.state.readOnly).toBe(true);
+    ed.destroy();
+  });
+
+  test("reconfigure replaces the extensions the page gave, and a Compartment of the page reconfigures too (setOption; by decision: reconfigure)", () => {
+    const f = Facet.define<number, number>({ combine: (x) => x.length });
+    const comp = new Compartment();
+    const { ed } = cfg({ doc: SRC, extensions: [f.of(1), comp.of(f.of(1))] });
+    expect(ed.state.facet(f)).toBe(2);
+    ed.dispatch({ effects: comp.reconfigure([]) });
+    expect(ed.state.facet(f)).toBe(1);
+    ed.reconfigure([f.of(1), f.of(2), f.of(3)]);
+    expect(ed.state.facet(f)).toBe(3);
+    expect(ed.roots().length).toBe(3);
+    ed.destroy();
+  });
+
+  test("collapseAll starts every block collapsed", () => {
+    const { ed } = cfg({ doc: SRC, collapseAll: true });
+    expect(ed.roots().every((r) => ed.renderer.isCollapsed(r))).toBe(true);
+    ed.destroy();
+  });
+
+  test("the old arguments (host, text, options) still work, with extensions too", () => {
+    const parent = document.createElement("div");
+    document.body.appendChild(parent);
+    const ed = createLezerBlockEditor(parent, SRC, {
+      ...OPTS.scheme,
+      extensions: lineNumbers(),
+    });
+    expect(ed.dom.querySelector(".cm-gutters")).not.toBeNull();
+    ed.destroy();
   });
 });
