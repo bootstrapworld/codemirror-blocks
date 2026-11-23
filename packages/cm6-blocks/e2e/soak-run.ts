@@ -119,15 +119,36 @@ export async function runChromium(
     const b = await el.boundingBox();
     return b && b.width > 1 && b.height > 1 ? { el, box: b } : null;
   };
+  /**
+   * A point on block `t` that is in the editor and that nothing covers: near its left edge (a click in the middle may land on a block inside
+   * it), moved into the window when the block is wider than it (its left edge can be scrolled out of view) and down when its top is under the
+   * demo's own toolbar (a click there hits the toolbar and the page loses the editor's focus). Null when there is none.
+   */
+  const grabPoint = async (t: {
+    box: { x: number; y: number; width: number; height: number };
+  }): Promise<{ x: number; y: number } | null> => {
+    const x = Math.max(t.box.x + 3, 4);
+    if (x > t.box.x + t.box.width - 2) return null;
+    const ys = [8, 20, 60, t.box.height / 2, t.box.height - 6]
+      .filter((d) => d > 0 && d < t.box.height)
+      .map((d) => t.box.y + d);
+    for (const y of ys) {
+      const ok = await evaluate(
+        ([px, py]: number[]) =>
+          !!document.elementFromPoint(px, py)?.closest(".cm-content"),
+        [x, y]
+      );
+      if (ok) return { x, y };
+    }
+    return null;
+  };
   const clickBlock = async (a: unknown, modifiers: "Shift"[] = []) => {
     const t = await blockBox(a);
     if (!t) return false;
-    // (the left edge of a block is its own: a click in the middle may land on a block inside it)
+    const p = await grabPoint(t);
+    if (!p) return false;
     if (modifiers.length) await page.keyboard.down("Shift");
-    await page.mouse.click(
-      t.box.x + 3,
-      t.box.y + Math.min(t.box.height / 2, 8)
-    );
+    await page.mouse.click(p.x, p.y);
     if (modifiers.length) await page.keyboard.up("Shift");
     return true;
   };
@@ -340,11 +361,9 @@ export async function runChromium(
         if (!blocks) return;
         const src = await blockBox(s.a);
         const dst = await target(String(s.where), s.b);
-        if (!src || !dst) return;
-        await drag(
-          { x: src.box.x + 3, y: src.box.y + Math.min(src.box.height / 2, 8) },
-          dst
-        );
+        const from = src && (await grabPoint(src));
+        if (!from || !dst) return;
+        await drag(from, dst);
         editsMade++;
         return;
       }
@@ -367,11 +386,7 @@ export async function runChromium(
           if (await clickBlock(a)) {
             await page.keyboard.press("Space");
             const t = await blockBox(a);
-            if (t && !first)
-              first = {
-                x: t.box.x + 3,
-                y: t.box.y + Math.min(t.box.height / 2, 8),
-              };
+            if (t && !first) first = await grabPoint(t);
           }
         }
         const dst = await target("gap", s.b);

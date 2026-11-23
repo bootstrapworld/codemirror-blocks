@@ -2556,6 +2556,8 @@ export function createLezerBlockEditor(
     },
     change: dispatch,
     focusNode(node) {
+      // (a comment that goes with a block is not a block: the focus goes to the block)
+      if (alive(node) && isAttached(node)) node = ownerOf(node) ?? node;
       // (a block that an edit has taken out of the tree, such as the one an edit box was opened at, or a piece of text that did not parse,
       // which is no block: focus goes to the block at its place)
       if (!alive(node) || !drawn(node)) {
