@@ -671,6 +671,8 @@ export async function runChromium(
         const ed = (window as any).demo.ed;
         if (ed.mode === "blocks") ed.focusEditor();
         else ed.view.focus();
+        // (a program with no block to focus, such as one that is only text that did not parse: the keys go to the text)
+        if (!document.activeElement?.closest(".cm-editor")) ed.view.focus();
       });
       let presses = 0;
       let same = 0;
@@ -693,7 +695,14 @@ export async function runChromium(
       for (let k = 0; k < presses; k++)
         await page.keyboard.press("ControlOrMeta+Shift+z");
       const after = await text();
-      if (after !== final)
+      // (a sequence that undid something itself has a redo history of its own: redoing as many as were pressed then reaches another state)
+      const ownUndo = seq.steps.some(
+        (s) =>
+          s.op === "undo" ||
+          s.op === "redo" ||
+          /^Mod\+(z|y|Shift\+z)$/i.test(String(s.key ?? ""))
+      );
+      if (!ownUndo && after !== final)
         return close({
           invariant: "redo-all",
           message: `redoing everything left ${JSON.stringify(after.slice(0, 80))}, not ${JSON.stringify(final.slice(0, 80))}`,
