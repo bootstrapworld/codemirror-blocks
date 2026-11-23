@@ -8,21 +8,18 @@ import { block, openInBlockMode } from "../compat/helpers";
  * also after the page has been scrolled away from the block that has focus.
  */
 const LINES = 120;
-// (one tall block, with calls in it, one on each line; every tenth is empty)
-const code = `(begin\n${Array.from({ length: LINES }, (_, i) =>
-  i % 10 === 9 ? `  (g${i})` : `  (f${i} a b)`
-).join("\n")})`;
+// edited: JavaScript, not Scheme. In this editor a Scheme `begin` runs its calls along one line, so it never gets taller than the window; a JavaScript
+// function body stacks its statements, as the old one did
+const code = `function tall() {\n${Array.from({ length: LINES }, (_, i) =>
+  i % 10 === 9 ? `  g${i}();` : `  f${i}(a, b);`
+).join("\n")}\n}`;
 
+// edited: the editor's scroller plus the page's (the demo's editor grows with its content, so the page scrolls); not the old `cmb.getCM().getScrollInfo()`
 const scrollTop = (page: Page) =>
   page.evaluate(
     () =>
-      (
-        window as unknown as {
-          cmb: { getCM(): { getScrollInfo(): { top: number } } };
-        }
-      ).cmb
-        .getCM()
-        .getScrollInfo().top
+      (window as unknown as { demo: { ed: { view: { scrollDOM: Element } } } })
+        .demo.ed.view.scrollDOM.scrollTop + window.scrollY
   );
 const value = (page: Page) =>
   page.evaluate(() =>
@@ -32,16 +29,17 @@ const active = (page: Page) =>
   page.evaluate(() => {
     const el = document.activeElement;
     return {
-      editable: el?.getAttribute("contenteditable"),
+      // edited: the edit box is an input (`.blocks-edit`), not a contenteditable; the answer keeps the old "true"
+      editable: el?.matches(".blocks-edit") ? "true" : "false",
       id: el?.id ?? "",
       tag: el?.tagName ?? "",
     };
   });
 
 async function scrollDown(page: Page, notches: number) {
-  const editor = page.locator(".CodeMirror-scroll");
-  const box = (await editor.boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  // edited: the wheel turns over a point in the window (the editor is taller than it, so its own middle may be out of sight)
+  const box = (await page.locator(".cm-scroller").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, 300);
   for (let i = 0; i < notches; i++) {
     await page.mouse.wheel(0, 400);
     await page.waitForTimeout(40);
@@ -50,13 +48,12 @@ async function scrollDown(page: Page, notches: number) {
 }
 
 /** The drop targets that belong to the tall block itself (between its calls) */
+// edited: the places are the block's gaps (`.blocks-gap`), the direct children of the function body's `.blocks-args`
 const sequenceTargets = (page: Page) =>
-  page.locator(
-    ".blocks-sequence > .blocks-sequence-exprs > .blocks-drop-target"
-  );
+  block(page, /^block with /).locator(":scope > .blocks-args > .blocks-gap");
 /** A drop target inside a call near the bottom: between its arguments, or in an empty one */
 const callTarget = (page: Page, label: RegExp, index: number) =>
-  block(page, label).locator(".blocks-drop-target").nth(index);
+  block(page, label).locator(".blocks-gap").nth(index);
 
 // (near the bottom, to be reached by scrolling; or near the top, to be in view)
 const cases = [
@@ -64,22 +61,22 @@ const cases = [
     name: "between the calls of a tall block",
     target: (page: Page, scrolled: boolean) =>
       sequenceTargets(page).nth(scrolled ? 95 : 3),
-    typed: "(z 1)",
-    expect: /\(z 1\)/,
+    typed: "z(1)",
+    expect: /z\(1\)/,
   },
   {
     name: "between arguments",
     target: (page: Page, scrolled: boolean) =>
-      callTarget(page, scrolled ? /^f88 expression/ : /^f2 expression/, 1),
+      callTarget(page, scrolled ? /^call to f88 / : /^call to f2 /, 1),
     typed: "z",
     expect: /z/,
   },
   {
     name: "in an empty list",
     target: (page: Page, scrolled: boolean) =>
-      callTarget(page, scrolled ? /^g89 expression/ : /^g9 expression/, 0),
-    typed: "(h 1)",
-    expect: /\(h 1\)/,
+      callTarget(page, scrolled ? /^call to g89 / : /^call to g9 /, 0),
+    typed: "h(1)",
+    expect: /h\(1\)/,
   },
 ];
 
@@ -88,8 +85,8 @@ for (const scrolled of [false, true]) {
     test(`${scrolled ? "after scrolling, " : ""}a click on a drop target ${c.name} opens it for typing`, async ({
       page,
     }) => {
-      await openInBlockMode(page, code);
-      await block(page, /^f0 expression/).click({ position: { x: 4, y: 4 } });
+      await openInBlockMode(page, code, "javascript");
+      await block(page, /^call to f0 /).click({ position: { x: 4, y: 4 } });
       if (scrolled) await scrollDown(page, 12);
       const before = await scrollTop(page);
       if (scrolled) expect(before).toBeGreaterThan(500);
@@ -122,8 +119,8 @@ for (const c of cases) {
   test(`after scrolling, cancelling the box of a drop target ${c.name} leaves the page where it is`, async ({
     page,
   }) => {
-    await openInBlockMode(page, code);
-    await block(page, /^f0 expression/).click({ position: { x: 4, y: 4 } });
+    await openInBlockMode(page, code, "javascript");
+    await block(page, /^call to f0 /).click({ position: { x: 4, y: 4 } });
     await scrollDown(page, 12);
     const target = c.target(page, true);
     await target.scrollIntoViewIfNeeded();
@@ -138,32 +135,3 @@ for (const c of cases) {
     expect(Math.abs((await scrollTop(page)) - before)).toBeLessThan(200);
   });
 }
-
-// FIXME-BEGIN (thirteenth round: D: the old drop targets are elements with their own box; here the places are gaps (`.blocks-gap`), and the test's selectors find none)
-const FIXME = new Set<string>([
-  "a click on a drop target between the calls of a tall block opens it for typing",
-  "a click on a drop target between arguments opens it for typing",
-  "a click on a drop target in an empty list opens it for typing",
-  "after scrolling, a click on a drop target between the calls of a tall block opens it for typing",
-  "after scrolling, a click on a drop target between arguments opens it for typing",
-  "after scrolling, a click on a drop target in an empty list opens it for typing",
-  "after scrolling, cancelling the box of a drop target between the calls of a tall block leaves the page where it is",
-  "after scrolling, cancelling the box of a drop target between arguments leaves the page where it is",
-  "after scrolling, cancelling the box of a drop target in an empty list leaves the page where it is",
-]);
-test.beforeEach(({}, ti) => {
-  test.fixme(
-    FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "D: the old drop targets are elements with their own box; here the places are gaps (`.blocks-gap`), and the test's selectors find none"
-  );
-});
-// FIXME-END
-// first error (sweep): a click on a drop target between the calls of a tall block opens it for typing => Test timeout of 20000ms exceeded.
-// first error (sweep): a click on a drop target between arguments opens it for typing => Test timeout of 20000ms exceeded.
-// first error (sweep): a click on a drop target in an empty list opens it for typing => Test timeout of 20000ms exceeded.
-// first error (sweep): after scrolling, a click on a drop target between the calls of a tall block opens it for typing => Test timeout of 20000ms exceeded.
-// first error (sweep): after scrolling, a click on a drop target between arguments opens it for typing => Test timeout of 20000ms exceeded.
-// first error (sweep): after scrolling, a click on a drop target in an empty list opens it for typing => Test timeout of 20000ms exceeded.
-// first error (sweep): after scrolling, cancelling the box of a drop target between the calls of a tall block leaves the page where it is => Test timeout of 20000ms exceeded.
-// first error (sweep): after scrolling, cancelling the box of a drop target between arguments leaves the page where it is => Test timeout of 20000ms exceeded.
-// first error (sweep): after scrolling, cancelling the box of a drop target in an empty list leaves the page where it is => Test timeout of 20000ms exceeded.

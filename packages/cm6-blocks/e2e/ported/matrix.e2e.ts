@@ -136,11 +136,7 @@ const operations: Operation[] = [
     name: "dragging a node onto a node",
     program: "(add a b) (sub c d)",
     run: async (page) => {
-      await dragWithEvents(
-        page,
-        block(page, /^symbol a\b/),
-        block(page, /^d,/)
-      );
+      await dragWithEvents(page, block(page, /^a, /), block(page, /^d, /));
     },
   },
   {
@@ -149,9 +145,10 @@ const operations: Operation[] = [
     run: async (page) => {
       await dragWithEvents(
         page,
-        block(page, /^symbol a\b/),
-        block(page, /sub expression/)
-          .locator(".blocks-drop-target")
+        block(page, /^a, /),
+        // edited: the place is the call's first gap (`.blocks-gap`), the old one a `.blocks-drop-target` element
+        block(page, /call to sub /)
+          .locator(".blocks-gap")
           .first()
       );
     },
@@ -177,8 +174,9 @@ const operations: Operation[] = [
     run: async (page) => {
       await dragWithEvents(
         page,
-        page.locator(".Primitive", { hasText: /^sqrt$/ }),
-        block(page, /^x,/)
+        // edited: the toolbar's item is the demo's template button (`call`), the old one a `.Primitive` named sqrt
+        page.locator('#templates button[data-template="call"]'),
+        block(page, /^x, /)
       );
     },
   },
@@ -235,23 +233,3 @@ for (const op of operations) {
     });
   });
 }
-
-// FIXME-BEGIN (twenty-fourth round: M: the drag variants that hang in the page's drag helper here: a drop onto a node, onto a drop target, onto whitespace is built now (twenty-sixth round), from the toolbar of primitives (not built); the other variants, undo included, pass)
-const FIXME = new Set<string>([
-  "dragging a node onto a node › changes the document and keeps it consistent",
-  "dragging a node onto a node › is undone by the keyboard",
-  "dragging a node onto a node › is redone by the keyboard",
-  "dragging a node onto a drop target › changes the document and keeps it consistent",
-  "dragging a node onto a drop target › is undone by the keyboard",
-  "dragging a node onto a drop target › is redone by the keyboard",
-  "dragging from the toolbar onto a node › changes the document and keeps it consistent",
-  "dragging from the toolbar onto a node › is undone by the keyboard",
-  "dragging from the toolbar onto a node › is redone by the keyboard",
-]);
-test.beforeEach(({}, ti) => {
-  test.fixme(
-    FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "M: the drag variants that hang in the page's drag helper here (a drop onto a node, a drop target or whitespace, and the toolbar of primitives are not built)"
-  );
-});
-// FIXME-END
