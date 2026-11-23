@@ -30,7 +30,7 @@ describe("The CodeMirrorBlocks Class", function () {
       teardown();
     });
 
-    // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
+    // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
     // first error (sweep): TypeError: cmb.getAllMarks is not a function
     it.skip("should allow you to mark nodes with the markText method", function () {
@@ -40,7 +40,7 @@ describe("The CodeMirrorBlocks Class", function () {
       expect(literal1.element!.style.color).toBe("red");
     });
 
-    // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
+    // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
     // first error (sweep): TypeError: cmb.getAllMarks is not a function
     it.skip("it should allow you to set a className value", function () {
@@ -50,7 +50,7 @@ describe("The CodeMirrorBlocks Class", function () {
       expect(expression.element!.className).toMatch(/error/);
     });
 
-    // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
+    // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
     // first error (sweep): TypeError: cmb.getAllMarks is not a function
     it.skip("it should allow you to set a className on a child node", function () {
@@ -60,7 +60,7 @@ describe("The CodeMirrorBlocks Class", function () {
       expect(expression.element!.className).not.toMatch(/error/);
     });
 
-    // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
+    // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
     // first error (sweep): TypeError: cmb.getAllMarks is not a function
     it.skip("it should allow you to set a title value", function () {
@@ -80,7 +80,7 @@ describe("The CodeMirrorBlocks Class", function () {
         });
       });
 
-      // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
+      // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
       // first error (sweep): TypeError: cmb.getAllMarks is not a function
       it.skip("should return marks with findMarks", function () {
@@ -90,7 +90,7 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(marks.length).toBe(2);
       });
 
-      // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
+      // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
       // first error (sweep): TypeError: cmb.getAllMarks is not a function
       it.skip("should return marks with findMarksAt", function () {
@@ -98,7 +98,7 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(marks.length).toBe(1);
       });
 
-      // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
+      // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
       // first error (sweep): TypeError: cmb.getAllMarks is not a function
       it.skip("should return all marks with getAllMarks", function () {
@@ -115,7 +115,7 @@ describe("The CodeMirrorBlocks Class", function () {
         });
       });
 
-      // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
+      // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
       // first error (sweep): TypeError: cmb.getAllMarks is not a function
       it.skip("should expose a clear function to remove the mark", function () {
@@ -124,7 +124,7 @@ describe("The CodeMirrorBlocks Class", function () {
         expect(cmb.getAllMarks().length).toBe(0);
       });
 
-      // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.getAllMarks is not a function)
+      // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
       // first error (sweep): TypeError: cmb.getAllMarks is not a function
       it.skip("should expose a find function", function () {
@@ -147,7 +147,7 @@ describe("The CodeMirrorBlocks Class", function () {
     });
     afterEach(teardown);
 
-    // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.markText (text marks on blocks))
+    // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
     // first error (sweep): Error: not in the compat layer: cmb.markText (text marks on blocks)
     it.skip("a mark on a block shows on it, and is remembered by the block's id", function () {
@@ -157,7 +157,7 @@ describe("The CodeMirrorBlocks Class", function () {
       expect(first.element!.classList.contains("flagged")).toBe(true);
     });
 
-    // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.markText (text marks on blocks))
+    // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
     // first error (sweep): Error: not in the compat layer: cmb.markText (text marks on blocks)
     it.skip("a mark does not outlast its block: deleting the block forgets it", function () {
@@ -168,7 +168,7 @@ describe("The CodeMirrorBlocks Class", function () {
       expect(marked()).toEqual([]);
     });
 
-    // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.markText (text marks on blocks))
+    // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
     // first error (sweep): Error: not in the compat layer: cmb.markText (text marks on blocks)
     it.skip("a mark stays while other blocks are edited", function () {
@@ -181,7 +181,7 @@ describe("The CodeMirrorBlocks Class", function () {
     // The one CodeMirror is kept across modes, so its marks are too. A mark
     // made on a block is a real mark in text mode (on the text, with no block
     // to show it on), and is on the block again when blocks come back.
-    // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.markText (text marks on blocks))
+    // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
     // first error (sweep): Error: not in the compat layer: cmb.markText (text marks on blocks)
     it.skip("a mark survives switching to text and back", function () {
       const [first] = cmb.getAst().rootNodes;
@@ -198,7 +198,7 @@ describe("The CodeMirrorBlocks Class", function () {
       expect(document.querySelectorAll(".flagged")).toHaveLength(1);
     });
 
-    // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.markText (text marks on blocks))
+    // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in the page's own extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
 
     // first error (sweep): Error: not in the compat layer: cmb.markText (text marks on blocks)
     it.skip("a mark moves with the text edited in text mode", function () {

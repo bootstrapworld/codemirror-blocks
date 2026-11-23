@@ -33,7 +33,7 @@ beforeEach(() => {
 afterEach(teardown);
 
 describe("things the editor does not support", () => {
-  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.runMode (CM5 runMode))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `@lezer/highlight`'s `highlightTree`; `runMode` is left out (test: none: a library function, not this editor's, spec/cm6-api.test.ts)
   // first error (sweep): Error: expect(received).toThrow(expected)
   it.skip("runMode is refused in both modes", () => {
     expect(() => cmb.runMode()).toThrow("runMode is not supported");
@@ -43,7 +43,7 @@ describe("things the editor does not support", () => {
 });
 
 describe("marking text", () => {
-  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.markText (text marks on blocks))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.mark` in an extension (test: decorations of the page: a mark on exactly one block's range styles that block, spec/cm6-api.test.ts)
   // first error (sweep): Error: expect(received).toThrow(expected)
   it.skip("only on a block, and only with the options a block supports", () => {
     allowConsoleErrors(); // the refusals are logged
@@ -117,7 +117,7 @@ describe("extending a selection", () => {
     cmb.addSelection(pos(2, 7));
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toHaveLength(expected))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed.dispatch({selection: EditorSelection.range(anchor, head)})` (test: the selection is offsets: extending, replacing and reading it (extendSelection, replaceRange, replaceSelection, somethingSelected), spec/cm6-api.test.ts)
 
   // first error (sweep): Error: expect(received).toHaveLength(expected)
   it.skip("extendSelection moves the head to a block boundary, without failing", () => {
@@ -128,7 +128,7 @@ describe("extending a selection", () => {
     expect(ranges(cmb)).toEqual([{ anchor: pos(2, 7), head: pos(2, 7) }]);
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: Error: expect(received).toThrow(expected))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed.dispatch({selection: EditorSelection.range(anchor, head)})` (test: the selection is offsets: extending, replacing and reading it (extendSelection, replaceRange, replaceSelection, somethingSelected), spec/cm6-api.test.ts)
 
   // first error (sweep): Error: expect(received).toThrow(expected)
   it.skip("extendSelection refuses to end in the middle of a block", () => {
@@ -138,7 +138,7 @@ describe("extending a selection", () => {
     );
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: TypeError: cmb.extendSelections is not a function)
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed.dispatch({selection: EditorSelection.range(anchor, head)})` (test: the selection is offsets: extending, replacing and reading it (extendSelection, replaceRange, replaceSelection, somethingSelected), spec/cm6-api.test.ts)
 
   // first error (sweep): TypeError: cmb.extendSelections is not a function
   it.skip("extendSelections and extendSelectionsBy do the same", () => {

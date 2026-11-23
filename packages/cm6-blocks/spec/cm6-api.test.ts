@@ -529,3 +529,67 @@ describe("block-only methods in text mode (entry-point tests; by decision: they 
     expect(ed.view.dom).toBe(ed.dom);
   });
 });
+
+describe("lines and positions are CodeMirror 6's (getLineHandle, getLine, lineCount, getCursor; by decision: offsets)", () => {
+  test("lines are read with doc.line: a value, with its text and offsets", () => {
+    const ed = make("scheme", SRC);
+    const doc = ed.state.doc;
+    expect(doc.lines).toBe(4);
+    const l = doc.line(2);
+    expect(l.text).toBe("(b 2)");
+    expect(doc.sliceString(l.from, l.to)).toBe("(b 2)");
+    expect(doc.line(2)).toEqual(l);
+  });
+
+  test("the cursor is an offset; the line and column come from doc.lineAt", () => {
+    const ed = make("scheme", SRC);
+    ed.dispatch({ selection: { anchor: 9 } });
+    const head = ed.state.selection.main.head;
+    const line = ed.state.doc.lineAt(head);
+    expect([line.number - 1, head - line.from]).toEqual([1, 3]);
+    expect(checkLezerEditor(ed)).toEqual([]);
+  });
+});
+
+describe("the selection is offsets: extending, replacing and reading it (extendSelection, replaceRange, replaceSelection, somethingSelected; by decision)", () => {
+  test("somethingSelected is a range that is not empty, and the selected text is sliceDoc", () => {
+    const ed = make("scheme", SRC);
+    expect(ed.state.selection.main.empty).toBe(true);
+    ed.dispatch({ selection: EditorSelection.range(6, 11) });
+    const r = ed.state.selection.main;
+    expect(r.empty).toBe(false);
+    expect(ed.state.sliceDoc(r.from, r.to)).toBe("(b 2)");
+  });
+
+  test("extending moves the head and keeps the anchor, anywhere in the text (a head in the middle of a block is the text's own selection)", () => {
+    const ed = make("scheme", SRC);
+    ed.dispatch({ selection: EditorSelection.range(6, 11) });
+    const { anchor } = ed.state.selection.main;
+    ed.dispatch({ selection: EditorSelection.range(anchor, 8) });
+    expect(ed.state.selection.main.anchor).toBe(6);
+    expect(ed.state.selection.main.head).toBe(8);
+    expect(checkLezerEditor(ed)).toEqual([]);
+  });
+
+  test("replaceSelection is state.replaceSelection, and the blocks follow", () => {
+    const ed = make("scheme", SRC);
+    ed.dispatch({ selection: EditorSelection.range(6, 11) });
+    ed.dispatch(ed.state.replaceSelection("(z 0)"));
+    expect(text(ed)).toBe("(a 1)\n(z 0)\n(c 3)\n");
+    expect(ed.roots().map((n) => src(ed, n))).toEqual([
+      "(a 1)",
+      "(z 0)",
+      "(c 3)",
+    ]);
+    expect(checkLezerEditor(ed)).toEqual([]);
+  });
+
+  test("replaceRange is a change; one that cuts a block in half is the text's, and the blocks stay consistent with the text", () => {
+    const ed = make("scheme", SRC);
+    ed.dispatch({ changes: { from: 8, to: 11, insert: "" } });
+    expect(text(ed)).toBe("(a 1)\n(b\n(c 3)\n");
+    expect(checkLezerEditor(ed)).toEqual([]);
+    expect(undo(ed)).toBe(true);
+    expect(text(ed)).toBe(SRC);
+  });
+});

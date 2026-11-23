@@ -69,7 +69,7 @@ describe("when testing CM apis,", () => {
     //expect(()=>cmb.off()).toThrow();
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.getLineHandle (CM5 line handles))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed.state.doc.line(n)`, a value (CM6 has no line handles) (test: lines are read with doc.line (getLineHandle, getLine, lineCount), spec/cm6-api.test.ts)
 
   // first error (sweep): Error: not in the compat layer: cmb.getLineHandle (CM5 line handles)
   it.skip("those that simply pass through should not throw errors", async () => {
@@ -208,7 +208,7 @@ describe("when testing CM apis,", () => {
     expect(firstRoot!.getAttribute("aria-selected")).toBe("true");
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality)
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed.state.selection.main` (offsets; `doc.lineAt` for the line) (test: the selection is offsets: extending, replacing and reading it (extendSelection, replaceRange, replaceSelection, somethingSelected), spec/cm6-api.test.ts)
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("getCursor should work as-is for Text", async () => {
@@ -338,7 +338,7 @@ describe("when testing CM apis,", () => {
     ]);
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toThrow())
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed.dispatch({changes})` (test: the selection is offsets: extending, replacing and reading it (extendSelection, replaceRange, replaceSelection, somethingSelected), spec/cm6-api.test.ts)
 
   // first error (sweep): Error: expect(received).toThrow()
   it.skip("replaceRange", async () => {
@@ -353,7 +353,7 @@ describe("when testing CM apis,", () => {
     expect(cmb.getValue()).toBe("(+Maya\ny");
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toThrow())
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed.dispatch(ed.state.replaceSelection(text))` (test: the selection is offsets: extending, replacing and reading it (extendSelection, replaceRange, replaceSelection, somethingSelected), spec/cm6-api.test.ts)
 
   // first error (sweep): Error: expect(received).toThrow()
   it.skip("replaceSelection", async () => {
@@ -393,7 +393,7 @@ describe("when testing CM apis,", () => {
     expect(cmb.getValue()).toBe("Maya\nx\nSchanzer");
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: cmb.setBookmark (CM5 bookmarks))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a `Decoration.widget` in an extension (test: widgets, line decorations and gutters of the page work as in CodeMirror 6, spec/cm6-api.test.ts)
 
   // first error (sweep): Error: not in the compat layer: cmb.setBookmark (CM5 bookmarks)
   it.skip("setBookmark", async () => {
@@ -408,7 +408,7 @@ describe("when testing CM apis,", () => {
     );
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: TypeError: Cannot read properties of undefined (reading 'nid'))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed.dispatch({selection})` (test: the selection is offsets: extending, replacing and reading it (extendSelection, replaceRange, replaceSelection, somethingSelected), spec/cm6-api.test.ts)
 
   // first error (sweep): TypeError: Cannot read properties of undefined (reading 'nid')
   it.skip("setCursor should work as-is for text, or activate the containing block", async () => {
@@ -491,7 +491,7 @@ describe("when testing CM apis,", () => {
     ]);
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality)
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `!ed.state.selection.main.empty` (test: the selection is offsets: extending, replacing and reading it (extendSelection, replaceRange, replaceSelection, somethingSelected), spec/cm6-api.test.ts)
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("somethingSelected should work for selected blocks and text ranges", async () => {

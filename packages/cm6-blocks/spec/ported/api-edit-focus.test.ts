@@ -60,7 +60,7 @@ describe("a change through the API, while a block has keyboard focus", () => {
     );
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality)
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed.dispatch({changes: {from: 0, to: doc.length, insert}})` (test: a change from code, while a block has keyboard focus, spec/cm6-api.test.ts)
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("setValue that keeps the block leaves focus on it", async () => {
@@ -73,7 +73,7 @@ describe("a change through the API, while a block has keyboard focus", () => {
     );
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: TypeError: Cannot read properties of undefined (reading 'has'))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed.dispatch({changes: {from: 0, to: doc.length, insert}})` (test: a change from code, while a block has keyboard focus, spec/cm6-api.test.ts)
 
   // first error (sweep): TypeError: Cannot read properties of undefined (reading 'has')
   it.skip("setValue that removes the block moves focus to the first root, as before", async () => {
@@ -83,7 +83,7 @@ describe("a change through the API, while a block has keyboard focus", () => {
     expect(cmb.getFocusedNode()).toBe(cmb.getAst().rootNodes[0]);
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: Error: expect(received).toBe(expected) // Object.is equality)
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed.dispatch({changes: {from: 0, to: doc.length, insert}})` (test: a change from code, while a block has keyboard focus, spec/cm6-api.test.ts)
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("with no block focused, focus goes to the first root, as before", async () => {

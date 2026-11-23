@@ -47,10 +47,7 @@ describe("The CodeMirrorBlocks Class", function () {
       expect(ast.rootNodes.length).toBe(0);
     });
 
-    // SKIPPED (N): CM5 API (`cmb.setBlockMode`); the behaviour is tested through `setBlockMode` of this editor's own interface (spec/cm6-api.test.ts)
-
-    // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-    it.skip("should set block mode to false", function () {
+    it("should set block mode to false", function () {
       cmb.setBlockMode(false);
       expect(cmb.getBlockMode()).toBe(false);
     });

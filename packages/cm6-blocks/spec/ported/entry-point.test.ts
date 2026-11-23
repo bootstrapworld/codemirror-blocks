@@ -20,7 +20,7 @@ const container = () => {
 };
 
 describe("CodeMirrorBlocks()", () => {
-  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `createLezerBlockEditor({parent, doc, parser, table})`: a language is its parser and table, there is no registry by id (test: CodeMirror 6's own configuration: parent and doc replace the host and the text, spec/cm6-api.test.ts)
   // first error (sweep): Error: not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
   it.skip("opens an editor for a language said by its id", () => {
     let editor: ReturnType<typeof CodeMirrorBlocks>;
@@ -30,7 +30,7 @@ describe("CodeMirrorBlocks()", () => {
     expect(editor!.getValue()).toBe("(+ 1 2)");
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `createLezerBlockEditor({parent, doc, parser, table})`: a language is its parser and table, there is no registry by id (test: CodeMirror 6's own configuration: parent and doc replace the host and the text, spec/cm6-api.test.ts)
 
   // first error (sweep): Error: expect(received).toThrow(expected)
   it.skip("says which languages there are when the id is not one of them", () => {
@@ -39,7 +39,7 @@ describe("CodeMirrorBlocks()", () => {
     );
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (uses the old implementation's internals or CM5 API methods the compat layer does not have: Error: Hooks cannot be defined inside tests. Hook of type "afterEach" is nested within "says that none have be)
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `createLezerBlockEditor({parent, doc, parser, table})`: a language is its parser and table, there is no registry by id (test: CodeMirror 6's own configuration: parent and doc replace the host and the text, spec/cm6-api.test.ts)
 
   // first error (sweep): Error: Hooks cannot be defined inside tests. Hook of type "afterEach" is nested within "says that none have been added, when none have".
   it.skip("says that none have been added, when none have", () => {
@@ -51,7 +51,7 @@ describe("CodeMirrorBlocks()", () => {
     });
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is a new `createLezerBlockEditor({parent, ...})` per editor: there is no per-container singleton (test: CodeMirror 6's own configuration: parent and doc replace the host and the text, spec/cm6-api.test.ts)
 
   // first error (sweep): Error: not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
   it.skip("returns the editor that a container has when it is called again, and does not make a second", () => {
@@ -81,7 +81,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
     return editor;
   };
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed` is an EditorView with every method, in both modes (test: the editor object is the same object in both modes, with every method, spec/cm6-api.test.ts)
 
   // first error (sweep): Error: not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
   it.skip("has every method in text mode, and is in text mode at first", () => {
@@ -93,7 +93,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
     expect(typeof editor.getValue).toBe("function");
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (iterates the old API module's `blockModeOnlyMethods` (not in the compat layer; also text mode, which is not built))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is `ed.roots()` and the other block-only methods throw in text mode (test: block-only methods in text mode (entry-point tests; by decision: they throw), spec/cm6-api.test.ts)
   // first error (sweep): Error: not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
   it.skip.each(["x"])(
     "%s() throws an Error that says it needs block mode, in text mode",
@@ -105,7 +105,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
     }
   );
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (undocumented difference or not yet examined: TypeError: Cannot read properties of undefined (reading 'example'))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is every public member of `EditorView` is on `ed` (test: every public member of EditorView is on the editor, and is the view's, spec/cm6-api.test.ts)
 
   // first error (sweep): TypeError: Cannot read properties of undefined (reading 'example')
   it.skip("has a method for each one that block mode has", () => {
@@ -123,7 +123,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
     }
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is one `ed` object in both modes (test: the editor object is the same object in both modes, with every method, spec/cm6-api.test.ts)
 
   // first error (sweep): Error: not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
   it.skip("is the same object in block mode and back, and answers for the mode that shows", () => {
@@ -148,7 +148,7 @@ describe("the API that CodeMirrorBlocks() returns", () => {
     expect(editor.getAst().rootNodes).toHaveLength(1);
   });
 
-  // SKIPPED (N): CM5 API, out of scope on this branch (not built / not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options))
+  // SKIPPED (D): by decision (user, 2026-11-23): the CM5 API is not supported; the CM6 equivalent is block-only methods throw in text mode, the rest keep working (test: block-only methods in text mode (entry-point tests; by decision: they throw), spec/cm6-api.test.ts)
 
   // first error (sweep): Error: not in the compat layer: CodeMirrorBlocks (the entry point and its constructor options)
   it.skip("keeps the methods that block mode restricts restricted, and those that text mode does, in the mode that shows", () => {
