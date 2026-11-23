@@ -139,7 +139,7 @@ describe("Delete and Backspace", () => {
       deleteRoot("(f x y) z");
       expect(said().filter((s) => s.startsWith("deleted"))).toEqual([
         // edited: the words are the table's describe template for a call
-        "deleted call to f with 2 arguments",
+        "deleted a f expression with 2 inputs",
       ]);
     });
   });

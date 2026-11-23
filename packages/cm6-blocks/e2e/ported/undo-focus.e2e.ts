@@ -1,5 +1,5 @@
 // PORTED from packages/codemirror-blocks/e2e/undo-focus.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, ninth round.
-// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `call to f `, `symbol g`
+// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `a f expression `, `symbol g`
 // edited (thirty-third round): a symbol's label here is `x, a symbol` and a number's `9, a number` (the table's), not `symbol x` / `number 9`
 import { expect, Page, test } from "@playwright/test";
 import {
@@ -90,7 +90,7 @@ test.describe("undoing and redoing typing at the top level", () => {
     await page.keyboard.press(`${MOD}+z`);
     await expectText(page, "(f x)\n(g y)");
     await expectConsistent(page);
-    await expect.poll(() => focusedLabel(page)).toMatch(/^call to f /);
+    await expect.poll(() => focusedLabel(page)).toMatch(/^a f expression /);
 
     await page.keyboard.press(`${MOD}+y`);
     await expectText(page, "(f x)\n9\n(g y)");

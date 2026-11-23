@@ -115,7 +115,7 @@ export const schemeTable: BlockTable = {
     ParenList: {
       kind: "call",
       label: "call",
-      describe: "call to ${func} with ${args.length|argument|arguments}",
+      describe: "a ${func} expression with ${args.length|input|inputs}",
       brackets: true,
       slots: [
         { name: "func", kind: "one", take: ["#0"] },
@@ -125,7 +125,7 @@ export const schemeTable: BlockTable = {
     TaggedParenList: {
       kind: "call",
       label: "call",
-      describe: "call to ${func} with ${args.length|argument|arguments}",
+      describe: "a ${func} expression with ${args.length|input|inputs}",
       brackets: true,
       slots: [
         { name: "func", kind: "one", take: ["#0"] },
@@ -135,7 +135,7 @@ export const schemeTable: BlockTable = {
     BracketList: {
       kind: "call",
       label: "call",
-      describe: "call to ${func} with ${args.length|argument|arguments}",
+      describe: "a ${func} expression with ${args.length|input|inputs}",
       brackets: true,
       slots: [
         { name: "func", kind: "one", take: ["#0"] },

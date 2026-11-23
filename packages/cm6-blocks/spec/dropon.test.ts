@@ -21,14 +21,14 @@ describe("a drop on a value inside a top-level block replaces it", () => {
   it("does not replace a compound block: only values (literals, blanks) are drop targets, as in the old editor", () => {
     const { cmb } = mountCMB(wescheme);
     cmb.setValue(`(f (g a b) y)\n(h z)`);
-    drag(getNodeLabeled(/^z\b/)).dropOnto(getNodeLabeled(/call to g /));
+    drag(getNodeLabeled(/^z\b/)).dropOnto(getNodeLabeled(/a g expression /));
     // z did not take the place of (g a b)
     expect(cmb.getValue()).toContain("(g a b)");
   });
   it("does nothing on the dragged block's own ancestor", () => {
     const { cmb } = mountCMB(wescheme);
     cmb.setValue(`(f (g x) y)`);
-    drag(getNodeLabeled(/^x\b/)).dropOnto(getNodeLabeled(/call to g /));
+    drag(getNodeLabeled(/^x\b/)).dropOnto(getNodeLabeled(/a g expression /));
     expect(cmb.getValue()).toBe("(f (g x) y)");
   });
 });
@@ -37,7 +37,7 @@ describe("the trash can (an element with the class TrashCan)", () => {
   it("deletes the dragged block", () => {
     const { cmb } = mountCMB(wescheme);
     cmb.setValue(`(f x y)\n(g z)`);
-    drag(getNodeLabeled(/call to f /)).dropOnto(
+    drag(getNodeLabeled(/a f expression /)).dropOnto(
       document.querySelector(".TrashCan")!
     );
     expect(cmb.getValue().trim()).toBe("(g z)");

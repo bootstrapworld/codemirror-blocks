@@ -29,7 +29,9 @@ test("the comment shortcut on a comment block and on a block with a comment", as
   await page.keyboard.type("elsewhere");
   await page.keyboard.press("Enter");
   await expect.poll(() => src(page)).toContain("; elsewhere");
-  const f = page.getByRole("treeitem", { name: /call to f .*with comment/ });
+  const f = page.getByRole("treeitem", {
+    name: /a f expression .*with comment/,
+  });
   await f.click({ position: { x: 4, y: 4 } });
   await page.keyboard.press("Shift+Control+]");
   await expect(box).toHaveValue("mine");

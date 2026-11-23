@@ -1,5 +1,5 @@
 // PORTED from packages/codemirror-blocks/e2e/search.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, ninth round.
-// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `call to f `, `symbol g`
+// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `a f expression `, `symbol g`
 import { expect, Page, test } from "@playwright/test";
 import { block, expectConsistent, openInBlockMode } from "../compat/helpers";
 
@@ -21,7 +21,7 @@ const focusedTop = (page: Page) =>
 
 test.beforeEach(async ({ page }) => {
   await openInBlockMode(page, PROGRAM);
-  await block(page, /^call to f /).click({ position: { x: 4, y: 4 } });
+  await block(page, /^a f expression /).click({ position: { x: 4, y: 4 } });
 });
 
 /** The dialog's title (the dialog element itself has no size of its own) */
@@ -96,9 +96,9 @@ test("search by block type finds the next call", async ({ page }) => {
   await page.getByRole("combobox").selectOption("call");
   await page.keyboard.press("Enter");
   await expect(heading(page)).toBeHidden();
-  expect(await focusedLabel(page)).toMatch(/^call to g /);
+  expect(await focusedLabel(page)).toMatch(/^a g expression /);
   await page.keyboard.press("PageDown"); // the only other call: back to the first
-  expect(await focusedLabel(page)).toMatch(/^call to f /);
+  expect(await focusedLabel(page)).toMatch(/^a f expression /);
 });
 
 test("Control+F3 picks the block type PageDown searches for", async ({
@@ -106,7 +106,7 @@ test("Control+F3 picks the block type PageDown searches for", async ({
 }) => {
   await page.keyboard.press("Control+F3"); // the first type: function calls
   await page.keyboard.press("PageDown");
-  expect(await focusedLabel(page)).toMatch(/^call to g /);
+  expect(await focusedLabel(page)).toMatch(/^a g expression /);
 });
 
 test("the editor still works after a search", async ({ page }) => {

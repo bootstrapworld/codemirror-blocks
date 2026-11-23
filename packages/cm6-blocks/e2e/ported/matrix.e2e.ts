@@ -1,5 +1,5 @@
 // PORTED from packages/codemirror-blocks/e2e/matrix.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, thirteenth round.
-// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `call to f `, `symbol g`
+// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `a f expression `, `symbol g`
 import { expect, Page, test } from "@playwright/test";
 import {
   MOD,
@@ -53,7 +53,7 @@ const operations: Operation[] = [
     name: "Delete on a selected root",
     program: "(f x)\n(g y)\n(h z)",
     run: async (page) => {
-      await select(page, /call to g /);
+      await select(page, /a g expression /);
       await page.keyboard.press("Delete");
     },
   },
@@ -61,7 +61,7 @@ const operations: Operation[] = [
     name: "Backspace on a selected child",
     program: "(f x y)",
     run: async (page) => {
-      await pick(page, /call to f /);
+      await pick(page, /a f expression /);
       await page.keyboard.press("ArrowRight");
       await page.keyboard.press("ArrowRight");
       await page.keyboard.press("Space");
@@ -72,7 +72,7 @@ const operations: Operation[] = [
     name: "Cut",
     program: "(f x)\n(g y)",
     run: async (page) => {
-      await select(page, /call to g /);
+      await select(page, /a g expression /);
       await page.keyboard.press(`${MOD}+x`);
     },
   },
@@ -81,7 +81,7 @@ const operations: Operation[] = [
     program: "(f x)\n(g y)",
     run: async (page) => {
       await setClipboard(page, "(new 1)");
-      await select(page, /call to g /);
+      await select(page, /a g expression /);
       await page.keyboard.press(`${MOD}+v`);
     },
   },
@@ -90,7 +90,7 @@ const operations: Operation[] = [
     program: "(f x)\n(g y)",
     run: async (page) => {
       await setClipboard(page, "(new 1)");
-      await pick(page, /call to f /);
+      await pick(page, /a f expression /);
       await page.keyboard.press(`${MOD}+v`);
     },
   },
@@ -107,7 +107,7 @@ const operations: Operation[] = [
     name: "inserting beside a child",
     program: "(f x y)",
     run: async (page) => {
-      await pick(page, /call to f /);
+      await pick(page, /a f expression /);
       await page.keyboard.press("ArrowRight");
       await page.keyboard.press("ArrowRight");
       await page.keyboard.press("Control+]");
@@ -119,7 +119,7 @@ const operations: Operation[] = [
     name: "typing at the top level",
     program: "(f x)\n(g y)",
     run: async (page) => {
-      await clickBeside(page, /call to f /);
+      await clickBeside(page, /a f expression /);
       await page.keyboard.type("9");
       await page.keyboard.press("Enter");
     },
@@ -129,7 +129,7 @@ const operations: Operation[] = [
     program: "(f x)\n(g y)",
     run: async (page) => {
       await setClipboard(page, "(new 1)");
-      await clickBeside(page, /call to f /);
+      await clickBeside(page, /a f expression /);
       await page.keyboard.press(`${MOD}+v`);
       await page.keyboard.press("Enter");
     },
@@ -149,7 +149,7 @@ const operations: Operation[] = [
         page,
         block(page, /^a, /),
         // edited: the place is the call's first gap (`.blocks-gap`), the old one a `.blocks-drop-target` element
-        block(page, /call to sub /)
+        block(page, /a sub expression /)
           .locator(".blocks-gap")
           .first()
       );
@@ -164,7 +164,7 @@ const operations: Operation[] = [
       const box = (await editor.boundingBox())!;
       // low on the left: the trash can sits in the bottom right corner
       // the bottom of the editor is the end of the text, after the last block
-      await dragWithEvents(page, block(page, /call to f /), editor, {
+      await dragWithEvents(page, block(page, /a f expression /), editor, {
         x: box.x + 120,
         y: box.y + box.height - 40,
       });
@@ -188,7 +188,7 @@ const operations: Operation[] = [
     name: "dragging a node to the trash can",
     program: "(f x)\n(g y)",
     run: async (page) => {
-      await dragWithMouse(page, block(page, /call to g /), trashCan(page));
+      await dragWithMouse(page, block(page, /a g expression /), trashCan(page));
     },
   },
 ];

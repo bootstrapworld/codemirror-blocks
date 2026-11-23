@@ -67,7 +67,7 @@ for (const lang of Object.keys(SRC)) {
         const during = await tree(page);
         expect(during).toContain(title);
         expect(during).not.toMatch(/treeitem/);
-        expect(during).not.toMatch(/symbol x|call to f/);
+        expect(during).not.toMatch(/symbol x|a f expression/);
         expect(
           await page.locator(".cm-editor").getAttribute("aria-hidden")
         ).toBe("true");

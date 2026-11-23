@@ -1,5 +1,5 @@
 // PORTED from packages/codemirror-blocks/e2e/focus-dropped.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, thirteenth round.
-// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `call to f `, `symbol g`
+// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `a f expression `, `symbol g`
 import { expect, test } from "@playwright/test";
 import { block, openInBlockMode } from "../compat/helpers";
 
@@ -10,7 +10,7 @@ test("focus goes to the focused block once it is back on the page", async ({
   page,
 }) => {
   await openInBlockMode(page, "(f x y)\n(g z)");
-  await block(page, /call to f /).click({ position: { x: 4, y: 4 } });
+  await block(page, /a f expression /).click({ position: { x: 4, y: 4 } });
   const dropped = await page.evaluate(() => {
     const el = document.activeElement as HTMLElement;
     (window as { dropped?: { el: HTMLElement; parent: Node } }).dropped = {

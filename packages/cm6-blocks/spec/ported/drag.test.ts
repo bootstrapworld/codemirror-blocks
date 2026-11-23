@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-// EDITED (documented, second round D): the labels `add expression`, `sub expression`, `collapse expression` are the table's `call to + `, `call to - `, `call to collapse `
+// EDITED (documented, second round D): the labels `add expression`, `sub expression`, `collapse expression` are the table's `a + expression `, `a - expression `, `a collapse expression `
 // PORTED from packages/codemirror-blocks/spec/drag-test.ts: only the imports changed (to ../compat/*); see doc/experiments/cm6-direct-tree.md, ninth round.
 import wescheme from "../compat/wescheme";
 import { teardown, keyDown, mountCMB } from "../compat/test-utils";
@@ -20,7 +20,7 @@ describe("the picture of a block that is being dragged", () => {
   // SKIPPED (D): drops go on gaps, holes and bare whitespace, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
   it("is a copy of the block in a box that has the language's class, so it has its shape", () => {
     cmb.setValue(`(add firstVar secondVar)`);
-    const add = getNodeLabeled(/call to add /);
+    const add = getNodeLabeled(/a add expression /);
     const dragging = drag(add);
     // edited: the picture is `.blocks-drag-preview` here (the old class was `.cmb-drag-preview`)
     const preview = document.querySelector(".blocks-drag-preview")!;
@@ -47,12 +47,14 @@ describe("when dragging a node onto a node in a different subtree", () => {
     cmb.setValue(
       `(divide 1 2) (add firstVar secondVar) (sub fourthVar fifthVar)`
     );
-    drag(getNodeLabeled(/call to add /)).dropOnto(getNodeLabeled(/fifthVar/));
+    drag(getNodeLabeled(/a add expression /)).dropOnto(
+      getNodeLabeled(/fifthVar/)
+    );
     expect(cmb.getValue()).toEqual(
       `(divide 1 2) (sub fourthVar (add firstVar secondVar))`
     );
     // edited: the dropped block itself takes focus here, not its nth child
-    expect(getNodeLabeled(/call to add /)).toHaveFocus();
+    expect(getNodeLabeled(/a add expression /)).toHaveFocus();
   });
 });
 
@@ -60,7 +62,7 @@ describe("when dragging a node onto a node that can't be dropped onto", () => {
   let addExprEl: Element;
   beforeEach(() => {
     cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
-    addExprEl = getNodeLabeled(/call to add /);
+    addExprEl = getNodeLabeled(/a add expression /);
   });
   it("should not add the blocks-over-target css class", () => {
     const dragging = drag(getNodeLabeled(/fifthVar/));
@@ -85,10 +87,10 @@ describe("when dragging a node over a drop target", () => {
     cmb.setValue(`(add firstVar secondVar) (sub fourthVar fifthVar)`);
     // edited: the old `.blocks-drop-target` elements are this editor's gaps
     subDropTargets = dropTargets(
-      screen.getByRole("treeitem", { name: /call to sub / })
+      screen.getByRole("treeitem", { name: /a sub expression / })
     );
     addDropTargets = dropTargets(
-      screen.getByRole("treeitem", { name: /call to add / })
+      screen.getByRole("treeitem", { name: /a add expression / })
     );
   });
 
@@ -130,7 +132,7 @@ describe("when dragging a node over a drop target", () => {
 // first error (sweep): the dropped collapsed root arrives expanded (needs: collapsed state carried through a move)
 it("saves collapsed state when dragging a root node to be the last child of the next root node", async () => {
   cmb.setValue("(collapse me)\n(add 1 2)");
-  const firstRootEl = getNodeLabeled(/call to collapse /);
+  const firstRootEl = getNodeLabeled(/a collapse expression /);
   await userEvent.click(firstRootEl);
   keyDown("ArrowLeft", {}, firstRootEl); // collapse it
   expect(firstRootEl).toHaveAttribute("aria-expanded", "false");
@@ -139,11 +141,11 @@ it("saves collapsed state when dragging a root node to be the last child of the 
   );
 
   expect(cmb.getValue()).toBe("\n(add 1 2 (collapse me))");
-  expect(getNodeLabeled(/call to add /)).toHaveAttribute(
+  expect(getNodeLabeled(/a add expression /)).toHaveAttribute(
     "aria-expanded",
     "true"
   );
-  expect(getNodeLabeled(/call to collapse /)).toHaveAttribute(
+  expect(getNodeLabeled(/a collapse expression /)).toHaveAttribute(
     "aria-expanded",
     "false"
   );

@@ -28,7 +28,7 @@ const CASES: Record<
 > = {
   scheme: {
     text: "(define (f x) (g 1 2 3))",
-    calls: ["call to g with 3 arguments", "call to g with 2 arguments"],
+    calls: ["a g expression with 3 inputs", "a g expression with 2 inputs"],
     extra: [["define", "f: function definition with 1 argument: x"]],
   },
   javascript: {

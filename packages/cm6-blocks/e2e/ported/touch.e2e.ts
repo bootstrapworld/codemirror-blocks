@@ -1,5 +1,5 @@
 // PORTED from packages/codemirror-blocks/e2e/touch.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, thirteenth round.
-// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `call to f `, `symbol g`
+// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `a f expression `, `symbol g`
 import {
   expect,
   test,
@@ -97,7 +97,7 @@ test.describe("dragging with a finger", () => {
     page,
   }) => {
     await openInBlockMode(page, program);
-    const from = await grip(block(page, /call to g /));
+    const from = await grip(block(page, /a g expression /));
     const to = await settled(trashCan(page));
     const release = await longPressDrag(page, from, to);
     await expect(page.locator(".blocks-drag-preview")).toHaveCount(1);
@@ -112,7 +112,7 @@ test.describe("dragging with a finger", () => {
     page,
   }) => {
     await openInBlockMode(page, program);
-    const from = await grip(block(page, /call to h /));
+    const from = await grip(block(page, /a h expression /));
     // edited: the first insertion place is the first `.blocks-gap` (the old one was `[id^=block-drop-target-]`)
     const gap = page.locator(".cm-content .blocks-gap").first();
     const to = await settled(gap);
@@ -132,7 +132,7 @@ test.describe("dragging with a finger", () => {
     const scroller = page.locator(".cm-scroller");
     const before = await scroller.evaluate((e) => e.scrollTop);
     const f = await finger(page);
-    const from = await center(block(page, /call to f /));
+    const from = await center(block(page, /a f expression /));
     await f.down(from);
     await f.slide(from, { x: from.x, y: from.y - 120 }, 12);
     await expect(page.locator(".blocks-drag-preview")).toHaveCount(0);

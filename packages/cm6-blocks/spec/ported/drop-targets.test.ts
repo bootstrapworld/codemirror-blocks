@@ -45,7 +45,8 @@ describe("dropping a node onto bare editor whitespace", () => {
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it("moves a root to that spot", () => {
     cmb.setValue("a\n\n\nb");
-    dropOnWhitespace(getNodeLabeled(/^a\b|symbol a$/), { line: 2, ch: 0 });
+    // edited: `^a\b` also matched the call label `a f expression...`, so it is `^a,`
+    dropOnWhitespace(getNodeLabeled(/^a,|symbol a$/), { line: 2, ch: 0 });
     expect(cmb.getAst().rootNodes.map((n) => n.toString())).toEqual(["a", "b"]);
     expect(cmb.getValue()).toBe("\n\na\nb");
   });
@@ -67,7 +68,8 @@ describe("dropping a node onto bare editor whitespace", () => {
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it("can be undone", () => {
     cmb.setValue("a\n\n\nb");
-    dropOnWhitespace(getNodeLabeled(/^a\b|symbol a$/), { line: 2, ch: 0 });
+    // edited: `^a\b` also matched the call label `a f expression...`, so it is `^a,`
+    dropOnWhitespace(getNodeLabeled(/^a,|symbol a$/), { line: 2, ch: 0 });
     undo();
     expect(cmb.getValue()).toBe("a\n\n\nb");
   });
@@ -78,7 +80,8 @@ describe("dropping a node onto bare editor whitespace", () => {
     // the point under the pointer is inside the widget that holds `b`, but not
     // on a drop target (that would replace `b`)
     const onB = getNodeLabeled(/^b\b|symbol b$/).parentElement!;
-    drag(getNodeLabeled(/^a\b|symbol a$/)).dropOnto(
+    // edited: `^a\b` also matched the call label `a f expression...`, so it is `^a,`
+    drag(getNodeLabeled(/^a,|symbol a$/)).dropOnto(
       wrapper,
       { x: 20, y: 20 },
       onB
@@ -96,7 +99,7 @@ describe("dragging from the toolbar", () => {
 
   it("inserts into the field at a drop target", () => {
     cmb.setValue("(f x y)");
-    const target = dropTargets(getNodeLabeled(/call to f /))[0];
+    const target = dropTargets(getNodeLabeled(/a f expression /))[0];
     drag(toolbarPrimitive("sqrt")).dropOnto(target);
     expect(cmb.getValue()).toBe("(f sqrt x y)");
   });
@@ -136,20 +139,20 @@ describe("drops that should do nothing", () => {
   });
 
   it("a node dropped onto itself", () => {
-    const el = getNodeLabeled(/call to f /);
+    const el = getNodeLabeled(/a f expression /);
     drag(el).dropOnto(el);
     expect(cmb.getValue()).toBe("(f (g x) y)");
   });
 
   it("a node dropped onto a drop target inside itself", () => {
-    const inside = dropTargets(getNodeLabeled(/call to g /))[0];
-    drag(getNodeLabeled(/call to f /)).dropOnto(inside);
+    const inside = dropTargets(getNodeLabeled(/a g expression /))[0];
+    drag(getNodeLabeled(/a f expression /)).dropOnto(inside);
     expect(cmb.getValue()).toBe("(f (g x) y)");
     expect(cmb.getAst().rootNodes[0].id).toBe(parent.id);
   });
 
   it("a node dropped onto one of its own descendants", () => {
-    drag(getNodeLabeled(/call to f /)).dropOnto(
+    drag(getNodeLabeled(/a f expression /)).dropOnto(
       getNodeLabeled(/^x\b|symbol x$/)
     );
     expect(cmb.getValue()).toBe("(f (g x) y)");
@@ -168,11 +171,11 @@ describe("drops that should do nothing", () => {
 describe("dragging nodes that carry extra state", () => {
   it("a node with a comment moves together with its comment", () => {
     cmb.setValue(";note\n(f x)\n(g y)");
-    const target = dropTargets(getNodeLabeled(/call to g /))[0];
+    const target = dropTargets(getNodeLabeled(/a g expression /))[0];
     // (twenty-first round: the comment travels with its node, as in the old editor, without being selected)
-    mouseDown(getNodeLabeled(/call to f /));
+    mouseDown(getNodeLabeled(/a f expression /));
     keyDown(" ");
-    drag(getNodeLabeled(/call to f /)).dropOnto(target);
+    drag(getNodeLabeled(/a f expression /)).dropOnto(target);
     // the comment travels with its node, into (g ...)
     expect(cmb.getAst().rootNodes.map((n) => n.toString())).toHaveLength(1);
     const text = cmb.getValue();

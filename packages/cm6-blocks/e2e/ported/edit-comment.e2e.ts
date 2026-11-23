@@ -1,5 +1,5 @@
 // PORTED from packages/codemirror-blocks/e2e/edit-comment.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, thirteenth round.
-// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `call to f `, `symbol g`
+// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `a f expression `, `symbol g`
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import {
@@ -30,7 +30,7 @@ const editing = (page: Page) =>
 test.describe("editing a comment from the keyboard", () => {
   test("adds a comment to a block that has none", async ({ page }) => {
     await openInBlockMode(page, "(f x)\n(g y)");
-    await page.getByRole("treeitem", { name: /call to g / }).click({
+    await page.getByRole("treeitem", { name: /a g expression / }).click({
       position: { x: 4, y: 4 },
     });
     await page.keyboard.press(COMMENT_KEY);
@@ -42,7 +42,7 @@ test.describe("editing a comment from the keyboard", () => {
       // edited: a new comment is a line comment (`; ...`), not a block comment
       .toBe("(f x)\n; the second one\n(g y)");
     await expect(
-      page.getByRole("treeitem", { name: /call to g / })
+      page.getByRole("treeitem", { name: /a g expression / })
     ).toBeFocused();
   });
 
@@ -50,7 +50,7 @@ test.describe("editing a comment from the keyboard", () => {
     page,
   }) => {
     await openInBlockMode(page, "#| old words |#\n(f x)");
-    await page.getByRole("treeitem", { name: /call to f / }).click({
+    await page.getByRole("treeitem", { name: /a f expression / }).click({
       position: { x: 4, y: 4 },
     });
     await page.keyboard.press(COMMENT_KEY);
@@ -69,7 +69,7 @@ test.describe("editing a comment from the keyboard", () => {
 
   test("Escape leaves the comment alone", async ({ page }) => {
     await openInBlockMode(page, "#| old words |#\n(f x)");
-    await page.getByRole("treeitem", { name: /call to f / }).click({
+    await page.getByRole("treeitem", { name: /a f expression / }).click({
       position: { x: 4, y: 4 },
     });
     await page.keyboard.press(COMMENT_KEY);
@@ -150,7 +150,7 @@ test.describe("a comment that goes with no block", () => {
   }) => {
     await openInBlockMode(page, "#| mine |#\n(g y)");
     const g = page.getByRole("treeitem", {
-      name: /call to g .*with comment: mine$/,
+      name: /a g expression .*with comment: mine$/,
     });
     await expect(g).toBeVisible();
     await expect(g).toHaveClass(/blocks-has-comment/);
@@ -189,7 +189,7 @@ test.describe("a comment that goes with no block", () => {
           ] ?? NaN,
         [selector, side]
       );
-    const g = page.getByRole("treeitem", { name: /call to g / });
+    const g = page.getByRole("treeitem", { name: /a g expression / });
     const popup = g.locator("> .blocks-comment");
     // (CodeMirror draws only the lines in view: go to the end, where g is)
     await page.evaluate(() => {
@@ -216,7 +216,7 @@ test.describe("a comment that goes with no block", () => {
     await page.evaluate(() => {
       (document.querySelector(".cm-scroller") as HTMLElement).scrollTop = 1e6;
     });
-    const g = page.getByRole("treeitem", { name: /call to g / });
+    const g = page.getByRole("treeitem", { name: /a g expression / });
     await g.click({ position: { x: 4, y: 4 } });
     await page.keyboard.press(COMMENT_KEY);
     const box = page.locator("input:focus, textarea:focus");
@@ -239,7 +239,7 @@ test.describe("a comment that goes with no block", () => {
     page,
   }) => {
     await openInBlockMode(page, "(f x)");
-    const f = page.getByRole("treeitem", { name: /call to f / });
+    const f = page.getByRole("treeitem", { name: /a f expression / });
     await f.click({ position: { x: 4, y: 4 } });
     await page.keyboard.press(COMMENT_KEY);
     const box = page.locator("input:focus, textarea:focus");
@@ -258,7 +258,7 @@ test.describe("a comment that goes with no block", () => {
     page,
   }) => {
     await openInBlockMode(page, "; short\n(f x)\n(g y)");
-    const f = page.getByRole("treeitem", { name: /call to f / });
+    const f = page.getByRole("treeitem", { name: /a f expression / });
     await f.click({ position: { x: 4, y: 4 } });
     const popup = f.locator("> .blocks-comment");
     await expect(popup).toBeVisible();
@@ -269,7 +269,7 @@ test.describe("a comment that goes with no block", () => {
     page,
   }) => {
     await openInBlockMode(page, "#| mine |#\n(g y)\n(h z)");
-    await page.getByRole("treeitem", { name: /call to g / }).click({
+    await page.getByRole("treeitem", { name: /a g expression / }).click({
       position: { x: 4, y: 4 },
     });
     await page.keyboard.press("Space");
@@ -306,7 +306,7 @@ test("the comment box of a collapsed block is shown and has focus", async ({
   page,
 }) => {
   await openInBlockMode(page, "(f (g 1 2) z)");
-  const g = page.getByRole("treeitem", { name: /call to g / });
+  const g = page.getByRole("treeitem", { name: /a g expression / });
   await g.click({ position: { x: 4, y: 4 } });
   await page.keyboard.press("ArrowLeft"); // (collapse it)
   await expect(g).toHaveAttribute("aria-expanded", "false");

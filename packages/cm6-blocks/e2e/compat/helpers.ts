@@ -88,7 +88,7 @@ export async function openInBlockMode(
   await expect(page.getByRole("treeitem").first()).toBeVisible();
 }
 
-/** A block, found by the label a screenreader would read out. (This editor's labels are the table's: `call to f with 1 argument`, not `f expression, 1 input`.) */
+/** A block, found by the label a screenreader would read out. (This editor's labels are the table's: `a f expression with 1 input`, not `f expression, 1 input`.) */
 export const block = (page: Page, label: string | RegExp) =>
   page.getByRole("treeitem", { name: label }).first();
 export const trashCan = (page: Page) => page.locator(".TrashCan");

@@ -143,7 +143,8 @@ const operations: Operation[] = [
     name: "dragging a node onto a node",
     code: "(add a b) (sub c d)",
     run: () => {
-      drag(getNodeLabeled(/^a\b|symbol a$/)).dropOnto(
+      // edited: `^a\b` also matched the call label `a f expression...`, so it is `^a,`
+      drag(getNodeLabeled(/^a,|symbol a$/)).dropOnto(
         getNodeLabeled(/^d\b|symbol d$/)
       );
     },
@@ -152,15 +153,17 @@ const operations: Operation[] = [
     name: "dragging a node onto a drop target",
     code: "(add a b) (sub c d)",
     run: () => {
-      const target = dropTargets(getNodeLabeled(/call to sub /))[0];
-      drag(getNodeLabeled(/^a\b|symbol a$/)).dropOnto(target);
+      const target = dropTargets(getNodeLabeled(/a sub expression /))[0];
+      // edited: `^a\b` also matched the call label `a f expression...`, so it is `^a,`
+      drag(getNodeLabeled(/^a,|symbol a$/)).dropOnto(target);
     },
   },
   {
     name: "dragging a node onto whitespace",
     code: "a\n\n\nb",
     run: () =>
-      dropOnWhitespace(cmb, getNodeLabeled(/^a\b|symbol a$/), {
+      // edited: `^a\b` also matched the call label `a f expression...`, so it is `^a,`
+      dropOnWhitespace(cmb, getNodeLabeled(/^a,|symbol a$/), {
         line: 2,
         ch: 0,
       }),
@@ -182,7 +185,7 @@ const operations: Operation[] = [
     name: "dragging a node to the trash can",
     code: "(f x y)\n(g z)",
     run: () => {
-      drag(getNodeLabeled(/call to f /)).dropOnto(
+      drag(getNodeLabeled(/a f expression /)).dropOnto(
         document.querySelector(".TrashCan")!
       );
     },

@@ -16,7 +16,7 @@ const program = "(f x y)\n(g z)\n(h w)";
 test.describe("dragging a block onto the trash can", () => {
   test("deletes it, and the text and AST agree", async ({ page }) => {
     await openInBlockMode(page, program);
-    await dragWithMouse(page, block(page, /call to g /), trashCan(page));
+    await dragWithMouse(page, block(page, /a g expression /), trashCan(page));
     const s = await expectConsistent(page);
     expect(s.roots).toEqual(["(f x y)", "(h w)"]);
     expect(s.text).not.toContain("(g z)");
@@ -24,7 +24,11 @@ test.describe("dragging a block onto the trash can", () => {
 
   test("works again and again", async ({ page }) => {
     await openInBlockMode(page, program);
-    for (const label of [/call to g /, /call to h /, /call to f /]) {
+    for (const label of [
+      /a g expression /,
+      /a h expression /,
+      /a f expression /,
+    ]) {
       await dragWithMouse(page, block(page, label), trashCan(page));
       await expectConsistent(page);
     }
@@ -37,7 +41,7 @@ test.describe("dragging a block onto the trash can", () => {
     // the first drag after a fresh load once edited a stale text-mode editor:
     // the AST lost the block, but the text on screen kept it
     await openInBlockMode(page, program);
-    await dragWithMouse(page, block(page, /call to f /), trashCan(page));
+    await dragWithMouse(page, block(page, /a f expression /), trashCan(page));
     const s = await expectConsistent(page);
     expect(s.roots).toEqual(["(g z)", "(h w)"]);
   });
@@ -46,7 +50,7 @@ test.describe("dragging a block onto the trash can", () => {
     await openInBlockMode(page, program);
     await page.getByRole("button", { name: /switch to text mode/i }).click();
     await page.getByRole("button", { name: /switch to blocks mode/i }).click();
-    await dragWithMouse(page, block(page, /call to g /), trashCan(page));
+    await dragWithMouse(page, block(page, /a g expression /), trashCan(page));
     const s = await expectConsistent(page);
     expect(s.roots).toEqual(["(f x y)", "(h w)"]);
   });
@@ -54,7 +58,7 @@ test.describe("dragging a block onto the trash can", () => {
   test("can be undone", async ({ page }) => {
     await openInBlockMode(page, program);
     const before = (await snapshot(page)).text;
-    await dragWithMouse(page, block(page, /call to g /), trashCan(page));
+    await dragWithMouse(page, block(page, /a g expression /), trashCan(page));
     await expectConsistent(page);
     await undoAll(page);
     const s = await expectConsistent(page);
@@ -64,7 +68,7 @@ test.describe("dragging a block onto the trash can", () => {
 
   test("leaves a block focused for the keyboard", async ({ page }) => {
     await openInBlockMode(page, program);
-    await dragWithMouse(page, block(page, /call to g /), trashCan(page));
+    await dragWithMouse(page, block(page, /a g expression /), trashCan(page));
     const s = await expectConsistent(page);
     expect(s.focus.role).toBe("treeitem");
     await page.keyboard.press(`${MOD}+z`);

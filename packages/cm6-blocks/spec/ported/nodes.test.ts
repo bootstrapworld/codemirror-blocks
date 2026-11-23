@@ -105,7 +105,7 @@ const nodes: [string, string, string, RegExp][] = [
 ];
 
 describe("what a block says", () => {
-  // SKIPPED (I): needs the old node API (`wescheme.buildAST`, `node.shortDescription()`, `describe(level)`), and the expectations are the old words (`f expression, 2 inputs`), which are the table's `call to f with 2 arguments` here (documented, second round D)
+  // SKIPPED (I): needs the old node API (`wescheme.buildAST`, `node.shortDescription()`, `describe(level)`), and the expectations are the old words (`f expression, 2 inputs`), which are the table's `a f expression with 2 inputs` here (documented, second round D)
   // first error (sweep): TypeError: _wescheme.default.buildAST is not a function
   it.skip.each(nodes)("%s is a %s: %s", (code, type, short, long) => {
     const node = rootOf(code);
@@ -129,9 +129,9 @@ describe("what a block says", () => {
 describe("what a block looks like", () => {
   // edited: spoken words come from the language table (the old test compared with node.shortDescription(), which is the old words)
   const labels: Record<string, string[]> = {
-    "(f x y)": ["call to f with 2 arguments"],
-    "(f x)": ["call to f with 1 argument"],
-    "(f (g (h (i 1))))": ["call to f with 1 argument"],
+    "(f x y)": ["a f expression with 2 inputs"],
+    "(f x)": ["a f expression with 1 input"],
+    "(f (g (h (i 1))))": ["a f expression with 1 input"],
     "(define x 5)": ["x: value definition"],
     "(define x (f 1))": ["x: value definition"],
     "(define (f a b) (+ a b))": [
@@ -140,15 +140,18 @@ describe("what a block looks like", () => {
     "(lambda (x y) (+ x y))": ["function of (x y) returning (+ x y)"],
     "(cond [(> 1 2) 3] [else 4])": ["cond with 2 clauses"],
     "(if 1 2 3)": ["if 1, then 2, else 3"],
-    "(begin 1 2)": ["call to begin with 2 arguments"],
-    "(when 1 2)": ["call to when with 2 arguments"],
-    "(unless 1 2)": ["call to unless with 2 arguments"],
-    "(let ([a 1]) a)": ["call to let with 2 arguments"],
-    "(define-struct p (x y))": ["call to define-struct with 2 arguments"],
+    "(begin 1 2)": ["a begin expression with 2 inputs"],
+    "(when 1 2)": ["a when expression with 2 inputs"],
+    "(unless 1 2)": ["a unless expression with 2 inputs"],
+    "(let ([a 1]) a)": ["a let expression with 2 inputs"],
+    "(define-struct p (x y))": ["a define-struct expression with 2 inputs"],
     "...": ["..., a blank"],
     "(lambda x x)": ["function of x returning x"],
-    "(else)": ["call to else with 0 arguments"],
-    "(f x)\n(g y)": ["call to f with 1 argument", "call to g with 1 argument"],
+    "(else)": ["a else expression with 0 inputs"],
+    "(f x)\n(g y)": [
+      "a f expression with 1 input",
+      "a g expression with 1 input",
+    ],
     "42": ["42, a number"],
     '"hi"': ['"hi", a string'],
   };
