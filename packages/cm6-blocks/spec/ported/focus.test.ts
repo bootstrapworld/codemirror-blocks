@@ -95,8 +95,7 @@ describe("focusing,", () => {
     expect(cmb.getFocusedNode()?.toString()).toBe("99");
   });
 
-  // SKIPPED (D): after inserting "99 88 77" focus is on the FIRST new block here ("99"), the old editor put it on the last ("77"); which one is the rule is a decision for the owner
-  it.skip("inserting multiple nodes should put focus on the last of the new nodes", async () => {
+  it("inserting multiple nodes should put focus on the last of the new nodes", async () => {
     mouseDown(literal1);
     keyDown("]", { ctrlKey: true });
     insertText("99 88 77");
