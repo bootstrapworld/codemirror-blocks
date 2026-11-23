@@ -62,14 +62,15 @@ export const dragOnto = (
 ) => {
   drag(src, mode).dropOnto(target, point);
 };
-/** Drag `src` onto the editor's whitespace at `loc` (this editor has no whitespace target: the drop is over the editor and takes nowhere, or at a root's edge) */
+/** Drag `src` onto the editor's whitespace at `loc` (jsdom has no layout: the position under the point is `loc`, through the compat `coordsChar` that the view's `posAtCoords` asks) */
 export const dropOnWhitespace = (
   cmb: API,
   src: Element,
-  _loc: { line: number; ch: number },
+  loc: { line: number; ch: number },
   mode?: DragMode
 ) => {
   const wrapper = cmb.getCM().getWrapperElement();
+  jest.spyOn(cmb.getCM(), "coordsChar").mockReturnValue(loc);
   document.elementFromPoint = jest.fn(() => wrapper);
   dragOnto(src, wrapper, { x: 20, y: 20 }, mode);
 };

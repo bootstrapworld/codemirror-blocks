@@ -12,6 +12,7 @@ import type { BNode } from "../../src/types";
 
 export type Pos = { line: number; ch: number };
 
+const defaultCoordsChar = () => ({ line: 0, ch: 0 });
 const posOf = (ed: LezerBlockEditor, offset: number): Pos => {
   const l = ed.view.state.doc.lineAt(
     Math.max(0, Math.min(offset, ed.view.state.doc.length))
@@ -126,7 +127,15 @@ export class AST {
 export class CompatAPI {
   private wrapped = new Map<number, ASTNode>();
   private historyBase = 0;
-  constructor(readonly ed: LezerBlockEditor) {}
+  constructor(readonly ed: LezerBlockEditor) {
+    // jsdom has no layout, so the view cannot find a position under a point: a test that mocks the old `coordsChar` of `getCM()` (the drop on whitespace) says where the point is
+    ed.view.posAtCoords = ((c: { x: number; y: number }) => {
+      const cm = this.getCM();
+      if (cm.coordsChar === defaultCoordsChar) return null;
+      return offsetOf(ed, cm.coordsChar({ left: c.x, top: c.y }) as Pos);
+    }) as typeof ed.view.posAtCoords;
+  }
+  private cm: ReturnType<CompatAPI["makeCM"]> | null = null;
   wrap(b: BNode): ASTNode {
     let w = this.wrapped.get(b.id);
     if (!w) this.wrapped.set(b.id, (w = new ASTNode(this, b)));
@@ -388,12 +397,18 @@ export class CompatAPI {
     return this.ed.view.dom;
   }
   getCM() {
+    return (this.cm ??= this.makeCM());
+  }
+  private makeCM() {
     const ed = this.ed;
     return {
       getWrapperElement: () => ed.view.dom,
       getScrollerElement: () => ed.view.scrollDOM,
       getInputField: () => ed.view.contentDOM,
-      coordsChar: () => ({ line: 0, ch: 0 }),
+      coordsChar: defaultCoordsChar as (c?: unknown) => {
+        line: number;
+        ch: number;
+      },
       /** CodeMirror's OWN cursor (the one that does not follow block focus) */
       getCursor: (which: "head" | "anchor" | "from" | "to" = "head") => {
         const r = ed.view.state.selection.main;

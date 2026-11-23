@@ -167,6 +167,40 @@ for (const lang of Object.keys(SMALL)) {
       // edited: text that does not parse is refused; see the next test
     });
 
+    // edited: a drop on bare whitespace between top-level blocks writes the block exactly there (as the old editor's drop on whitespace)
+    test("a real mouse drag onto a blank line between top-level blocks moves it there as a top-level block; one undo restores", async ({
+      page,
+    }) => {
+      const doc =
+        lang === "scheme"
+          ? "(f 1)\n\n\n(h 4)\n"
+          : lang === "javascript"
+            ? "f(1);\n\n\nh(4);\n"
+            : "f(1)\n\n\nh(4)\n";
+      await load(page, doc);
+      const one = lit(page, "1");
+      const box = (await one.boundingBox())!;
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width / 2 + 12, box.y + 8, {
+        steps: 3,
+      });
+      await page.waitForSelector(".blocks-dragging");
+      const lines = page.locator(".cm-content > .cm-line");
+      const blank = (await lines.nth(2).boundingBox())!;
+      await page.mouse.move(blank.x + 300, blank.y + blank.height / 2, {
+        steps: 8,
+      });
+      await page.mouse.up();
+      // (the 1 left f and stands alone, on the blank line where it was let go)
+      const got = (await text(page)).split("\n");
+      expect(got[2]).toMatch(/^1;?$/);
+      expect(got.join("\n")).not.toContain("1)");
+      expect(await check(page)).toEqual([]);
+      await page.keyboard.press("ControlOrMeta+z");
+      expect(await text(page)).toBe(doc);
+    });
+
     // edited: an edit box refuses text that does not parse (stays open, red); Escape cancels
     test(`${EDIT} refuses text that does not parse; Escape cancels`, async ({
       page,

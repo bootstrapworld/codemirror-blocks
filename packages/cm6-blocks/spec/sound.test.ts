@@ -341,6 +341,8 @@ describe.each(LANGS)("sounds: %s", (l) => {
     expect(heard).toEqual([["beep", "drop-refused"]]);
     heard.length = 0;
     where.el = ed.view.dom.querySelector(".cm-content") as Element;
+    // edited: a drop over bare whitespace now writes the block there; "nowhere" is a point where the view finds no position
+    ed.view.posAtCoords = (() => null) as never;
     down();
     ptr(document, "pointermove", 40);
     ptr(document, "pointerup", 40);

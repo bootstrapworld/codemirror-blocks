@@ -81,6 +81,7 @@ for (const lang of Object.keys(SMALL)) {
       expect((await text(page)).split("\n").length).toBeGreaterThan(2);
     });
 
+    // edited: bare editor whitespace takes a drop now (the old editor's rule), so "not on a gap or a hole" is let go outside the editor, on the toolbar
     test("a drop that is not on a gap or a hole writes nothing", async ({
       page,
     }) => {
@@ -90,7 +91,9 @@ for (const lang of Object.keys(SMALL)) {
       const b = (await btn.boundingBox())!;
       await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
       await page.mouse.down();
-      await page.mouse.move(b.x + 200, b.y + 300, { steps: 6 });
+      await page.mouse.move(b.x + b.width / 2 + 30, b.y + b.height / 2, {
+        steps: 6,
+      });
       await page.mouse.up();
       expect(await text(page)).toBe(SMALL[lang]);
       expect(await page.locator("input.blocks-edit").count()).toBe(0);

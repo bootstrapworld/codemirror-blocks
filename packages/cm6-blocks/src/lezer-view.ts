@@ -172,7 +172,7 @@ export interface LezerBlockEditor {
    */
   insertTemplateAt(
     name: string,
-    target: { slot: Slot; index: number } | { blank: BNode }
+    target: { slot: Slot; index: number } | { blank: BNode } | { at: number }
   ): BNode | null;
   /** start dragging template `name` from the toolbar: call from a `pointerdown` on a toolbar button; the block goes where the pointer is let go over a gap or a blank (a press that does not move is left to the button's own click) */
   beginTemplateDrag(e: PointerEvent, name: string): void;
@@ -270,8 +270,10 @@ export interface LezerBlockEditor {
   /** Move several blocks (none inside another) to a gap, in document order: ONE text change, one undo step. */
   moveNodes(
     nodes: BNode[],
-    target: { slot: Slot; index: number } | { blank: BNode }
+    target: { slot: Slot; index: number } | { blank: BNode } | { at: number }
   ): void;
+  /** is `pos` bare whitespace of the program: not inside any top-level block (a drop there inserts at `pos`, as in the old editor) */
+  isWhitespaceAt(pos: number): boolean;
   /** the source text of each block (see copyText), in the order given */
   copyTexts(nodes: BNode[]): string[];
   /** paste several blocks one after another (as separate elements of one list); one text change */
@@ -1445,6 +1447,27 @@ export function createLezerBlockEditor(
     const right = next === "" || /[\s)\]};,]/.test(next) ? "" : " ";
     return { from: node.from, to: node.to, insert: left + snippet + right };
   }
+  /** bare whitespace: no top-level block has `pos` strictly inside it */
+  const isWhitespaceAt = (pos: number): boolean =>
+    pos >= 0 &&
+    pos <= view.state.doc.length &&
+    !rootsSlot.nodes.some((r) => r.from < pos && pos < r.to);
+  /** the change that writes `snippet` at a bare-whitespace position, as the old editor's drop on whitespace: exactly there; a line break is added only where text of the same line would run into it (the old editor did not, and glued the blocks together) */
+  function atChange(pos: number, snippet: string): TextChange {
+    if (!isWhitespaceAt(pos)) throw new Error("not between blocks");
+    const t = currentText();
+    const before = t.slice(t.lastIndexOf("\n", pos - 1) + 1, pos);
+    const eol = t.indexOf("\n", pos);
+    const after = t.slice(pos, eol < 0 ? t.length : eol);
+    return {
+      from: pos,
+      to: pos,
+      insert:
+        (/\S/.test(before) ? "\n" : "") +
+        snippet +
+        (/\S/.test(after) ? "\n" : ""),
+    };
+  }
   /** after a template was written by `change`: the leaf at its first hole gets its edit box (and is returned) */
   function openHole(
     change: TextChange,
@@ -1809,7 +1832,12 @@ export function createLezerBlockEditor(
       let change: TextChange;
       let snippet: string;
       let hole: number;
-      if ("blank" in target) {
+      if ("at" in target) {
+        const f = fillTemplate(table, name, "");
+        snippet = f.text;
+        hole = f.hole;
+        change = atChange(target.at, snippet);
+      } else if ("blank" in target) {
         live(target.blank);
         // (a template replaces a hole or a value (a literal), as in the old editor, where only those are drop targets: not a compound block; a statement goes only where statements do)
         if (
@@ -1857,6 +1885,7 @@ export function createLezerBlockEditor(
       dispatch(change);
       return openHole(change, snippet, hole);
     },
+    isWhitespaceAt,
     beginTemplateDrag: (e, name) => interaction.beginTemplateDrag(e, name),
     edit: (node, typed) => interaction.edit(node, typed),
     lastFocused: () =>
@@ -2204,11 +2233,18 @@ export function createLezerBlockEditor(
       if (!nodes.length) return;
       const sorted = [...nodes].sort((x, y) => x.from - y.from || x.to - y.to);
       const node = sorted[0];
-      const dest = "blank" in target ? target.blank : target.slot.owner;
-      live(dest);
-      for (const n of sorted)
-        for (let c: BNode | null = dest; c; c = c.parent)
-          if (c === n) throw new Error("a block cannot go inside itself");
+      const dest =
+        "at" in target
+          ? null
+          : "blank" in target
+            ? target.blank
+            : target.slot.owner;
+      if (dest) {
+        live(dest);
+        for (const n of sorted)
+          for (let c: BNode | null = dest; c; c = c.parent)
+            if (c === n) throw new Error("a block cannot go inside itself");
+      }
       if (sorted.length > 1 && "blank" in target)
         throw new Error("a hole takes one block");
       if (sorted.length === 1) {
@@ -2224,7 +2260,7 @@ export function createLezerBlockEditor(
       const t = currentText();
       // (a comment directly above a block goes with it, as in the old editor; into a gap only)
       const moved = [...sorted];
-      if ("slot" in target)
+      if (!("blank" in target))
         for (const n of sorted) {
           for (const c of commentsOf(n))
             if (c.slot && !moved.includes(c)) moved.push(c);
@@ -2255,7 +2291,8 @@ export function createLezerBlockEditor(
         ...removeChanges(moved.filter(inList), t),
       ]);
       let put: TextChange;
-      if ("blank" in target)
+      if ("at" in target) put = atChange(target.at, snippets.join("\n"));
+      else if ("blank" in target)
         put = replaceChange(
           target.blank,
           snippets[0].replace(/\n/g, "\n" + indentAt(target.blank.from))
@@ -2487,8 +2524,10 @@ export function createLezerBlockEditor(
   named(
     "insertTemplateAt",
     () => "templateAt",
-    ((_n: string, t: { slot: Slot; index: number } | { blank: BNode }) =>
-      "blank" in t ? t.blank : t.slot.owner) as never,
+    ((
+      _n: string,
+      t: { slot: Slot; index: number } | { blank: BNode } | { at: number }
+    ) => ("at" in t ? null : "blank" in t ? t.blank : t.slot.owner)) as never,
     ((n: string) => ({ name: n })) as never
   );
   named(

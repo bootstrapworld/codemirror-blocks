@@ -1011,7 +1011,11 @@ export function attachInteraction(ed: LezerBlockEditor): {
 
   /* ---- drag and drop (pointer events: mouse, finger, pen) */
 
-  type Target = { slot: Slot; index: number } | { blank: BNode };
+  type Target =
+    | { slot: Slot; index: number }
+    | { blank: BNode }
+    /** bare whitespace between or around the top-level blocks: the block goes exactly at this position (as in the old editor) */
+    | { at: number };
   /** the trash can: an element of the page (class `TrashCan`, outside the editor) that takes the dragged blocks away */
   type Trash = { trash: Element };
   type AnyTarget = Target | Trash;
@@ -1048,7 +1052,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     x: number,
     y: number,
     node: BNode | null
-  ): { target: AnyTarget; mark: Element } | null {
+  ): { target: AnyTarget; mark: Element | null } | null {
     const el = doc.elementFromPoint(x, y);
     const can = el?.closest(".TrashCan");
     if (can) return { target: { trash: can }, mark: can };
@@ -1057,7 +1061,13 @@ export function attachInteraction(ed: LezerBlockEditor): {
     if (gap && gap.slot.pieces) return null;
     if (gap) return { target: gap, mark: el.closest(".blocks-gap") as Element };
     const hit = renderer.nodeOf(el);
-    if (!hit) return null;
+    if (!hit) {
+      // not over any block: bare whitespace of the editor, a drop there writes the block at that spot (edited: the old editor's drop on whitespace)
+      const pos = ed.view.posAtCoords({ x, y }, false);
+      return pos != null && ed.isWhitespaceAt(pos)
+        ? { target: { at: pos }, mark: null }
+        : null;
+    }
     if (ed.isBlank(hit) && hit !== node)
       return { target: { blank: hit }, mark: renderer.element(hit) };
     const root = rootsOf(hit);
@@ -1096,11 +1106,13 @@ export function attachInteraction(ed: LezerBlockEditor): {
       ? { trash: true }
       : "blank" in t
         ? { blank: { from: t.blank.from, to: t.blank.to } }
-        : {
-            slot: t.slot.name,
-            owner: { kind: t.slot.owner.kind, from: t.slot.owner.from },
-            index: t.index,
-          };
+        : "at" in t
+          ? { at: t.at }
+          : {
+              slot: t.slot.name,
+              owner: { kind: t.slot.owner.kind, from: t.slot.owner.from },
+              index: t.index,
+            };
   /** a drag let go over the editor but not over a place that takes it (the old editor beeps there; let go elsewhere, it does nothing) */
   const overEditor = (e: PointerEvent): boolean => {
     const el = doc.elementFromPoint(e.clientX, e.clientY);
@@ -1177,10 +1189,10 @@ export function attachInteraction(ed: LezerBlockEditor): {
     const hit = targetAt(x, y, drag?.on ? drag.node : null);
     if (hit?.mark !== d.mark) {
       d.mark?.classList.remove("blocks-drop-target", "blocks-drop-replace");
-      hit?.mark.classList.add("blocks-drop-target");
+      hit?.mark?.classList.add("blocks-drop-target");
       // (a value or hole that the drop would replace: its own colour, as in the old editor)
       if (hit && "blank" in hit.target)
-        hit.mark.classList.add("blocks-drop-replace");
+        hit.mark?.classList.add("blocks-drop-replace");
     }
     if ("target" in d) d.target = hit?.target ?? null;
     d.mark = hit?.mark ?? null;
