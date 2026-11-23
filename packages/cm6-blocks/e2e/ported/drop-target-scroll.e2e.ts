@@ -1,5 +1,5 @@
 // PORTED from packages/codemirror-blocks/e2e/drop-target-scroll.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, thirteenth round.
-// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `a f expression `, `symbol g`
+// EDITED (documented, second round D): the labels `f expression`, `g,` are the table's `call to f `, `symbol g`
 import { expect, test, type Page } from "@playwright/test";
 import { block, openInBlockMode } from "../compat/helpers";
 
@@ -67,22 +67,14 @@ const cases = [
   {
     name: "between arguments",
     target: (page: Page, scrolled: boolean) =>
-      callTarget(
-        page,
-        scrolled ? /^a f88 expression / : /^a f2 expression /,
-        1
-      ),
+      callTarget(page, scrolled ? /^call to f88 / : /^call to f2 /, 1),
     typed: "z",
     expect: /z/,
   },
   {
     name: "in an empty list",
     target: (page: Page, scrolled: boolean) =>
-      callTarget(
-        page,
-        scrolled ? /^a g89 expression / : /^a g9 expression /,
-        0
-      ),
+      callTarget(page, scrolled ? /^call to g89 / : /^call to g9 /, 0),
     typed: "h(1)",
     expect: /h\(1\)/,
   },
@@ -94,9 +86,7 @@ for (const scrolled of [false, true]) {
       page,
     }) => {
       await openInBlockMode(page, code, "javascript");
-      await block(page, /^a f0 expression /).click({
-        position: { x: 4, y: 4 },
-      });
+      await block(page, /^call to f0 /).click({ position: { x: 4, y: 4 } });
       if (scrolled) await scrollDown(page, 12);
       const before = await scrollTop(page);
       if (scrolled) expect(before).toBeGreaterThan(500);
@@ -130,7 +120,7 @@ for (const c of cases) {
     page,
   }) => {
     await openInBlockMode(page, code, "javascript");
-    await block(page, /^a f0 expression /).click({ position: { x: 4, y: 4 } });
+    await block(page, /^call to f0 /).click({ position: { x: 4, y: 4 } });
     await scrollDown(page, 12);
     const target = c.target(page, true);
     await target.scrollIntoViewIfNeeded();
