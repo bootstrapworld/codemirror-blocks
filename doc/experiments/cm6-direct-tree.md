@@ -2675,3 +2675,19 @@ Decision (the user): build the old editor's toggle with its animation. Until now
 ## Thirty-first round: dragging a selected block drags the whole selection (decision)
 
 The user decided (2026-11-23) to keep this editor's rule: dragging any block of a selection drags the whole selection, which is DIFFERENT from the old editor (it moves only the grabbed block). The three ported edge-cases tests that expect the old rule stay skipped, now class `D` (excluded by decision; csv class EXCLUDED-D, 11 in all).
+
+## Thirty-second round: the editor as a CodeMirror 6 `EditorView`; the CM5 API tests are excluded by decision
+
+The user decided (2026-11-23): a CM6 user who embeds this editor instead of plain CM6 must not have to change any supported call; CM5 compatibility is not a goal. No CM5-shaped facade, offsets only, CM6 events only (plus `ed.onModeChange`), `extensions` yes and `setOption` no (`ed.reconfigure`), no `runMode` / `getLineHandle`, block-only methods throw in text mode. `doc/experiments/cm6-api-map.md` ends with the audit ("What a CM6 user can call today").
+
+**What was built**
+
+- **`ed` is an `EditorView` for CM6 code** (`src/view-surface.ts`): every public member of `EditorView` (`state`, `dispatch`, `dom`, `contentDOM`, `scrollDOM`, `focus`, `hasFocus`, `requestMeasure`, `coordsAtPos`, `posAtCoords`, `viewport`, ...) is forwarded to `ed.view`, which stays. `undo(ed)`, `ed.dispatch({effects: StateEffect.appendConfig.of(...)})` and a page's `Compartment` work. `destroy` is the editor's own.
+- **CM6's own configuration**: `createLezerBlockEditor({parent, doc | value, extensions, collapseAll, parser, table, ...})`; the arguments `(host, text, options)` still work. `ed.reconfigure(ext)` replaces the page's extensions (a `Compartment`).
+- **Marks** (`src/user-marks.ts`): a page's `Decoration.mark` whose range is exactly one block's range puts its `class`, `style` and `title` on the block (the block layer replaces each root by a widget, so such marks were not drawn). Widgets, line decorations and gutters of the page already worked. The marks are the page's own field: they move with the text, and go with the block when it is deleted.
+- **Block-only methods** (`roots`, `focusedNode`, `selection`, `selectedBlocks`) throw "... is only available in block mode" in text mode; `inAnyMode(ed)` gives the unguarded ones to tools (the test shim).
+- **Not built, on purpose**: a language registry (`addLanguage` and the rest; a language is its parser and table, imported, so bundles stay tree-shaken; the three entry-point tests that need it are excluded), per-container singleton, `markText`-style marker objects, `setValue` and the CM5 position methods.
+
+**Tests.** 27 new CM6-shaped tests in `spec/cm6-api.test.ts` (the editor as an EditorView 5, configuration 8, page decorations 6, block-only methods 2, lines and positions 2, selection as offsets 4). 39 of the 40 EXCLUDED-N ported tests are now class `D`, with the CM6 equivalent and the counterpart test in the comment; `should set block mode to false` passes unchanged and is un-skipped; the lambda program block stays `N` (not an API).
+
+**Counts.** Jest 1757 passed, 104 skipped (was 1729 / 105); Chromium 282 passed, 19 skipped, 1 failed (`scheme-look.e2e.ts`, needs `ast-test.rkt`, as before). The csv has 117 skipped ported tests (EXCLUDED-D 49, EXCLUDED-I 43, REAL-TOOLBAR 16, OTHER 7, EXCLUDED-N 1, FOCUS-RULE 1). Bundle (minified, bytes; before to after): `scheme-only.js` 447,806 to 450,655 (+2.8 KB), `demo.js` (three languages) 598,060 to 600,949 (+2.9 KB).
