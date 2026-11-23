@@ -17,7 +17,7 @@
  *   Shift-Ctrl-]          edit the comment of the block (a comment block directly above it or after it on its line; none: written above)
  *   Home / End            first / last block;  Shift-,  jump to the root;  \  read the ancestors;  Shift-\  read the children
  * Mouse: click a block to focus it (a click on a literal opens its edit box, as in the old editor; a touch needs a second tap); click a gap to open the box for a new sibling there; drag a block (pointer events,
- * so a finger or a pen too) onto a gap, a blank, or the top or bottom edge of a top-level block to move it.
+ * so a finger or a pen too) onto a gap, a blank, or bare whitespace to move it.
  * A box refuses text that does not parse (nothing is written; red outline, the message as the title and aloud); text typed in the document itself may still read as an error root.
  */
 import { createAutoScroll } from "./autoscroll";
@@ -1047,7 +1047,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     return r;
   };
 
-  /** what a drop at (x, y) would mean: a gap, a blank, or the top or bottom edge of a top-level block */
+  /** what a drop at (x, y) would mean: a gap, a blank or a value, or bare whitespace; anything else (a compound block outside its gaps, even a top-level one) is not a target, as in the old editor */
   function targetAt(
     x: number,
     y: number,
@@ -1071,7 +1071,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     if (ed.isBlank(hit) && hit !== node)
       return { target: { blank: hit }, mark: renderer.element(hit) };
     const root = rootsOf(hit);
-    // (edited: checked before the edge zones, so a value takes the drop even in the root's top or bottom 30%) a drop on a value inside a top-level block replaces it: in the old editor only the nodes that are "normally editable" (a literal, a blank) are drop targets, a compound block is not; the top-level block itself takes drops at its edges only
+    // (edited: the edge zones of top-level blocks are gone, the old editor has none) a drop on a value inside a top-level block replaces it: in the old editor only the nodes that are "normally editable" (a literal, a blank) are drop targets, a compound block is not
     if (
       hit !== root &&
       hit !== node &&
@@ -1080,20 +1080,6 @@ export function attachInteraction(ed: LezerBlockEditor): {
       !(node && isInside(hit, node))
     )
       return { target: { blank: hit }, mark: renderer.element(hit) };
-    if (root !== node && root.parent && root.slot) {
-      const r = renderer.element(root).getBoundingClientRect();
-      const i = root.slot.nodes.indexOf(root);
-      if (r.height > 0 && y < r.top + r.height * 0.3)
-        return {
-          target: { slot: root.slot, index: i },
-          mark: renderer.element(root),
-        };
-      if (r.height > 0 && y > r.bottom - r.height * 0.3)
-        return {
-          target: { slot: root.slot, index: i + 1 },
-          mark: renderer.element(root),
-        };
-    }
     return null;
   }
   const isInside = (n: BNode, of: BNode): boolean => {
@@ -1118,7 +1104,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     const el = doc.elementFromPoint(e.clientX, e.clientY);
     return !!el && dom.contains(el);
   };
-  /* a template dragged out of the toolbar: the same targets (gaps, blanks, the edges of top-level blocks), the same marks; the block is made where it is let go */
+  /* a template dragged out of the toolbar: the same targets (gaps, blanks, whitespace), the same marks; the block is made where it is let go */
   interface TDrag {
     name: string;
     x: number;

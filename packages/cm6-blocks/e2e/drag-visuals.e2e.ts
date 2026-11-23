@@ -75,7 +75,7 @@ test("a gap is lightblue under the pointer, and a value that a drop replaces is 
     for (const el of document.querySelectorAll(".cm-content .blocks-value")) {
       if (el.closest(".blocks-drag-source")) continue;
       const r = el.getBoundingClientRect();
-      // (not near the top or bottom edge of its top-level block: those take a drop as an insertion)
+      // (edited: the edge zones of top-level blocks are gone; the middle of the block is kept, as it was)
       let root: Element = el;
       while (root.parentElement?.closest('[role="treeitem"]'))
         root = root.parentElement.closest('[role="treeitem"]')!;

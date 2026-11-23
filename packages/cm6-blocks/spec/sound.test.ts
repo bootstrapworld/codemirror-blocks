@@ -292,7 +292,7 @@ describe.each(LANGS)("sounds: %s", (l) => {
   test("a block let go over the editor where nothing takes it beeps; one let go outside does not", () => {
     const { ed, heard } = rig(l);
     const el = ed.renderer.element(lit(ed, "4"));
-    // (the middle of a top-level block: a block inside one is replaced by a drop, the edges of a top-level one take it)
+    // (edited: a top-level compound block takes no drop of its own, the old editor has none; a block inside one is replaced by a drop)
     const five = lit(ed, "5");
     const target = ed.renderer.element(
       ed.roots().find((r) => r.from <= five.from && five.to <= r.to) ?? five

@@ -181,7 +181,7 @@ const operations: Operation[] = [
         block(page, /^x, /)
       );
     },
-    // edited: the value is replaced, not written beside the call as a new root (the root's edge zones do not take it)
+    // edited: the value is replaced, not written beside the call as a new root (there are no edge zones on a root now)
     verify: (before, after) => expect(after.length).toBe(before.length),
   },
   {

@@ -170,7 +170,7 @@ describe.each(LANGS)("moving blocks: %s", (l) => {
     ok(ed);
     expect(ed.lastError).toBeNull();
   });
-  test("a block let go on a value replaces it, even in the root's top edge zone", () => {
+  test("a block let go on a value replaces it (the root has no edge zones)", () => {
     const ed = make(l);
     const before = text(ed);
     const roots = ed.roots().length;
@@ -178,7 +178,7 @@ describe.each(LANGS)("moving blocks: %s", (l) => {
     const one = lit(ed, "1");
     const root = (n: BNode): BNode => (n.parent?.parent ? root(n.parent) : n);
     const rootEl = ed.renderer.element(root(one));
-    // (jsdom has no layout: the root is 100 px tall and the pointer is at its top, inside the 30% zone)
+    // (jsdom has no layout; edited: the root's edge zones are gone, the value takes the drop wherever the pointer is)
     rootEl.getBoundingClientRect = () =>
       ({
         top: 0,

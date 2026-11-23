@@ -17,7 +17,7 @@ beforeEach(() => {
 afterEach(teardown);
 
 describe("the picture of a block that is being dragged", () => {
-  // SKIPPED (D): drops go on gaps, holes and root edges, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
+  // SKIPPED (D): drops go on gaps, holes and bare whitespace, with no drop onto a node and no `blocks-over-target` class or old drag preview (parity table)
   it("is a copy of the block in a box that has the language's class, so it has its shape", () => {
     cmb.setValue(`(add firstVar secondVar)`);
     const add = getNodeLabeled(/call to add /);
@@ -124,7 +124,7 @@ describe("when dragging a node over a drop target", () => {
   });
 });
 
-// SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and root edges)
+// SKIPPED (D): the old drop targets are elements (`block-drop-target-*`, `.blocks-drop-target`); here the places are gaps (`.blocks-gap`): the helper finds none (notes, parity table: drops go on gaps, holes and bare whitespace)
 
 // SKIPPED (U): the dropped collapsed root arrives expanded (aria-expanded stays "true"). Cause: carryMarks (lezer-view.ts) re-collapses a replaced block only at the same place, and a moved block lands at another; a fix has to map the moved block through moveBlocks (more than 30 lines)
 // first error (sweep): the dropped collapsed root arrives expanded (needs: collapsed state carried through a move)
