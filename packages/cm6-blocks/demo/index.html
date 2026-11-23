@@ -27,6 +27,18 @@
         margin-left: auto;
         font-family: monospace;
       }
+      #app {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .codemirror-pane {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
       #editor {
         flex: 1;
         min-height: 0;
@@ -54,7 +66,6 @@
           <option value="python">Python</option>
         </select>
       </label>
-      <label><input type="checkbox" id="blocks" checked /> Blocks</label>
       <button id="big">Load a big document (~3000 lines)</button>
       <button id="constructs">Load the constructs sample</button>
       <button id="small">Load the sample</button>
@@ -77,12 +88,23 @@
         >&#128465; Trash</span
       >
     </header>
-    <div
-      id="templates"
-      aria-label="templates"
-      style="padding: 4px 12px; border-bottom: 1px solid #ddd; font-size: 14px"
-    ></div>
-    <div id="editor"></div>
+    <div class="Editor blocks" id="app">
+      <div class="toolbar-pane">
+        <!-- (the one child of the pane has no padding or border: it must be able to shrink to nothing) -->
+        <div>
+          <div
+            id="templates"
+            aria-label="templates"
+            style="
+              padding: 4px 12px;
+              border-bottom: 1px solid #ddd;
+              font-size: 14px;
+            "
+          ></div>
+        </div>
+      </div>
+      <div class="codemirror-pane"><div id="editor"></div></div>
+    </div>
     <script src="demo.js"></script>
   </body>
 </html>

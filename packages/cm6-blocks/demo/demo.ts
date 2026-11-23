@@ -5,6 +5,7 @@ import {
   createLezerBlockEditor,
   LezerBlockEditor,
 } from "../src/lezer-view";
+import { mountModeToggle, ModeToggle } from "../src/mode";
 import { BIG } from "./samples";
 import { schemeParser, schemeTable } from "../src/lang-scheme";
 import { javascriptParser, javascriptTable } from "../src/lang-javascript";
@@ -67,6 +68,7 @@ type LangName = keyof typeof LANGS;
 const $ = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 let ed: LezerBlockEditor | null = null;
+let toggle: ModeToggle | null = null;
 let lang: LangName = "scheme";
 
 function bigDoc(l: LangName): string {
@@ -76,6 +78,8 @@ function bigDoc(l: LangName): string {
 }
 
 function show(text: string, reconcile = true, anchors = true): void {
+  const mode = ed?.mode ?? "blocks"; // (the mode stays across a new document or language)
+  toggle?.destroy();
   ed?.destroy();
   $("editor").textContent = "";
   const t0 = performance.now();
@@ -86,7 +90,8 @@ function show(text: string, reconcile = true, anchors = true): void {
     focusToolbar: () =>
       ($("templates").querySelector("button") as HTMLElement | null)?.focus(),
   });
-  ed.setBlockMode($<HTMLInputElement>("blocks").checked);
+  ed.setMode(mode);
+  toggle = mountModeToggle(ed, $("app"));
   const ms = performance.now() - t0;
   const demo = {
     ed,
@@ -106,7 +111,7 @@ function show(text: string, reconcile = true, anchors = true): void {
   const poll = () => {
     if (
       document.querySelector(".cm-content .blocks-node") ||
-      !$<HTMLInputElement>("blocks").checked
+      ed?.mode === "text"
     ) {
       demo.firstDrawMs = performance.now();
       requestAnimationFrame(() =>
@@ -170,9 +175,6 @@ function loadBig(): void {
 
 $<HTMLSelectElement>("lang").addEventListener("change", (e) =>
   setLanguage((e.target as HTMLSelectElement).value as LangName)
-);
-$<HTMLInputElement>("blocks").addEventListener("change", (e) =>
-  ed?.setBlockMode((e.target as HTMLInputElement).checked)
 );
 $("big").addEventListener("click", loadBig);
 $("constructs").addEventListener("click", () => show(BIG[lang]));

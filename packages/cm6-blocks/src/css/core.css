@@ -514,10 +514,12 @@
   background: #fff;
   border: 1px solid #999;
 }
-/* the toolbar (a bar above the editor) opens and closes with the mode: its height goes from nothing to what it holds */
+/* the toolbar (a bar above the editor) opens and closes with the mode: its height goes from nothing to what it holds (its one child has no
+   padding or border of its own, which would keep it from shrinking to nothing) */
 .Editor > .toolbar-pane {
   display: grid;
   grid-template-rows: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   overflow: hidden;
   opacity: 1;
   transition:
@@ -526,6 +528,7 @@
 }
 .Editor > .toolbar-pane > * {
   min-height: 0;
+  min-width: 0;
 }
 .Editor.text > .toolbar-pane {
   grid-template-rows: 0fr;

@@ -9,27 +9,37 @@ export const MOD = "ControlOrMeta";
 
 /** The old page's `window.cmb`, in the few methods the old helpers call, over `window.demo.ed` */
 const SHIM = () => {
-  const d = (window as any).demo;
-  const ed = d.ed;
+  // (looked up each time: a new language or document makes a new editor and a new `window.demo`)
+  const ed = new Proxy(
+    {},
+    { get: (_t, k) => (window as any).demo.ed[k as string] }
+  ) as any;
   const doc = () => ed.view.state.doc;
   (window as any).cmb = {
     getValue: () => doc().toString(),
     setValue: (t: string) =>
       ed.view.dispatch({ changes: { from: 0, to: doc().length, insert: t } }),
     clearHistory: () => {},
+    // (twenty-ninth round: the old page's CodeMirror 5 object, in the two methods the ported tests of scrolling use)
+    getCM: () => ({
+      getScrollInfo: () => ({ top: ed.view.scrollDOM.scrollTop }),
+      scrollTo: (_x: number, y: number) => {
+        ed.view.scrollDOM.scrollTop = y;
+      },
+    }),
     // (the page cannot read the undo depth: the text the last setValue left is the floor undoAll stops at)
     base: "",
   };
 };
 
 /**
- * Open the demo page, put `code` in the editor (the demo is always in blocks mode: there is no toggle to click). `language` is the demo's `?lang=`
- * (default "scheme").
+ * Open the demo page with `window.cmb` (the old page's) in place; the program is the language's sample. `language` is the demo's `?lang=` (default
+ * "scheme"). The page starts in blocks mode; the toggle button is `.blocks-toggle-btn`.
  */
-export async function openInBlockMode(
+export async function openDemo(
   page: Page,
-  code: string,
-  language = "scheme"
+  language = "scheme",
+  mode: "blocks" | "text" = "blocks"
 ) {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -48,6 +58,29 @@ export async function openInBlockMode(
       );
     });
   await page.evaluate(SHIM);
+  await expect(page.getByRole("treeitem").first()).toBeVisible();
+  // (the old page opens as text: the tests of the toggle start there; the toolbar's closing has finished when this returns)
+  if (mode === "text") {
+    await page.evaluate(() => (window as any).demo.ed.setMode("text"));
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.querySelector(".toolbar-pane")!.getBoundingClientRect()
+              .height
+        )
+      )
+      .toBeLessThan(5);
+  }
+}
+
+/** Open the demo page, put `code` in the editor (in blocks mode: the toggle button leads to text mode and back) */
+export async function openInBlockMode(
+  page: Page,
+  code: string,
+  language = "scheme"
+) {
+  await openDemo(page, language);
   await page.evaluate((c) => {
     (window as any).cmb.setValue(c);
     (window as any).cmb.base = (window as any).cmb.getValue();

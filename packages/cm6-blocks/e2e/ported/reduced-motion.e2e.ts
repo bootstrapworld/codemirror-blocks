@@ -2,7 +2,6 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { openInBlockMode } from "../compat/helpers";
-test.fixme(true, "M: the morph and its motion are not built");
 
 /**
  * A block's size and place are not animated (its colors may be), and nothing
@@ -26,7 +25,8 @@ const styleOf = (page: Page, selector: string) =>
 test.describe("motion", () => {
   test("a block's size and place are not animated", async ({ page }) => {
     await openInBlockMode(page, PROGRAM);
-    for (const selector of [".blocks-functionApp", ".blocks-literal"]) {
+    // edited: this editor's blocks are `.blocks-node` (a call, here) and `.blocks-literal`
+    for (const selector of [".blocks-node", ".blocks-literal"]) {
       const { transitionProperty } = await styleOf(page, selector);
       expect(transitionProperty).not.toBe("all");
       expect(transitionProperty).not.toMatch(
@@ -38,15 +38,11 @@ test.describe("motion", () => {
   test("nothing animates when less motion is asked for", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await openInBlockMode(page, PROGRAM);
-    for (const selector of [
-      ".blocks-functionApp",
-      ".blocks-literal",
-      ".blocks-drop-target",
-    ]) {
+    // edited: the place a block can be dropped on is `.blocks-gap` (`.blocks-drop-target` is the class it has while a drag is over it)
+    for (const selector of [".blocks-node", ".blocks-literal", ".blocks-gap"]) {
       const s = await styleOf(page, selector);
       expect(s.transitionDuration, selector).toMatch(/^0s(, 0s)*$/);
       expect(s.animationName, selector).toBe("none");
     }
   });
 });
-// first error (sweep): (whole file) => Test timeout of 20000ms exceeded.

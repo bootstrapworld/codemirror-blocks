@@ -1,6 +1,7 @@
 // PORTED from packages/codemirror-blocks/e2e/morph.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, thirteenth round.
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
+import { openDemo } from "../compat/helpers";
 
 /**
  * Switching between text and blocks: the words of the program float from where
@@ -11,9 +12,10 @@ const toggle = (page: Page) => page.locator(".blocks-toggle-btn").click();
 const fragments = (page: Page) => page.locator(".cmb-morph");
 const editor = (page: Page) => page.locator(".Editor");
 
-async function open(page: Page, lang = "routine") {
-  await page.goto(`/?lang=${lang}`);
-  await page.waitForFunction(() => !!(window as { cmb?: unknown }).cmb);
+// edited: the page is this editor's demo (`openDemo`: the old page's `window.cmb` in place over it); its languages are scheme, javascript and python,
+// and every one has a toolbar, so the one test of the toolbar opening and closing opens the page it likes (the bar is above the editor here, not beside it)
+async function open(page: Page, lang = "scheme") {
+  await openDemo(page, lang, "text"); // (the old page opens as text)
   await expect(page.locator(".blocks-toggle-btn")).toBeVisible();
 }
 
@@ -30,14 +32,16 @@ test.describe("with motion", () => {
     await toggle(page);
     // (copies of the words are over the editor while it is switching)
     await expect(fragments(page).first()).toBeVisible();
-    await expect(editor(page)).toHaveAttribute("data-morphing", "");
+    // edited: the mark is "" while the words are measured and "play" once they float, which is a few frames after (the blocks are drawn at once here,
+    // so by the time the test looks it may be either)
+    await expect(editor(page)).toHaveAttribute("data-morphing", /^(play)?$/);
     const words = await fragments(page).allTextContents();
-    expect(words).toContain("repeat");
+    expect(words).toContain("define"); // edited: `repeat` was Routine's
     // (and they are gone, with the blocks there, when they have got there)
     await expect(fragments(page)).toHaveCount(0, { timeout: 5000 });
     await expect(editor(page)).not.toHaveAttribute("data-morphing", "");
     await expect(
-      page.locator(".CodeMirror-code .blocks-node").first()
+      page.locator(".cm-content .blocks-node").first()
     ).toBeVisible();
 
     // and back to the text
@@ -50,8 +54,8 @@ test.describe("with motion", () => {
     const back = await page.evaluate(() =>
       (window as unknown as { cmb: { getValue(): string } }).cmb.getValue()
     );
-    expect(back.replace(/\s+/g, " ")).toContain("repeat 3");
-    expect(text).toContain("repeat 3");
+    expect(back.replace(/\s+/g, " ")).toContain("define (square x)"); // edited: Scheme's sample
+    expect(text).toContain("define (square x)");
   });
 
   test("the words really move: a word ends up away from where it began", async ({
@@ -83,8 +87,8 @@ test.describe("with motion", () => {
       .poll(async () => Object.keys(await moved()).length)
       .toBeGreaterThan(0);
     const distances = await moved();
-    // `repeat` is at the start of a line in the text, and in the strip of a block
-    expect(distances["repeat"]).toBeGreaterThan(10);
+    // `define` is at the start of a line in the text, and in the strip of a block (edited: `repeat` was Routine's)
+    expect(distances["define"]).toBeGreaterThan(10);
     // (most of the words that are in both go somewhere)
     const far = Object.values(distances).filter((d) => d > 10).length;
     expect(far).toBeGreaterThan(Object.keys(distances).length / 2);
@@ -103,11 +107,17 @@ test.describe("with motion", () => {
       const box = layer.getBoundingClientRect();
       // (a clip is measured from the box of the element it is on: one with no
       // size shows nothing at all)
-      const m = /inset\(([-\d.]+)px ([-\d.]+)px ([-\d.]+)px ([-\d.]+)px\)/.exec(
-        getComputedStyle(layer).clipPath
-      );
+      // edited: the browser writes `inset(52px 0px 0px)` for `inset(52px 0px 0px 0px)` when the sides are equal (the editor is as wide as the window
+      // here): the one to four values are read as the shorthand they are
+      const m = /inset\(([^)]+)\)/.exec(getComputedStyle(layer).clipPath);
       if (!m || !box.width || !box.height) return { box: box.width, shown: 0 };
-      const [top, right, bottom, left] = m.slice(1).map(Number);
+      const v = m[1].split(/\s+/).map(parseFloat);
+      const [top, right, bottom, left] = [
+        v[0],
+        v[1] ?? v[0],
+        v[2] ?? v[0],
+        v[3] ?? v[1] ?? v[0],
+      ];
       const shown = [
         ...layer.querySelectorAll<HTMLElement>(".cmb-morph"),
       ].filter((el) => {
@@ -130,13 +140,14 @@ test.describe("with motion", () => {
   test("the toolbar opens first, then the words float; going back the words float, then it closes", async ({
     page,
   }) => {
-    // (WeScheme has a toolbar; Routine has none)
-    await open(page, "wescheme");
+    // edited: the toolbar is a bar above the editor here, so what opens and closes is its height, and the words are measured below it (not
+    // to the right of it: `width` / `wordLeft` / `barRight` of the old test)
+    await open(page, "scheme");
     type State = {
-      width: number;
+      height: number;
       moving: boolean;
-      wordLeft: number;
-      barRight: number;
+      wordTop: number;
+      barBottom: number;
     };
     // when a word has an animation: how wide the toolbar is, whether it is itself
     // moving, and where the first word began
@@ -150,9 +161,9 @@ test.describe("with motion", () => {
           const bar = document.querySelector(".toolbar-pane") as HTMLElement;
           const box = bar.getBoundingClientRect();
           return {
-            width: box.width,
-            barRight: box.right,
-            wordLeft: parseFloat(words[0].style.left),
+            height: box.height,
+            barBottom: box.bottom,
+            wordTop: parseFloat(words[0].style.top),
             moving: bar
               .getAnimations()
               .some(
@@ -166,15 +177,15 @@ test.describe("with motion", () => {
     // they were measured after it opened (to the right of it, not under it)
     await toggle(page);
     const opening = await whenFloating();
-    expect(opening.width).toBeGreaterThan(190);
+    expect(opening.height).toBeGreaterThan(30);
     expect(opening.moving).toBe(false);
-    expect(opening.wordLeft).toBeGreaterThan(opening.barRight);
+    expect(opening.wordTop).toBeGreaterThanOrEqual(opening.barBottom - 1);
     await expect(fragments(page)).toHaveCount(0, { timeout: 5000 });
     // back to text: the toolbar is held open while the words float, and closes
     // after them
     await toggle(page);
     const closing = await whenFloating();
-    expect(closing.width).toBeGreaterThan(190);
+    expect(closing.height).toBeGreaterThan(30);
     expect(closing.moving).toBe(false);
     await expect(fragments(page)).toHaveCount(0, { timeout: 5000 });
     await expect
@@ -182,7 +193,7 @@ test.describe("with motion", () => {
         page.evaluate(
           () =>
             document.querySelector(".toolbar-pane")!.getBoundingClientRect()
-              .width
+              .height
         )
       )
       .toBeLessThan(5);
@@ -191,7 +202,7 @@ test.describe("with motion", () => {
   test("a click while the toolbar is opening makes the switch at once", async ({
     page,
   }) => {
-    await open(page, "wescheme");
+    await open(page, "scheme");
     await toggle(page);
     // (the toolbar is on its way: nothing is switched yet)
     await expect(page.locator(".Editor")).toHaveClass(/text/);
@@ -201,7 +212,7 @@ test.describe("with motion", () => {
     });
     await expect(fragments(page)).toHaveCount(0);
     await expect(
-      page.locator(".CodeMirror-code .blocks-node").first()
+      page.locator(".cm-content .blocks-node").first()
     ).toBeVisible();
   });
 
@@ -215,7 +226,7 @@ test.describe("with motion", () => {
     await expect(fragments(page)).toHaveCount(0, { timeout: 500 });
     await expect(editor(page)).not.toHaveAttribute("data-morphing", "");
     await expect(
-      page.locator(".CodeMirror-code .blocks-node").first()
+      page.locator(".cm-content .blocks-node").first()
     ).toBeVisible();
   });
 });
@@ -242,36 +253,8 @@ test.describe("with reduced motion", () => {
     );
     expect(seen).toBe(0);
     await expect(
-      page.locator(".CodeMirror-code .blocks-node").first()
+      page.locator(".cm-content .blocks-node").first()
     ).toBeVisible();
     await expect(editor(page)).not.toHaveAttribute("data-morphing", "");
   });
 });
-
-test.fixme(true, "M: the animated morph between text and blocks is not built");
-
-// FIXME-BEGIN (thirteenth round: M: the animated morph between text and blocks is not built)
-const FIXME = new Set<string>([
-  "with motion › the words of the text float into the blocks, and back",
-  "with motion › the words really move: a word ends up away from where it began",
-  "with motion › the words can be seen: the layer they are on has a size, and they are in what it shows",
-  "with motion › the toolbar opens first, then the words float; going back the words float, then it closes",
-  "with motion › a click while the toolbar is opening makes the switch at once",
-  "with motion › a key pressed in the middle of it ends it at once",
-  "with reduced motion › nothing floats: the switch is made at once",
-]);
-test.beforeEach(({}, ti) => {
-  test.fixme(
-    FIXME.has(ti.titlePath.slice(1).join(" › ")),
-    "M: the animated morph between text and blocks is not built"
-  );
-});
-// FIXME-END
-// first error (sweep): (whole file) => Test timeout of 20000ms exceeded.
-// first error (sweep): with motion › the words of the text float into the blocks, and back => Test timeout of 20000ms exceeded.
-// first error (sweep): with motion › the words really move: a word ends up away from where it began => Test timeout of 20000ms exceeded.
-// first error (sweep): with motion › the words can be seen: the layer they are on has a size, and they are in what it shows => Test timeout of 20000ms exceeded.
-// first error (sweep): with motion › the toolbar opens first, then the words float; going back the words float, then it closes => Test timeout of 20000ms exceeded.
-// first error (sweep): with motion › a click while the toolbar is opening makes the switch at once => Test timeout of 20000ms exceeded.
-// first error (sweep): with motion › a key pressed in the middle of it ends it at once => Test timeout of 20000ms exceeded.
-// first error (sweep): with reduced motion › nothing floats: the switch is made at once => Test timeout of 20000ms exceeded.

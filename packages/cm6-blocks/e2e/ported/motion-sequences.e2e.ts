@@ -1,7 +1,6 @@
 // PORTED from packages/codemirror-blocks/e2e/motion-sequences.e2e.ts: only the import changed (to ../compat/helpers); see doc/experiments/cm6-direct-tree.md, thirteenth round.
 import { expect, Page, test } from "@playwright/test";
-import { snapshot } from "../compat/helpers";
-test.fixme(true, "M: the morph and its motion are not built");
+import { openDemo, snapshot } from "../compat/helpers";
 
 /**
  * The animated switch between text and blocks (see ui/morph.ts), in sequences
@@ -22,25 +21,27 @@ test.use({ reducedMotion: "no-preference" });
 const SEEDS = (process.env.CMB_MOTION_SEEDS ?? "1,2,3")
   .split(",")
   .map((s) => Number(s.trim()));
-const LANGUAGES = ["wescheme", "routine", "lambda", "example"];
+// edited: this editor's demo has Scheme, JavaScript and Python (not WeScheme, Routine, Lambda and the example language)
+const LANGUAGES = ["scheme", "javascript", "python"];
 const BURSTS = 4;
 /**
- * Documents that hold the core nodes each language writes its own way, put in
- * before the switches (a language's own example code has few of them): the
- * seed picks one, besides the example code
+ * Documents that hold more than a language's own sample (the Scheme ones with comments and brackets, the others with blocks and calls), put in
+ * before the switches: the seed picks one, besides the sample. (They parse: a program that does not cannot be switched to blocks, and the dialog
+ * that says so is its own test.)
  */
 const DOCUMENTS: Record<string, string[]> = {
-  wescheme: [
-    "(cond\n  [(< a b) a]\n  ; the else\n  [else b])\n(cond [x 1] [y 2])\n(when a b c)\n(f ... z)",
+  scheme: [
+    "(cond\n  [(< a b) a]\n  ; the else\n  [else b])\n(cond [x 1] [y 2])\n(when a b c)",
+    '; plan\n(define n 10)\n(if (< n 30)\n    (display "on time")\n    (display "late"))',
   ],
-  lambda: [
-    "if a then b else if c then d else e;\nf(1, 2);\nx = y + 1;\nif p then { q; r }",
-    "if ... then loop(i + 1) else i",
+  javascript: [
+    "if (a) { b; } else if (c) { d; } else { e; }\nf(1, 2);\nx = y + 1;",
+    "// loop\nfor (let i = 0; i < 3; i++) {\n  total = total + i;\n}",
   ],
-  routine: [
-    '; plan\n(let n 10)\n(repeat 3\n  (show (+ n 1))\n  (if (> n 20) (show "late")))\n(if (< n 30)\n  (show "on time")\n  (show "late"))',
+  python: [
+    "if a:\n    b\nelif c:\n    d\nelse:\n    e\nf(1, 2)\nx = y + 1",
+    "# loop\nfor i in [1, 2, 3]:\n    total = total + i",
   ],
-  example: [],
 };
 
 /** mulberry32: the same sequence for the same seed */
@@ -82,7 +83,7 @@ const steps: Record<string, Step> = {
     return "click beside the editor";
   },
   "scroll the editor": async (page) => {
-    const box = await page.locator(".CodeMirror-scroll").boundingBox();
+    const box = await page.locator(".cm-scroller").boundingBox();
     if (!box) return "no editor to scroll";
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.wheel(0, 150);
@@ -118,17 +119,19 @@ async function settled(page: Page, memory: { text?: string; blocks: boolean }) {
         : cls;
   });
   expect(["blocks", "text"], "the mode of the editor").toContain(mode);
-  const inLines = page.locator(".CodeMirror-code .blocks-node");
+  const inLines = page.locator(".cm-content .blocks-node");
   const bar = page.locator(".toolbar-pane");
   const hasBar = (await bar.count()) > 0;
-  const barWidth = () => bar.evaluate((el) => el.getBoundingClientRect().width);
+  // edited: the toolbar is a bar above the editor here: it is its height that opens and closes
+  const barWidth = () =>
+    bar.evaluate((el) => el.getBoundingClientRect().height);
   if (mode === "blocks") {
     memory.blocks = true;
     await expect
       .poll(() => inLines.count(), { timeout: 5000 })
       .toBeGreaterThan(0);
     if (hasBar)
-      await expect.poll(barWidth, { timeout: 5000 }).toBeGreaterThan(190);
+      await expect.poll(barWidth, { timeout: 5000 }).toBeGreaterThan(30);
     // (the AST is the text: not where keyboard focus is, as a click beside the
     // editor leaves it on the page)
     await expect
@@ -162,8 +165,7 @@ async function runSequence(page: Page, seed: number) {
   const log: string[] = [`open ${language}`];
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(String(error.stack)));
-  await page.goto(`/?lang=${language}`);
-  await page.waitForFunction(() => !!(window as { cmb?: unknown }).cmb);
+  await openDemo(page, language); // (edited: this editor's page)
   await expect(page.locator(".blocks-toggle-btn")).toBeVisible();
   // (or the language's own example code, if the seed says so)
   const documents = DOCUMENTS[language] ?? [];
@@ -229,4 +231,3 @@ async function runSequence(page: Page, seed: number) {
 for (const seed of SEEDS) {
   test(`motion sequence, seed ${seed}`, ({ page }) => runSequence(page, seed));
 }
-// first error (sweep): (whole file) => Test timeout of 20000ms exceeded.
