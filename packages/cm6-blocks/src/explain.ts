@@ -10,7 +10,7 @@
 import type { BNode, Language, TextChange } from "./types";
 import type { BlockTable } from "./lezer";
 
-const errorsIn = (roots: BNode[], a: number, b: number): BNode[] => {
+export const errorsIn = (roots: BNode[], a: number, b: number): BNode[] => {
   const out: BNode[] = [];
   const go = (n: BNode) => {
     if (n.kind === "error") out.push(n);

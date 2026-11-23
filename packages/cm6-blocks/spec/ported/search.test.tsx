@@ -361,13 +361,11 @@ describe("the search rotor", () => {
     expect(said().pop()).toBe("No search settings have been selected");
   });
 
-  // SKIPPED (M): the page's text/blocks mode toggle button and text mode
-
-  // first error (sweep): TypeError: Cannot read properties of null (reading 'element')
-  it.skip("does nothing in text mode", () => {
+  it("does nothing in text mode", () => {
     cmb.setBlockMode(false);
     say.mockClear();
-    keyDown("F3", { ctrlKey: true }, document.querySelector("textarea")!);
+    // edited: the text is CodeMirror 6's contenteditable, not a textarea
+    keyDown("F3", { ctrlKey: true }, document.querySelector(".cm-content")!);
     expect(said()).toEqual([]);
   });
 });

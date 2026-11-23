@@ -36,7 +36,7 @@ describe("When editing and moving commented nodes", () => {
 2`);
     });
 
-    // SKIPPED (D): text/blocks toggling does not rewrite comments here (there is no text mode switch of the text); the comment stays as written (notes, sixth round 4)
+    // SKIPPED (D): the old editor prints the program again when the mode is switched, which rewrites the comments (the opening whitespace goes); this editor does not print: the text stays exactly as written, on every switch (twenty-ninth round)
 
     // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
     it.skip("when the mode is toggled, it should reformat all comments as block comments", () => {

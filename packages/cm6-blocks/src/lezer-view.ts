@@ -23,6 +23,7 @@
  */
 import {
   Compartment,
+  EditorSelection,
   EditorState,
   Extension,
   StateEffect,
@@ -73,7 +74,7 @@ import {
 import { browserPlayer, SoundEvent, SoundName, SoundPlayer } from "./sound";
 import { makeNode } from "./node";
 import { contentHash } from "./hash";
-import { refusal } from "./explain";
+import { END_MESSAGE, errorsIn, explainError, place, refusal } from "./explain";
 import { Bail, compatible, reconcile, ReconcileEnv } from "./reconcile";
 import type { BNode, Doc, Slot, TextChange } from "./types";
 import coreCss from "./css/core.css";
@@ -308,6 +309,21 @@ export interface LezerBlockEditor {
   change(c: TextChange): void;
   focusNode(node: BNode): void;
   focusedNode(): BNode | null;
+  /**
+   * The mode: "blocks" (the program drawn as blocks over the text) or "text" (plain CodeMirror text, no block layer, no block keys). `setMode` switches at
+   * once, with no animation (`mountModeToggle` of mode.ts has the animated switch and the button). Going to blocks needs text that parses: a text with
+   * a parse error stays in text mode, and the answer is the message that says why (null when the mode is the one asked for). Focus and scroll position
+   * are kept; going back to blocks after the text was edited in text mode starts the undo history over (the old editor's rule).
+   */
+  setMode(mode: "text" | "blocks"): string | null;
+  readonly mode: "text" | "blocks";
+  /** why the text cannot be shown as blocks now (the parser's message), or null when it can */
+  modeProblem(): string | null;
+  /** `fn` is called after each switch of the mode; returns the function that stops it */
+  onModeChange(fn: (mode: "text" | "blocks") => void): () => void;
+  /** forget the undo and redo history (the text stays) */
+  clearHistory(): void;
+  /** `setMode` for a boolean (the old editor's name); a switch refused for a parse error is silent here: ask `modeProblem` or use `setMode` */
   setBlockMode(on: boolean): void;
   /** are the blocks showing (not the text mode) */
   isBlockMode(): boolean;
@@ -976,6 +992,7 @@ export function createLezerBlockEditor(
   });
 
   const compartment = new Compartment();
+  const historyComp = new Compartment();
   let held: (() => void) | null = null;
   class PendingWidget extends WidgetType {
     constructor(readonly el: HTMLElement) {
@@ -1061,6 +1078,9 @@ export function createLezerBlockEditor(
     }),
   ];
   let blockMode = true;
+  /** text was edited while in text mode since the blocks were last shown: the history starts over on the way back (see `setMode`) */
+  let editedAsText = false;
+  const modeListeners = new Set<(m: "text" | "blocks") => void>();
   let gone = false;
   // eslint-disable-next-line prefer-const -- read by closures made before the view exists
   let view: EditorView;
@@ -1712,6 +1732,63 @@ export function createLezerBlockEditor(
         ? parts.slice(0, -1).join(", ") + ", and " + parts[parts.length - 1]
         : parts.join(" and ");
     say(`At the top level, this program contains ${list}.`);
+  }
+
+  /* ---- the mode */
+
+  /** why the text cannot be drawn as blocks: the first parse error, in the parser's words; null when the whole text parses */
+  function modeProblem(): string | null {
+    const st = view.state.field(field);
+    const text = view.state.doc.toString();
+    const bad = errorsIn(st.roots, 0, text.length);
+    if (bad.length) return explainError(options.table, text, bad[0]);
+    if (st.errs.length) {
+      const [from, to] = st.errs[0];
+      return to >= text.trimEnd().length
+        ? END_MESSAGE
+        : `Unexpected text at ${place(text, from)}`;
+    }
+    return null;
+  }
+  /** forget the undo and redo history: the history extension is dropped and put back, which makes its field new */
+  function clearHistory(): void {
+    if (gone) return;
+    view.dispatch({ effects: historyComp.reconfigure([]) });
+    view.dispatch({ effects: historyComp.reconfigure(history()) });
+    histUndo.length = 0;
+    histRedo.length = 0;
+    histPending = null;
+  }
+  function switchMode(on: boolean): string | null {
+    if (blockMode === on) return null;
+    if (gone) return null;
+    if (on) {
+      const why = modeProblem();
+      if (why) return why;
+    }
+    // (what must survive the switch: the block that has the focus, where the text is scrolled to)
+    const had = ed.focusedNode();
+    const inEditor = view.contentDOM.contains(
+      view.contentDOM.ownerDocument.activeElement
+    );
+    blockMode = on;
+    done.length = 0;
+    undone.length = 0;
+    view.dispatch({
+      effects: [
+        view.scrollSnapshot(),
+        compartment.reconfigure(on ? blockExtension : []),
+      ],
+      // (a block that had the focus: the text cursor goes to its start)
+      selection: !on && had ? EditorSelection.cursor(had.from) : undefined,
+    });
+    if (on && editedAsText) clearHistory();
+    editedAsText = false;
+    if (inEditor && !on) view.focus();
+    sayLater(`${on ? "Block" : "Text"} Mode Enabled`, 500);
+    if (on) summarize();
+    for (const fn of [...modeListeners]) fn(blockMode ? "blocks" : "text");
+    return null;
   }
 
   const ed: LezerBlockEditor = {
@@ -2402,17 +2479,19 @@ export function createLezerBlockEditor(
       return renderer.nodeOf(active);
     },
     isBlockMode: () => blockMode,
-    setBlockMode(on) {
-      if (blockMode === on) return;
-      blockMode = on;
-      done.length = 0;
-      undone.length = 0;
-      view.dispatch({
-        effects: compartment.reconfigure(on ? blockExtension : []),
-      });
-      sayLater(`${on ? "Block" : "Text"} Mode Enabled`, 500);
-      if (on) summarize();
+    get mode() {
+      return blockMode ? "blocks" : "text";
     },
+    setMode: (mode) => switchMode(mode === "blocks"),
+    setBlockMode(on) {
+      switchMode(on);
+    },
+    modeProblem,
+    onModeChange(fn) {
+      modeListeners.add(fn);
+      return () => modeListeners.delete(fn);
+    },
+    clearHistory,
     stats: () => ({ ...stats }),
     destroy() {
       gone = true;
@@ -2429,7 +2508,7 @@ export function createLezerBlockEditor(
     state: EditorState.create({
       doc: text,
       extensions: [
-        history(),
+        historyComp.of(history()),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         field,
         compartment.of(blockExtension),
@@ -2438,6 +2517,7 @@ export function createLezerBlockEditor(
     dispatchTransactions(trs, v) {
       for (const t of trs) recorder.transaction(t);
       if (trs.some((t) => t.docChanged)) settleHistoryFocus();
+      if (!blockMode && trs.some((t) => t.docChanged)) editedAsText = true;
       const snap = trs.some((t) => t.docChanged) ? takeSnapshot() : null;
       const focusBefore = snap && snap.node ? pathOf(snap.node) : null;
       const before = v.state;
@@ -2535,6 +2615,12 @@ export function createLezerBlockEditor(
     () => "mode",
     () => null,
     ((on: boolean) => ({ blocks: on })) as never
+  );
+  named(
+    "setMode",
+    () => "mode",
+    () => null,
+    ((mode: string) => ({ blocks: mode === "blocks" })) as never
   );
   named(
     "collapse",

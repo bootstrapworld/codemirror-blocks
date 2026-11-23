@@ -57,8 +57,6 @@ describe("dragging while a top-level quarantine is open", () => {
     expect(document.querySelector("input.blocks-edit")).toBeNull();
   });
 
-  // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
-
   it("is two undo steps: the drop, then the typing", () => {
     expect(cmb.historySize().undo).toBe(2);
     undo();
@@ -81,14 +79,14 @@ describe("dragging one of several selected blocks", () => {
     dragOnto(elementForNode(root(0))!, elementForNode(root(3))!);
   });
 
-  // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
+  // SKIPPED (U): the drop of one of several selected blocks (`dragOnto` of the compat layer) makes no change here: the text stays `a b c d`; not looked into
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("moves just the block that was grabbed, onto the target", () => {
     expect(cmb.getValue()).toBe("b c a");
   });
 
-  // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
+  // SKIPPED (U): the drop of one of several selected blocks (`dragOnto` of the compat layer) makes no change here: the text stays `a b c d`; not looked into
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("leaves the other selected block where it was, still selected", () => {
@@ -96,7 +94,7 @@ describe("dragging one of several selected blocks", () => {
     expect(texts()[0]).toBe("b");
   });
 
-  // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
+  // SKIPPED (U): the drop of one of several selected blocks (`dragOnto` of the compat layer) makes no change here, so there is nothing to undo; not looked into
 
   // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
   it.skip("is one undo step", () => {
@@ -145,9 +143,8 @@ describe("undo after switching modes", () => {
   // Text typed between two blocks can pass through text that is not a program,
   // which block mode could not undo to, so editing as text starts the history
   // over on the way back to blocks.
-  // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
-  // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
-  it.skip("starts the history over when the text was edited in text mode", () => {
+  // edited: the old test stayed skipped until the mode switch was built (twenty-ninth round)
+  it("starts the history over when the text was edited in text mode", () => {
     cmb.setBlockMode(false);
     cmb.replaceRange("\n42", { line: 1, ch: 5 });
     expect(cmb.getValue()).toBe("(f y)\n(g z)\n42");
@@ -191,17 +188,15 @@ describe("unmounting the editor", () => {
     document.body.insertAdjacentHTML("afterbegin", '<div id="root"></div>');
   });
 
-  // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
-
-  // first error (sweep): Error: expect(received).toBe(expected) // Object.is equality
-  it.skip("is fine while a block is being edited in place", () => {
+  it("is fine while a block is being edited in place", () => {
     cmb = mountCMB(wescheme).cmb;
     cmb.setValue("(f x)");
     const x = kids(root())[1];
     mouseDown(x);
     keyDown("Enter", {}, x);
-    expect(document.activeElement?.getAttribute("contenteditable")).toBe(
-      "true"
+    // edited: the edit box is an input.blocks-edit, not a contenteditable
+    expect(document.activeElement?.classList.contains("blocks-edit")).toBe(
+      true
     );
     expect(() => teardown()).not.toThrow();
     // edited: the edit box is an input.blocks-edit (the editor's own content is contenteditable)
@@ -211,7 +206,7 @@ describe("unmounting the editor", () => {
 });
 
 describe("mounting again with a different language", () => {
-  // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
+  // SKIPPED (N): the old toolbar of primitives (`.Primitive`), which this editor does not have: its templates are a page's bar
   // first error (sweep): Error: expect(received).toBeGreaterThan(expected)
   it.skip("shows only the new language's blocks and toolbar", () => {
     cmb = mountCMB(wescheme).cmb;
@@ -233,7 +228,7 @@ describe("mounting again with a different language", () => {
     expect(document.querySelectorAll(".Primitive")).toHaveLength(0);
   });
 
-  // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
+  // SKIPPED (N): `getAst().language` and the old toolbar of primitives (`.Primitive`) are not in this editor or its compat layer
 
   // first error (sweep): TypeError: Cannot read properties of undefined (reading 'id')
   it.skip("goes back to the first language with nothing left over", () => {
@@ -263,7 +258,7 @@ describe("the lambda program block", () => {
     cmb = mountCMB(lambda).cmb;
   });
 
-  // SKIPPED (M): the old lifecycle edge cases (text mode, switching or remounting a language, the quarantine while dragging) are not built
+  // SKIPPED (N): the old lambda language's program block (a root that spans the whole program) is not in this editor: the block ends at 6, not 16
 
   // first error (sweep): Error: expect(received).toEqual(expected) // deep equality
   it.skip("spans everything it holds, so that it gets a block and its children fit inside", () => {

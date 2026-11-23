@@ -185,7 +185,7 @@ export class CompatAPI {
     this.ed.setBlockMode(on);
   }
   getBlockMode(): boolean {
-    return true;
+    return this.ed.isBlockMode();
   }
   // ---- cursor and selection (the text's)
   setCursor(p: Pos): void {

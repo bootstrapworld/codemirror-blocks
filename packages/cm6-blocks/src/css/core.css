@@ -481,3 +481,90 @@
   background: #fff0f0;
   color: #700;
 }
+
+/* ---- the text/blocks toggle (mode.ts) and the animation of the switch (morph.ts) ---- */
+.screenreader-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.Editor {
+  position: relative;
+}
+.Editor > .blocks-toggle-btn {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  top: 8px;
+  right: 24px;
+  z-index: 100;
+  height: 34px;
+  width: 34px;
+  padding: 0;
+  border-radius: 3px;
+  font-size: 18pt;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #999;
+}
+/* the toolbar (a bar above the editor) opens and closes with the mode: its height goes from nothing to what it holds */
+.Editor > .toolbar-pane {
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+  opacity: 1;
+  transition:
+    grid-template-rows 0.5s,
+    opacity 0.5s;
+}
+.Editor > .toolbar-pane > * {
+  min-height: 0;
+}
+.Editor.text > .toolbar-pane {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+/* the words of a switch between text and blocks float (morph.ts): the text of the editor is not drawn, copies of the words are, over it.
+   (the fill, not `color`: the color the text will have is what the words that float to it are made, and is read from it) */
+.Editor[data-morphing] .cm-content * {
+  -webkit-text-fill-color: transparent !important;
+}
+/* the toolbar is open whenever the words float, so that nothing is moving under them: going to blocks it is opened first, while the editor is
+   still text; going to text it is held open while the words float, and let go to close after them */
+.Editor.text[data-morph-toolbar] > .toolbar-pane {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+/* (and the blocks come in with the words, and not before) */
+.Editor.blocks[data-morphing] .cm-content {
+  opacity: 0;
+}
+.Editor.blocks[data-morphing="play"] .cm-content {
+  opacity: 1;
+  animation: cmb-morph-in 450ms ease-out both;
+}
+@keyframes cmb-morph-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* nothing animates for someone who asks their system for less motion */
+@media (prefers-reduced-motion: reduce) {
+  .Editor,
+  .Editor *,
+  .cm-editor,
+  .cm-editor * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

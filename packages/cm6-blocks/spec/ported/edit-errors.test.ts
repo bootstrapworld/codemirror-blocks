@@ -278,10 +278,7 @@ describe("switching modes with text that can't be converted", () => {
   const toggle = (name: RegExp) =>
     fireEvent.click(screen.getByRole("button", { name }));
 
-  // SKIPPED (M): the page's text/blocks mode toggle button and text mode
-
-  // first error (sweep): TestingLibraryElementError: Unable to find an accessible element with the role "button" and name `/switch to text mode/i`
-  it.skip("stays in text mode and explains why", () => {
+  it("stays in text mode and explains why", () => {
     allowConsoleErrors();
     toggle(/switch to text mode/i);
     cmb.setValue("(((");
@@ -291,10 +288,7 @@ describe("switching modes with text that can't be converted", () => {
     expect(cmb.getValue()).toBe("(((");
   });
 
-  // SKIPPED (M): the page's text/blocks mode toggle button and text mode
-
-  // first error (sweep): TestingLibraryElementError: Unable to find an accessible element with the role "button" and name `/switch to text mode/i`
-  it.skip("switches once the text is fixed", () => {
+  it("switches once the text is fixed", () => {
     allowConsoleErrors();
     toggle(/switch to text mode/i);
     cmb.setValue("(((");

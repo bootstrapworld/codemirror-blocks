@@ -9,6 +9,7 @@ import {
   LezerBlockEditor,
 } from "../../src/lezer-view";
 import { schemeParser, schemeTable } from "../../src/lang-scheme";
+import { mountModeToggle } from "../../src/mode";
 import { makeAPI, ASTNode, CompatAPI } from "./api";
 import * as announcer from "./announcer";
 import * as utils from "./utils";
@@ -66,7 +67,10 @@ export function mountCMB(
   // (the old editor's input is the focused element after it mounts; tests send their first key to document.activeElement)
   ed.view.contentDOM.focus();
   const cmb = makeAPI(ed) as unknown as API;
-  mounted = { cmb, store: {}, ed };
+  // (the old page's toggle button, and the `store` whose `blockMode` the old tests read)
+  mountModeToggle(ed, document.getElementById("root")!);
+  const store = { getState: () => ({ blockMode: ed.isBlockMode() }) };
+  mounted = { cmb, store, ed };
   return { cmb, store: mounted.store };
 }
 export function teardown() {
