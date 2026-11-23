@@ -1465,6 +1465,27 @@ export function createLezerBlockEditor(
     return found;
   }
   /** the drawn block that starts at `pos` and is longest (the one written there) */
+  /** the last of the outermost blocks (comments aside) that lie wholly inside [from, to): where focus goes after several blocks go in, as in the old editor */
+  function lastBlockIn(from: number, to: number): BNode | null {
+    const inside = new Set<BNode>();
+    for (const r of rootsSlot.nodes)
+      if (r.to >= from && r.from <= to)
+        walk(r, (n) => {
+          if (
+            n.from >= from &&
+            n.to <= to &&
+            n.to > n.from &&
+            n.kind !== "comment" &&
+            drawn(n)
+          )
+            inside.add(n);
+        });
+    let best: BNode | null = null;
+    for (const n of inside)
+      if (!(n.parent && inside.has(n.parent)) && (!best || n.from > best.from))
+        best = n;
+    return best;
+  }
   function blockAt(pos: number, len: number): BNode | null {
     let best: BNode | null = null;
     for (const r of rootsSlot.nodes) {
@@ -2056,10 +2077,12 @@ export function createLezerBlockEditor(
           ? rootPasteChange(anchor, !!before, joined)
           : changeFor(where.slot, where.index, joined);
       dispatch(change);
-      const found = blockAt(
-        change.from + change.insert.indexOf(texts[0].split("\n")[0]),
-        texts[0].length
-      );
+      const found =
+        lastBlockIn(change.from, change.from + change.insert.length) ??
+        blockAt(
+          change.from + change.insert.indexOf(texts[0].split("\n")[0]),
+          texts[0].length
+        );
       if (found) ed.focusNode(found);
       return found;
     },
@@ -2091,7 +2114,10 @@ export function createLezerBlockEditor(
         change.from + change.insert.indexOf(texts[0].split("\n")[0]),
         texts[0].length
       );
-      if (
+      if (texts.length > 1)
+        found =
+          lastBlockIn(change.from, change.from + change.insert.length) ?? found;
+      else if (
         found &&
         found.kind === "comment" &&
         found.slot &&
@@ -2134,7 +2160,9 @@ export function createLezerBlockEditor(
         );
         dispatch(c);
         const at = c.from + c.insert.indexOf(text.split("\n")[0]);
-        const found = blockAt(at, c.insert.length);
+        const found =
+          lastBlockIn(c.from, c.from + c.insert.length) ??
+          blockAt(at, c.insert.length);
         if (found) ed.focusNode(found);
         return found;
       }
@@ -2146,10 +2174,9 @@ export function createLezerBlockEditor(
           ? rootPasteChange(anchor, !!before, snippet)
           : changeFor(where.slot, where.index, snippet);
       dispatch(change);
-      let found = blockAt(
-        change.from + change.insert.indexOf(snippet),
-        snippet.length
-      );
+      let found =
+        lastBlockIn(change.from, change.from + change.insert.length) ??
+        blockAt(change.from + change.insert.indexOf(snippet), snippet.length);
       // (a block that was copied with its comment: the focus goes to the block, not to the comment line above it)
       if (
         found &&

@@ -236,3 +236,18 @@ describe("12. the search keys work from the text, with no block focused (the old
     expect(textOf(ed).slice(n.from, n.to)).toBe("xy"); // (the first "x" at or after the cursor, innermost block)
   });
 });
+
+describe("twenty-fifth round: after several blocks go in, focus is on the last", () => {
+  test("pasteTexts, and one text of several forms, focus the last block", () => {
+    const ed = make("scheme", "a b");
+    ed.pasteTexts(ed.roots()[0], ["x", "y", "z"]);
+    expect(textOf(ed).slice(ed.focusedNode()!.from, ed.focusedNode()!.to)).toBe(
+      "z"
+    );
+    const ed2 = make("scheme", "a b");
+    ed2.pasteText(ed2.roots()[0], "x\ny");
+    const f = ed2.focusedNode()!;
+    expect(textOf(ed2).slice(f.from, f.to)).toBe("y");
+    ok(ed2);
+  });
+});
