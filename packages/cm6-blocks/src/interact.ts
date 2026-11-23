@@ -345,7 +345,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
         ed.say(`changed ${t}`);
       },
       typed === undefined,
-      false,
+      // (a text with line breaks, such as a docstring, goes in a textarea: an input would drop the breaks, and leaving the box would write that)
+      (typed ?? node.value ?? "").includes("\n"),
       (t) => (t === (node.value ?? "") ? null : ed.refuseReplace(node, t))
     );
   }
