@@ -5,7 +5,7 @@
  */
 import { redo, redoDepth, undo, undoDepth } from "@codemirror/commands";
 import { EditorSelection } from "@codemirror/state";
-import type { LezerBlockEditor } from "../../src/lezer-view";
+import { inAnyMode, LezerBlockEditor } from "../../src/lezer-view";
 import { contentHash } from "../../src/hash";
 import { hasError } from "../../src/lezer";
 import type { BNode } from "../../src/types";
@@ -93,7 +93,7 @@ export class ASTNode {
 export class AST {
   constructor(private readonly api: CompatAPI) {}
   get rootNodes(): ASTNode[] {
-    return this.api.ed
+    return inAnyMode(this.api.ed)
       .roots()
       .filter((r) => r.kind !== "error")
       .map((r) => this.api.wrap(r));
@@ -119,7 +119,7 @@ export class AST {
       yield api.wrap(n);
       for (const s of n.slots) for (const c of s.nodes) yield* go(api, c);
     };
-    for (const r of this.api.ed.roots())
+    for (const r of inAnyMode(this.api.ed).roots())
       if (r.kind !== "error") yield* go(this.api, r);
   }
 }
@@ -174,11 +174,13 @@ export class CompatAPI {
   }
   getFocusedNode(): ASTNode | undefined {
     // (the old API answers undefined when nothing is focused)
-    const n = this.ed.focusedNode();
+    const n = inAnyMode(this.ed).focusedNode();
     return n ? this.wrap(n) : undefined;
   }
   getSelectedNodes(): ASTNode[] {
-    return this.ed.selection().map((n) => this.wrap(n));
+    return inAnyMode(this.ed)
+      .selection()
+      .map((n) => this.wrap(n));
   }
   // ---- modes
   setBlockMode(on: boolean): void {
@@ -198,7 +200,7 @@ export class CompatAPI {
    * itself does not move with the focus (in the old editor, in a real browser, `getCM().getCursor()` stays where it was).
    */
   getCursor(which?: "head" | "anchor" | "from" | "to"): Pos {
-    const node = this.ed.focusedNode();
+    const node = inAnyMode(this.ed).focusedNode();
     const el = document.activeElement;
     if (
       node &&
@@ -234,7 +236,7 @@ export class CompatAPI {
       o.push(n);
       for (const s of n.slots) for (const c of s.nodes) go(c);
     };
-    for (const r of this.ed.roots()) if (r.kind !== "error") go(r);
+    for (const r of inAnyMode(this.ed).roots()) if (r.kind !== "error") go(r);
     return o;
   }
   private blockAt(a: number, b: number): BNode | undefined {
@@ -244,7 +246,7 @@ export class CompatAPI {
   }
   private validateRange(a: number, b: number): void {
     if (this.blockAt(a, b)) return;
-    const roots = this.ed.roots();
+    const roots = inAnyMode(this.ed).roots();
     const topLevel = (o: number) =>
       !this.allNodes().some(
         (n) => n.from < o && o < n.to && n.kind !== "program"
@@ -287,7 +289,7 @@ export class CompatAPI {
     this.setSelections([...this.listSelections(), { anchor, head }]);
   }
   listSelections(): { anchor: Pos; head: Pos }[] {
-    const nodes = this.ed.selectedBlocks();
+    const nodes = inAnyMode(this.ed).selectedBlocks();
     // (with blocks selected the cursor is not a selection: only text that is really selected stays)
     const text = this.ed.view.state.selection.ranges.filter(
       (r) => !nodes.length || !r.empty
@@ -363,7 +365,7 @@ export class CompatAPI {
   }
   somethingSelected(): boolean {
     return (
-      this.ed.selection().length > 0 ||
+      inAnyMode(this.ed).selection().length > 0 ||
       this.ed.view.state.selection.ranges.some((r) => !r.empty)
     );
   }

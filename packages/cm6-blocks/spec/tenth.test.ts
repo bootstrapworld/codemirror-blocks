@@ -193,7 +193,7 @@ describe("3. Down and Up from the text cursor with no block focused", () => {
     ed.setBlockMode(false);
     at(ed, 0);
     press(ed, "ArrowDown");
-    expect(ed.focusedNode()).toBeNull();
+    expect(() => ed.focusedNode()).toThrow(/only available in block mode/);
   });
 });
 

@@ -499,3 +499,33 @@ describe("decorations of the page (markText, setBookmark, addLineWidget, gutters
     expect(ed.dom.querySelector(".cm-gutters")?.textContent).toContain("*");
   });
 });
+
+describe("block-only methods in text mode (entry-point tests; by decision: they throw)", () => {
+  test("roots, focusedNode, selection and selectedBlocks throw in text mode and answer again in block mode", () => {
+    const ed = make("scheme", SRC);
+    ed.setMode("text");
+    for (const f of [
+      () => ed.roots(),
+      () => ed.focusedNode(),
+      () => ed.selection(),
+      () => ed.selectedBlocks(),
+    ])
+      expect(f).toThrow(/only available in block mode/);
+    expect(ed.state.doc.toString()).toBe(SRC);
+    expect(() =>
+      ed.dispatch({ changes: { from: 0, insert: " " } })
+    ).not.toThrow();
+    ed.setMode("blocks");
+    expect(ed.roots().length).toBe(3);
+    expect(ed.focusedNode()).toBeNull();
+  });
+
+  test("the editor object is the same object in both modes, with every method", () => {
+    const ed = make("scheme", SRC);
+    const names = Object.keys(ed).concat(VIEW_MEMBERS as unknown as string[]);
+    ed.setMode("text");
+    ed.setMode("blocks");
+    for (const n of names) expect(n in ed).toBe(true);
+    expect(ed.view.dom).toBe(ed.dom);
+  });
+});

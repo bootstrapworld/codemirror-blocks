@@ -1797,6 +1797,11 @@ export function createLezerBlockEditor(
     histRedo.length = 0;
     histPending = null;
   }
+  const focusedBlock = (): BNode | null => {
+    const active = view.dom.ownerDocument.activeElement;
+    if (!active || !view.contentDOM.contains(active)) return null;
+    return renderer.nodeOf(active);
+  };
   function switchMode(on: boolean): string | null {
     if (blockMode === on) return null;
     if (gone) return null;
@@ -1805,7 +1810,7 @@ export function createLezerBlockEditor(
       if (why) return why;
     }
     // (what must survive the switch: the block that has the focus, where the text is scrolled to)
-    const had = ed.focusedNode();
+    const had = focusedBlock();
     const inEditor = view.contentDOM.contains(
       view.contentDOM.ownerDocument.activeElement
     );
@@ -2514,11 +2519,7 @@ export function createLezerBlockEditor(
       if (typeof el.scrollIntoView === "function")
         el.scrollIntoView({ block: "nearest", inline: "nearest" });
     },
-    focusedNode() {
-      const active = view.dom.ownerDocument.activeElement;
-      if (!active || !view.contentDOM.contains(active)) return null;
-      return renderer.nodeOf(active);
-    },
+    focusedNode: focusedBlock,
     isBlockMode: () => blockMode,
     get mode() {
       return blockMode ? "blocks" : "text";
@@ -2707,6 +2708,22 @@ export function createLezerBlockEditor(
   );
   named("moveNode", () => "moveNodes", ((n: BNode) => n) as never);
   named("setComment", () => "setComment", ((n: BNode) => n) as never);
+  const unguarded: Record<string, () => unknown> = {};
+  // the methods that only make sense with blocks showing throw in text mode (the old editor's rule)
+  for (const name of [
+    "roots",
+    "focusedNode",
+    "selection",
+    "selectedBlocks",
+  ] as const) {
+    const orig = ed[name] as () => unknown;
+    unguarded[name] = orig;
+    (ed as unknown as Record<string, () => unknown>)[name] = () => {
+      if (!blockMode)
+        throw new Error(`${name}() is only available in block mode`);
+      return orig();
+    };
+  }
   const whole = forwardView(ed, () => view) as LezerBlockEditor;
   const interaction = attachInteraction(whole);
   // the active block, for assistive technology: the real attribute on the element with role="tree"
@@ -2766,14 +2783,30 @@ export function createLezerBlockEditor(
   summarize();
   if (options.collapseAll) ed.collapseAll(true);
   marks();
-  internals.set(whole, { field, blockMode: () => blockMode });
+  internals.set(whole, { field, blockMode: () => blockMode, unguarded });
   return whole;
 }
 
 const internals = new WeakMap<
   LezerBlockEditor,
-  { field: StateField<LState>; blockMode: () => boolean }
+  {
+    field: StateField<LState>;
+    blockMode: () => boolean;
+    unguarded: Record<string, () => unknown>;
+  }
 >();
+
+/** the block-only methods without the text-mode check (`roots`, `focusedNode`, `selection`, `selectedBlocks`): for tests and tools that read the tree in either mode */
+export function inAnyMode(ed: LezerBlockEditor): {
+  roots(): BNode[];
+  focusedNode(): BNode | null;
+  selection(): BNode[];
+  selectedBlocks(): BNode[];
+} {
+  const u = (internals.get(ed) as { unguarded: Record<string, () => unknown> })
+    .unguarded;
+  return u as never;
+}
 
 /**
  * How often the editor's tree differed from a fresh parse of the same text

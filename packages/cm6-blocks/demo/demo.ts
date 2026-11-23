@@ -137,7 +137,10 @@ function show(text: string, reconcile = true, anchors = true): void {
     b.addEventListener("mousedown", (e) => e.preventDefault()); // keep the focus on the block
     b.addEventListener("pointerdown", (e) => ed!.beginTemplateDrag(e, t.name)); // dragging it into the program inserts it there; a plain click inserts it after the focused block
     b.addEventListener("click", () =>
-      ed!.insertTemplate(t.name, ed!.focusedNode() ?? ed!.lastFocused())
+      ed!.insertTemplate(
+        t.name,
+        (ed!.isBlockMode() ? ed!.focusedNode() : null) ?? ed!.lastFocused()
+      )
     );
     bar.appendChild(b);
   }
@@ -158,7 +161,7 @@ function stats(): void {
   if (!ed) return;
   const s = ed.stats();
   $("stats").textContent =
-    `${ed.view.state.doc.lines} lines, ${ed.roots().length} roots, ${ed.view.dom.querySelectorAll(".cm-content > .cm-line > .blocks-node").length} drawn, ` +
+    `${ed.view.state.doc.lines} lines, ${ed.doc.program.slots[0].nodes.length} roots, ${ed.view.dom.querySelectorAll(".cm-content > .cm-line > .blocks-node").length} drawn, ` +
     `${s.edits} edits, ${s.rootsRebuilt} roots rebuilt`;
 }
 function setLanguage(l: LangName): void {
