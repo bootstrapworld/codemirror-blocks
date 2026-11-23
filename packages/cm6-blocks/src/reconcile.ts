@@ -74,6 +74,9 @@ function adopt(slot: Slot, child: BNode): void {
 
 /** Make `old` equal to `nw` (they are `compatible`); returns whether anything under `old` or its own text changed. */
 export function reconcile(old: BNode, nw: BNode, env: ReconcileEnv): boolean {
+  // (an old node that the new tree uses as an anchor, somewhere else, is not given the fields of this other new node: it would be in two
+  // places, and the one that was changed in place would be wrong)
+  if (old !== nw && env.anchored?.(old)) throw new Bail();
   let changed = !sameText(old, nw);
   old.from = nw.from;
   old.to = nw.to;

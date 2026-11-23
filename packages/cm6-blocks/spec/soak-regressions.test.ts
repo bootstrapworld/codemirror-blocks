@@ -170,3 +170,60 @@ it("a multi-line string edited in its box keeps its line breaks when the box is 
   expect(ed.view.state.doc.toString()).toBe(code);
   ed.destroy();
 });
+
+it("seed 15213: an old node that the new tree uses as an anchor (the call after a comparison, which a template splits into two statements) is not given the fields of another new node: reconcile gives up the old root (Bail) and the redo is the fresh tree", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 15213,
+      language: "python",
+      code: 'for lst in "s3":\n    fact = fact.lst(True, lambda h: [])\n    total = {{"s1": [49]}: None}\nfor h in "s6":\n    for fact in 68:\n        acc() - g(fact, 14) < lst.h()\n        acc = {lambda y: lambda h: None: g(True, None) == True}\n    g(n.x(True) * lst())\n    g = "s2"\n{[85 < acc, acc(None, "s3", 31)]: {None * True: {None: None}}}\n',
+      steps: [
+        { op: "textEdit", a: 0.9585142226424068, len: 2, w: '"' },
+        {
+          op: "insertTemplateAt",
+          t: 0.1948692286387086,
+          a: 0.45953861251473427,
+          b: 0.7230334531050175,
+        },
+      ],
+      motion: "full",
+    } as Sequence)
+  ).toBeNull();
+});
+
+it("seed 25648: a moved node: the anchor that the old tree still holds in a `rest` slot is not changed in place as the counterpart of another new node", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 25648,
+      language: "python",
+      code: 'def g(n, x):\n    if n:\n        return f(27, "s5") < x()\n    if None:\n        total(True, {f: None}) == y(lambda f: acc, {"s9": 36}, y)\n        return total() + None\n    else:\n        fact = total(x - y.x())\n    n = x < None + None == "s9" + "s6"\n\nn = {f.lst(lst, n) == {None: None}: acc(49 - 31)}\n# note\nTrue\ny = {acc(True, y(True, None, 81), lambda acc: "s4"): True}\n',
+      steps: [{ op: "moveNode", a: 0.8469444722868502, b: 0.6531096936669201 }],
+      motion: "full",
+    } as Sequence)
+  ).toBeNull();
+});
+
+it("seed 51015: a pasted text and a template in a comparison chain: the same anchor rule, the `rest` slot of a binary", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 51015,
+      language: "python",
+      code: '67\nn = "s2"\ny = True\ndef acc(fact, g):\n    h = fact == acc.total(None) < g()\n    return lst(0, h, 89) + x("s6")\n',
+      steps: [
+        { op: "toggleMode", a: 0.02780469600111246 },
+        { op: "toggleMode", a: 0.13880405784584582 },
+        {
+          op: "pasteText",
+          a: 0.6671620837878436,
+          text: "[1, 2]",
+          before: false,
+        },
+        { op: "insertTemplate", t: 0.808039223542437, a: 0.473476235056296 },
+      ],
+      motion: "reduced",
+    } as Sequence)
+  ).toBeNull();
+});
