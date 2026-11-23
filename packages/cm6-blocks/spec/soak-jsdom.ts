@@ -534,6 +534,8 @@ export function runJsdom(
     if (stop) press("Escape", stop);
     ed.clearSelection?.();
     const final = text();
+    // (a sequence that ends with an undo has a redo history of its own: redoing as many as were undone then reaches another state than the end)
+    const redoLeft = redoDepth(view.state) > 0;
     let n = 0;
     while (undoDepth(view.state) > 0 && n < 1000) {
       undo(view);
@@ -549,7 +551,7 @@ export function runJsdom(
       });
     // (as many as were undone: the sequence itself may have ended with an undo)
     for (let k = 0; k < undone && redoDepth(view.state) > 0; k++) redo(view);
-    if (text() !== final)
+    if (!redoLeft && text() !== final)
       return done({
         invariant: "redo-all",
         message: `redoing everything left ${JSON.stringify(text().slice(0, 80))}, not ${JSON.stringify(final.slice(0, 80))}`,

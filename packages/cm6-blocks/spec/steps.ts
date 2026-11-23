@@ -149,9 +149,18 @@ export function removeOracle(
         !n.slot.pieces &&
         REMOVABLE.includes(n.slot.name)
     );
-  const before =
-    check && shapes ? ed.roots().map((r) => shape(r, new Set(gone))) : null;
   const text = ed.view.state.doc.toString();
+  // (a Python `{x}` that loses its last element is `{}`: another thing, an empty dict; the same kind of language fact as Scheme's)
+  const emptiesBraces = gone.some(
+    (n) =>
+      n.slot &&
+      n.slot.nodes.every((c) => gone.includes(c)) &&
+      text[n.slot.owner.from] === "{"
+  );
+  const before =
+    check && shapes && !emptiesBraces
+      ? ed.roots().map((r) => shape(r, new Set(gone)))
+      : null;
   // the text, whatever the blocks: only the removed blocks and the blanks and commas between blocks may be different
   const norm = (x: string): string =>
     x
