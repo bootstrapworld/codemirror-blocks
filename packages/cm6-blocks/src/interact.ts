@@ -315,6 +315,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
   }
 
   function editLeaf(node: BNode, typed?: string): void {
+    // (a box that is open in this block goes first: its input is the first child, which the new one would be put before)
+    open?.cancel();
     ed.focusNode(node);
     const el = renderer.element(node);
     // a node that is not drawn (outside the viewport) has no place for a box: it would sit in a detached element and show up later

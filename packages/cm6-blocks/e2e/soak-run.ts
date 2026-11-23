@@ -334,11 +334,12 @@ export async function runChromium(
         if (!blocks) return;
         const placed = await evaluate((a: any) => {
           const ed = (window as any).demo.ed;
+          // (focusing the editor may close an open box, which writes its text: read the length after that)
+          ed.view.focus();
           const len = ed.view.state.doc.length;
           let pos = Math.min(len, Math.floor(a.a * (len + 1)));
           while (pos <= len && !ed.isWhitespaceAt(pos)) pos++;
           if (pos > len) return false;
-          ed.view.focus();
           ed.view.dispatch({ selection: { anchor: pos } });
           return true;
         }, s as any);

@@ -117,3 +117,24 @@ test("seed 594: a comment block that has the focus and comes to go with a block 
   );
   expect(v).toBeNull();
 });
+test("seed 1051: clicking a leaf whose box is already open (a second box in the same block) does not throw", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 1051,
+      language: "python",
+      code: '"""\n################################\n# Mini Lindenmayer tool\n###############################\n\n',
+      steps: [
+        { op: "click", a: 0.9077679137699306, shift: false },
+        { op: "key", key: "Shift+|", a: 0.49513182789087296 },
+        { op: "focus", a: 0.5956072302069515 },
+      ],
+      motion: "full",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});
