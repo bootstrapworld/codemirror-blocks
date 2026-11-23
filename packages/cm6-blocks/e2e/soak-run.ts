@@ -2,7 +2,7 @@
  * The soak runner's Chromium engine (scripts/soak.js, e2e/soak.e2e.ts): one sequence of steps (spec/soak-gen.ts) with REAL input (keys, the mouse,
  * the clipboard) in the demo page, the invariants checked after every step. `runChromium` returns the first violation, or null.
  */
-import type { Browser, CDPSession } from "@playwright/test";
+import type { Browser, CDPSession, Page } from "@playwright/test";
 import { a11yProblems, focusProblem } from "../spec/soak-dom";
 import {
   at,
@@ -32,6 +32,8 @@ export interface ChromiumOptions {
   actionMs?: number;
   /** invariants not to check (a known finding that hides others) */
   skip?: string[];
+  /** called after each step, before the invariants are read (for looking at the page by hand when a failure is being understood) */
+  onStep?: (page: Page, i: number) => Promise<void>;
 }
 
 /** the sequence's step `s` as a function of the page; returns when the step has been made (the page may still be settling) */
@@ -509,9 +511,18 @@ export async function runChromium(
         const lineEl = (
           dom.node.nodeType === 3 ? dom.node.parentElement : dom.node
         )?.closest?.(".cm-line") as HTMLElement | null;
-        const first = lineEl?.querySelector(
+        let first = lineEl?.querySelector(
           ".blocks-node, .blocks-comment, .blocks-edit"
         ) as HTMLElement | null;
+        // (a line that starts with text, such as the `else` of a Python `else:` whose body is a block, or the indentation of a root that
+        // the parser read after a bad dedent, has its number beside that text, not beside the block, which a block-level widget puts on the
+        // line below it: the checker measures the line then)
+        if (lineEl && first) {
+          const r = document.createRange();
+          r.setStart(lineEl, 0);
+          r.setEndBefore(first);
+          if (r.toString() !== "") first = null;
+        }
         const box = (first ?? lineEl)?.getBoundingClientRect();
         if (!box || !box.height) continue;
         if (Math.abs(g.top - box.top) > 2)
@@ -641,6 +652,7 @@ export async function runChromium(
       if (g) return close(g);
       if (!rushed) await settle();
       if (rushed) continue; // (the next step is made in the middle of the morph; the invariants are read after that one)
+      await o.onStep?.(page, i);
       const v = await check(i, s.op);
       if (v) return close(v);
     }
