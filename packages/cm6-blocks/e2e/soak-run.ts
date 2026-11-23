@@ -744,7 +744,7 @@ export async function runChromium(
       if (!ownUndo && after !== final)
         return close({
           invariant: "redo-all",
-          message: `redoing everything left ${JSON.stringify(after.slice(0, 80))}, not ${JSON.stringify(final.slice(0, 80))}`,
+          message: `redoing everything left ${JSON.stringify(after.slice(0, 80))}, not ${JSON.stringify(final.slice(0, 80))}${firstDifference(after, final)}`,
           step: seq.steps.length,
           op: "redo-all",
         });

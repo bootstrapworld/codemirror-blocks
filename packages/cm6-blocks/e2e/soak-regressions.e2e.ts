@@ -221,3 +221,28 @@ test("seed 223: a switch back to blocks that is refused (text that does not pars
   );
   expect(v).toBeNull();
 });
+
+test("seed 579: dragging a selection of three blocks into a comparison chain (a `rest` slot) leaves the tree what its own parse gives: an anchor is not reconciled in place as another node", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 579,
+      language: "javascript",
+      code: 'describe("results of a worker", () => {\n  const lines =\n    JSON.stringify({ seed: 1, ok: true }) +\n    "\\n" +\n    JSON.stringify({ seed: 2, invariant: "focus", steps: [{ op: "key" }] }) +\n    "\\n" +\n    \'{"seed": 3, "ok"\'; // (cut: the worker was killed in the middle of a line)\n  test("passed, failed, and what was done", () => {\n    const r = lib.readResults(lines);\n    expect(r.passed).toBe(1);\n    expect(r.failures.map((f) => f.seed)).toEqual([2]);\n    expect([...r.done]).toEqual([1, 2]);\n  });\n  test("the first seed that was not done is the one that was running", () => {\n    expect(lib.missingSeeds([1, 2, 3, 4], lib.readResults(lines).done)).toEqual(\n      [3, 4]\n    );\n    expect(lib.readResults("").done.size).toBe(0);\n  });\n});\n\n',
+      steps: [
+        {
+          op: "dragSelection",
+          a: 0.8941608611494303,
+          b: 0.14645513915456831,
+          n: 3,
+        },
+      ],
+      motion: "reduced",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});
