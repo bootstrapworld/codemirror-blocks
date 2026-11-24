@@ -722,11 +722,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     },
     readChildren: (n, _e, handled) => {
       handled();
-      // (comments are not counted among the children)
-      const c = kids(n)
-        .filter((k) => k.kind !== "comment")
-        .map((k) => ed.language.describe(k));
-      ed.say(c.length ? c.join(", ") : "no children");
+      ed.say(ed.readChildren(n));
     },
     toggleSelection: (n, _e, handled) => {
       handled();
@@ -734,10 +730,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
     },
     readAncestors: (n, _e, handled) => {
       handled();
-      const parts = [ed.language.describe(n)];
-      for (let p = n.parent; p && p.kind !== "program"; p = p.parent)
-        parts.push(ed.language.describe(p) + ", at level " + level(p));
-      if (parts.length > 1) ed.say(parts.join(", inside "));
+      const said = ed.readAncestors(n);
+      if (said) ed.say(said);
       else beep("no-ancestors");
     },
     first: (_n, _e, handled) => {
@@ -908,11 +902,6 @@ export function attachInteraction(ed: LezerBlockEditor): {
   /** a short sound is the old editor's way to say "no" (sound.ts lists the events) */
   const beep = (event: SoundEvent): void => ed.sound("beep", event);
   let pasteBefore = false;
-  const level = (n: BNode): number => {
-    let c = 0;
-    for (let p: BNode | null = n; p && p.kind !== "program"; p = p.parent) c++;
-    return c;
-  };
 
   /* ---- clipboard */
 

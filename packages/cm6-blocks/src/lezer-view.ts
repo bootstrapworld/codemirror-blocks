@@ -77,6 +77,8 @@ import {
 import { browserPlayer, SoundEvent, SoundName, SoundPlayer } from "./sound";
 import { makeNode } from "./node";
 import { contentHash } from "./hash";
+import { describeKinds, summarizeProgram } from "./summary";
+import type { Kind } from "./summary";
 import { END_MESSAGE, errorsIn, explainError, place, refusal } from "./explain";
 import { Bail, compatible, reconcile, ReconcileEnv } from "./reconcile";
 import type { BNode, Doc, Slot, TextChange } from "./types";
@@ -288,6 +290,21 @@ export interface LezerBlockEditor extends ViewSurface {
   reportError(error: unknown): void;
   /** what was announced, newest last (the last 50) */
   said: string[];
+  /**
+   * The summary of the program, the old editor's words: "At the top level, this program contains 2 function definitions and 1 call." (each kind
+   * named by its table row's `label`, in the order the kinds first appear); null when there is nothing in it. Comments never count. Works in both modes.
+   */
+  summarizeProgram(): string | null;
+  /** what a list of blocks is made of, as part of a sentence ("2 calls and 1 number"; "nothing" for none); comments are left out */
+  describeKinds(nodes: readonly BNode[]): string;
+  /** say the summary of the program (a live region, also in `said`); false when there is nothing to say. The first time blocks are drawn it is said by itself */
+  sayProgramSummary(): boolean;
+  /** what the old editor says for "Read Ancestors": the block's description, then each ancestor's, "inside", with its level; null at the top level (it beeps) */
+  readAncestors(node: BNode): string | null;
+  /** what it says for "Read Children": the descriptions of the children, comments left out, joined with commas ("no children" for none) */
+  readChildren(node: BNode): string;
+  /** the summary of one block: what a screenreader says of it, and where it is ("call with 2 arguments, at level 2") */
+  summarizeBlock(node: BNode): string;
   /** Move several blocks (none inside another) to a gap, in document order: ONE text change, one undo step. */
   moveNodes(
     nodes: BNode[],
@@ -1897,6 +1914,13 @@ export function createLezerBlockEditor(
     }, 50);
   }
 
+  /** how deep a block is: 1 for a top-level one */
+  const levelOf = (n: BNode): number => {
+    let c = 0;
+    for (let p: BNode | null = n; p && p.kind !== "program"; p = p.parent) c++;
+    return c;
+  };
+
   let notice: HTMLElement | null = null;
   function reportError(error: unknown): void {
     if (notice?.isConnected) return; // (said once while it is showing)
@@ -1931,30 +1955,26 @@ export function createLezerBlockEditor(
     });
     return out.slice(0, 3).join(" and ");
   }
-  /** the first time the program is drawn as blocks: what is at its top level ("At the top level, this program contains 2 definitions and 1 call.") */
+  /** what a node is, for counting: the table's label of its row (an unparsed piece is "unparsed text"; a kind with no row is its own name) */
+  const kindOf = (n: BNode): Kind => {
+    const row = table.nodes[keyOfNode(n) ?? ""];
+    return {
+      type: keyOfNode(n) ?? n.kind,
+      label: n.kind === "error" ? "unparsed text" : (row?.label ?? n.kind),
+      orphan: n.kind === "comment",
+    };
+  };
+  /** "At the top level, this program contains 2 definitions and 1 call.", or null when there is nothing but comments; the comments never count */
+  const programSummary = (): string | null =>
+    summarizeProgram(rootsSlot.nodes.map(kindOf));
+  /** the first time the program is drawn as blocks: say it (once: after that the person knows their way around) */
   let summarized = false;
   function summarize(): void {
-    // (comments are not counted)
-    const counted = rootsSlot.nodes.filter((r) => r.kind !== "comment");
-    if (summarized || !counted.length) return;
+    if (summarized) return;
+    const s = programSummary();
+    if (!s) return;
     summarized = true;
-    const counts = new Map<string, number>();
-    for (const r of counted) {
-      const label =
-        (r.kind === "error"
-          ? "unparsed text"
-          : table.nodes[keyOfNode(r) ?? ""]?.label) ?? r.kind;
-      counts.set(label, (counts.get(label) ?? 0) + 1);
-    }
-    const parts = [...counts].map(
-      ([l, n]) =>
-        `${n} ${n === 1 ? l : /(s|x|sh|ch)$/.test(l) ? l + "es" : l + "s"}`
-    );
-    const list =
-      parts.length > 2
-        ? parts.slice(0, -1).join(", ") + ", and " + parts[parts.length - 1]
-        : parts.join(" and ");
-    say(`At the top level, this program contains ${list}.`);
+    say(s);
   }
 
   /* ---- the mode */
@@ -2284,6 +2304,28 @@ export function createLezerBlockEditor(
     exportActivity: () => recorder.export(),
     said,
     say,
+    summarizeProgram: programSummary,
+    describeKinds: (nodes) => describeKinds(nodes.map(kindOf)),
+    sayProgramSummary() {
+      const s = programSummary();
+      if (s) say(s);
+      return !!s;
+    },
+    readAncestors(node) {
+      const parts = [ed.language.describe(node)];
+      for (let p = node.parent; p && p.kind !== "program"; p = p.parent)
+        parts.push(ed.language.describe(p) + ", at level " + levelOf(p));
+      return parts.length > 1 ? parts.join(", inside ") : null;
+    },
+    readChildren(node) {
+      const c = node.slots
+        .flatMap((s) => s.nodes)
+        .filter((k) => k.kind !== "comment")
+        .map((k) => ed.language.describe(k));
+      return c.length ? c.join(", ") : "no children";
+    },
+    summarizeBlock: (node) =>
+      `${ed.language.describe(node)}, at level ${levelOf(node)}`,
     reportError,
     sound(name, event) {
       if (soundOn) (options.playSound ?? defaultPlayer)(name, event); // (the option is read each time: a page may set it later)
