@@ -1045,3 +1045,503 @@ it("seed 166412: a root of no width (a recovered ;) is not counted in the set si
     })
   ).toBeNull();
 }, 120_000);
+it("seed 110590: an edit that changes how the parser recovers makes the roots after it read again (an error beside it, errors between two touched roots, the same errors left beyond)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 110590,
+      language: "javascript",
+      code: 'var fact = 92;\ny.n({a: null ? 53 : y, b: n < "s5"});\n// TODO\nconst y = [];\nvar acc = lst(lst.h(n, null) - null < true);\ntotal(n(null, fact));\n',
+      steps: [
+        {
+          op: "textEdit",
+          a: 0.3642166708596051,
+          len: 0,
+          w: "(",
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 189367: an edit that changes how the parser recovers makes the roots after it read again (an error beside it, errors between two touched roots, the same errors left beyond)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 189367,
+      language: "javascript",
+      code: '// a comment\nfor (const x of [1, 2, 3]) {\n  total = total + x;\n}\nconsole.log(total, "done");\n',
+      steps: [
+        {
+          op: "replaceDoc",
+          text: "if (75) {\n  const x = true ? true : (acc) => acc;\n}\n[];\n// note\nn(h);\nconst y = lst.g();\n(g) => null;\n\nconst fact = (y) => (g) => true === true;\n// TODO\nn(x, [acc()]);\n",
+        },
+        {
+          op: "textEdit",
+          a: 0.20154931233264506,
+          len: 1,
+          w: "}",
+        },
+        {
+          op: "moveNode",
+          a: 0.686006881063804,
+          b: 0.2439013917464763,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 100800: an edit that changes how the parser recovers makes the roots after it read again (an error beside it, errors between two touched roots, the same errors left beyond)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 100800,
+      language: "javascript",
+      code: "a.b(c);\n[1, 2, 3];\nlet y = 5;",
+      steps: [
+        {
+          op: "pasteText",
+          a: 0.030136682093143463,
+          text: "true",
+          before: false,
+        },
+        {
+          op: "editBox",
+          a: 0.32979863160289824,
+          text: ")",
+          accept: true,
+        },
+        {
+          op: "textEdit",
+          a: 0.8051465933676809,
+          len: 2,
+          w: "",
+        },
+        {
+          op: "removeNode",
+          a: 0.034249101066961884,
+          b: 0.18531385087408125,
+        },
+        {
+          op: "setComment",
+          a: 0.4876486212015152,
+          text: "x; y",
+        },
+        {
+          op: "topLevelType",
+          a: 0.8512061552610248,
+          text: "foo bar",
+          accept: true,
+          how: "paste",
+        },
+        {
+          op: "insertText",
+          a: 0.5358822050038725,
+          b: 0.3326982301659882,
+          text: "[1, 2]",
+        },
+        {
+          op: "setComment",
+          a: 0.13754135579802096,
+          text: "note",
+        },
+        {
+          op: "removeNode",
+          a: 0.1871915354859084,
+          b: 0.6957916915416718,
+        },
+        {
+          op: "removeNode",
+          a: 0.615448051597923,
+          b: 0.6046434259042144,
+        },
+        {
+          op: "typeIntoBlock",
+          a: 0.8721863895189017,
+          text: "7",
+          accept: false,
+        },
+        {
+          op: "topLevelType",
+          a: 0.5501355158630759,
+          text: "(f 1)",
+          accept: true,
+          how: "type",
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "search",
+          text: "define",
+          next: false,
+        },
+        {
+          op: "select",
+          a: 0.4668796109035611,
+        },
+        {
+          op: "key",
+          key: "Backspace",
+          a: 0.5518591296859086,
+        },
+        {
+          op: "insertText",
+          a: 0.9055527565069497,
+          b: 0.8642652533017099,
+          text: "g(2)",
+        },
+        {
+          op: "key",
+          key: "Mod+Enter",
+          a: 0.5902943103574216,
+        },
+        {
+          op: "editBox",
+          a: 0.9071383941918612,
+          text: "y2",
+          accept: true,
+        },
+        {
+          op: "removeNode",
+          a: 0.17551913554780185,
+          b: 0.5208625805098563,
+        },
+        {
+          op: "key",
+          key: "Shift+ArrowLeft",
+          a: 0.47125021764077246,
+        },
+        {
+          op: "textEdit",
+          a: 0.5252554402686656,
+          len: 2,
+          w: " ",
+        },
+        {
+          op: "textEdit",
+          a: 0.050975498743355274,
+          len: 3,
+          w: '"',
+        },
+        {
+          op: "topLevelType",
+          a: 0.5817542574368417,
+          text: "x",
+          accept: false,
+          how: "type",
+        },
+        {
+          op: "insertTemplate",
+          t: 0.7813831304665655,
+          a: 0.06637405697256327,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 196989: an edit that changes how the parser recovers makes the roots after it read again (an error beside it, errors between two touched roots, the same errors left beyond)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 196989,
+      language: "javascript",
+      code: '// note\nconst total = "s8";\n',
+      steps: [
+        {
+          op: "textEdit",
+          a: 0.45316242473199964,
+          len: 2,
+          w: "(",
+        },
+        {
+          op: "topLevelType",
+          a: 0.05529108224436641,
+          text: "(f 1)",
+          accept: true,
+          how: "paste",
+        },
+        {
+          op: "replaceText",
+          a: 0.05569395120255649,
+          text: "g(2)",
+        },
+        {
+          op: "removeNode",
+          a: 0.2516508169937879,
+          b: 0.8765634093433619,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 152396: an edit that changes how the parser recovers makes the roots after it read again (an error beside it, errors between two touched roots, the same errors left beyond)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 152396,
+      language: "javascript",
+      code: 'if (g(null ? true : null)) {\n  while (n(g(), "s3" ? n : null, n + "s9")) {\n    (g) => "s9" ? true : total({a: "s5", b: null}, 86);\n    var y = g(43, fact(), [] - h.y(true));\n    f = y(true + true, n);\n  }\n}\nf([75], (x) => true === f(), [null]);\n',
+      steps: [
+        {
+          op: "editBox",
+          a: 0.7312195945996791,
+          text: "  ",
+          accept: true,
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "insertTemplateAt",
+          t: 0.3062992673367262,
+          a: 0.5070303387474269,
+          b: 0.47183117642998695,
+        },
+        {
+          op: "key",
+          key: "Space",
+          a: 0.9567368975840509,
+        },
+        {
+          op: "moveNode",
+          a: 0.03854922135360539,
+          b: 0.1303199203684926,
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "search",
+          text: "1",
+          next: false,
+        },
+        {
+          op: "insertText",
+          a: 0.27262712689116597,
+          b: 0.6718298990745097,
+          text: "true",
+        },
+        {
+          op: "key",
+          key: "Backspace",
+          a: 0.8499687886796892,
+        },
+        {
+          op: "select",
+          a: 0.41484883963130414,
+        },
+        {
+          op: "replaceText",
+          a: 0.4580533972475678,
+          text: "x",
+        },
+        {
+          op: "moveSelection",
+          a: 0.8838887352030724,
+        },
+        {
+          op: "textEdit",
+          a: 0.26219012145884335,
+          len: 2,
+          w: "{",
+        },
+        {
+          op: "editBox",
+          a: 0.3174007323104888,
+          text: ")",
+          accept: false,
+        },
+        {
+          op: "removeNode",
+          a: 0.9867883082479239,
+          b: 0.6767240972258151,
+        },
+        {
+          op: "moveNode",
+          a: 0.958855259232223,
+          b: 0.02473422233015299,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 191658: an edit that changes how the parser recovers makes the roots after it read again (an error beside it, errors between two touched roots, the same errors left beyond)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 191658,
+      language: "python",
+      code: '"s3"\nf = h(acc, n(f("s4"), total), None < {"s3": None})\n# TODO\ny = lambda g: lambda acc: acc - True\n"s7"\nwhile h("s1", True, None) == "s2" * True:\n    acc("s9", lst(f(), True == None, True), {None: True} - fact * True)',
+      steps: [
+        {
+          op: "moveNode",
+          a: 0.2486220367718488,
+          b: 0.4519062037579715,
+        },
+        {
+          op: "textEdit",
+          a: 0.8162776913959533,
+          len: 1,
+          w: "12",
+        },
+        {
+          op: "replaceDoc",
+          text: "def f(a, b):\n    y = a\n    return y\nf(1, 2)\n",
+        },
+        {
+          op: "key",
+          key: "Mod+Shift+z",
+          a: 0.3166285159531981,
+        },
+        {
+          op: "search",
+          text: "f",
+          next: true,
+        },
+        {
+          op: "pasteText",
+          a: 0.5015405188314617,
+          text: "True",
+          before: true,
+        },
+        {
+          op: "key",
+          key: "Home",
+          a: 0.4130794124212116,
+        },
+        {
+          op: "setComment",
+          a: 0.38144653174094856,
+          text: "x; y",
+        },
+        {
+          op: "collapse",
+          a: 0.5093106171116233,
+          on: false,
+        },
+        {
+          op: "key",
+          key: "ArrowRight",
+          a: 0.9713748600333929,
+        },
+        {
+          op: "textEdit",
+          a: 0.1552359696943313,
+          len: 2,
+          w: "if a:\n    b",
+        },
+        {
+          op: "redo",
+        },
+        {
+          op: "typeIntoBlock",
+          a: 0.42301130294799805,
+          text: "7",
+          accept: true,
+        },
+        {
+          op: "redo",
+        },
+        {
+          op: "comment",
+          a: 0.2363070733845234,
+          text: "TODO: fix",
+          accept: true,
+        },
+        {
+          op: "insertTemplate",
+          t: 0.1564259589649737,
+          a: 0.5582798400428146,
+        },
+        {
+          op: "moveNode",
+          a: 0.7241625469177961,
+          b: 0.7031007537152618,
+        },
+        {
+          op: "insertTemplate",
+          t: 0.2802774936426431,
+          a: 0.26203350559808314,
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "focus",
+          a: 0.3414340091403574,
+        },
+        {
+          op: "replaceText",
+          a: 0.6876044834498316,
+          text: "True",
+        },
+        {
+          op: "pasteText",
+          a: 0.17064845422282815,
+          text: "g(2)",
+          before: false,
+        },
+        {
+          op: "moveSelection",
+          a: 0.05412997305393219,
+        },
+        {
+          op: "select",
+          a: 0.9682135847397149,
+        },
+        {
+          op: "key",
+          key: "Space",
+          a: 0.6636744572315365,
+        },
+        {
+          op: "insertTemplateAt",
+          t: 0.973084069788456,
+          a: 0.7799091001506895,
+          b: 0.701559656765312,
+        },
+        {
+          op: "insertText",
+          a: 0.9775334557052702,
+          b: 0.08480556146241724,
+          text: "f()",
+        },
+        {
+          op: "insertText",
+          a: 0.45464742043986917,
+          b: 0.16827837540768087,
+          text: "{1: 2}",
+        },
+        {
+          op: "redo",
+        },
+        {
+          op: "key",
+          key: "Shift+|",
+          a: 0.541248818160966,
+        },
+        {
+          op: "insertText",
+          a: 0.3187273337971419,
+          b: 0.4769354846794158,
+          text: "{1: 2}",
+        },
+        {
+          op: "focus",
+          a: 0.02779122651554644,
+        },
+        {
+          op: "removeNode",
+          a: 0.5102774694096297,
+          b: 0.80423628189601,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);

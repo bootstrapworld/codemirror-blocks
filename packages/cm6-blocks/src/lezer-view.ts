@@ -772,9 +772,10 @@ export function createLezerBlockEditor(
           hi = Math.max(hi, tr.changes.mapPos(rs[k].to, -1));
         }
         let found = false;
+        // (one more at each end: a recovery node of no width at the end of the touched part, `(` + a comment + the recovery, is not inside it)
         tree.iterate({
-          from: lo,
-          to: hi,
+          from: Math.max(0, lo - 1),
+          to: hi + 1,
           enter: (n) => {
             if (n.type.isError) found = true;
             return !found;
@@ -807,9 +808,33 @@ export function createLezerBlockEditor(
           oldBeyond.every(
             (e, i) => e[0] === newBeyond[i][0] && e[1] === newBeyond[i][1]
           );
-        lastError = sameErrors
-          ? -1
-          : errs.reduce((m, e) => Math.max(m, e[1]), -1);
+        // (the roots between two touched ones, which a change in the first can make read differently: their errors, old and new)
+        let sameInside = true;
+        for (let k = 0; k < rs.length && sameInside; k++) {
+          if (affected.has(k) || rs[k].to < firstChangeA || k > lastAffected)
+            continue;
+          const a0 = tr.changes.mapPos(rs[k].from, 1);
+          const b0 = tr.changes.mapPos(rs[k].to, -1);
+          const was = v.errs
+            .filter((e) => e[0] >= rs[k].from && e[1] <= rs[k].to)
+            .map((e) => [
+              tr.changes.mapPos(e[0], 1),
+              tr.changes.mapPos(e[1], -1),
+            ]);
+          const now = errs.filter((e) => e[0] >= a0 && e[1] <= b0);
+          sameInside =
+            was.length === now.length &&
+            was.every((e, i) => e[0] === now[i][0] && e[1] === now[i][1]);
+        }
+        // (an error in the touched part, old or new, even where the same ones are left beyond it: how the parser recovers can be read another way
+        // in the roots after it with no error of theirs moved, `[]` as an array or as a pattern)
+        const nearError =
+          errs.some((e) => e[0] <= newB && e[1] >= firstChange) ||
+          v.errs.some((e) => e[0] <= oldB && e[1] >= firstChangeA);
+        lastError =
+          sameErrors && sameInside && !nearError
+            ? -1
+            : errs.reduce((m, e) => Math.max(m, e[1]), -1);
       }
       const kept = new Set<BNode>();
       // Anchors: inside a touched root that holds a change, a block that no change is near (nor its neighbours), with no Lezer error in it, and
