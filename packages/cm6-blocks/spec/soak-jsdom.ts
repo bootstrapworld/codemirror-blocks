@@ -109,6 +109,16 @@ const treeShape = (ed: LezerBlockEditor): string =>
     .map((n) => `${n.kind}:${n.from}-${n.to}:${n.value ?? ""}`)
     .join("|");
 
+/** where two tree shapes first differ: the blocks around it in each */
+const firstDifference = (a: string, b: string): string => {
+  const x = a.split("|");
+  const y = b.split("|");
+  let i = 0;
+  while (i < x.length && i < y.length && x[i] === y[i]) i++;
+  const near = (l: string[]) => l.slice(Math.max(0, i - 1), i + 2).join("|");
+  return `first difference at block ${i} of ${x.length} and ${y.length}: ${near(x).slice(0, 160)} vs ${near(y).slice(0, 160)}`;
+};
+
 export interface JsdomOptions {
   /** a step that takes longer than this (ms) is "stuck" */
   stepTimeoutMs?: number;
@@ -554,10 +564,16 @@ export function runJsdom(
         fresh = createLezerBlockEditor(host, text(), L.opts);
         const a = treeShape(ed!);
         const b = treeShape(fresh);
-        if (a !== b)
+        // (a text with a parse error, which a document cut from a real file can have: Lezer's incremental parse is not guaranteed to
+        // recover from an error the way a fresh parse does, and the editor draws what its own tree gives: checkLezerEditor holds it to that)
+        if (
+          a !== b &&
+          ed!.modeProblem() === null &&
+          fresh.modeProblem() === null
+        )
           return {
             invariant: "reparse",
-            message: `the blocks differ from a fresh parse of the text ${JSON.stringify(text().slice(0, 80))}: ${a.slice(0, 100)} vs ${b.slice(0, 100)}`,
+            message: `the blocks differ from a fresh parse of the text ${JSON.stringify(text().slice(0, 80))}: ${firstDifference(a, b)}`,
           };
       } finally {
         fresh?.destroy();
