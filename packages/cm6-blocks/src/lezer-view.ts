@@ -1204,9 +1204,27 @@ export function createLezerBlockEditor(
     () => rootsSlot.nodes,
     () => [view.state.field(field).decos, view.state.field(pendingField)]
   );
+  /**
+   * A block that has the focus is taken out of the page when scrolling leaves it outside what CodeMirror draws (the viewport): the page
+   * body would have the focus, and the keys would go nowhere. The focus stays in the editor (its text) when that happens: the block
+   * reports its loss while the view is being updated (`focusout` with nowhere to go), and the update's listener looks where the focus is.
+   */
+  let lostBlockFocus = false;
+  function keepFocusOnScroll(): void {
+    if (!lostBlockFocus) return;
+    lostBlockFocus = false;
+    if (gone || !blockMode || holdFocus) return;
+    const d = view.dom.ownerDocument;
+    const a = d.activeElement;
+    if (a && a !== d.body && a !== d.documentElement && a.isConnected) return;
+    view.contentDOM.focus({ preventScroll: true });
+  }
   const blockExtension: Extension = [
     pendingField,
-    EditorView.updateListener.of(() => marks()),
+    EditorView.updateListener.of(() => {
+      marks();
+      keepFocusOnScroll();
+    }),
     // typing or pasting at the top level (no block under the change) is held in a pending box, not written: nothing half-typed
     // reaches the document or the undo history
     EditorState.transactionFilter.of((tr) => {
@@ -3141,6 +3159,11 @@ export function createLezerBlockEditor(
         }
       }
     },
+  });
+  view.dom.addEventListener("focusout", (e) => {
+    const t = e.target as HTMLElement | null;
+    if (blockMode && !e.relatedTarget && t && renderer.nodeOf(t))
+      lostBlockFocus = true;
   });
   injectSheets(view.dom, table);
 

@@ -817,3 +817,44 @@ test("soak seed 4569: exception after search: uncaught: focusedNode() is only av
   );
   expect(v).toBeNull();
 });
+
+test("soak seed 3369: focus after editBox: keyboard focus is on the page body", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 3369,
+      language: "scheme",
+      code: "#f\ntotal\n(lambda (f) 'a)",
+      steps: [
+        {
+          op: "replaceDoc",
+          text: '(define n (< (= (cond [#t total] [else \'a]) "s6") (lambda (y) (total #t n))))\n\n(define (x n) (x (cond ["s8" (cond [#t x] [else x])] [else (cond [#f "s7"] [else 59])]) 4 (acc \'(#t \'a n) (fact \'a #f x) (total "s8" 50 #t))))\n; TODO\n(define n (let ([n #f]) \'(4 (y))))\n; TODO\n(f (if (let ([total (cond ["s0" fact] [else #f])]) #f) #f (if \'a #t \'a)) (x (cond [(if \'a "s7" \'a) (= 12 x)] [else (f 73 \'a)]) (fact (x \'a) (x)) (total "s2" #t (n x #f))) (cond [(n (f #f) #f) (total (g n) (fact "s1" 79))] [else (* (< fact acc) "s2")]))\n(lambda (acc) (if (acc (if h \'a #f)) 88 (fact (lambda (h) \'a) (if \'a #t 86) #t)))\n\n(cond [#t \'((if (f) (if #f \'a 13) (lst h "s6" \'a)) (cond [(x #f) (= 76 #t)] [else \'(#f total)]) (* (g #f total) (< #t 96)))] [else (n (total #t))])\n\n(let ([g (= (x (f)) (h))]) (lst))\n(define fact (if (< (f) (g "s7" #f "s3")) (acc (let ([total \'a]) h) (if 22 \'a #f) (- lst acc)) (f (h "s9" "s9" \'a))))\n',
+        },
+        {
+          op: "dragSelection",
+          a: 0.028305394342169166,
+          b: 0.6536570591852069,
+          n: 4,
+        },
+        {
+          op: "insertText",
+          a: 0.6987120877020061,
+          b: 0.5398613195866346,
+          text: "(define y 2)",
+        },
+        {
+          op: "editBox",
+          a: 0.9748298155609518,
+          text: "(",
+          accept: false,
+        },
+      ],
+      motion: "reduced",
+    },
+    { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
+  );
+  expect(v).toBeNull();
+});
