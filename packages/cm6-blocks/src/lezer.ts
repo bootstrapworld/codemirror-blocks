@@ -998,6 +998,8 @@ export function removeChanges(nodes: BNode[], text?: string): TextChange[] {
           const k = gap.search(/[^\s,][\s,]*$/);
           if (k >= 0) from += k + 1;
         }
+        // (a node that is not after the one before it in the list: a recovered error block of no width, a comment found inside a neighbour)
+        from = Math.min(from, first.from);
         const lastLine =
           !!text &&
           text[last.to] === "\n" &&
@@ -1015,9 +1017,28 @@ export function removeChanges(nodes: BNode[], text?: string): TextChange[] {
         } else if (text) {
           let a = from;
           while (a > 0 && (text[a - 1] === " " || text[a - 1] === "\t")) a--;
-          if (a > 0 && text[a - 1] !== "\n") from = a;
+          // (only where what follows closes or ends it: not in `t=>ue`, where the blank is the one before the `=`)
+          const next = text[last.to];
+          if (
+            a > 0 &&
+            text[a - 1] !== "\n" &&
+            (next === undefined || /[)\]}\n;,:\s]/.test(next))
+          )
+            from = a;
         }
-        out.push({ from, to: last.to, insert: "" });
+        let to = last.to;
+        if (text && !slot.glue) {
+          // the only element, on a line of its own between its brackets (`f(\n    x\n)`): nothing is left between them (`f()`)
+          let a = first.from;
+          while (a > 0 && /\s/.test(text[a - 1])) a--;
+          let b = last.to;
+          while (b < text.length && /[\s,]/.test(text[b])) b++;
+          if (a > 0 && "([{".includes(text[a - 1]) && ")]}".includes(text[b])) {
+            from = a;
+            to = b;
+          }
+        }
+        out.push({ from, to, insert: "" });
       }
       i = j;
     }

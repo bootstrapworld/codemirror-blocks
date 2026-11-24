@@ -154,8 +154,12 @@ export function removeOracle(
   // parent's list, so the removal leaves braces with nothing between them: the same kind of language fact as Scheme's)
   const emptiesBraces = gone.some(
     (n) =>
-      text.slice(0, n.from).trimEnd().endsWith("{") &&
-      text.slice(n.to).trimStart().startsWith("}")
+      (text.slice(0, n.from).trimEnd().endsWith("{") &&
+        text.slice(n.to).trimStart().startsWith("}")) ||
+      // (the same for a Python grouping paren, which has no block either: `f(a, (b))` minus `b` is `f(a, ())`, an empty tuple; a paren that is
+      // a call's own is told from it by what is before it: a comma or a bracket, not a name)
+      (/[,([{]\s*\(\s*$/.test(text.slice(0, n.from)) &&
+        text.slice(n.to).trimStart().startsWith(")"))
   );
   const before =
     check && shapes && !emptiesBraces

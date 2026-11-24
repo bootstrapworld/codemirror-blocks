@@ -286,3 +286,290 @@ it("seed 62182: a comment that goes with a block is written on its own line abov
     } as Sequence)
   ).toBeNull();
 });
+it("seed 51778: removing the only element on a line of its own between its brackets leaves no blank before the closing bracket", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 51778,
+      language: "python",
+      code: 'def defproperty(klass, name, doc):\n    get = getattr(klass, ("_get_" + name))\n    def set(self, value, name=name):\n        raise xml.dom.NoModificationAllowedErr(\n            "attempt to modify read-only attribute " + repr(name))\n    assert not hasattr(klass, "_set_" + name), \\\n           "expected not to find _set_" + name\n    prop = property(get, set, doc=doc)\n    setattr(klass, name, prop)\n\n',
+      steps: [
+        {
+          op: "removeNode",
+          a: 0.5209107981063426,
+          b: 0.9079988349694759,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 116728: the same in a JavaScript array", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 116728,
+      language: "javascript",
+      code: "a.b(c);\n[1, 2, 3];\nlet y = 5;",
+      steps: [
+        {
+          op: "textEdit",
+          a: 0.3239234590437263,
+          len: 2,
+          w: "\n",
+        },
+        {
+          op: "removeNode",
+          a: 0.7035086846444756,
+          b: 0.6301844418048859,
+        },
+        {
+          op: "removeNode",
+          a: 0.5380800282582641,
+          b: 0.7479404453188181,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 161468: the same for the only parameter of a Python def", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 161468,
+      language: "python",
+      code: "def f(a, b):\n    y = a\n    return y\nf(1, 2)\n",
+      steps: [
+        {
+          op: "textEdit",
+          a: 0.1464822180569172,
+          len: 3,
+          w: "\n    ",
+        },
+        {
+          op: "removeNode",
+          a: 0.04251516982913017,
+          b: 0.1329567302018404,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 164059: removing a recovered error block of no width or a comment found inside a neighbour does not make an inverted change", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 164059,
+      language: "python",
+      code: 'total = fact(lambda fact: f < True, total.y(lambda y: True), lambda h: "s0")\n',
+      steps: [
+        {
+          op: "insertText",
+          a: 0.08443147642537951,
+          b: 0.2729130282532424,
+          text: "f()",
+        },
+        {
+          op: "insertText",
+          a: 0.2671851497143507,
+          b: 0.2687134223524481,
+          text: "True",
+        },
+        {
+          op: "textEdit",
+          a: 0.8850083558354527,
+          len: 3,
+          w: "    ",
+        },
+        {
+          op: "removeNode",
+          a: 0.9445901939179748,
+          b: 0.9567949301563203,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 116885: an error block of no width at the end of a parameter list is removed without an inverted change", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 116885,
+      language: "python",
+      code: 'class DatagramProtocol(BaseProtocol):\n    """Interface for datagram protocol."""\n\n    def datagram_received(self, data, addr):\n        """Called when some datagram is received."""\n\n    def error_received(self, exc):\n        """Called when a send or receive operation raises an OSError.\n\n        (Other than BlockingIOError or InterruptedError.)\n        """\n\n\n',
+      steps: [
+        {
+          op: "replaceDoc",
+          text: 'for g in True:\n    def fact(x, total):\n        return "s9"\n        lst = n()\n    [f(y(fact), g), g()]\n\n# TODO\ny = []\n# note\nfor g in {True: fact}:\n    {acc(True, "s6" - 44): []}\n    h(True + h, lambda fact: 23, 74) < lambda n: {acc: "s1"}\nTrue\ndef fact(n, acc):\n    if {"s3" * None: h(None)}:\n        return "s0"\n    acc = fact(h(), g.acc(None * "s0", []), g(lambda y: "s3"))\nx = lst(None)\n# note\ndef f(y, x):\n    [lst.y()]\n    total = lambda acc: [92, "s3", True + 71]\n',
+        },
+        {
+          op: "replaceWithTexts",
+          a: 0.02652803622186184,
+          texts: ["x"],
+        },
+        {
+          op: "moveNode",
+          a: 0.7342839657794684,
+          b: 0.6915117071475834,
+        },
+        {
+          op: "removeNode",
+          a: 0.6872087535448372,
+          b: 0.9560729069635272,
+        },
+      ],
+      motion: "full",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 173647: a comment in the rest slot of an if that lies inside a branch is removed without an inverted change", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 173647,
+      language: "python",
+      code: "if x:\n    f(1)\nelif y:\n    g()\nelse:\n    h()\n[1, 2]",
+      steps: [
+        {
+          op: "comment",
+          a: 0.3801471134647727,
+          text: "a b c",
+          accept: true,
+        },
+        {
+          op: "insertText",
+          a: 0.21993211819790304,
+          b: 0.9613397843204439,
+          text: "{1: 2}",
+        },
+        {
+          op: "moveNode",
+          a: 0.14793525962159038,
+          b: 0.8988624224439263,
+        },
+        {
+          op: "pasteText",
+          a: 0.08687012013979256,
+          text: "True",
+          before: false,
+        },
+        {
+          op: "textEdit",
+          a: 0.8173128222115338,
+          len: 2,
+          w: "x",
+        },
+        {
+          op: "replaceText",
+          a: 0.7672946511302143,
+          text: "{1: 2}",
+        },
+        {
+          op: "setComment",
+          a: 0.06996252364479005,
+          text: "note",
+        },
+        {
+          op: "pasteText",
+          a: 0.8819503546692431,
+          text: "x",
+          before: false,
+        },
+        {
+          op: "editBox",
+          a: 0.40106450323946774,
+          text: ")",
+          accept: true,
+        },
+        {
+          op: "redo",
+        },
+        {
+          op: "comment",
+          a: 0.7367090743500739,
+          text: "TODO: fix",
+          accept: true,
+        },
+        {
+          op: "collapse",
+          a: 0.24620524933561683,
+          on: true,
+        },
+        {
+          op: "moveNode",
+          a: 0.18814783450216055,
+          b: 0.45190474251285195,
+        },
+        {
+          op: "topLevelType",
+          a: 0.28964203293435276,
+          text: "x",
+          accept: false,
+          how: "type",
+        },
+        {
+          op: "moveNode",
+          a: 0.9532708481419832,
+          b: 0.07200144836679101,
+        },
+        {
+          op: "typeIntoBlock",
+          a: 0.6055222335271537,
+          text: "7",
+          accept: true,
+        },
+        {
+          op: "removeNode",
+          a: 0.039609107188880444,
+          b: 0.8029510527849197,
+        },
+      ],
+      motion: "full",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 126177: removing the bare parameter of an arrow function keeps the blank before the =", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 126177,
+      language: "javascript",
+      code: "// note\nconst total = true;\n// note\nlst;",
+      steps: [
+        {
+          op: "textEdit",
+          a: 0.5799059092532843,
+          len: 1,
+          w: "=>",
+        },
+        {
+          op: "removeNode",
+          a: 0.8875406570732594,
+          b: 0.036220253678038716,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 106806: removing the content of a Python grouping paren is an empty tuple, a language fact for the removal oracle", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 106806,
+      language: "python",
+      code: 'def defproperty(klass, name, doc):\n    get = getattr(klass, ("_get_" + name))\n    def set(self, value, name=name):\n        raise xml.dom.NoModificationAllowedErr(\n            "attempt to modify read-only attribute " + repr(name))\n    assert not hasattr(klass, "_set_" + name), \\\n           "expected not to find _set_" + name\n    prop = property(get, set, doc=doc)\n    setattr(klass, name, prop)\n\n',
+      steps: [
+        {
+          op: "removeNode",
+          a: 0.19371583359315991,
+          b: 0.6721976643893868,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
