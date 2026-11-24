@@ -36,21 +36,25 @@ export function a11yProblems(): string[] {
     groups.set(holder, [...(groups.get(holder) ?? []), it]);
   }
   for (const [holder, g] of groups) {
-    // (the roots of a program that is taller than the window: CodeMirror draws only the lines near the viewport, so fewer roots than the
-    // set size are drawn, from any position on: their positions go up by one and stay within the set. Everything inside a root is drawn)
+    // (the roots of a program that is taller than the window: CodeMirror draws only the lines near the viewport, and the line of the selection
+    // (the cursor) too, wherever it is, so fewer roots than the set size are drawn, with gaps: their positions go up and stay within the set.
+    // Everything inside a root is drawn)
     const first = Number(g[0].getAttribute("aria-posinset"));
     const size = Number(g[0].getAttribute("aria-setsize"));
     const virtual = holder === content && g.length < size && first >= 1;
+    let last = 0;
     g.forEach((it, i) => {
       const label = it.getAttribute("aria-label");
-      const want = virtual ? first + i : i + 1;
-      if (Number(it.getAttribute("aria-posinset")) !== want)
+      const pos = Number(it.getAttribute("aria-posinset"));
+      const want = virtual ? pos : i + 1;
+      if (virtual ? pos <= last || pos > size : pos !== want)
         out.push(
-          `posinset ${it.getAttribute("aria-posinset")} but position ${want} @ ${label}`
+          `posinset ${it.getAttribute("aria-posinset")} but position ${virtual ? "after " + last : want} @ ${label}`
         );
+      last = pos;
       if (
         virtual
-          ? Number(it.getAttribute("aria-setsize")) !== size || want > size
+          ? Number(it.getAttribute("aria-setsize")) !== size
           : Number(it.getAttribute("aria-setsize")) !== g.length
       )
         out.push(

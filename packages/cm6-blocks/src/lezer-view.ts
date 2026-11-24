@@ -3064,17 +3064,25 @@ export function createLezerBlockEditor(
     const to = (e as FocusEvent).relatedTarget as Element | null;
     if (!to || !renderer.nodeOf(to) || !view.contentDOM.contains(to))
       setActive(null);
+    placed?.classList.remove("blocks-comment-above");
+    placed = null;
   });
   /**
    * The popup with a block's comment hangs from the top of the block; where that would put it below the bottom of the editor it is held at
    * the block's bottom edge instead and grows upwards (unless that leaves it above the top too). Placed when a block gets focus, and again
    * a frame later and when the editor scrolls.
    */
+  let placed: HTMLElement | null = null;
   const placePopup = (): void => {
     const el = view.contentDOM.ownerDocument.activeElement;
     const pop = el?.querySelector?.(
       ":scope > .blocks-comment"
     ) as HTMLElement | null;
+    // (the popup that was held at the bottom edge when its block had the focus is let go of when the focus is elsewhere: a block that kept
+    // its element through an undo or a drop keeps the class otherwise)
+    if (placed && placed !== pop)
+      placed.classList.remove("blocks-comment-above");
+    placed = pop;
     if (!pop) return;
     pop.classList.remove("blocks-comment-above");
     const room = view.dom.getBoundingClientRect();
@@ -3317,10 +3325,14 @@ export function checkLezerEditor(ed: LezerBlockEditor): string[] {
     }
     // (an open edit box, or the refusal under it, is in the block's DOM and not in a fresh drawing)
     if (el.querySelector(".blocks-edit")) continue;
-    if (!freshR.element(r).isEqualNode(el))
-      say(
-        `root ${r.id}: its DOM is not what a fresh drawing gives (${domDiff(el, freshR.element(r))})`
-      );
+    // (the popup of the focused block's comment may be held at the bottom edge: that is where it is, not what is drawn)
+    const held = Array.from(el.querySelectorAll(".blocks-comment-above"));
+    held.forEach((h) => h.classList.remove("blocks-comment-above"));
+    const same = freshR.element(r).isEqualNode(el);
+    const why = same ? "" : domDiff(el, freshR.element(r));
+    held.forEach((h) => h.classList.add("blocks-comment-above"));
+    if (!same)
+      say(`root ${r.id}: its DOM is not what a fresh drawing gives (${why})`);
   }
   return problems;
 }
