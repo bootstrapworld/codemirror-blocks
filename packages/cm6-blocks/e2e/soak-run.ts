@@ -453,6 +453,7 @@ export async function runChromium(
         editsMade++;
         if (s.back) {
           await toggleAndSettle();
+          toolbarOk = true; // (the focus stays on the mode button: the step went there on purpose)
           // (a refused switch shows a dialog: close it, the step is over)
           for (
             let k = 0;
@@ -872,6 +873,7 @@ export async function runChromium(
         (s) =>
           s.op === "undo" ||
           s.op === "redo" ||
+          s.op === "undoRun" ||
           /^Mod\+(z|y|Shift\+z)$/i.test(String(s.key ?? ""))
       );
       if (!ownUndo && after !== final)
