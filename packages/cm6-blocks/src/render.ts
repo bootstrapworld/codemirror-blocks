@@ -97,10 +97,18 @@ export class Renderer {
       if (n.kind === "comment") todo.add(n); // (it may have come to go with a block, or stopped)
       if (n.slots.length && this.mayHaveStrays(n))
         for (const s of n.slots) for (const c of s.nodes) todo.add(c);
-      if (n.kind !== "comment" || !n.slot) continue;
+      if (!n.slot || (n.kind !== "comment" && n.slot.nodes.length < 2))
+        continue;
       const i = n.slot.nodes.indexOf(n);
-      for (const m of [n.slot.nodes[i - 1], n.slot.nodes[i + 1]])
-        if (m) todo.add(m);
+      if (n.kind === "comment") {
+        for (const m of [n.slot.nodes[i - 1], n.slot.nodes[i + 1]])
+          if (m) todo.add(m);
+      } else if (
+        // (a comment next to a drawn block that is outside what CodeMirror draws has no element to be found through: the block is)
+        n.slot.nodes[i - 1]?.kind === "comment" ||
+        n.slot.nodes[i + 1]?.kind === "comment"
+      )
+        todo.add(n);
     }
     for (const n of todo) if (this.els.has(n)) this.relabel(n);
   }
