@@ -1860,17 +1860,20 @@ export function createLezerBlockEditor(
       userEvent: "input.block",
     });
   }
-  /** changes sorted, and those that overlap made one (every one must only delete: two blanks cannot be merged) */
+  /** changes sorted, and those that overlap made one (two blanks cannot be merged: at most one of two that overlap writes text) */
   function mergeChanges(cs: TextChange[]): TextChange[] {
     const sorted = [...cs].sort((a, b) => a.from - b.from || a.to - b.to);
     const out: TextChange[] = [];
     for (const c of sorted) {
       const last = out[out.length - 1];
       if (last && c.from < last.to) {
-        if (last.insert || c.insert)
+        // (only a text that does not parse has blocks that overlap: a blank and a deletion that reaches into it make one change, which
+        // writes the blank; two blanks cannot be merged)
+        if (last.insert && c.insert)
           throw new Error(
             "two of the blocks overlap: they cannot be changed together"
           );
+        if (c.insert) last.insert = c.insert;
         last.to = Math.max(last.to, c.to);
       } else out.push({ ...c });
     }

@@ -1545,3 +1545,108 @@ it("seed 191658: an edit that changes how the parser recovers makes the roots af
     })
   ).toBeNull();
 }, 120_000);
+
+it("seed 259236: Backspace on selected blocks of a text that does not parse, where a blank and a deletion overlap, makes one change (no exception)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 259236,
+      language: "javascript",
+      code: "function f(a, b) { return a * b; }\nf(1, 2);\nif (x) { f(1, 2); } else { g(); }",
+      steps: [
+        {
+          op: "toggleMode",
+          a: 0.650963586056605,
+        },
+        {
+          op: "toggleMode",
+          a: 0.3499852509703487,
+        },
+        {
+          op: "textEdit",
+          a: 0.2201427510008216,
+          len: 2,
+          w: "`",
+        },
+        {
+          op: "insertText",
+          a: 0.39539279928430915,
+          b: 0.7781902642454952,
+          text: "g(2)",
+        },
+        {
+          op: "pasteText",
+          a: 0.4924271742347628,
+          text: "[1, 2]",
+          before: false,
+        },
+        {
+          op: "key",
+          key: "Mod+z",
+          a: 0.9194535354617983,
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "pasteText",
+          a: 0.16597305657342076,
+          text: "true",
+          before: false,
+        },
+        {
+          op: "pasteText",
+          a: 0.4112097613979131,
+          text: "g(2)",
+          before: false,
+        },
+        {
+          op: "setComment",
+          a: 0.7979403003118932,
+          text: "note",
+        },
+        {
+          op: "replaceDoc",
+          text: "var h = {a: h(n ? fact : y), b: null ? [26] : 95};\n\n",
+        },
+        {
+          op: "collapse",
+          a: 0.22280769352801144,
+          on: false,
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "focus",
+          a: 0.17188423057086766,
+        },
+        {
+          op: "select",
+          a: 0.5094033901114017,
+        },
+        {
+          op: "textEdit",
+          a: 0.8750510094687343,
+          len: 2,
+          w: "(",
+        },
+        {
+          op: "select",
+          a: 0.8726411641109735,
+        },
+        {
+          op: "setComment",
+          a: 0.676923583028838,
+          text: "",
+        },
+        {
+          op: "key",
+          key: "Backspace",
+          a: 0.6852235866244882,
+        },
+      ],
+      motion: "full",
+    })
+  ).toBeNull();
+}, 120_000);
