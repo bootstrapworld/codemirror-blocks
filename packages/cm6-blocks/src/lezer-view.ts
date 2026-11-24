@@ -1043,9 +1043,16 @@ export function createLezerBlockEditor(
       }
       // a reconciled root keeps its widget, unless its range is no longer what the mapped decoration has
       for (const [r, p] of reconciled) {
+        // (two or more separate changes inside one widget: CodeMirror's tiles for the lines after it come out the wrong length, so the
+        // widget is set again then: a block moved into a block that is next to it, and the lines after them were not drawn)
+        let inside = 0;
+        tr.changes.iterChangedRanges((a, b) => {
+          if (a >= p.from0 && b <= p.to0) inside++;
+        });
         if (
           !drawn(r) ||
-          (tr.changes.mapPos(p.from0, 1) === r.from &&
+          (inside < 2 &&
+            tr.changes.mapPos(p.from0, 1) === r.from &&
             tr.changes.mapPos(p.to0, -1) === r.to)
         )
           continue;

@@ -573,3 +573,326 @@ it("seed 106806: removing the content of a Python grouping paren is an empty tup
     })
   ).toBeNull();
 }, 120_000);
+it("seed 84423: two separate changes inside one root (a block moved into a neighbour in the same root) set the root's widget again, so the lines after it are drawn", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 84423,
+      language: "javascript",
+      code: 'total = [];\n// TODO\n"s5";\nlet g = 55;\n\n37;',
+      steps: [
+        {
+          op: "textEdit",
+          a: 0.07934253173880279,
+          len: 3,
+          w: "(",
+        },
+        {
+          op: "moveNode",
+          a: 0.16912874253466725,
+          b: 0.6466815716121346,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 62470: two separate changes inside one root (a block moved into a neighbour in the same root) set the root's widget again, so the lines after it are drawn", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 62470,
+      language: "python",
+      code: "20\n",
+      steps: [
+        {
+          op: "insertTemplate",
+          t: 0.551050785696134,
+          a: 0.11744548217393458,
+        },
+        {
+          op: "pasteText",
+          a: 0.1693189616780728,
+          text: '"s"',
+          before: true,
+        },
+        {
+          op: "replaceText",
+          a: 0.4843867712188512,
+          text: '"s"',
+        },
+        {
+          op: "textEdit",
+          a: 0.3555873150471598,
+          len: 3,
+          w: "lambda",
+        },
+        {
+          op: "pasteText",
+          a: 0.11830790992826223,
+          text: "f()",
+          before: false,
+        },
+        {
+          op: "moveNode",
+          a: 0.6960470560006797,
+          b: 0.04023701651021838,
+        },
+        {
+          op: "textEdit",
+          a: 0.776112083112821,
+          len: 2,
+          w: ":",
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 83968: two separate changes inside one root (a block moved into a neighbour in the same root) set the root's widget again, so the lines after it are drawn", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 83968,
+      language: "python",
+      code: '"""      turtle-example-suite:\n\n        tdemo_fractalCurves.py\n\n',
+      steps: [
+        {
+          op: "comment",
+          a: 0.7603552658110857,
+          text: "a b c",
+          accept: true,
+        },
+        {
+          op: "pasteText",
+          a: 0.47595615964382887,
+          text: "1",
+          before: false,
+        },
+        {
+          op: "replaceWithTexts",
+          a: 0.5651380964554846,
+          texts: ["f()", "f()"],
+        },
+        {
+          op: "moveNode",
+          a: 0.4744549645110965,
+          b: 0.025232664542272687,
+        },
+        {
+          op: "insertTemplate",
+          t: 0.4260322309564799,
+          a: 0.8441470887046307,
+        },
+        {
+          op: "insertText",
+          a: 0.41147755458950996,
+          b: 0.3767599770799279,
+          text: '"s"',
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 118562: two separate changes inside one root (a block moved into a neighbour in the same root) set the root's widget again, so the lines after it are drawn", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 118562,
+      language: "javascript",
+      code: 'describe("jsonValues", () => {\n  it("reads the pages gh prints one after another", () => {\n    expect(lib.jsonValues(\'[{"a":1}]\\n[{"a":2},{"a":3}]\\n[]\')).toEqual([\n      [{ a: 1 }],\n      [{ a: 2 }, { a: 3 }],\n      [],\n    ]);\n  });\n  it("is not fooled by brackets and quotes inside a string", () => {\n    const body = \'a ] [ " \\\\ } { b\';\n    const text = JSON.stringify([{ body }]) + "\\n" + JSON.stringify([{ body }]);\n    expect(lib.jsonValues(text)).toEqual([[{ body }], [{ body }]]);\n  });\n});\n\n',
+      steps: [
+        {
+          op: "replaceDoc",
+          text: '14 * n();\n\nvar x = "s0";\nconst acc = true;\n',
+        },
+        {
+          op: "moveNode",
+          a: 0.19346871320158243,
+          b: 0.4959958225954324,
+        },
+        {
+          op: "replaceText",
+          a: 0.2383379393722862,
+          text: "[1, 2]",
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 208562: two separate changes inside one root (a block moved into a neighbour in the same root) set the root's widget again, so the lines after it are drawn", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 208562,
+      language: "python",
+      code: 'y("s2")\n\n',
+      steps: [
+        {
+          op: "insertTemplate",
+          t: 0.8023360313382,
+          a: 0.7492189684417099,
+        },
+        {
+          op: "removeNode",
+          a: 0.0018984738271683455,
+          b: 0.1092046748381108,
+        },
+        {
+          op: "moveNode",
+          a: 0.6725072739645839,
+          b: 0.2642213124781847,
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "insertTemplate",
+          t: 0.8229043197352439,
+          a: 0.9477159278467298,
+        },
+        {
+          op: "moveNode",
+          a: 0.2908471131231636,
+          b: 0.17446365347132087,
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "undo",
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 83616: two separate changes inside one root (a block moved into a neighbour in the same root) set the root's widget again, so the lines after it are drawn", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 83616,
+      language: "python",
+      code: "61\n# note\nf = 79",
+      steps: [
+        {
+          op: "pasteText",
+          a: 0.05748125212267041,
+          text: "f()",
+          before: false,
+        },
+        {
+          op: "removeNode",
+          a: 0.37622712180018425,
+          b: 0.4996540530119091,
+        },
+        {
+          op: "moveNode",
+          a: 0.5346126661170274,
+          b: 0.6800179504789412,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 191466: two separate changes inside one root (a block moved into a neighbour in the same root) set the root's widget again, so the lines after it are drawn", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 191466,
+      language: "python",
+      code: "if x:\n    f(1)\nelif y:\n    g()\nelse:\n    h()\n[1, 2]",
+      steps: [
+        {
+          op: "toggleMode",
+          a: 0.7786708446219563,
+        },
+        {
+          op: "textEdit",
+          a: 0.05832287389785051,
+          len: 3,
+          w: '"',
+        },
+        {
+          op: "moveNode",
+          a: 0.329264625441283,
+          b: 0.12130286544561386,
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "toggleMode",
+          a: 0.1742572053335607,
+        },
+        {
+          op: "collapse",
+          a: 0.25312654208391905,
+          on: true,
+        },
+        {
+          op: "editBox",
+          a: 0.7833976212423295,
+          text: "x",
+          accept: true,
+        },
+        {
+          op: "replaceDoc",
+          text: "",
+        },
+        {
+          op: "select",
+          a: 0.3946039453148842,
+        },
+        {
+          op: "topLevelType",
+          a: 0.5414182045497,
+          text: "(f 1)",
+          accept: true,
+          how: "paste",
+        },
+        {
+          op: "topLevelType",
+          a: 0.9722131700254977,
+          text: "foo bar",
+          accept: true,
+          how: "type",
+        },
+        {
+          op: "key",
+          key: "ArrowRight",
+          a: 0.6914680830668658,
+        },
+        {
+          op: "clearSelection",
+        },
+        {
+          op: "comment",
+          a: 0.5245240018703043,
+          text: "x; y",
+          accept: true,
+        },
+        {
+          op: "comment",
+          a: 0.6479726200923324,
+          text: "x; y",
+          accept: false,
+        },
+        {
+          op: "replaceText",
+          a: 0.5932663707062602,
+          text: "f()",
+        },
+        {
+          op: "moveNode",
+          a: 0.6417626179754734,
+          b: 0.1663635631557554,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
