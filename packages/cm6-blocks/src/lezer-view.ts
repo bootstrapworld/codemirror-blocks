@@ -234,6 +234,14 @@ export interface LezerBlockEditor extends ViewSurface {
   pendingAt(): number | null;
   /** the message that refuses `insertText` with these arguments (the text would not parse), or null */
   refuseInsert(slot: Slot, index: number, snippet: string): string | null;
+  /**
+   * Top level typing: write `snippet` as new root(s) at the text position `at`. On a line with no block text (a blank line, the
+   * ends of the document) it is written exactly there, as one change; next to a block on its line it is a new root at that place in
+   * the list (`insertText`: a separator as needed). Returns the range of the text written (one undo step).
+   */
+  insertAt(at: number, snippet: string): { from: number; to: number };
+  /** the message that refuses `insertAt` with these arguments (the text would not parse), or null */
+  refuseAt(at: number, snippet: string): string | null;
   /** the message that refuses `replaceText` with these arguments, or null */
   refuseReplace(node: BNode, snippet: string): string | null;
   /**
@@ -1685,6 +1693,21 @@ export function createLezerBlockEditor(
       insert: lead + "\n" + ind + first.insert.slice(at),
     };
   }
+  /**
+   * The change for text typed or pasted at the top level at `at`: exactly there when its line holds no block text (and no block
+   * contains the position), else a new root at that place in the list.
+   */
+  function topLevelChange(at: number, snippet: string): TextChange {
+    const roots = rootsSlot.nodes;
+    const t = currentText();
+    const ls = t.lastIndexOf("\n", at - 1) + 1;
+    const le = t.indexOf("\n", at);
+    const line = t.slice(ls, le < 0 ? t.length : le);
+    if (!line.trim() && !roots.some((r) => r.from < at && at < r.to))
+      return { from: at, to: at, insert: snippet };
+    const index = roots.filter((r) => r.to <= at).length;
+    return ownLineChange(rootsSlot, index, snippet);
+  }
   /** Nodes are only good until the next change that rebuilds their root: refuse a stale one (throws). */
   const live = (n: BNode): void => {
     if (doc.byId.get(n.id) !== n)
@@ -2178,6 +2201,20 @@ export function createLezerBlockEditor(
     insertText(slot, index, snippet) {
       live(slot.owner);
       dispatch(ownLineChange(slot, index, snippet));
+    },
+    insertAt(at, snippet) {
+      const c = topLevelChange(at, snippet);
+      const off = c.insert.indexOf(snippet);
+      dispatch(c);
+      const from = c.from + Math.max(off, 0);
+      return { from, to: from + snippet.length };
+    },
+    refuseAt(at, snippet) {
+      try {
+        return refusal(language, currentText(), topLevelChange(at, snippet));
+      } catch {
+        return null;
+      }
     },
     topLevelInput: null,
     flushTopLevel() {

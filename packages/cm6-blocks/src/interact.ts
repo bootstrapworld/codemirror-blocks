@@ -536,6 +536,13 @@ export function attachInteraction(ed: LezerBlockEditor): {
     );
   }
 
+  /** focus the first block that a top level insert wrote (as before) */
+  function focusFirst(r: { from: number; to: number }): void {
+    const made = ed.roots().filter((n) => n.from >= r.from && n.to <= r.to);
+    const first = made[0];
+    if (first && first.kind !== "error") ed.focusNode(first);
+  }
+
   /**
    * Top level typing (the old editor's "quarantine"): text typed or pasted where no block is goes into a box at that place, and is
    * written, as one change, when it parses (Enter, or blur); text that does not parse is refused, as in any box. Escape discards it.
@@ -546,10 +553,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     text: string,
     message?: string
   ): void {
-    const slot = ed.doc.program.slots[0];
     let at = from;
-    const indexAt = (pos: number) =>
-      slot.nodes.filter((r) => r.to <= pos).length;
     ed.say("inserting.  Use Enter to save, and Alt-Q to cancel");
     const host = ed.pendingHost(from);
     box(
@@ -566,11 +570,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
       },
       (t) => {
         try {
-          const index = indexAt(at);
-          const had = slot.nodes.length;
-          ed.insertText(slot, index, t);
-          const made = slot.nodes.length > had ? slot.nodes[index] : null;
-          if (made && made.kind !== "error") ed.focusNode(made);
+          const r = ed.insertAt(at, t);
+          focusFirst(r);
           ed.say(`inserted ${t}`);
         } catch (e) {
           ed.lastError = (e as Error).message;
@@ -578,10 +579,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
       },
       false,
       text.includes("\n"),
-      (t) =>
-        t.trim() === ""
-          ? null
-          : ed.refuseInsert(slot, indexAt(ed.pendingAt() ?? at), t),
+      (t) => (t.trim() === "" ? null : ed.refuseAt(ed.pendingAt() ?? at, t)),
       message
     );
     void to;
@@ -590,15 +588,10 @@ export function attachInteraction(ed: LezerBlockEditor): {
     if (!ed.isBlockMode()) return;
     if (how === "paste" && text.trim() !== "") {
       // a paste that parses is committed at once (one undo step) and drawn; one that does not is shown in the box, red, with the message
-      const slot = ed.doc.program.slots[0];
-      const index = slot.nodes.filter((r) => r.to <= from).length;
-      const message = ed.refuseInsert(slot, index, text);
+      const message = ed.refuseAt(from, text);
       if (!message) {
         try {
-          const had = slot.nodes.length;
-          ed.insertText(slot, index, text);
-          const made = slot.nodes.length > had ? slot.nodes[index] : null;
-          if (made && made.kind !== "error") ed.focusNode(made);
+          focusFirst(ed.insertAt(from, text));
           ed.say(`inserted ${text}`);
           return;
         } catch (e) {
