@@ -263,3 +263,26 @@ it("seed 11430: removeNode in a Python function whose parameter has a default (`
     } as Sequence)
   ).toBeNull();
 }, 120_000);
+it("seed 62182: a comment that goes with a block is written on its own line above it when the block is moved inline (a line comment would swallow the rest of the line)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 62182,
+      language: "python",
+      code: "",
+      steps: [
+        {
+          op: "pasteText",
+          a: 0.006176432594656944,
+          text: "g(2)",
+          before: false,
+        },
+        { op: "setComment", a: 0.011833824217319489, text: "x; y" },
+        { op: "textEdit", a: 0.08497873228043318, len: 1, w: "if a:\n    b" },
+        { op: "moveNode", a: 0.11347453738562763, b: 0.4890835096593946 },
+        { op: "comment", a: 0.11330164573155344, text: "x; y", accept: true },
+      ],
+      motion: "full",
+    } as Sequence)
+  ).toBeNull();
+});

@@ -370,7 +370,9 @@ const errorsOf = (tree: Tree, from = 0): [number, number][] => {
   return out;
 };
 
-const drawn = (n: BNode): boolean => n.kind !== "error";
+// (a root of no width, which the parser makes when it recovers from an error, has nothing to replace: CodeMirror refuses the decoration)
+const drawn = (n: BNode): boolean =>
+  n.kind !== "error" && !(n.to === n.from && n.parent?.kind === "program");
 const widgetNode = (d: Decoration): BNode => (d.spec.widget as RootWidget).node;
 const count = (n: BNode): number => {
   let c = 0;
@@ -1544,6 +1546,72 @@ export function createLezerBlockEditor(
     }
     return insertChange(table, currentText(), slot, index, snippet);
   }
+  /** a line comment (not a block comment: it ends at the line's end, which is what makes it swallow what follows) */
+  const isLineComment = (text: string): boolean =>
+    !!table.lineComment && text.startsWith(table.lineComment);
+  /** the text on the line of `pos` before it, in the text as `before` ends with it */
+  const lineBefore = (before: string): string =>
+    before.slice(before.lastIndexOf("\n") + 1);
+  /**
+   * Decision (TO BE REVISITED, doc/experiments/cm6-api-map.md): a block that goes with a line comment AFTER it on its line
+   * (`x = 1  # c`) is written with the comment on its own line directly above the block (`# c`, a line break, the indentation, the
+   * block) when the comment would swallow the text after it, so that the comment still goes with the block (`ownerOf`) and the text
+   * still parses. The comment starts its line too (a comment after another block on its line would go with that block).
+   */
+  function ownLineChange(
+    slot: Slot,
+    index: number,
+    snippet: string
+  ): TextChange {
+    const change = changeFor(slot, index, snippet);
+    if (!table.lineComment || slot.pieces) return change;
+    let c: BNode | undefined;
+    try {
+      const roots = language.parse(snippet);
+      c = roots[roots.length - 1];
+    } catch {
+      return change;
+    }
+    const last = snippet.replace(/\s+$/, "");
+    if (
+      !c ||
+      c.kind !== "comment" ||
+      c.to !== last.length ||
+      !isLineComment(snippet.slice(c.from, c.to)) ||
+      !snippet.slice(0, c.from).trim() ||
+      lineBefore(snippet.slice(0, c.from)).trim() === ""
+    )
+      return change;
+    const t = currentText();
+    const off = change.insert.indexOf(snippet);
+    if (off < 0) return change;
+    const after = (change.insert.slice(off + c.to) + t.slice(change.to)).split(
+      "\n"
+    )[0];
+    if (!after.trim()) return change;
+    const ref = slot.nodes[Math.min(index, slot.nodes.length - 1)];
+    const ind = indentAt(ref ? ref.from : slot.owner.from);
+    const above =
+      snippet.slice(c.from, c.to) +
+      "\n" +
+      ind +
+      snippet.slice(0, c.from).replace(/\s+$/, "");
+    const first = changeFor(slot, index, above);
+    const at = first.insert.indexOf(above);
+    const prefix = lineBefore(
+      t.slice(0, first.from) + first.insert.slice(0, at)
+    );
+    if (!prefix.trim()) return first;
+    // (the comment starts a line: no space is left at the end of the one before it)
+    const lead = first.insert.slice(0, at).replace(/[ \t]+$/, "");
+    let from = first.from;
+    if (at === 0) while (/[ \t]/.test(t[from - 1] ?? "")) from--;
+    return {
+      ...first,
+      from,
+      insert: lead + "\n" + ind + first.insert.slice(at),
+    };
+  }
   /** Nodes are only good until the next change that rebuilds their root: refuse a stale one (throws). */
   const live = (n: BNode): void => {
     if (doc.byId.get(n.id) !== n)
@@ -1934,7 +2002,7 @@ export function createLezerBlockEditor(
     roots: () => rootsSlot.nodes,
     insertText(slot, index, snippet) {
       live(slot.owner);
-      dispatch(changeFor(slot, index, snippet));
+      dispatch(ownLineChange(slot, index, snippet));
     },
     topLevelInput: null,
     flushTopLevel() {
@@ -2524,22 +2592,114 @@ export function createLezerBlockEditor(
           sl.nodes[Math.min(target.index, sl.nodes.length - 1)] ?? null;
         const ind = ref ? indentAt(ref.from) : "";
         const sep = separatorFor(table, t, sl);
-        put = changeFor(
-          sl,
-          target.index,
-          snippets
-            .map(
-              (x, i) =>
-                x.replace(/\n/g, "\n" + ind) +
+        // (a comment that goes with the block is written with it: a line comment above a block goes on its line, one after it on its
+        // line stays there unless it would swallow what follows, and then it goes on a line of its own above the block: ownLineChange)
+        const own = (i: number): boolean =>
+          isLineComment(t.slice(moved[i].from, moved[i].to));
+        const build = (
+          above: Set<number>
+        ): { text: string; ends: number[]; firstOwnLine: boolean } => {
+          const parts: string[] = [];
+          const joins: string[] = [];
+          const ownLine: boolean[] = [];
+          const partOf: number[] = [];
+          for (let i = 0; i < moved.length; i++) {
+            const x = snippets[i].replace(/\n/g, "\n" + ind);
+            if (above.has(i)) {
+              // (the comment, a line break, the indentation, the block it came after)
+              const k = parts.length - 1;
+              parts[k] = x + "\n" + ind + parts[k];
+              ownLine[k] = true;
+              partOf[i] = k;
+              continue;
+            }
+            const startsLine =
+              own(i) && !!moved[i + 1] && ownerOf(moved[i]) === moved[i + 1];
+            const join =
+              i === 0
+                ? ""
+                : glue(i - 1) !== null
+                  ? " "
+                  : moved[i - 1].kind === "comment" &&
+                      ownerOf(moved[i - 1]) === moved[i] &&
+                      own(i - 1) &&
+                      !sep.includes("\n")
+                    ? "\n" + ind
+                    : sep;
+            // (a comment that starts a line: after another block on its line it would go with that block)
+            joins.push(
+              startsLine && i > 0 && !join.includes("\n")
+                ? join.replace(/[ \t]+$/, "") + "\n" + ind
+                : join
+            );
+            ownLine.push(startsLine);
+            parts.push(
+              x +
                 // (a comment block of its own keeps a blank line after it, or it would go with the block below)
                 (moved[i].kind === "comment" &&
                 !moved.includes(ownerOf(moved[i]) as BNode) &&
                 sep.includes("\n")
                   ? "\n"
                   : "")
+            );
+            partOf[i] = parts.length - 1;
+          }
+          let text = "";
+          const partEnd: number[] = [];
+          parts.forEach((x, k) => {
+            text += joins[k] + x;
+            partEnd.push(text.length);
+          });
+          return {
+            text,
+            ends: partOf.map((k) => partEnd[k]),
+            firstOwnLine: !!ownLine[0],
+          };
+        };
+        let above = new Set<number>();
+        let r = build(above);
+        let c = changeFor(sl, target.index, r.text);
+        const swallowed = (): number[] => {
+          const off = c.insert.indexOf(r.text);
+          const out: number[] = [];
+          for (let i = 1; i < moved.length; i++)
+            if (
+              glue(i - 1) !== null &&
+              own(i) &&
+              !above.has(i) &&
+              off >= 0 &&
+              (c.insert.slice(off + r.ends[i]) + t.slice(c.to))
+                .split("\n")[0]
+                .trim()
             )
-            .reduce((a, x, i) => a + (glue(i - 1) ?? sep) + x)
-        );
+              out.push(i);
+          return out;
+        };
+        const bad = swallowed();
+        if (bad.length) {
+          above = new Set(bad);
+          r = build(above);
+          c = changeFor(sl, target.index, r.text);
+        }
+        if (r.firstOwnLine) {
+          const at = c.insert.indexOf(r.text);
+          const prefix = lineBefore(t.slice(0, c.from) + c.insert.slice(0, at));
+          if (prefix.trim()) {
+            // (no space is left at the end of the line before the comment)
+            let from = c.from;
+            if (at === 0) while (/[ \t]/.test(t[from - 1] ?? "")) from--;
+            c = {
+              ...c,
+              from,
+              insert:
+                c.insert.slice(0, at).replace(/[ \t]+$/, "") +
+                "\n" +
+                ind +
+                c.insert.slice(at),
+            };
+          }
+        }
+        put = c;
       }
       for (const g of gone)
         if (put.from > g.from && put.from < g.to)
@@ -3095,7 +3255,7 @@ export function checkLezerEditor(ed: LezerBlockEditor): string[] {
   let freshR: Renderer | null = null;
   for (const r of roots) {
     const mine = decos.filter((d) => d.node === r);
-    if (r.kind === "error") {
+    if (r.kind === "error" || !drawn(r)) {
       if (mine.length) say(`error root ${r.id} has a decoration`);
       continue;
     }
