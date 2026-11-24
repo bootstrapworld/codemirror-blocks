@@ -1210,9 +1210,13 @@ export function createLezerBlockEditor(
    * reports its loss while the view is being updated (`focusout` with nowhere to go), and the update's listener looks where the focus is.
    */
   let lostBlockFocus = false;
+  /** the block that last took the focus and has not given it up: when it is gone from the page with the focus on the body, the focus was lost with it */
+  let focusedEl: HTMLElement | null = null;
   function keepFocusOnScroll(): void {
+    if (focusedEl && !focusedEl.isConnected) lostBlockFocus = true;
     if (!lostBlockFocus) return;
     lostBlockFocus = false;
+    focusedEl = null;
     if (gone || !blockMode || holdFocus) return;
     const d = view.dom.ownerDocument;
     const a = d.activeElement;
@@ -1461,7 +1465,8 @@ export function createLezerBlockEditor(
   /**
    * The last block went while a block had the focus: the focus goes to the editor itself (the text), as in the old editor
    * (`focusAfterUndoOrRedo`: "with no block left to focus, keep keyboard focus in the editor"), not to the page body, where a
-   * screen reader user hears the editor vanish. Every way the last block can go ends here: it is a net under the transaction.
+   * screen reader user hears the editor vanish. Every way the last block can go ends here: it is a net under the transaction. The same
+   * when blocks remain but none is drawn yet (a document replaced while scrolled far down: CodeMirror draws the new one after the update).
    */
   function keepFocusInEditor(s: Snap | null): void {
     if (!s || (!s.node && s.boxPos === undefined) || gone || !blockMode) return;
@@ -1470,7 +1475,7 @@ export function createLezerBlockEditor(
     if (active && active !== doc_.body && view.dom.contains(active)) return;
     if (active && active !== doc_.body && active !== doc_.documentElement)
       return; // (the focus went somewhere on purpose)
-    if (rootsSlot.nodes.some((r) => r.kind !== "error")) return;
+    if (rootsSlot.nodes.some((r) => r.kind !== "error" && isDrawn(r))) return;
     view.contentDOM.focus({ preventScroll: true });
   }
 
@@ -3163,10 +3168,15 @@ export function createLezerBlockEditor(
       }
     },
   });
+  view.dom.addEventListener("focusin", (e) => {
+    const t = e.target as HTMLElement | null;
+    focusedEl = t && renderer.nodeOf(t) ? t : null;
+  });
   view.dom.addEventListener("focusout", (e) => {
     const t = e.target as HTMLElement | null;
     if (blockMode && !e.relatedTarget && t && renderer.nodeOf(t))
       lostBlockFocus = true;
+    if (t === focusedEl) focusedEl = null;
   });
   injectSheets(view.dom, table);
 
