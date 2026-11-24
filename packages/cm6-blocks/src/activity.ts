@@ -75,6 +75,8 @@ export interface Recorder {
   /** a transaction went through: record it if it changed the text */
   transaction(tr: Transaction): void;
   entries(): LogEntry[];
+  /** when the last entry was made (Date.now), or 0 */
+  lastAt(): number;
   export(): ActivityExport;
   clear(text: string): void;
 }
@@ -85,9 +87,11 @@ export function createRecorder(initialText: string, limit: number): Recorder {
   let dropped = 0;
   let seq = 0;
   const stack: Ctx[] = [];
+  let last = 0;
 
   function push(e: Omit<LogEntry, "seq" | "t">): void {
-    list.push({ seq: seq++, t: Date.now(), ...e });
+    last = Date.now();
+    list.push({ seq: seq++, t: last, ...e });
     while (list.length > Math.max(1, limit)) {
       const old = list.shift() as LogEntry;
       dropped++;
@@ -138,6 +142,7 @@ export function createRecorder(initialText: string, limit: number): Recorder {
       });
     },
     entries: () => list.map((e) => ({ ...e })),
+    lastAt: () => last,
     export: () => ({
       format: 1,
       base,

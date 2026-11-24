@@ -77,6 +77,8 @@ import {
 import { browserPlayer, SoundEvent, SoundName, SoundPlayer } from "./sound";
 import { makeNode } from "./node";
 import { contentHash } from "./hash";
+import { errorOf, RECENT_MS, reportText, watchUncaught } from "./error-report";
+import type { ErrorReport } from "./error-report";
 import { describeKinds, summarizeProgram } from "./summary";
 import type { Kind } from "./summary";
 import { END_MESSAGE, errorsIn, explainError, place, refusal } from "./explain";
@@ -134,6 +136,20 @@ export interface LezerOptions {
   sounds?: boolean;
   /** what plays a sound; the default is the browser's Audio (sound.ts). A test passes one that records what was asked for which event */
   playSound?: SoundPlayer;
+  /**
+   * The error notice's report form (forty-fourth round). NOTHING is sent by the editor. The form shows the report text (the error, the program,
+   * the activity log, the browser) for the person to copy; if `onReport` is given, it also has a "Send" button that calls it with the report.
+   * The old editor opened a new issue of the project's GitHub in a tab: there is no address of anyone's here.
+   */
+  onReport?: (report: ErrorReport) => void;
+  /** called whenever the notice is raised, before the person does anything (a page that logs errors; the old editor's `setLogReporter`) */
+  onError?: (error: unknown, report: ErrorReport) => void;
+  /**
+   * Watch the window for uncaught errors and unhandled rejections, and show the notice for one that comes within 2 seconds of something done to
+   * the editor (the old editor's rule, and its default: it watched always). The errors are not swallowed: the browser reports them as usual.
+   * `false` installs no listener. The watcher goes away with `ed.destroy()`.
+   */
+  watchUncaughtErrors?: boolean;
   /** how many entries of the activity log are kept (default 200, as the old editor); the oldest are dropped, their changes folded into the log's starting text */
   activityLimit?: number;
 }
@@ -286,8 +302,14 @@ export interface LezerBlockEditor extends ViewSurface {
   soundsOn(): boolean;
   /** announce `text` to a screen reader (a live region next to the editor); also kept in `said` */
   say(text: string): void;
-  /** an error an action of the editor caught: a dismissible notice (role="alert") next to the editor, spoken once while it shows */
+  /**
+   * An error: a dismissible notice (role="alert") next to the editor, spoken once while it shows, with a "Report this problem" button that opens the
+   * report form (see `LezerOptions.onReport`). The error is also written to the console. An action of the editor that meets an error calls this
+   * (a key), and so does the watcher of uncaught errors.
+   */
   reportError(error: unknown): void;
+  /** the report the form shows: the latest error (or `error`), the document, the activity log; null if there has been no error */
+  errorReport(error?: unknown): ErrorReport | null;
   /** what was announced, newest last (the last 50) */
   said: string[];
   /**
@@ -1922,7 +1944,38 @@ export function createLezerBlockEditor(
   };
 
   let notice: HTMLElement | null = null;
-  function reportError(error: unknown): void {
+  let lastError: { error: unknown; source: ErrorReport["source"] } | null =
+    null;
+  function errorReport(error?: unknown): ErrorReport | null {
+    const e: typeof lastError =
+      error === undefined ? lastError : { error, source: "action" };
+    if (!e) return null;
+    return {
+      format: 1,
+      language: table.lang ?? "",
+      mode: blockMode ? "blocks" : "text",
+      userAgent: parent.ownerDocument.defaultView?.navigator?.userAgent ?? "",
+      code: view.state.doc.toString(),
+      activity: recorder.export(),
+      error: errorOf(e.error),
+      source: e.source,
+    };
+  }
+  function reportError(
+    error: unknown,
+    source: ErrorReport["source"] = "action"
+  ): void {
+    // (the error is not swallowed: it is written down, as the old editor's log reporter did)
+    console.error(error);
+    lastError = { error, source };
+    if (options.onError) {
+      try {
+        const r = errorReport();
+        if (r) options.onError(error, r);
+      } catch (e) {
+        console.error(e);
+      }
+    }
     if (notice?.isConnected) return; // (said once while it is showing)
     const doc = parent.ownerDocument;
     const n = (notice = doc.createElement("div"));
@@ -1930,13 +1983,81 @@ export function createLezerBlockEditor(
     n.setAttribute("role", "alert");
     const text = `Something went wrong: ${error instanceof Error ? error.message : String(error)}`;
     n.append(text + " ");
-    const b = doc.createElement("button");
-    b.textContent = "Dismiss";
-    b.addEventListener("click", () => n.remove());
-    n.append(b);
+    const button = (label: string, fn: () => void): HTMLButtonElement => {
+      const b = doc.createElement("button");
+      b.type = "button";
+      b.textContent = label;
+      b.addEventListener("click", fn);
+      return b;
+    };
+    const close = (): void => n.remove();
+    const form = doc.createElement("div");
+    form.className = "blocks-error-report";
+    form.setAttribute("role", "group");
+    form.setAttribute("aria-label", "Report this problem");
+    form.hidden = true;
+    const area = doc.createElement("textarea");
+    area.readOnly = true;
+    area.rows = 12;
+    area.setAttribute("aria-label", "The report");
+    const status = doc.createElement("span");
+    status.setAttribute("role", "status");
+    form.append(area);
+    form.append(
+      button("Copy", () => {
+        area.select();
+        const clip = parent.ownerDocument.defaultView?.navigator?.clipboard;
+        const done = (m: string): void => {
+          status.textContent = m;
+        };
+        if (clip?.writeText)
+          clip.writeText(area.value).then(
+            () => done("Copied"),
+            () => done("Select the text and copy it")
+          );
+        else done("Select the text and copy it");
+      })
+    );
+    if (options.onReport) {
+      form.append(
+        button("Send", () => {
+          const r = errorReport();
+          if (!r) return;
+          try {
+            options.onReport?.(r);
+          } catch (e) {
+            // (kept open: the person can copy it instead)
+            status.textContent = `The report was not sent: ${e instanceof Error ? e.message : String(e)}`;
+            return;
+          }
+          say("Report sent");
+          close();
+        })
+      );
+    }
+    form.append(button("Close", close), status);
+    n.append(
+      button("Report this problem", () => {
+        // (the report is made when the form opens: it holds the document and the log as they are then)
+        area.value = reportText(errorReport() ?? ({} as ErrorReport));
+        form.hidden = false;
+        area.focus();
+      }),
+      button("Dismiss", close),
+      form
+    );
     parent.appendChild(n);
     say(text);
   }
+  // errors nobody caught, soon after the editor was used (the old editor's watcher); not swallowed
+  let stopWatching: (() => void) | null = null;
+  const win = parent.ownerDocument.defaultView;
+  if (win && options.watchUncaughtErrors !== false)
+    stopWatching = watchUncaught(
+      win,
+      () => !gone && Date.now() - recorder.lastAt() < RECENT_MS,
+      (e, source) => reportError(e, source)
+    );
 
   const done: string[] = [];
   const undone: string[] = [];
@@ -2327,6 +2448,7 @@ export function createLezerBlockEditor(
     summarizeBlock: (node) =>
       `${ed.language.describe(node)}, at level ${levelOf(node)}`,
     reportError,
+    errorReport,
     sound(name, event) {
       if (soundOn) (options.playSound ?? defaultPlayer)(name, event); // (the option is read each time: a page may set it later)
     },
@@ -2883,6 +3005,8 @@ export function createLezerBlockEditor(
     stats: () => ({ ...stats }),
     destroy() {
       gone = true;
+      stopWatching?.();
+      notice?.remove();
       if (sayTimer) clearTimeout(sayTimer);
       unqueue();
       region.remove();
