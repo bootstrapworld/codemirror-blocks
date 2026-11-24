@@ -40,10 +40,10 @@ test("edits can be properly undone and redone from an active block", async ({
   await page.keyboard.press("Enter");
   await expectText(page, "\nB\n\n");
 
-  // change (3): C, committed with Enter (EDITED: the box that top-level typing opens commits the C on the line before the cursor, with its line break; the old test, in jsdom, got no line break and C at the end)
+  // change (3): C, committed with Enter
   await page.keyboard.type("C");
   await page.keyboard.press("Enter");
-  await expectText(page, "\nB\nC\n\n");
+  await expectText(page, "\nB\n\nC");
   await expectConsistent(page);
 
   // undo (3), (2), (1)
@@ -60,6 +60,6 @@ test("edits can be properly undone and redone from an active block", async ({
   await page.keyboard.press(`${MOD}+Shift+z`);
   await expectText(page, "\nB\n\n");
   await page.keyboard.press(`${MOD}+Shift+z`);
-  await expectText(page, "\nB\nC\n\n");
+  await expectText(page, "\nB\n\nC");
   await expectConsistent(page);
 });
