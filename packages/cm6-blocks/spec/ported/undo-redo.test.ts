@@ -28,8 +28,7 @@ beforeEach(async () => {
 afterEach(teardown);
 
 // https://github.com/bootstrapworld/codemirror-blocks/issues/315
-// SKIPPED (c): the old test presses Enter with the focus in the text after a cut; in jsdom a keydown has no default action (no line break) and here the focus is not in the text after a cut. Needs a compat step that types the browser default into the focused text: not built
-// first error (sweep): Error: expect(received).toEqual(expected) // deep equality
+// MOVED to Chromium (e2e/ported/undo-redo.e2e.ts, real keys): the old test presses Enter with the focus in the text; in jsdom a keydown has no default action, so no line break is inserted. This stub stays skipped so the old test is still listed.
 it.skip("make sure edits can be properly undone/redone from an active block", () => {
   // initialize state
   cmb.setValue(`A\nB\n`);
