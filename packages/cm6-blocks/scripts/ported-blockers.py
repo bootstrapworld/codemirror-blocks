@@ -9,7 +9,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); PKG = os.path.dirname(HERE)
 ORDER = [
  ("TOPLEVEL-TYPING", r"quarantine|top level|top-level|typeChar|pasteAtCursor|type at the top|paste at the top|typing and pasting"),
  ("MODE-TOGGLE", r"mode toggle|text mode|blocks mode|morph|toggle|setBlockMode|lifecycle|onBlockMode|text/blocks|switches? (once|to)|mode button"),
- ("REAL-TOOLBAR", r"toolbar|primitive|\.Primitive|search box|search table"),
+ ("DEFERRED-TOOLBAR", r"toolbar|primitive|\.Primitive|search box|search table"),
  ("WHITESPACE-DROP", r"whitespace|non-value|drop target|dropped on|drop onto|drop on|a drop|drag"),
  ("EDIT-BOX-DOM", r"contenteditable|edit box|the box|input/textarea|innerHTML|textContent"),
  ("COMMENT-AS-BLOCK", r"comment"),
@@ -23,7 +23,7 @@ def dep_of(text):
 def classify(cls, reason):
     t = reason
     if cls in ("N", "I", "D"): return "EXCLUDED-" + cls, []
-    if cls == "Q": return "DESIGN-QUESTION", []
+    if cls == "Q": return ("DEFERRED-TOOLBAR" if re.search(r"toolbar", reason, re.I) else "DESIGN-QUESTION"), []
     d, rest = dep_of(t)
     if d == "OTHER" and cls == "U": d = "UNDOCUMENTED"
     return d, rest
