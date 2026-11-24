@@ -597,3 +597,223 @@ test("seed 3764: CodeMirror also draws the line of the selection, so the drawn r
   );
   expect(v).toBeNull();
 });
+
+test("soak seed 1606: exception after toggleMode: uncaught: focusedNode() is only available in block mode", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 1606,
+      language: "python",
+      code: '# TODO\nf(f(None, True, h + "s1"), "s2", g(59, None))\n\nx = []\n\ng.acc(True)\ndef f(acc, f):\n    f({x: None}, 43, lst(lambda fact: None, {None: True}))\n    n = acc\n\n# note\nfor n in {None: True}:\n    x = fact()\n# a b c\ny(total, "s0" == 47, n) - None\nfact(None)\nwhile lst(fact.acc("s3"), None < "s2", "s5" == 13):\n    f = lst()\n    def fact(acc, g):\n        return y\n        return fact(None * 49, f.x(), None)\n\n',
+      steps: [
+        {
+          op: "topLevelType",
+          a: 0.77368995686993,
+          text: "(",
+          accept: true,
+          how: "type",
+        },
+        {
+          op: "insertText",
+          a: 0.5037400040309876,
+          b: 0.07215151353739202,
+          text: "[1, 2]",
+        },
+        {
+          op: "toggleMode",
+          a: 0.033919941168278456,
+          rush: 0.39,
+        },
+      ],
+      motion: "reduced",
+    },
+    { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
+  );
+  expect(v).toBeNull();
+});
+
+test("soak seed 1337: exception after after undo/redo: uncaught: focusedNode() is only available in block mode", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 1337,
+      language: "python",
+      code: "MAXFDS_TO_SEND = 256\nUNSIGNED_STRUCT = struct.Struct('Q')     # large enough for pid_t\n\n#\n# Forkserver class\n#\n\n",
+      steps: [
+        {
+          op: "topLevelType",
+          a: 0.4401160420384258,
+          text: "(f 1)",
+          accept: true,
+          how: "type",
+        },
+        {
+          op: "insertText",
+          a: 0.0030426173470914364,
+          b: 0.7292801185976714,
+          text: '"s"',
+        },
+        {
+          op: "toggleMode",
+          a: 0.7653983817435801,
+          rush: 0.15,
+        },
+      ],
+      motion: "full",
+    },
+    { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
+  );
+  expect(v).toBeNull();
+});
+
+test("soak seed 4569: exception after search: uncaught: focusedNode() is only available in block mode", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 4569,
+      language: "javascript",
+      code: 'y.y(["s8", "s1"] ? {a: null, b: acc} : f());\nconst n = 56;\nwhile (null) {\n  if (fact(fact, true, "s9") ? null === x : "s1") {\n    const y = g(fact.y(53 === null, "s8"), y(total, {a: "s6", b: true}, [true, acc, true]), (h) => "s0" - x);\n    null;\n  }\n  var y = n(null, g, 25);\n}\nif (null) {\n  while (g()) {\n    true;\n    let x = fact();\n  }\n  var h = (acc) => fact("s4") ? (y) => true + "s5" < total : true;\n  f(true, true);\n} else {\n  while (22) {\n    var h = n();\n    total(63);\n  }\n  let lst = null;\n}\nif ([92, y, fact] < [5]) {\n  function g(fact, y) {\n    [fact] < y(true, "s2", null) * y((lst) => null, [true, acc, "s3"]);\n    return {a: f(y), b: 68};\n  }\n} else {\n  x = acc("s7");\n  let acc = x(y((x) => acc, lst(), h(87, true, "s0")));\n  const n = h();\n}\n// a b c\nfor (const x of true * x) {\n  const g = 44;\n  function fact(total, n) {\n    26;\n    return acc(null, "s8");\n  }\n  for (const n of 82 + total) {\n    let x = lst(h ? null : true - [true], fact(x(), (n) => null), f(null - 65, n(69)));\n  }\n}\nh();',
+      steps: [
+        {
+          op: "key",
+          key: "Mod+Shift+z",
+          a: 0.5859131976030767,
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "replaceDoc",
+          text: '// TODO\nf.x("s4");\n\nconst f = g(lst() < 24 ? null : "s5");\nf;\n// note\nfor (const fact of y === true) {\n  if (fact(total + acc, [24, null, null])) {\n    var n = n(f(), {a: null, b: x(true, null)});\n    y = lst(acc, h("s1", null, total));\n  }\n  fact = [];\n}\nfor (const g of x) {\n  const f = [lst(), fact(true), f(true)] ? "s9" : (x) => (g) => 11;\n  fact = fact(acc(y));\n  var g = f(fact(null ? true : 44, "s2" * total), x(15 * 56), "s8");\n}\nvar n = y();\n\n// a b c\nfor (const total of fact(total, y)) {\n  if (true - x) {\n    const g = g((fact) => null === f(), null, acc.g("s3"));\n    12;\n  }\n}\n',
+        },
+        {
+          op: "insertText",
+          a: 0.46900667576119304,
+          b: 0.5890645917970687,
+          text: "true",
+        },
+        {
+          op: "topLevelType",
+          a: 0.9677418568171561,
+          text: "(f 1)",
+          accept: true,
+          how: "type",
+        },
+        {
+          op: "textEdit",
+          a: 0.9333418761380017,
+          len: 2,
+          w: "",
+        },
+        {
+          op: "insertText",
+          a: 0.45990118477493525,
+          b: 0.500926676671952,
+          text: "f()",
+        },
+        {
+          op: "dragBlock",
+          a: 0.728226532228291,
+          b: 0.12854257551953197,
+          where: "end",
+        },
+        {
+          op: "comment",
+          a: 0.323386391159147,
+          text: "note",
+          accept: true,
+        },
+        {
+          op: "click",
+          a: 0.7705515490379184,
+          shift: false,
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "removeNode",
+          a: 0.3381074743811041,
+          b: 0.15617139427922666,
+        },
+        {
+          op: "key",
+          key: "Delete",
+          a: 0.8716683543752879,
+        },
+        {
+          op: "textEdit",
+          a: 0.8945401522796601,
+          len: 0,
+          w: "/*",
+        },
+        {
+          op: "insertText",
+          a: 0.2591058509424329,
+          b: 0.5687064814846963,
+          text: "[1, 2]",
+        },
+        {
+          op: "comment",
+          a: 0.7419541359413415,
+          text: "x; y",
+          accept: false,
+        },
+        {
+          op: "focus",
+          a: 0.6316943275742233,
+        },
+        {
+          op: "click",
+          a: 0.8524912793654948,
+          shift: false,
+        },
+        {
+          op: "topLevelType",
+          a: 0.4278958751820028,
+          text: "42",
+          accept: true,
+          how: "type",
+        },
+        {
+          op: "key",
+          key: "Escape",
+          a: 0.9572529287543148,
+        },
+        {
+          op: "key",
+          key: "End",
+          a: 0.0587524794973433,
+        },
+        {
+          op: "typeIntoBlock",
+          a: 0.14139127475209534,
+          text: "7",
+          accept: true,
+        },
+        {
+          op: "toggleMode",
+          a: 0.5804434434976429,
+          rush: 0.13,
+        },
+        {
+          op: "search",
+          text: "x",
+          next: false,
+        },
+      ],
+      motion: "full",
+    },
+    { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
+  );
+  expect(v).toBeNull();
+});

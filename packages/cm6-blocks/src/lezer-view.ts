@@ -2233,7 +2233,7 @@ export function createLezerBlockEditor(
       const sorted = [...nodes].sort((x, y) => x.from - y.from || x.to - y.to);
       const node = sorted.find((n) => n.slot) as BNode;
       // where focus should go afterwards, if it is on a node (or inside one): the node now at the place of the first
-      const f = ed.focusedNode();
+      const f = blockMode ? ed.focusedNode() : null; // (in text mode no block has the focus; the reader throws)
       let inside = false;
       for (let c: BNode | null = f; c; c = c.parent)
         if (sorted.includes(c)) inside = true;
@@ -2388,7 +2388,7 @@ export function createLezerBlockEditor(
       renderer.setCollapsed(node, on);
       remeasureHeights();
       // focus inside what is now hidden goes to the block that holds it
-      const f = ed.focusedNode();
+      const f = blockMode ? ed.focusedNode() : null; // (in text mode no block has the focus; the reader throws)
       if (on && f && f !== node)
         for (let c = f.parent; c; c = c.parent)
           if (c === node) ed.focusNode(node);
@@ -2401,7 +2401,7 @@ export function createLezerBlockEditor(
         if (foldable(n)) renderer.setCollapsed(n, on);
       });
       remeasureHeights();
-      const f = ed.focusedNode();
+      const f = blockMode ? ed.focusedNode() : null; // (in text mode no block has the focus; the reader throws)
       if (on && f) ed.focusNode(root);
     },
     clearSelection() {

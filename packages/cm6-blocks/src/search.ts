@@ -162,10 +162,8 @@ export function createSearch(
   function find(forward: boolean, at?: number): Match | null {
     if (state.mode === null) return null;
     const list = candidates();
-    const focus =
-      at !== undefined && !ed.focusedNode()
-        ? null
-        : (ed.focusedNode() ?? ed.lastFocused());
+    const now = ed.mode === "blocks" ? ed.focusedNode() : null; // (the block readers throw in text mode)
+    const focus = at !== undefined && !now ? null : (now ?? ed.lastFocused());
     const empty = state.mode === "text" && state.text.searchString === "";
     const block = state.mode === "block" || empty;
     // where the search starts: a block search goes by the order of the blocks (a parent before its children), a text search by position
@@ -286,7 +284,10 @@ export function createSearch(
     const host = ui.host();
     const doc = host.ownerDocument;
     const back =
-      at !== undefined ? null : (ed.focusedNode() ?? ed.lastFocused()); // (opened from the text: the focus goes back to the text)
+      at !== undefined
+        ? null
+        : ((ed.mode === "blocks" ? ed.focusedNode() : null) ??
+          ed.lastFocused()); // (opened from the text: the focus goes back to the text)
     const el = doc.createElement("div");
     el.className = "blocks-help blocks-search";
     el.setAttribute("role", "dialog");

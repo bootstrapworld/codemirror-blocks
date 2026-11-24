@@ -156,12 +156,14 @@ export function attachInteraction(ed: LezerBlockEditor): {
 
   function focusSoon(n: BNode): void {
     ed.focusNode(n);
-    if (ed.focusedNode() === n) return;
+    if (ed.mode === "text" || ed.focusedNode() === n) return;
     // a root that is not drawn yet (outside the viewport): scroll to it, then try again
     view.dispatch({
       effects: EditorView.scrollIntoView(n.from, { y: "center" }),
     });
     const again = (left: number) => () => {
+      // (a switch to text mode can come before the retry: the block readers throw there)
+      if (ed.mode === "text") return;
       ed.focusNode(n);
       if (ed.focusedNode() !== n && left > 0) setTimeout(again(left - 1), 30);
     };
@@ -559,7 +561,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
         ed.clearPending();
         // (a block takes focus, as when the old editor's quarantine closes; an editor with none keeps it itself)
         ed.focusEditor();
-        if (!ed.focusedNode()) view.focus();
+        // (a toggle to text mode can come before the blur that closes the box: the block readers throw there)
+        if (ed.mode === "text" || !ed.focusedNode()) view.focus();
       },
       (t) => {
         try {
