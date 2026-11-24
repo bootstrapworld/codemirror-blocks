@@ -42,13 +42,16 @@ function flagClass(el: Element, name: string, on: boolean): void {
 
 /**
  * The nodes of a slot that count in aria-setsize / aria-posinset: no comment counts (one that goes with a block is not drawn as a block, one
- * that goes with none is drawn but is not counted), and a top-level piece of text that did not parse (an `error` root) is not drawn.
+ * that goes with none is drawn but is not counted), and a top-level piece of text that did not parse (an `error` root), or a root of no width (a recovered `;`), is not drawn.
  */
+function counts(n: BNode, top: boolean): boolean {
+  return (
+    n.kind !== "comment" && !(top && (n.kind === "error" || n.to === n.from))
+  );
+}
 function drawnIn(slot: Slot): BNode[] {
   const top = slot.owner.kind === "program";
-  return slot.nodes.filter(
-    (n) => n.kind !== "comment" && !(top && n.kind === "error")
-  );
+  return slot.nodes.filter((n) => counts(n, top));
 }
 
 export class Renderer {
@@ -541,7 +544,7 @@ export class Renderer {
     const n = drawnIn(slot).length;
     let pos = 0;
     slot.nodes.forEach((c, i) => {
-      if (c.kind === "comment" || (top && c.kind === "error")) return;
+      if (!counts(c, top)) return;
       pos++;
       const el = this.els.get(c);
       if (!el) return;

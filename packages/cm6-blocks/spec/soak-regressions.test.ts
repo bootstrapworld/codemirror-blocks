@@ -896,3 +896,152 @@ it("seed 191466: two separate changes inside one root (a block moved into a neig
     })
   ).toBeNull();
 }, 120_000);
+it("seed 196454: a root of no width (a recovered ;) is not counted in the set size and positions, when blocks are drawn or renumbered", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 196454,
+      language: "python",
+      code: "71\n\n",
+      steps: [
+        {
+          op: "pasteText",
+          a: 0.17597710993140936,
+          text: "1",
+          before: false,
+        },
+        {
+          op: "setComment",
+          a: 0.5636834625620395,
+          text: "x; y",
+        },
+        {
+          op: "textEdit",
+          a: 0.3078826814889908,
+          len: 2,
+          w: "",
+        },
+        {
+          op: "textEdit",
+          a: 0.31623691809363663,
+          len: 1,
+          w: "",
+        },
+        {
+          op: "setComment",
+          a: 0.6574691687710583,
+          text: "TODO: fix",
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
+it("seed 166412: a root of no width (a recovered ;) is not counted in the set size and positions, when blocks are drawn or renumbered", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 166412,
+      language: "python",
+      code: "7\n",
+      steps: [
+        {
+          op: "editBox",
+          a: 0.7374783239793032,
+          text: "(",
+          accept: true,
+        },
+        {
+          op: "redo",
+        },
+        {
+          op: "comment",
+          a: 0.6402304717339575,
+          text: "x; y",
+          accept: true,
+        },
+        {
+          op: "redo",
+        },
+        {
+          op: "pasteText",
+          a: 0.9818322891369462,
+          text: "1",
+          before: true,
+        },
+        {
+          op: "topLevelType",
+          a: 0.8094806971494108,
+          text: "(f 1)",
+          accept: true,
+          how: "type",
+        },
+        {
+          op: "toggleMode",
+          a: 0.397793669719249,
+        },
+        {
+          op: "focus",
+          a: 0.45591088151559234,
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "insertText",
+          a: 0.3445836615283042,
+          b: 0.6500314269214869,
+          text: "{1: 2}",
+        },
+        {
+          op: "key",
+          key: "Home",
+          a: 0.06607825914397836,
+        },
+        {
+          op: "toggleMode",
+          a: 0.42165031121112406,
+        },
+        {
+          op: "comment",
+          a: 0.47738968138583004,
+          text: "",
+          accept: true,
+        },
+        {
+          op: "focus",
+          a: 0.3098198014777154,
+        },
+        {
+          op: "insertTemplate",
+          t: 0.5767614841461182,
+          a: 0.2358887221198529,
+        },
+        {
+          op: "editBox",
+          a: 0.44232661253772676,
+          text: "foo",
+          accept: true,
+        },
+        {
+          op: "pasteText",
+          a: 0.4793475253973156,
+          text: "x",
+          before: true,
+        },
+        {
+          op: "replaceText",
+          a: 0.4738032058812678,
+          text: "g(2)",
+        },
+        {
+          op: "pasteText",
+          a: 0.04524213750846684,
+          text: "f()",
+          before: false,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
