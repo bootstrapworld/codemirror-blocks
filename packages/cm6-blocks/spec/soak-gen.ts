@@ -268,7 +268,11 @@ const gen = {
       if (r < 0.72) return `{a: ${expr(d - 1)}, b: ${expr(d - 1)}}`;
       if (r < 0.8)
         return `${pick(rnd, NAMES)}.${pick(rnd, NAMES)}(${args(int(rnd, 0, 2))})`;
-      if (r < 0.88) return `(${pick(rnd, NAMES)}) => ${expr(d - 1)}`;
+      if (r < 0.88) {
+        // (an arrow's body that starts with a brace is a block, not an object)
+        const b = expr(d - 1);
+        return `(${pick(rnd, NAMES)}) => ${b.startsWith("{") ? `(${b})` : b}`;
+      }
       return `${expr(d - 1)} ? ${expr(d - 1)} : ${expr(d - 1)}`;
     };
     const stmt = (d: number, inFn: boolean): string => {
@@ -286,7 +290,9 @@ const gen = {
       if (r < 0.62)
         return `${pick(rnd, ["let", "const", "var"])} ${pick(rnd, NAMES)} = ${expr(3)};`;
       if (r < 0.7) return `${pick(rnd, NAMES)} = ${expr(2)};`;
-      return `${expr(3)};`;
+      // (a statement that starts with a brace is a block, not an object)
+      const e = expr(3);
+      return e.startsWith("{") ? `(${e});` : `${e};`;
     };
     const bodyFn = (d: number): string =>
       `{\n${Array.from({ length: int(rnd, 1, 3) }, () => "  " + stmt(d, true).replace(/\n/g, "\n  ")).join("\n")}\n}`;
@@ -307,6 +313,12 @@ const gen = {
         "True",
         "None",
       ]);
+    // (a lambda reaches as far to the right as it can: next to an operator, as a key or before the colon of a header it is not Python
+    // unless it is in parentheses, and a program that does not parse is no fair start for the invariants)
+    const operand = (d: number): string => {
+      const e = expr(d);
+      return e.startsWith("lambda") ? `(${e})` : e;
+    };
     const expr = (d: number): string => {
       if (d <= 0 || rnd() < 0.3) return atom();
       const r = rnd();
@@ -314,9 +326,9 @@ const gen = {
         Array.from({ length: k }, () => expr(d - 1)).join(", ");
       if (r < 0.4) return `${pick(rnd, NAMES)}(${args(int(rnd, 0, 3))})`;
       if (r < 0.58)
-        return `${expr(d - 1)} ${pick(rnd, ["+", "-", "*", "<", "=="])} ${expr(d - 1)}`;
+        return `${operand(d - 1)} ${pick(rnd, ["+", "-", "*", "<", "=="])} ${operand(d - 1)}`;
       if (r < 0.7) return `[${args(int(rnd, 0, 3))}]`;
-      if (r < 0.78) return `{${expr(d - 1)}: ${expr(d - 1)}}`;
+      if (r < 0.78) return `{${operand(d - 1)}: ${expr(d - 1)}}`;
       if (r < 0.86)
         return `${pick(rnd, NAMES)}.${pick(rnd, NAMES)}(${args(int(rnd, 0, 2))})`;
       return `lambda ${pick(rnd, NAMES)}: ${expr(d - 1)}`;
@@ -328,14 +340,15 @@ const gen = {
     const stmt = (d: number, inFn: boolean): string[] => {
       const r = rnd();
       if (d > 0 && r < 0.12) {
-        const o = [`if ${expr(2)}:`, ...block(d - 1, inFn)];
+        const o = [`if ${operand(2)}:`, ...block(d - 1, inFn)];
         if (rnd() < 0.4) o.push("else:", ...block(d - 1, inFn));
         return o;
       }
-      if (d > 0 && r < 0.2) return [`while ${expr(2)}:`, ...block(d - 1, inFn)];
+      if (d > 0 && r < 0.2)
+        return [`while ${operand(2)}:`, ...block(d - 1, inFn)];
       if (d > 0 && r < 0.27)
         return [
-          `for ${pick(rnd, NAMES)} in ${expr(1)}:`,
+          `for ${pick(rnd, NAMES)} in ${operand(1)}:`,
           ...block(d - 1, inFn),
         ];
       if (d > 0 && r < 0.35)
@@ -359,8 +372,42 @@ const gen = {
 
 // ---- chunks of real files (the corpora of scripts/corpus-lib.ts), cached in a file so that parallel workers do not each scan the repository ----
 
+/**
+ * Does the text parse without a Lezer error? A chunk cut from a real file at a line that starts at column 0 can start inside a docstring or a
+ * template string: one such chunk turns the rest of a long document into one huge error (thousands of error nodes), and a document like that
+ * is no program (the editor shows text for it): it is not a fair start for the invariants (round 47 triage). Without the parsers, nothing is
+ * filtered.
+ */
+const PARSERS: Record<Lang, string> = {
+  scheme: "cm6-lezer-scheme-common-lang",
+  javascript: "@lezer/javascript",
+  python: "@lezer/python",
+};
+function parsesClean(lang: Lang, text: string): boolean {
+  try {
+    const { parser } = require(PARSERS[lang]) as {
+      parser: { parse(s: string): import("@lezer/common").Tree };
+    };
+    let bad = false;
+    parser.parse(text).iterate({
+      enter: (n) => {
+        if (n.type.isError) bad = true;
+        return !bad;
+      },
+    });
+    return !bad;
+  } catch (_) {
+    return true;
+  }
+}
+
 let chunkCache: Record<string, string[]> | null = null;
+const cleanCache: Partial<Record<Lang, string[]>> = {};
 function corpusChunks(lang: Lang): string[] {
+  const all = rawChunks(lang);
+  return (cleanCache[lang] ??= all.filter((c) => parsesClean(lang, c)));
+}
+function rawChunks(lang: Lang): string[] {
   if (!chunkCache) {
     const file =
       process.env.CMB6_SOAK_CORPUS ||
