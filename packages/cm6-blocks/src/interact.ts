@@ -537,10 +537,11 @@ export function attachInteraction(ed: LezerBlockEditor): {
   }
 
   /** focus the first block that a top level insert wrote (as before) */
-  function focusFirst(r: { from: number; to: number }): void {
+  /** after several blocks were written, the focus goes to the last, as in the old editor */
+  function focusLast(r: { from: number; to: number }): void {
     const made = ed.roots().filter((n) => n.from >= r.from && n.to <= r.to);
-    const first = made[0];
-    if (first && first.kind !== "error") ed.focusNode(first);
+    const last = made[made.length - 1];
+    if (last && last.kind !== "error") ed.focusNode(last);
   }
 
   /**
@@ -571,7 +572,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
       (t) => {
         try {
           const r = ed.insertAt(at, t);
-          focusFirst(r);
+          focusLast(r);
           ed.say(`inserted ${t}`);
         } catch (e) {
           ed.lastError = (e as Error).message;
@@ -591,7 +592,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
       const message = ed.refuseAt(from, text);
       if (!message) {
         try {
-          focusFirst(ed.insertAt(from, text));
+          focusLast(ed.insertAt(from, text));
           ed.say(`inserted ${text}`);
           return;
         } catch (e) {

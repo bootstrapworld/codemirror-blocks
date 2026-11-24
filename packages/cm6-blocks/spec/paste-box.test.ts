@@ -55,7 +55,7 @@ const red = (ed: LezerBlockEditor, b: HTMLElement) => {
 };
 
 describe.each(["scheme", "javascript", "python"])("paste: %s", (l) => {
-  test("top level: a paste that parses is committed, drawn, one undo step, focus on it", async () => {
+  test("top level: a paste that parses is committed, drawn, one undo step, focus on the last block pasted", async () => {
     const ed = make(l, START[l]);
     const before = docText(ed);
     await topPaste(ed, before.length, "\n" + NEW[l] + "\n" + NEW[l]);
@@ -64,7 +64,7 @@ describe.each(["scheme", "javascript", "python"])("paste: %s", (l) => {
     expect(ed.view.dom.querySelectorAll(".blocks-node").length).toBeGreaterThan(
       0
     );
-    expect(ed.focusedNode()).toBe(ed.roots()[2]);
+    expect(ed.focusedNode()).toBe(ed.roots()[3]);
     undo(ed);
     expect(docText(ed)).toBe(before);
   });

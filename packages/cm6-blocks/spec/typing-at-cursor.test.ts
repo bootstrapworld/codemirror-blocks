@@ -74,7 +74,7 @@ describe.each(["scheme", "javascript", "python"])(
       await typeCommit(ed, a.length + 1, two);
       expect(docText(ed)).toBe(`${a}\n${two}\n${b}\n`);
       expect(ed.roots().length).toBe(4);
-      expect(ed.focusedNode()).toBe(ed.roots()[1]);
+      expect(ed.focusedNode()).toBe(ed.roots()[2]); // (the last of the two)
     });
     test("text that does not parse is refused at the cursor, the box stays", async () => {
       const src = `${a}\n\n${b}\n`;
