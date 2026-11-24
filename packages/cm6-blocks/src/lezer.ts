@@ -109,6 +109,12 @@ export interface BlockTable {
     siblings: readonly BNode[];
     text: TextSource;
   }) => BNode | null | "default";
+  /**
+   * Lezer nodes that are not blocks themselves but hold a comma list of items some of which are written `name [: type] OP value`
+   * with no node of their own (Python's `ParamList`: `final=False`, `a: int = 1`). Keyed by the Lezer node name: such an item is ONE
+   * block of table row `row` (its parts tagged "PairName", "PairType" (what came from a `TypeDef`), "PairValue" for the slots to take).
+   */
+  pairs?: Record<string, { op: string; row: string }>;
   /** how elements of a list are separated, by list-slot name or node kind */
   separators?: Record<string, string>;
   /**
@@ -252,7 +258,79 @@ export function lezerLanguage(
         continue;
       } else if (table.opaque?.includes(c.name))
         out.push({ node: c, key: "@opaque", path });
-      else if (c.firstChild) collect(c, [...path, c.name], out, text);
+      else if (c.firstChild) {
+        const pr = table.pairs?.[c.name];
+        if (pr) pairCands(c, pr, [...path, c.name], out, text);
+        else collect(c, [...path, c.name], out, text);
+      }
+    }
+  }
+
+  /** the candidates of a node whose comma items `name = value` are blocks of their own (see `BlockTable.pairs`) */
+  function pairCands(
+    n: SyntaxNode,
+    pr: { op: string; row: string },
+    path: string[],
+    out: Cand[],
+    text: string
+  ): void {
+    const sub: Cand[] = [];
+    collect(n, path, sub, text);
+    const commas: number[] = [];
+    const ops: number[] = [];
+    for (let c = n.firstChild; c; c = c.nextSibling) {
+      if (c.name === ",") commas.push(c.from);
+      else if (c.name === pr.op) ops.push(c.from);
+    }
+    const itemOf = (pos: number): number =>
+      commas.filter((k) => k <= pos).length;
+    const isCom = (cd: Cand): boolean =>
+      table.nodes[cd.key]?.kind === "comment";
+    const withOp = new Set(ops.map(itemOf));
+    const done = new Set<number>();
+    for (const cd of sub) {
+      const it = itemOf(cd.node.from);
+      if (isCom(cd) || cd.key === "@error" || !withOp.has(it)) {
+        out.push(cd);
+        continue;
+      }
+      if (done.has(it)) continue;
+      done.add(it);
+      const op = ops.find((o) => itemOf(o) === it) as number;
+      const members = sub
+        .filter(
+          (k) => !isCom(k) && k.key !== "@error" && itemOf(k.node.from) === it
+        )
+        .map((k) => ({
+          ...k,
+          path: [
+            ...k.path,
+            k.node.from > op
+              ? "PairValue"
+              : k.path.includes("TypeDef")
+                ? "PairType"
+                : "PairName",
+          ],
+        }));
+      // (a lone `name =` with no value, or a stray part: not a pair, its parts stay as they are)
+      if (
+        members.length < 2 ||
+        !members.some((k) => k.path.includes("PairName")) ||
+        !members.some((k) => k.path.includes("PairValue"))
+      ) {
+        out.push(...sub.filter((k) => itemOf(k.node.from) === it));
+        continue;
+      }
+      out.push({
+        node: {
+          from: members[0].node.from,
+          to: members[members.length - 1].node.to,
+          name: "Pair",
+        } as unknown as SyntaxNode,
+        key: pr.row,
+        path: [...path, "Pair"],
+        members,
+      });
     }
   }
 
@@ -928,7 +1006,13 @@ export function removeChanges(nodes: BNode[], text?: string): TextChange[] {
       } else {
         // the whole list: also the blanks before it on the same line (`(h 4)` -> `(h)`)
         let from = first.from;
-        if (text) {
+        if (text && slot.glue && !slot.owner.keyword) {
+          // a part that is written with a sign of its own (`final=False`, `a: int`): the sign goes with it, back to the part before
+          let at = -1;
+          for (const o of others)
+            if (o.to <= from && o.to > at && o.kind !== "comment") at = o.to;
+          if (at >= 0 && /^[\s=:]*$/.test(text.slice(at, from))) from = at;
+        } else if (text) {
           let a = from;
           while (a > 0 && (text[a - 1] === " " || text[a - 1] === "\t")) a--;
           if (a > 0 && text[a - 1] !== "\n") from = a;

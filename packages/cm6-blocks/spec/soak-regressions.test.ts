@@ -248,3 +248,18 @@ it("seed 25711: an error that an edit makes in the roots it touches makes the pa
     } as Sequence)
   ).toBeNull();
 });
+
+it("seed 11430: removeNode in a Python function whose parameter has a default (`final=False`, one block since the fortieth round): the removal changes only what it removes", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 11430,
+      language: "python",
+      code: "class IncrementalDecoder(codecs.IncrementalDecoder):\n    def decode(self, input, final=False):\n        return codecs.charmap_decode(input,self.errors,decoding_table)[0]\n\n",
+      steps: [
+        { op: "removeNode", a: 0.596174577716738, b: 0.7119021683465689 },
+      ],
+      motion: "full",
+    } as Sequence)
+  ).toBeNull();
+}, 120_000);

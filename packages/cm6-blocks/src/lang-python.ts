@@ -65,6 +65,16 @@ export const pythonTable: BlockTable = {
         one("value", ["#2"]),
       ],
     },
+    DefaultParam: {
+      kind: "assign",
+      label: "default parameter",
+      describe: "${name} equals ${value}",
+      slots: [
+        one("name", ["PairName"]),
+        { ...list("annotation", ["PairType"]), before: ": " },
+        { ...list("value", ["PairValue"]), before: "=" },
+      ],
+    },
     PassStatement: leaf("statement", "pass"),
     BreakStatement: leaf("statement", "break"),
     ContinueStatement: leaf("statement", "continue"),
@@ -301,6 +311,7 @@ export const pythonTable: BlockTable = {
       slots: [list("elements", "*")],
     },
   },
+  pairs: { ParamList: { op: "AssignOp", row: "DefaultParam" } },
   blank: "...",
   lineComment: "#",
   separators: {
@@ -308,6 +319,7 @@ export const pythonTable: BlockTable = {
     elements: ", ",
     items: ", ",
     names: ", ",
+    params: ", ",
     roots: "\n",
   },
   opaque: ["AwaitExpression"],
