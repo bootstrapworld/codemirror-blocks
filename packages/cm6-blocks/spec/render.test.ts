@@ -22,7 +22,7 @@ function raw(kind: string, extra: Partial<BNode> = {}): BNode {
     id: nextId++,
     kind,
     from: 0,
-    to: 0,
+    to: 1, // (a node of no width is not drawn as a root)
     parent: null,
     slot: null,
     slots: [],
