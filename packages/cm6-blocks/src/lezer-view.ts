@@ -442,6 +442,8 @@ export function createLezerBlockEditor(
    * After an edit the heights are read again two frames later. A block that a drop or a removal moved is, for a frame, laid out without the
    * space of something that comes back (a gap under the mouse): CodeMirror measures that frame, and the observer of the roots may not report
    * the size that follows (the soak: a number of the gutter 20 px off until the next edit).
+   * STILL NEEDED (checked with it switched off, the observer of 67a0b839 kept: a 10-minute Chromium soak over seeds 1 to 1420 failed on seed 1252, the
+   * very sequence this was added for, with 0 failures in 1422 sequences with it on).
    */
   let laterPending = false;
   const remeasureLater = (): void => {
