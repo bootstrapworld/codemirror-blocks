@@ -21,6 +21,10 @@
  *                                    boxes, comments (Shift-Ctrl-]), collapse/expand, the text/blocks toggle with the morph on and with
  *                                    reduced motion (some toggles are pressed again in the middle of the morph), undo and redo, search,
  *                                    line numbers (always on in the demo), scrolling.
+ * SIZES AND WIDER STEPS (round 46): 18% of the sequences start from a LONG document (60 to 400 top-level forms, so that the viewport virtualizes;
+ * fewer steps; in Chromium more scrolling, with a key or the toggle after it: --long-docs F, --no-long-docs); the steps also include
+ * multi-line pastes, broken text typed in text mode and back to blocks, undo/redo runs, collapse bursts, multi-select with cut / copy / paste
+ * and Delete by key, and comments next to comments (see the header of spec/soak-gen.ts).
  * INVARIANTS, checked after EVERY step; the first one that breaks ends the sequence and is reported with the seed and the shrunk steps:
  *   consistency   the blocks and the text agree (checkLezerEditor: the DOM against a fresh drawing, the tree against the text)
  *   reparse       (jsdom) the text read again by a fresh editor gives the same blocks as the ones shown
