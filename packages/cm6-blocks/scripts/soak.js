@@ -43,6 +43,8 @@
  *   --alternate          jsdom, plus ONE Chromium batch at a time, every --e2e-every (20th) batch (instead of both at once)
  *   --motion             Chromium only, with the text/blocks toggle favoured and motion on in most sequences; results in soak-results/motion
  *   --language L         scheme, javascript or python (default: random per sequence)
+ *   --long-docs F        the fraction F (0 to 1) of sequences that start from a LONG document of 60 to 400 top-level forms (default 0.18; 0 or
+ *                        --no-long-docs: only small programs). A long document gets fewer steps, and in Chromium more scrolling
  *   --seed N             start there (it resumes where it stopped by default); --fresh forgets the saved progress
  *   --steps N            steps per sequence (default: a ramp, 20 and up to 100 for jsdom, 15 up to 60 for Chromium)
  *   --batch N            seeds per worker process (default 40 for jsdom, 6 for Chromium); --batches N stops after N batches
@@ -82,6 +84,9 @@ const path = require("path");
 const lib = require("./soak-lib");
 
 const opts = lib.parseArgs(process.argv.slice(2));
+// (the fraction of long documents: the workers read it from the environment, spec/soak-gen.ts `longDocs`)
+if (opts.longDocs !== undefined)
+  process.env.CMB6_SOAK_LONG_DOCS = String(opts.longDocs);
 const pkg = path.resolve(__dirname, "..");
 const repo =
   spawnSync("git", ["rev-parse", "--show-toplevel"], {

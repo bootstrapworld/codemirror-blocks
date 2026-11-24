@@ -1,11 +1,17 @@
 // The soak runner's generator (spec/soak-gen.ts): the same seed gives the same sequence, steps are fractions, a failing list shrinks.
 import {
+  BROKEN,
+  genStep,
   LANG_NAMES,
+  longDocs,
+  longProgram,
   makeSequence,
   mulberry32,
   randomProgram,
   shrink,
   Step,
+  stepsFor,
+  topLevelForms,
 } from "./soak-gen";
 
 describe("soak generator", () => {
@@ -13,7 +19,7 @@ describe("soak generator", () => {
     const a = makeSequence("jsdom", 42, 20);
     expect(makeSequence("jsdom", 42, 20)).toEqual(a);
     expect(makeSequence("chromium", 42, 20).steps).not.toEqual(a.steps);
-    expect(a.steps).toHaveLength(20);
+    expect(a.steps).toHaveLength(stepsFor(a.code, 20)); // (a long document gets fewer)
   });
   test("every step has an op and only fractions, numbers, booleans and texts", () => {
     for (const engine of ["jsdom", "chromium"] as const)
@@ -63,5 +69,123 @@ describe("soak generator", () => {
       5
     );
     expect(runs).toBe(5);
+  });
+});
+
+describe("soak generator: long documents and wider steps (forty-sixth round)", () => {
+  const withLong = (v: string | undefined, fn: () => void) => {
+    const old = process.env.CMB6_SOAK_LONG_DOCS;
+    if (v === undefined) delete process.env.CMB6_SOAK_LONG_DOCS;
+    else process.env.CMB6_SOAK_LONG_DOCS = v;
+    try {
+      fn();
+    } finally {
+      if (old === undefined) delete process.env.CMB6_SOAK_LONG_DOCS;
+      else process.env.CMB6_SOAK_LONG_DOCS = old;
+    }
+  };
+  test("longDocs is 0.18 by default, and the environment sets it", () => {
+    withLong(undefined, () => expect(longDocs()).toBe(0.18));
+    withLong("0", () => expect(longDocs()).toBe(0));
+    withLong("1", () => expect(longDocs()).toBe(1));
+    withLong("7", () => expect(longDocs()).toBe(1));
+  });
+  test("a long program has 60 to 400 top-level forms in every language, and the same seed gives the same one", () => {
+    for (const l of LANG_NAMES)
+      for (let seed = 1; seed <= 12; seed++) {
+        const a = longProgram(l, mulberry32(seed));
+        expect(longProgram(l, mulberry32(seed))).toBe(a);
+        const n = topLevelForms(a);
+        expect(n).toBeGreaterThanOrEqual(55); // (the count is of lines: a piece may hold a form or two more than it counts)
+        expect(n).toBeLessThanOrEqual(500);
+        expect(a.endsWith("\n")).toBe(true);
+      }
+  });
+  test("about a fifth of the sequences have a long document; all of them with 1, none with 0", () => {
+    const share = (v: string | undefined) => {
+      let long = 0;
+      withLong(v, () => {
+        for (let seed = 0; seed < 200; seed++)
+          if (topLevelForms(makeSequence("jsdom", seed, 1).code) > 60) long++;
+      });
+      return long / 200;
+    };
+    const d = share(undefined);
+    expect(d).toBeGreaterThan(0.08);
+    expect(d).toBeLessThan(0.3);
+    expect(share("0")).toBe(0);
+    expect(share("1")).toBeGreaterThan(0.85);
+  });
+  test("a long document gets fewer steps, a small one all of them", () => {
+    expect(stepsFor("(a)\n(b)\n", 100)).toBe(100);
+    const big = Array.from({ length: 400 }, () => "(f 1)").join("\n");
+    expect(stepsFor(big, 100)).toBeLessThan(40);
+    expect(stepsFor(big, 100)).toBeGreaterThanOrEqual(12);
+    expect(stepsFor(big, 5)).toBe(5);
+  });
+  test("Chromium scrolls more in a long document, jsdom never scrolls", () => {
+    const count = (engine: "jsdom" | "chromium", long: boolean, op: string) => {
+      const rnd = mulberry32(9);
+      return Array.from({ length: 3000 }, () =>
+        genStep(rnd, "scheme", engine, false, long)
+      ).filter((s) => s.op === op).length;
+    };
+    expect(count("chromium", true, "scroll")).toBeGreaterThan(
+      3 * count("chromium", false, "scroll")
+    );
+    expect(count("chromium", true, "scrollKey")).toBeGreaterThan(0);
+    expect(count("chromium", true, "scrollToggle")).toBeGreaterThan(0);
+    expect(count("chromium", false, "scrollKey")).toBe(0);
+    for (const op of ["scroll", "scrollKey", "scrollToggle"])
+      expect(count("jsdom", true, op)).toBe(0);
+  });
+  test("each wider op appears in both engines, with valid fields", () => {
+    for (const engine of ["jsdom", "chromium"] as const)
+      for (const lang of LANG_NAMES) {
+        const rnd = mulberry32(31);
+        const steps = Array.from({ length: 4000 }, () =>
+          genStep(rnd, lang, engine)
+        );
+        const of = (op: string) => steps.filter((s) => s.op === op);
+        for (const op of [
+          "pasteMulti",
+          "brokenText",
+          "undoRun",
+          "collapseBurst",
+          "collapseAllThen",
+          "multiSelect",
+          "commentNear",
+        ])
+          expect(of(op).length).toBeGreaterThan(0);
+        for (const s of of("pasteMulti")) {
+          expect(String(s.text).split("\n").length).toBeGreaterThanOrEqual(2);
+          expect(String(s.text).split("\n").length).toBeLessThanOrEqual(4);
+        }
+        for (const s of of("brokenText")) {
+          expect(BROKEN[lang]).toContain(s.w);
+          expect(typeof s.back).toBe("boolean");
+        }
+        for (const s of of("undoRun")) {
+          expect(s.n).toBeGreaterThanOrEqual(2);
+          expect(s.n).toBeLessThanOrEqual(5);
+        }
+        for (const s of of("collapseBurst")) expect(s.n).toBeGreaterThan(2);
+        for (const s of of("multiSelect")) {
+          expect(s.n).toBeGreaterThanOrEqual(2);
+          expect(s.n).toBeLessThanOrEqual(5);
+          expect(["delete", "cut", "cutPaste", "copyPaste"]).toContain(s.then);
+        }
+        for (const s of of("commentNear")) expect([-1, 1]).toContain(s.dir);
+      }
+  });
+  test("multi-form snippets reach the API's insert, paste, replace and replaced document", () => {
+    const rnd = mulberry32(5);
+    const steps = Array.from({ length: 4000 }, () =>
+      genStep(rnd, "python", "jsdom")
+    );
+    for (const op of ["insertText", "pasteText", "replaceText", "replaceDoc"])
+      expect(
+        steps.some((s) => s.op === op && String(s.text).includes("\n"))
+      ).toBe(true);
   });
 });

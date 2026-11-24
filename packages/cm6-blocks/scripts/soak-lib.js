@@ -43,6 +43,11 @@ function parseArgs(argv) {
     alternate: has("alternate"),
     e2eEvery: num("e2e-every", 20),
     motion: has("motion"),
+    longDocs: has("no-long-docs")
+      ? 0
+      : raw["long-docs"] === undefined
+        ? undefined
+        : Number(raw["long-docs"]),
     language: raw.language,
     seed: raw.seed === undefined ? undefined : Number(raw.seed),
     fresh: has("fresh"),

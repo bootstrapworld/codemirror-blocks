@@ -5,6 +5,19 @@
  * A sequence is a language, a program (text) and a list of steps. A step is plain data: `{op, ...}` whose numbers are FRACTIONS in [0, 1)
  * ("block a of the program in document order" is `floor(a * count)` when the step runs), so any subset of a step list is still a
  * valid list of steps: that is what lets a failing sequence be shrunk and replayed from the record alone.
+ *
+ * PROGRAM SIZE (forty-sixth round): most sequences start from a small program (a few lines), but a fraction (`longDocs()`, 18% by default;
+ * `CMB6_SOAK_LONG_DOCS=0` or `soak.js --long-docs 0` turns it off, `--long-docs 1` makes every program long) is a LONG document of 60 to 400
+ * top-level forms, built from the generated programs, the hand-written ones and chunks of real files, with blank lines and comments between
+ * them, so that CodeMirror draws only the lines near the viewport. A long document gets fewer steps (`stepsFor`: the invariants read the
+ * whole document after each step) and, in Chromium, more `scroll` steps (plus `scrollKey` and `scrollToggle`: a scroll and then a key or the
+ * mode toggle). A step's fractions `a` / `b` pick among the blocks that EXIST (jsdom: all of them; Chromium: those that are drawn).
+ *
+ * WIDER STEPS (same round): `pasteMulti` (several forms pasted at the top level), `brokenText` (text mode, broken syntax typed, back to
+ * blocks), `undoRun` (2 to 5 undos or redos in a row), `collapseBurst` and `collapseAllThen` (collapse many, then edit), `multiSelect`
+ * (select 2 to 5 blocks, then Delete / cut / copy and paste by key), `commentNear` (a comment next to another comment), and multi-form snippets
+ * in the API's insertText, pasteText, replaceText and replaceDoc. All of them are in both engines except `scrollKey` and `scrollToggle`
+ * (Chromium only: jsdom has no layout).
  */
 import * as fs from "fs";
 import * as path from "path";
@@ -109,6 +122,54 @@ export const BOX_TEXTS: string[] = [
   "(((",
   "a b c",
 ];
+/** several forms, one to a line (a multi-line paste or snippet) */
+export function multiSnippet(rnd: Rnd, lang: Lang): string {
+  return Array.from({ length: int(rnd, 2, 4) }, () =>
+    pick(rnd, SNIPPETS[lang])
+  ).join("\n");
+}
+/** a snippet: mostly one form, sometimes 2 to 4 joined by newlines */
+const snip = (rnd: Rnd, lang: Lang): string =>
+  rnd() < 0.3 ? multiSnippet(rnd, lang) : pick(rnd, SNIPPETS[lang]);
+/** text that does not parse (an unclosed bracket or string, a stray token): typed in text mode, then the editor is asked to go back to blocks */
+export const BROKEN: Record<Lang, string[]> = {
+  scheme: [
+    "(define (f x",
+    "(f 1 2",
+    ")",
+    '"unclosed',
+    "[1 2)",
+    "#;",
+    "'",
+    "(a . )",
+    "(if",
+    "#|",
+  ],
+  javascript: [
+    "function f(",
+    "if (x) {",
+    '"abc',
+    "}",
+    "let = ;",
+    "a +",
+    "[1, 2",
+    "f(1,",
+    "/* open",
+    "`tpl ${",
+  ],
+  python: [
+    "def f(:",
+    "if x",
+    "    y = (",
+    '"""abc',
+    "x = [1,",
+    "else:",
+    "f(1,",
+    "lambda",
+    "  stray",
+    "x = 'a",
+  ],
+};
 export const COMMENT_WORDS = ["note", "a b c", "", "TODO: fix", "x; y"];
 export const SEARCH_WORDS = ["x", "f", "1", "define", "zzz", "("];
 
@@ -345,8 +406,62 @@ function corpusChunks(lang: Lang): string[] {
   return chunkCache?.[lang] ?? [];
 }
 
-/** a program for `lang`: a hand-written one, a generated one or a piece of a real file */
+/** the fraction of sequences that start from a LONG document (default 0.18; `CMB6_SOAK_LONG_DOCS`, set by `soak.js --long-docs`, 0 turns it off) */
+export function longDocs(): number {
+  const v = Number(process.env.CMB6_SOAK_LONG_DOCS);
+  return process.env.CMB6_SOAK_LONG_DOCS === undefined ||
+    process.env.CMB6_SOAK_LONG_DOCS === "" ||
+    !Number.isFinite(v)
+    ? 0.18
+    : Math.max(0, Math.min(1, v));
+}
+const LONG_MIN = 60;
+const LONG_MAX = 400;
+const COMMENT_LINE: Record<Lang, string> = {
+  scheme: ";",
+  javascript: "//",
+  python: "#",
+};
+/** the number of top-level forms (lines that start at column 0 with something that is not a closer or a comment) */
+export function topLevelForms(code: string): number {
+  let n = 0;
+  for (const l of code.split("\n"))
+    if (/^[^\s)\]}]/.test(l) && !/^(;|\/\/|#(?![;|!]))/.test(l)) n++;
+  return n;
+}
+/**
+ * A long document of 60 to 400 top-level forms: generated programs, hand-written ones and chunks of real files, one after the other, with
+ * blank lines and comments between them. Every piece starts at column 0 and ends with a newline, so the pieces stay separate forms.
+ */
+export function longProgram(lang: Lang, rnd: Rnd): string {
+  const want = int(rnd, LONG_MIN, LONG_MAX);
+  const chunks = corpusChunks(lang);
+  const out: string[] = [];
+  let forms = 0;
+  let chars = 0;
+  while (forms < want && chars < 120_000) {
+    const r = rnd();
+    let piece: string;
+    if (r < 0.6) piece = gen[lang](rnd);
+    else if (r < 0.8 && chunks.length) piece = pick(rnd, chunks);
+    else piece = pick(rnd, START[lang]);
+    if (piece.trim() === "") continue;
+    if (!piece.endsWith("\n")) piece += "\n";
+    out.push(piece);
+    forms += topLevelForms(piece);
+    chars += piece.length;
+    if (rnd() < 0.2) out.push("\n");
+    if (rnd() < 0.1)
+      out.push(
+        `${COMMENT_LINE[lang]} ${pick(rnd, ["note", "TODO", "a b c"])}\n`
+      );
+  }
+  return out.join("");
+}
+
+/** a program for `lang`: mostly a small one (a hand-written one, a generated one or a piece of a real file), sometimes a long document */
 export function randomProgram(lang: Lang, rnd: Rnd): string {
+  if (rnd() < longDocs()) return longProgram(lang, rnd);
   const r = rnd();
   if (r < 0.25) return pick(rnd, START[lang]);
   if (r < 0.75) return gen[lang](rnd);
@@ -446,6 +561,70 @@ const COMMON: Table = [
     }),
   ],
 ];
+/** wider operations (forty-sixth round) that both engines run */
+const WIDE: Table = [
+  // several forms pasted at the top level (a multi-line paste)
+  [
+    3,
+    (r, l) => ({
+      op: "pasteMulti",
+      a: f(r),
+      text: multiSnippet(r, l),
+      accept: r() < 0.6,
+    }),
+  ],
+  // broken syntax typed in text mode, then back to blocks (refused while it does not parse: the error-recovery path)
+  [
+    4,
+    (r, l) => ({
+      op: "brokenText",
+      a: f(r),
+      w: pick(r, BROKEN[l]),
+      nl: r() < 0.5,
+      back: r() < 0.7,
+    }),
+  ],
+  [3, (r) => ({ op: "undoRun", n: 2 + int(r, 0, 3), redo: r() < 0.35 })],
+  [
+    2,
+    (r) => ({
+      op: "collapseBurst",
+      a: f(r),
+      n: 3 + int(r, 0, 5),
+      on: r() < 0.7,
+    }),
+  ],
+  [
+    2,
+    (r) => ({
+      op: "collapseAllThen",
+      on: r() < 0.8,
+      a: f(r),
+      text: pick(r, BOX_TEXTS),
+      accept: r() < 0.7,
+    }),
+  ],
+  [
+    4,
+    (r) => ({
+      op: "multiSelect",
+      a: f(r),
+      n: 2 + int(r, 0, 3),
+      then: pick(r, ["delete", "cut", "cutPaste", "copyPaste", "cutPaste"]),
+      b: f(r),
+    }),
+  ],
+  [
+    3,
+    (r) => ({
+      op: "commentNear",
+      a: f(r),
+      dir: r() < 0.5 ? -1 : 1,
+      text: pick(r, COMMENT_WORDS),
+      accept: r() < 0.8,
+    }),
+  ],
+];
 /** the editor's API (a program or a tool calls these; a person does not press them) */
 const API: Table = [
   [
@@ -454,7 +633,7 @@ const API: Table = [
       op: "insertText",
       a: f(r),
       b: f(r),
-      text: pick(r, SNIPPETS[l]),
+      text: snip(r, l),
     }),
   ],
   [5, (r) => ({ op: "removeNode", a: f(r), b: f(r) })],
@@ -466,11 +645,11 @@ const API: Table = [
     (r, l) => ({
       op: "pasteText",
       a: f(r),
-      text: pick(r, SNIPPETS[l]),
+      text: snip(r, l),
       before: r() < 0.3,
     }),
   ],
-  [2, (r, l) => ({ op: "replaceText", a: f(r), text: pick(r, SNIPPETS[l]) })],
+  [2, (r, l) => ({ op: "replaceText", a: f(r), text: snip(r, l) })],
   [
     1,
     (r, l) => ({
@@ -489,7 +668,12 @@ const API: Table = [
     2,
     (r, l) => ({
       op: "replaceDoc",
-      text: r() < 0.5 ? pick(r, START[l]) : gen[l](r),
+      text:
+        r() < 0.15
+          ? multiSnippet(r, l) + "\n"
+          : r() < 0.5
+            ? pick(r, START[l])
+            : gen[l](r),
     }),
   ],
 ];
@@ -519,19 +703,52 @@ const MOUSE: Table = [
   [2, (r) => ({ op: "scroll", a: f(r) })],
 ];
 
-/** one random step. `engine` decides which tables are used; `weights` shifts them (the `--motion` runs favour the toggle) */
+/** the keys pressed right after a scroll (the focused block may now be outside the drawn part of the document) */
+const SCROLL_KEYS = [
+  "ArrowDown",
+  "ArrowUp",
+  "ArrowLeft",
+  "ArrowRight",
+  "Enter",
+  "Space",
+  "Shift+ArrowRight",
+  "Home",
+  "End",
+];
+
+/** a long document gets fewer steps: the invariants read the whole document after each step (60 forms or fewer: all of them) */
+export function stepsFor(code: string, nSteps: number): number {
+  const forms = topLevelForms(code);
+  return forms <= 60
+    ? nSteps
+    : Math.min(nSteps, Math.max(12, Math.round((nSteps * 60) / forms) + 10));
+}
+
+/**
+ * one random step. `engine` decides which tables are used; `motion` shifts them (the `--motion` runs favour the toggle); `long`: the document
+ * is long (Chromium: more scrolling, and a key or the toggle right after it)
+ */
 export function genStep(
   rnd: Rnd,
   lang: Lang,
   engine: Engine,
-  motion = false
+  motion = false,
+  long = false
 ): Step {
   // (Chromium runs the few API calls that a page's own code would make: an insert, a removal, a replaced document)
   const all: Table =
     engine === "jsdom"
-      ? [...COMMON, ...API]
-      : [...COMMON, ...MOUSE, API[0], API[1], API[API.length - 1]];
+      ? [...COMMON, ...WIDE, ...API]
+      : [...COMMON, ...WIDE, ...MOUSE, API[0], API[1], API[API.length - 1]];
   if (motion) all.push([40, (r) => ({ op: "toggleMode", a: f(r) })]);
+  if (long && engine === "chromium") {
+    all.push([14, (r) => ({ op: "scroll", a: f(r) })]);
+    all.push([
+      5,
+      (r) => ({ op: "scrollKey", a: f(r), key: pick(r, SCROLL_KEYS) }),
+    ]);
+    all.push([3, (r) => ({ op: "scrollToggle", a: f(r) })]);
+  }
   let total = 0;
   for (const [w] of all) total += w;
   let x = rnd() * total;
@@ -563,8 +780,9 @@ export function makeSequence(
   const language = opts.language ?? pick(rnd, LANG_NAMES);
   const code = randomProgram(language, rnd);
   const motion = rnd() < (opts.motion ? 0.8 : 0.35) ? "full" : "reduced";
-  const steps = Array.from({ length: nSteps }, () =>
-    genStep(rnd, language, engine, !!opts.motion)
+  const long = topLevelForms(code) > 60;
+  const steps = Array.from({ length: stepsFor(code, nSteps) }, () =>
+    genStep(rnd, language, engine, !!opts.motion, long)
   );
   return { engine, seed, language, code, steps, motion };
 }

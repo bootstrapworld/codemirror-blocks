@@ -221,6 +221,17 @@ export async function runChromium(
       : null;
   };
 
+  const scrollTo = (a: number): Promise<void> =>
+    evaluate((a: number) => {
+      const sd = (window as any).demo.ed.view.scrollDOM as HTMLElement;
+      sd.scrollTop = a * sd.scrollHeight;
+    }, a);
+  /** press the mode button and wait for the morph to end */
+  const toggleAndSettle = async (): Promise<void> => {
+    await page.locator(".blocks-toggle-btn").click();
+    await settle();
+  };
+
   let armed = false;
   let toolbarOk = false;
   let textEditedInText = false;
@@ -412,10 +423,118 @@ export async function runChromium(
         return;
       }
       case "scroll":
-        await evaluate((a: number) => {
-          const sd = (window as any).demo.ed.view.scrollDOM as HTMLElement;
-          sd.scrollTop = a * sd.scrollHeight;
-        }, Number(s.a));
+        await scrollTo(Number(s.a));
+        return;
+      case "scrollKey":
+        // (the focused block may now be outside the drawn part of a long document: a key must still be heard, and the focus kept)
+        await scrollTo(Number(s.a));
+        await settle();
+        await press(String(s.key));
+        return;
+      case "scrollToggle":
+        await scrollTo(Number(s.a));
+        await settle();
+        await page.locator(".blocks-toggle-btn").click();
+        toolbarOk = true;
+        return;
+      case "brokenText": {
+        // text mode, broken syntax typed at a place of the text, then back to blocks (refused while it does not parse)
+        if (blocks) await toggleAndSettle();
+        await evaluate((a: any) => {
+          const v = (window as any).demo.ed.view;
+          const len = v.state.doc.length;
+          const from = Math.min(len, Math.floor(a.a * (len + 1)));
+          v.focus();
+          v.dispatch({ selection: { anchor: from } });
+        }, s as any);
+        if (s.nl) await page.keyboard.press("Enter");
+        await page.keyboard.type(String(s.w));
+        textEditedInText = true;
+        editsMade++;
+        if (s.back) {
+          await toggleAndSettle();
+          // (a refused switch shows a dialog: close it, the step is over)
+          for (
+            let k = 0;
+            k < 3 && (await page.locator("[role=dialog]").count());
+            k++
+          ) {
+            await page
+              .locator("[role=dialog] .closeDialog")
+              .first()
+              .click()
+              .catch(() => undefined);
+            await page.waitForTimeout(50);
+          }
+          if ((await mode()) === "blocks") {
+            // (the editor's rule: back to blocks after text edits starts the history over)
+            historyReset = true;
+            textEditedInText = false;
+          }
+        }
+        return;
+      }
+      case "undoRun":
+        for (let k = 0; k < Number(s.n); k++)
+          await press(s.redo ? "Mod+Shift+z" : "Mod+z");
+        return;
+      case "collapseBurst": {
+        if (!blocks) return;
+        for (let k = 0; k < Number(s.n); k++)
+          if (await clickBlock((Number(s.a) + k * 0.137) % 1))
+            await press(s.on ? "ArrowLeft" : "ArrowRight");
+        return;
+      }
+      case "collapseAllThen":
+        if (!blocks) return;
+        await press(s.on ? "Shift+ArrowLeft" : "Shift+ArrowRight");
+        await exec({
+          op: "editBox",
+          a: s.a,
+          text: s.text,
+          accept: s.accept,
+        });
+        return;
+      case "multiSelect": {
+        if (!blocks) return;
+        let n = 0;
+        for (let k = 0; k < Number(s.n); k++)
+          if (await clickBlock((Number(s.a) + k * 0.137) % 1)) {
+            await page.keyboard.press("Space");
+            n++;
+          }
+        if (!n) return;
+        if (s.then === "delete") await press("Delete");
+        else {
+          await press(s.then === "copyPaste" ? "Mod+c" : "Mod+x");
+          if (await clickBlock(s.b)) await press("Mod+v");
+        }
+        editsMade++;
+        return;
+      }
+      case "commentNear": {
+        if (!blocks) return;
+        // (the block next to a comment: the fraction that picks it among the drawn blocks)
+        const f2: number = await evaluate((a: any) => {
+          const its = Array.from(
+            document.querySelectorAll(".cm-content [role=treeitem]")
+          );
+          const cs = its
+            .map((e, i) => (e.classList.contains("blocks-comment") ? i : -1))
+            .filter((i) => i >= 0);
+          if (!cs.length) return a.a;
+          const c = cs[Math.min(cs.length - 1, Math.floor(a.a * cs.length))];
+          const i = Math.max(0, Math.min(its.length - 1, c + a.dir));
+          return (i + 0.5) / its.length;
+        }, s as any);
+        if (!(await clickBlock(f2))) return;
+        await page.keyboard.press("Control+Shift+BracketRight");
+        await fillBox(String(s.text), !!s.accept);
+        editsMade++;
+        return;
+      }
+      case "pasteMulti":
+        await exec({ ...s, op: "topLevelType", how: "paste" });
         return;
       case "insertText":
         if (blocks)

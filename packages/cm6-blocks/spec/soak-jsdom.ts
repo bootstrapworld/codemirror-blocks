@@ -223,6 +223,30 @@ export function runJsdom(
   let armed = false;
   const toolbarOk = false;
 
+  /** the mode switch of a step; the old editor's rule: blocks mode after text edits starts the history over (the undo-all check is then off) */
+  const switchMode = (to: "text" | "blocks"): void => {
+    const before = undoDepth(view.state);
+    ed!.setMode(to);
+    if (before > 0 && undoDepth(view.state) === 0) noUndoCheck = true;
+  };
+  /** a copy, cut or paste event as the browser sends it for Mod+c, Mod+x and Mod+v; returns the text a copy or cut put on the clipboard */
+  const clipEvent = (
+    el: Element,
+    type: "copy" | "cut" | "paste",
+    text = ""
+  ): string => {
+    const e = new Event(type, { bubbles: true, cancelable: true }) as Event & {
+      clipboardData: unknown;
+    };
+    let out = "";
+    e.clipboardData = {
+      getData: () => text,
+      setData: (_: string, v: string) => (out = v),
+    };
+    el.dispatchEvent(e);
+    return out;
+  };
+
   const exec = (s: Step): void => {
     const blocks = inBlocks();
     switch (s.op) {
@@ -266,9 +290,82 @@ export function runJsdom(
         if (blocks) ed!.collapseAll(!!s.on);
         return;
       case "toggleMode": {
-        const before = undoDepth(view.state);
-        ed!.setMode(blocks ? "text" : "blocks");
-        if (before > 0 && undoDepth(view.state) === 0) noUndoCheck = true; // (the old editor's rule: blocks mode after text edits starts the history over)
+        switchMode(blocks ? "text" : "blocks");
+        return;
+      }
+      case "brokenText": {
+        // text mode, broken syntax at a place of the text, then back to blocks (refused while it does not parse: the editor stays in text mode)
+        if (blocks) switchMode("text");
+        const len = view.state.doc.length;
+        const from = Math.min(len, Math.floor(Number(s.a) * (len + 1)));
+        view.dispatch({
+          changes: { from, insert: (s.nl ? "\n" : "") + String(s.w) },
+        });
+        if (s.back) switchMode("blocks");
+        return;
+      }
+      case "undoRun":
+        for (let k = 0; k < Number(s.n); k++) (s.redo ? redo : undo)(view);
+        return;
+      case "collapseBurst": {
+        if (!blocks) return;
+        for (let k = 0; k < Number(s.n); k++) {
+          const n = nodeAt((Number(s.a) + k * 0.137) % 1);
+          if (n && n.slots.length) ed!.collapse(n, !!s.on);
+        }
+        return;
+      }
+      case "collapseAllThen":
+        if (!blocks) return;
+        ed!.collapseAll(!!s.on);
+        exec({ op: "editBox", a: s.a, text: s.text, accept: s.accept });
+        return;
+      case "multiSelect": {
+        if (!blocks) return;
+        let last: BNode | null = null;
+        for (let k = 0; k < Number(s.n); k++) {
+          const n = nodeAt((Number(s.a) + k * 0.137) % 1);
+          if (n && ed!.toggleSelect(n) === "selected") last = n;
+        }
+        if (!last) return;
+        ed!.focusNode(last);
+        const el = () => ed!.renderer.element(ed!.focusedNode() ?? last!);
+        if (s.then === "delete") {
+          press("Delete");
+        } else {
+          // cut / copy and paste through the clipboard events the browser sends for Mod+x, Mod+c and Mod+v
+          const out = clipEvent(el(), s.then === "copyPaste" ? "copy" : "cut");
+          if (s.then !== "delete" && out) {
+            ed!.clearSelection();
+            const n = nodeAt(s.b);
+            if (n) {
+              ed!.focusNode(n);
+              clipEvent(el(), "paste", out);
+            }
+          }
+        }
+        return;
+      }
+      case "commentNear": {
+        if (!blocks) return;
+        const all = blocksOf(ed!);
+        const comments = all
+          .map((n, i) => (n.kind === "comment" ? i : -1))
+          .filter((i) => i >= 0);
+        let n: BNode | null;
+        if (comments.length) {
+          const c = comments[at(s.a, comments.length)];
+          n = all[Math.max(0, Math.min(all.length - 1, c + Number(s.dir)))];
+        } else n = nodeAt(s.a);
+        if (!n) return;
+        ed!.focusNode(n);
+        press("Control+Shift+]");
+        finishBox(String(s.text), !!s.accept);
+        return;
+      }
+      case "pasteMulti": {
+        // (the same as a paste at the top level: `topLevelType` with several forms)
+        exec({ ...s, op: "topLevelType", how: "paste" });
         return;
       }
       case "undo":

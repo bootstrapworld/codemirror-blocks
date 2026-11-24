@@ -32,6 +32,12 @@ describe("parseArgs", () => {
     expect(o.steps).toBe(30);
     expect(o.ramp).toBe(false); // (a fixed number of steps turns the ramp off)
   });
+  test("--long-docs F sets the share of long documents; --no-long-docs turns them off", () => {
+    expect(lib.parseArgs([]).longDocs).toBeUndefined();
+    expect(lib.parseArgs(["--long-docs", "0.5"]).longDocs).toBe(0.5);
+    expect(lib.parseArgs(["--long-docs=1"]).longDocs).toBe(1);
+    expect(lib.parseArgs(["--no-long-docs"]).longDocs).toBe(0);
+  });
   test("--smoke is short and small; --motion is Chromium only; --cores MIN-MAX", () => {
     expect(lib.parseArgs(["--smoke"])).toMatchObject({
       smoke: true,
