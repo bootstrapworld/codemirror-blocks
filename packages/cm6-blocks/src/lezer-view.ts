@@ -3567,7 +3567,30 @@ export function checkLezerEditor(ed: LezerBlockEditor): string[] {
           if (n.type.isError) errors = true;
         },
       });
-    if (mine.length === 0 && errors) divergences.count++;
+    // (Lezer puts a skipped comment in another node when it reads on from an old tree: inside the statement before it, which ends without a
+    // `;`, or as the parent of what follows an unterminated one. Neither tree has an error, and the editor draws what its own tree gives:
+    // what is held to the fresh parse is the tree without its comments)
+    const plain = (t: Tree): string => {
+      let out = "";
+      const walkIt = (c: ReturnType<Tree["cursor"]>): void => {
+        do {
+          const comment = /Comment$/.test(c.name);
+          if (!comment) out += c.name;
+          if (c.firstChild()) {
+            if (!comment) out += "(";
+            walkIt(c);
+            if (!comment) out += ")";
+            c.parent();
+          }
+          if (!comment) out += ",";
+        } while (c.nextSibling());
+      };
+      walkIt(t.cursor());
+      // (a node that held only a comment is no node with children)
+      return out.replace(/([^,(]|^)\(\)/g, "$1");
+    };
+    if (mine.length === 0 && (errors || plain(own) === plain(freshTree)))
+      divergences.count++;
     else
       for (const d of mine.length ? mine : diff)
         say(mine.length ? `(not what its own tree gives) ${d}` : d);

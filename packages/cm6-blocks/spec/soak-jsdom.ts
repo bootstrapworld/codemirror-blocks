@@ -6,6 +6,7 @@ import { redo, redoDepth, undo, undoDepth } from "@codemirror/commands";
 import { walk } from "../src/doc";
 import {
   checkLezerEditor,
+  divergences,
   createLezerBlockEditor,
   LezerBlockEditor,
 } from "../src/lezer-view";
@@ -555,7 +556,10 @@ export function runJsdom(
       return { invariant: "exception", message: m };
     }
     if (inBlocks()) {
+      const d0 = divergences.count;
       const problems = checkLezerEditor(ed!);
+      // (the editor's own parse differs from a fresh one, in where Lezer puts a comment or after an error: then the blocks differ too)
+      const diverged = divergences.count > d0;
       if (problems.length)
         return {
           invariant: "consistency",
@@ -574,6 +578,7 @@ export function runJsdom(
         // recover from an error the way a fresh parse does, and the editor draws what its own tree gives: checkLezerEditor holds it to that)
         if (
           a !== b &&
+          !diverged &&
           ed!.modeProblem() === null &&
           fresh.modeProblem() === null
         )
