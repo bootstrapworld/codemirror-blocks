@@ -1146,10 +1146,14 @@ export function attachInteraction(ed: LezerBlockEditor): {
     d.ghost.style.top = `${d.cy + (d.touch ? -52 : 14)}px`;
   }
   /** while a finger drags: the holes (what a drop can replace) get a class, so that they can grow to a finger-sized target (a language's hole is a literal that says `...`, not a kind of its own) */
+  // (remembered, not looked up: an element that CodeMirror took out of the page during the drag (a scroll, a collapse) is kept by the renderer and drawn again later, and must not come back marked)
+  const holeMarked = new Set<Element>();
   function markHoles(on: boolean): void {
     if (!on) {
       for (const el of Array.from(dom.querySelectorAll(".blocks-hole")))
         el.classList.remove("blocks-hole");
+      for (const el of holeMarked) el.classList.remove("blocks-hole");
+      holeMarked.clear();
       return;
     }
     // (only what is drawn: CodeMirror draws the viewport, so the walk is over the elements that exist now; auto-scroll calls this again as blocks come into view)
@@ -1162,8 +1166,10 @@ export function attachInteraction(ed: LezerBlockEditor): {
         n.slots.length === 0 &&
         n.kind !== "error" &&
         ed.isBlank(n)
-      )
+      ) {
         el.classList.add("blocks-hole");
+        holeMarked.add(el);
+      }
     }
   }
   /*
