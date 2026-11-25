@@ -47,7 +47,7 @@ import {
   undoDepth,
 } from "@codemirror/commands";
 import { Tree, TreeFragment } from "@lezer/common";
-import type { Parser } from "@lezer/common";
+import type { Parser, SyntaxNode } from "@lezer/common";
 import { walk } from "./doc";
 import { userMarks } from "./user-marks";
 import { forwardView, ViewSurface } from "./view-surface";
@@ -886,6 +886,16 @@ export function createLezerBlockEditor(
         for (const k of affected) {
           lo = Math.min(lo, tr.changes.mapPos(rs[k].from, 1));
           hi = Math.max(hi, tr.changes.mapPos(rs[k].to, -1));
+        }
+        // (the top-level node of the new tree that ends the touched part can be longer than the roots that were: an unclosed `(` makes the
+        // parser read on over the roots after it, to where it recovers, with a zero-width error at the start of the next statement. The
+        // touched part goes to the end of that node, and to the start of the one after it)
+        let end: SyntaxNode | null = tree.resolve(hi, -1);
+        while (end && end.parent && end.parent.parent) end = end.parent;
+        if (end && end.parent) {
+          hi = Math.max(hi, end.to);
+          const next = end.nextSibling;
+          if (next) hi = Math.max(hi, next.from);
         }
         let found = false;
         // (one more at each end: a recovery node of no width at the end of the touched part, `(` + a comment + the recovery, is not inside it)
