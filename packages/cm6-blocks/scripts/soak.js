@@ -36,7 +36,11 @@
  *   selection     every selected and the focused block is in the tree
  *   stuck         a step takes longer than 10 s (jsdom) / 30 s (Chromium), or the page stops answering; a worker that never comes back is
  *                 killed after --timeout-min and the seed that was running is recorded as a "timeout" crash
- * WHAT IT CANNOT DO: see a screen (no pixels are compared), use a real screen reader, a touch screen or a phone, a browser other than
+ * EDITOR OPTIONS AND TOUCH (round 47): half of the sequences create the editor with other options than the default (line numbers, line
+ * wrapping, collapseAll, the four "for measuring" switches off, a small activity limit; stored as `editor` in the record, so --replay and
+ * --promote reproduce them; CMB6_SOAK_OPTIONS=0 turns it off). 30% of the Chromium sequences are touch sequences (taps, a long press and a
+ * drag with a finger, a long press that lets go, a quick swipe that must not drag; CMB6_SOAK_TOUCH=0 turns it off), with real touch events.
+ * WHAT IT CANNOT DO: see a screen (no pixels are compared), use a real screen reader, a phone (touch is emulated), a browser other than
  * Chromium, or a Mac's native key events; and the invariants say nothing about WHAT an operation should do, only that the editor stays
  * whole (a drop that puts the block in the wrong place is not a failure).
  *

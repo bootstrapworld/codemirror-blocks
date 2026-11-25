@@ -6,10 +6,12 @@ import type { Browser, CDPSession, Page } from "@playwright/test";
 import { a11yProblems, focusProblem } from "../spec/soak-dom";
 import {
   at,
+  defaultEditor,
   makeSequence,
   Sequence,
   shrink,
   Step,
+  TOUCH_OPS,
   Violation,
 } from "../spec/soak-gen";
 
@@ -58,6 +60,8 @@ export async function runChromium(
     viewport: { width: 1100, height: 800 },
     reducedMotion: seq.motion === "reduced" ? "reduce" : "no-preference",
     permissions: ["clipboard-read", "clipboard-write"],
+    // (a touch screen only for a sequence with a finger's steps: the mouse sequences are what they were)
+    hasTouch: seq.steps.some((s) => TOUCH_OPS.includes(s.op)),
   });
   const page = await context.newPage();
   page.setDefaultTimeout(actionMs);
@@ -84,10 +88,14 @@ export async function runChromium(
     await page.goto(`/index.html?lang=${seq.language}`);
     await page.waitForFunction(() => !!(window as any).demo);
     // (the demo's own program is replaced by the sequence's: that replacement is not a step to undo)
-    await evaluate((code: string) => {
-      (window as any).demo.show(code);
-      (window as any).demo.ed.clearHistory?.();
-    }, seq.code);
+    const choice = seq.editor ?? defaultEditor("chromium");
+    await evaluate(
+      (a: { code: string; c: any }) => {
+        (window as any).demo.show(a.code, a.c.reconcile, a.c.anchors, a.c);
+        (window as any).demo.ed.clearHistory?.();
+      },
+      { code: seq.code, c: choice }
+    );
     cdp = await context.newCDPSession(page);
     await cdp.send("Accessibility.enable");
   } catch (e) {
@@ -187,6 +195,15 @@ export async function runChromium(
     await page.mouse.move(to.x, to.y, { steps: 8 });
     await page.mouse.up();
   };
+  const LONG_PRESS_WAIT = 480; // (the editor's long press is 350 ms)
+  const touch = (
+    type: "touchStart" | "touchMove" | "touchEnd",
+    pts: { x: number; y: number }[]
+  ) =>
+    cdp!.send("Input.dispatchTouchEvent", {
+      type,
+      touchPoints: pts.map((p) => ({ x: p.x, y: p.y })),
+    });
   /** where a drag `where` ends, for the fraction b */
   const target = async (
     where: string,
@@ -388,6 +405,78 @@ export async function runChromium(
         if (!from || !dst) return;
         await drag(from, dst);
         editsMade++;
+        return;
+      }
+      // ---- a finger: real touch events (CDP Input.dispatchTouchEvent: Playwright's touchscreen can only tap), so that the page gets
+      // pointerType "touch" (src/interact.ts: the long press of 350 ms starts a drag; a finger that moves earlier is scrolling) ----
+      case "tap": {
+        if (!blocks) return;
+        const t = await blockBox(s.a);
+        const p = t && (await grabPoint(t));
+        if (!p) return;
+        await page.touchscreen.tap(p.x, p.y);
+        if (s.twice) {
+          // (a second tap, after the time of a double tap, on the focused block: a leaf opens its box, any other block its whole text)
+          await page.waitForTimeout(450);
+          await page.touchscreen.tap(p.x, p.y);
+          editsMade++;
+        }
+        return;
+      }
+      case "longPress": {
+        // (the finger lets go where it pressed: the drag has begun, and ends over the block itself)
+        if (!blocks) return;
+        const t = await blockBox(s.a);
+        const p = t && (await grabPoint(t));
+        if (!p) return;
+        await touch("touchStart", [p]);
+        await page.waitForTimeout(LONG_PRESS_WAIT);
+        await touch("touchEnd", []);
+        await page.waitForTimeout(50);
+        editsMade++;
+        return;
+      }
+      case "touchDrag": {
+        if (!blocks) return;
+        const src = await blockBox(s.a);
+        const dst = await target(String(s.where), s.b);
+        const from = src && (await grabPoint(src));
+        if (!from || !dst) return;
+        await touch("touchStart", [from]);
+        await page.waitForTimeout(LONG_PRESS_WAIT);
+        for (let k = 1; k <= 8; k++) {
+          await touch("touchMove", [
+            {
+              x: from.x + ((dst.x - from.x) * k) / 8,
+              y: from.y + ((dst.y - from.y) * k) / 8,
+            },
+          ]);
+          await page.waitForTimeout(16);
+        }
+        await touch("touchEnd", []);
+        await page.waitForTimeout(50);
+        editsMade++;
+        return;
+      }
+      case "swipe": {
+        // a finger that moves before the long press is over is scrolling the page: the program must not change
+        if (!blocks) return;
+        const t = await blockBox(s.a);
+        const p = t && (await grabPoint(t));
+        if (!p) return;
+        const before = await text();
+        const dy = s.dir === "up" ? -14 : 14;
+        await touch("touchStart", [p]);
+        for (let k = 1; k <= 4; k++) {
+          await touch("touchMove", [{ x: p.x, y: p.y + dy * k }]);
+          await page.waitForTimeout(16);
+        }
+        await touch("touchEnd", []);
+        await page.waitForTimeout(50);
+        if ((await text()) !== before)
+          throw new Error(
+            `a quick swipe on a block changed the program: it was taken for a drag`
+          );
         return;
       }
       case "dragTemplate": {
