@@ -924,3 +924,21 @@ test("soak seed 261: a comment next to a block in a document scrolled past the d
   );
   expect(v).toBeNull();
 });
+
+test("soak seed 3575: a collapse burst skips the blocks hidden inside a collapsed one (it waited out the timeout on each)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 3575,
+      language: "javascript",
+      code: '// TODO\nvar h = f(n ? (h) => true : lst.total(87, true), null, g === "s5" ? total : fact(true, "s2", true));\n',
+      steps: [{ op: "collapseBurst", a: 0.09770062356255949, n: 7, on: true }],
+      motion: "reduced",
+    },
+    { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
+  );
+  expect(v).toBeNull();
+});

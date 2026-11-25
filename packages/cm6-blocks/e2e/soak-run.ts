@@ -127,6 +127,9 @@ export async function runChromium(
     const i = at(a, n);
     if (i < 0) return null;
     const el = items().nth(i);
+    // (a block inside a collapsed one is in the DOM but not shown: scrolling to it would wait out the whole action timeout, and a burst of
+    // presses on such blocks then outlasts the step's limit)
+    if (!(await el.isVisible().catch(() => false))) return null;
     await el.scrollIntoViewIfNeeded().catch(() => undefined);
     const b = await el.boundingBox();
     return b && b.width > 1 && b.height > 1 ? { el, box: b } : null;
