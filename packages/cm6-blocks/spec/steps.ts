@@ -179,7 +179,14 @@ export function removeOracle(
         n.slot &&
         n.slot.kind === "list" &&
         !n.slot.pieces &&
-        n.slot.owner.kind !== "program"
+        n.slot.owner.kind !== "program" &&
+        // (a token that is no block touching the block, such as the `|...|` symbol that follows a stray `#` in `"a"#|`: the grammar has no node
+        // for it, so what the removal makes of the text next to it is no separator question)
+        !(
+          text[n.to] !== undefined &&
+          !/[\s,()[\]{};]/.test(text[n.to]) &&
+          !n.slot.nodes.some((o) => o.from === n.to)
+        )
     );
   let expected = "";
   if (lists) {
@@ -211,6 +218,9 @@ export function removeOracle(
     ["a comma before a closing bracket", /,\s*[)\]}]/g],
     ["two commas", /,\s*,/g],
   ] as [string, RegExp][]) {
+    // (a JavaScript elision, `[, 2]` or `[a, , b]`, is a comma that stands for a hole: the removal of what follows it leaves it, as it must)
+    if (/[[,]\s*,/.test(text) && what !== "a blank before a closing bracket")
+      continue;
     if (count(re, t) > count(re, text))
       throw new Error(
         `a removal left ${what}: ${JSON.stringify(t)} (was ${JSON.stringify(text)})`
