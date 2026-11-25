@@ -1,7 +1,12 @@
 // shared by the fuzzers of the Lezer editor: the languages, a seeded random generator, and ONE random step (the fuzzer's own generator)
 import { redo, undo } from "@codemirror/commands";
 import { walk } from "../src/doc";
-import type { LezerBlockEditor, LezerOptions } from "../src/lezer-view";
+import {
+  checkLezerEditor,
+  divergences,
+  type LezerBlockEditor,
+  type LezerOptions,
+} from "../src/lezer-view";
 import { schemeParser, schemeTable } from "../src/lang-scheme";
 import { javascriptParser, javascriptTable } from "../src/lang-javascript";
 import { pythonParser, pythonTable } from "../src/lang-python";
@@ -161,8 +166,16 @@ export function removeOracle(
       (/[,([{]\s*\(\s*$/.test(text.slice(0, n.from)) &&
         text.slice(n.to).trimStart().startsWith(")"))
   );
+  // (Lezer puts a skipped comment in another node when it reads on from an old tree, so the blocks the editor shows can differ from a fresh parse
+  // of the same text, in where a comment is: a statement that ends without a `;` takes the comment after it. A removal that reparses far away
+  // gives the other reading: then it is the parse, and not the removal, that changed the roots, and there is nothing to compare)
+  const diverges = (): boolean => {
+    const d0 = divergences.count;
+    checkLezerEditor(ed);
+    return divergences.count > d0;
+  };
   const before =
-    check && shapes && !emptiesBraces
+    check && shapes && !emptiesBraces && !diverges()
       ? ed.roots().map((r) => shape(r, new Set(gone)))
       : null;
   // the text, whatever the blocks: only the removed blocks and the blanks and commas between blocks may be different
@@ -205,6 +218,7 @@ export function removeOracle(
   }
   if (!before) return;
   if (!clean(ed)) return; // (the text no longer parses: a removal can break a statement, nothing to compare)
+  if (diverges()) return;
   const after = ed.roots().map((r) => shape(r, new Set()));
   if (JSON.stringify(before) !== JSON.stringify(after)) {
     throw new Error(

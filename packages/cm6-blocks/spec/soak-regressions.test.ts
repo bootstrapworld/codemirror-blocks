@@ -2158,3 +2158,44 @@ it("soak seed 202784: removing the element after a JavaScript elision leaves the
     })
   ).toBeNull();
 }, 120_000);
+it("soak seed 220054: a removal far from a statement that took the comment after it (Lezer's incremental parse) is no change of the roots: the oracle compares only trees that are what a fresh parse gives", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 220054,
+      language: "javascript",
+      code: 'config.module.rules.push(\n  {\n    test: /\\.rkt$/,\n    type: "asset/source",\n  },\n  {\n    test: /\\.tsx?$/,\n    use: [\n      {\n        loader: "ts-loader",\n        options: {\n          // Point directly to your custom tsconfig that excludes tests\n          configFile: path.resolve(__dirname, "../tsconfig.build.json"),\n        },\n      },\n    ],\n    exclude: /node_modules/,\n  }\n);\n\nwhile (76 === 38) {\n  function total(acc, lst) {\n    lst(h(null, null * true, true + fact), lst(29, "s5", 54) < "s3");\n    return "s8";\n  }\n  "s3";\n}\nx = acc - true ? lst(y, null) : true;\n(f) => "s4" ? true : x * x(null, g, "s2");\n(y) => "s9" === y(true);\nn = [null];\nvar n = total;\n// TODO\nlst = true;\n// a b c\nfunction replayCommand(record, file) {\n  return `npm run soak -w @bootstrapworld/cm6-blocks -- --replay ${file ?? record.seed}`;\n}\n\n/** A readable summary: new failures first, most common first, then the known ones */\nlet x = 1 + 2;\nf(x, 3);\nwhile (x < 9) { x = x + 1; g(x); }\nconst at = process.argv.indexOf("--port");\nconst port = at >= 0 ? Number(process.argv[at + 1]) : 8080;\nconst types = {\n  ".html": "text/html",\n  ".js": "text/javascript",\n  ".css": "text/css",\n  ".json": "application/json",\n  ".map": "application/json",\n  ".rkt": "text/plain",\n};\n\n// a comment\nfor (const x of [1, 2, 3]) {\n  total = total + x;\n}\nconsole.log(total, "done");\n\nif (fact(true === true, "s2", 7)) {\n  null;\n  n;\n  for (const total of fact.g()) {\n    let f = f;\n    let y = fact.fact();\n  }\n}\nvar x = {a: n(), b: h};\n\n4;\nfunction g(y, y) {\n  const lst = {a: lst, b: "s3"} + 75;\n  while (true) {\n    return total;\n    const x = h(x.total((x) => "s6", total()), acc.h() * y());\n  }\n}\nx = true;\n// TODO\nlet g = fact();\nfor (const acc of x) {\n  const y = "s8" < total(null, 6) ? "s7" : null;\n  let f = acc();\n}\nn = true;\nf = true;\nx = h(true + 3);\n90;\nvar fact = {a: [true, null, 73], b: null} < null;\nif ("s9") {\n  function h(y, lst) {\n    return 34 ? 59 : (n) => "s8";\n    let f = (total) => total.lst();\n    var f = total((fact) => fact("s1", null, true), true);\n  }\n  function x(y, g) {\n    let f = null ? (g) => null < true : true;\n    var total = total(fact(n(), n(), []), []);\n    const fact = h("s8" === {a: y, b: "s6"});\n  }\n}\nfor (const n of fact()) {\n  let g = lst(h([55]), n(x.fact(), null === "s4", f), h(52 - 32, total));\n  fact < true ? lst(y(79, h)) : h(x(), x(62, lst));\n}\nconst f = h;\nh.total(x(acc("s7", null)));\nnull;\n\nlet acc = y();\nif (60 ? ["s9"] : acc(null)) {\n  if (g(lst, true, true) ? acc : 38) {\n    let f = null;\n    const f = {a: "s2", b: true} ? true - true : "s5" ? total(n.g()) : {a: y, b: "s1"};\n    const y = x(f((fact) => 84, [null, "s2", null], 35 + "s7"), g.f(null < 19, h.g()), (f) => lst(35, null));\n  }\n  x(["s2"], null === null, fact(f)) < n();\n}\na.b(c);\n[1, 2, 3];\nlet y = 5;\nfunction parseJsdomFailure(title, message) {\n  const text = stripAnsi(message);\n  if (!text.includes("A randomized sequence of operations broke the editor")) {\n    return null;\n  }\n  const seed = /seed (\\d+)/.exec(title)?.[1];\n  const at = /failed at: (.*)/.exec(text)?.[1] ?? "?";\n  const problem = (\n    /problem:\\s+([^\\n]*(?:\\n {13}[^\\n]*)*)/.exec(text)?.[1] ?? "?"\n  )\n    .split(/\\n\\s+/)\n    .join(" | ")\n    .trim();\n  const shrunk = /Shrunk to (\\d+) of (\\d+) steps/.exec(text);\n  const replay = /CMB_RANDOM_REPLAY=\'(.*)\' npx jest/.exec(text)?.[1];\n  const ops = [...text.matchAll(/^\\s+\\d+\\. (.*)$/gm)].map((m) => m[1]);\n  return {\n    kind: "jsdom",\n    seed: seed === undefined ? undefined : Number(seed),\n    steps: Number(/\\((\\d+) steps\\)/.exec(title)?.[1]) || undefined,\n    failedAt: at,\n    problem,\n    shrunkTo: shrunk ? Number(shrunk[1]) : undefined,\n    trace: ops.slice(0, 40),\n    replay,\n  };\n}\n\n/** Failures of the same kind get the same signature, whatever the ids and numbers */\nwhile (y.g(total(h, true), true)) {\n  true;\n  function h(total, lst) {\n    return "s5";\n    let acc = lst();\n    n = n - null ? true : 89;\n  }\n}\n\nfunction fact(total, lst) {\n  true;\n  if ("s8") {\n    return fact;\n  } else {\n    var h = f();\n    return 29;\n  }\n  const total = acc();\n}\nif (y(true) < "s5" - null) {\n  if (g(null ? "s7" : null)) {\n    var fact = [n(h(68, null, 18), n(true, null, true), null), (g) => null ? "s1" : true];\n    total([], h.acc(null, 66), fact(23, n()));\n    const g = total((y) => 79, "s6" ? fact : null) - g();\n  }\n  let g = [(n) => "s2", "s7"] === y ? g : fact ? null : acc;\n  h.f() ? {a: {a: null, b: "s6"}, b: f()} : lst("s3", "s4") + "s5";\n} else {\n  var y = true;\n  [acc("s9"), true, 6] ? [] : true + h();\n  function x(total, lst) {\n    47;\n    return [];\n    var total = null;\n  }\n}\n// TODO\nh = x(acc, null, null) ? "s8" : 47;\ntrue;\nif ([{a: null, b: null}]) {\n  const y = [79, fact(65)];\n  const fact = n(true);\n  fact.x(true, "s5");\n}\n\nlet y = null;\n// a b c\ntotal = h("s1" + true);\nx(15, g(["s5", total], acc(true, 22, 22)));\na.b(c);\n[1, 2, 3];\nlet y = 5;\n\na.b(c);\n[1, 2, 3];\nlet y = 5;\n// note\nif ((acc) => true) {\n  function h(h, lst) {\n    return acc.x(total ? 77 : "s3", null ? 41 : true);\n  }\n  46;\n  "s2" ? lst : [acc()];\n} else {\n  let fact = true;\n  n();\n}\n// TODO\ntotal = true;\n\n[[null], y(x(), h(), g)];\nlet total = x(68, null);\nlet fact = {a: {a: h(true), b: acc()}, b: true * null - lst()};\n\nwhile (lst(null, null) ? y : true) {\n  n = x;\n  function n(total, y) {\n    var y = null;\n    return fact.g(["s0", 63], h("s3", null));\n    return y();\n  }\n}\n"s3";\nwhile (lst) {\n  fact("s3") + h(h);\n}\n// note\nwhile (true) {\n  while (y()) {\n    var n = null;\n  }\n  var h = {a: total(y, f, true) ? (y) => true : "s1" ? true : 20, b: f({a: null, b: lst}, x, acc(x))};\n}\n[];\n\nfor (const y of [null, "s6", 35]) {\n  for (const n of f()) {\n    let total = y(null ? lst : 28 === lst, x("s6" ? true : g), total(79 ? 78 : 6, null ? true : "s8", acc(21)));\n    var n = (x) => 49 < x(n(total, 43, 75), true, fact.y());\n    const total = fact();\n  }\n  let fact = true;\n  let n = {a: {a: 57, b: total(41, f)}, b: (total) => ["s0"]};\n}\nh((lst) => true + 38, total(55 + true));\n// a b c\nfor (const x of lst(null)) {\n  var total = acc(x(null, true ? g : f));\n}\nif (true) {\n  null;\n  h;\n}\nvar acc = lst();\n\nif (true + null ? h("s3", "s9", 3) : acc("s4")) {\n  lst(73);\n}\n// note\n(lst) => x ? "s1" : true < n.n(x + null, f(true, null));\n// TODO\nconst acc = n(null, fact(), 73);\nn();\ntotal.h(["s3", []]);\nif (acc()) {\n  while ("s9") {\n    total.lst(n);\n    var g = (y) => 65;\n  }\n} else {\n  "s3";\n  h = acc();\n  ({a: 93, b: {a: g, b: f}} ? null ? null : (n) => null : n());\n}\n',
+      steps: [
+        {
+          op: "topLevelType",
+          a: 0.4792316050734371,
+          text: "42",
+          accept: false,
+          how: "paste",
+        },
+        {
+          op: "insertText",
+          a: 0.6527477491181344,
+          b: 0.4506497320253402,
+          text: "[1, 2]",
+        },
+        {
+          op: "removeNode",
+          a: 0.4372370666824281,
+          b: 0.24992513726465404,
+        },
+      ],
+      motion: "full",
+      editor: {
+        lineNumbers: false,
+        lineWrapping: false,
+        collapseAll: true,
+        reconcile: false,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    })
+  ).toBeNull();
+}, 120_000);
