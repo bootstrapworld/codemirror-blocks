@@ -49,6 +49,7 @@ function counts(n: BNode, top: boolean): boolean {
     n.kind !== "comment" && !(top && (n.kind === "error" || n.to === n.from))
   );
 }
+const isGap = (el: Element): boolean => el.classList.contains("blocks-gap");
 function drawnIn(slot: Slot): BNode[] {
   const top = slot.owner.kind === "program";
   return slot.nodes.filter((n) => counts(n, top));
@@ -324,7 +325,14 @@ export class Renderer {
         const el = this.element(change.node);
         if (container && slot.kind === "list") {
           const gap = this.makeGap(slot.name, change.index);
-          const before = this.gapsOf(container)[change.index] ?? null;
+          // (the gap in front of the block that is now after it, else the one at the end: found from that block, not by counting the gaps)
+          const next = slot.nodes[change.index + 1];
+          const nextEl = next && this.els.get(next);
+          const prev = nextEl?.previousElementSibling;
+          const before =
+            prev && nextEl.parentElement === container && isGap(prev)
+              ? prev
+              : (this.gapsOf(container)[change.index] ?? null);
           container.insertBefore(gap, before);
           container.insertBefore(el, before);
           this.renumber(slot, change.index);
@@ -340,7 +348,11 @@ export class Renderer {
       } else if (this.els.has(owner)) {
         const container = this.containerOf(owner, slot);
         if (container && slot.kind === "list" && el) {
-          const gap = this.gapsOf(container)[change.index];
+          const prev = el.previousElementSibling;
+          const gap =
+            prev && el.parentElement === container && isGap(prev)
+              ? prev
+              : this.gapsOf(container)[change.index];
           if (gap) {
             gap.remove();
             this.stats.removed++;
@@ -578,8 +590,9 @@ export class Renderer {
 
   /** the gaps of a list, in order (an open edit box is among the children too, so a gap is not at an even position) */
   private gapsOf(container: Element): Element[] {
-    return Array.from(container.children).filter((c) =>
-      c.classList.contains("blocks-gap")
-    );
+    const out: Element[] = [];
+    for (let c = container.firstElementChild; c; c = c.nextElementSibling)
+      if (isGap(c)) out.push(c);
+    return out;
   }
 }
