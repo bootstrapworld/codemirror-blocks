@@ -767,9 +767,25 @@ export function createLezerBlockEditor(
       tr.changes.iterChangedRanges((fromA, toA, fromB, toB) =>
         cr.push({ fromA, toA, fromB, toB })
       );
-      const frags = TreeFragment.applyChanges(v.fragments, cr);
+      let frags = TreeFragment.applyChanges(v.fragments, cr);
       const tp = performance.now();
-      const tree = parser.parse(s, frags);
+      let tree = parser.parse(s, frags);
+      // (a tree that had an error and now has none: Lezer's incremental parse can keep the structure that the recovery gave to the text after
+      // the error, and the text that is now right reads differently from a fresh parse (a Python body that goes on past its dedent). It is
+      // read again from nothing: one parse, only in the edit that mends the text)
+      if (v.errs.length) {
+        let bad = false;
+        tree.iterate({
+          enter: (n) => {
+            if (n.type.isError) bad = true;
+            return !bad;
+          },
+        });
+        if (!bad) {
+          frags = [];
+          tree = parser.parse(s);
+        }
+      }
       const tq = performance.now();
       stats.parseMs += tq - tp;
 
