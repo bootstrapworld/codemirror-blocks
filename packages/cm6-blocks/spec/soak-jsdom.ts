@@ -538,6 +538,9 @@ export function runJsdom(
             to: view.state.doc.length,
             insert: String(s.text),
           },
+          // (CodeMirror maps a range that lies inside the replaced text to one that ends before it starts, and its own Delete then throws:
+          // a host that replaces the document sets the selection)
+          selection: { anchor: 0 },
         });
         return;
       default:

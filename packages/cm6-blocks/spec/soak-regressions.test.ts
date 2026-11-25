@@ -1802,3 +1802,44 @@ it("seed 25338: a block removed from a list whose recovered blocks are out of or
     })
   ).toBeNull();
 }, 120_000);
+it("seed 48326: the replaceDoc step sets the selection (CodeMirror maps a selection inside the replaced text to a range that ends before it starts, and its own Delete throws: not the editor's)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 48326,
+      language: "python",
+      code: 'def __dict_replace(s, d):\n    """Replace substrings of a string using a dictionary."""\n    for key, value in d.items():\n        s = s.replace(key, value)\n    return s\n\n',
+      steps: [
+        {
+          op: "collapseAllThen",
+          on: false,
+          a: 0.11496339668519795,
+          text: "y2",
+          accept: false,
+        },
+        {
+          op: "brokenText",
+          a: 0.22915910300798714,
+          w: "  stray",
+          nl: false,
+          back: true,
+        },
+        {
+          op: "key",
+          key: "Shift+ArrowRight",
+          a: 0.7951876241713762,
+        },
+        {
+          op: "replaceDoc",
+          text: '# a comment\ntotal = 0\nfor x in [1, 2, 3]:\n    total = total + x\nprint(total, "done")\n',
+        },
+        {
+          op: "key",
+          key: "Delete",
+          a: 0.40757811814546585,
+        },
+      ],
+      motion: "reduced",
+    })
+  ).toBeNull();
+}, 120_000);
