@@ -417,6 +417,23 @@ const errorsOf = (tree: Tree, from = 0): [number, number][] => {
   return out;
 };
 
+/**
+ * Whether the text has anything that is not blank between the top-level nodes of `tree` (before the first, between two, after the last):
+ * a tree with no error covers all of the text that is not blank, so something is then missing from it (a fault of an incremental parse)
+ */
+const lostText = (tree: Tree, text: string): boolean => {
+  const c = tree.cursor();
+  let at = 0;
+  const gap = (to: number): boolean => to > at && /\S/.test(text.slice(at, to));
+  if (c.firstChild()) {
+    do {
+      if (gap(c.from)) return true;
+      at = Math.max(at, c.to);
+    } while (c.nextSibling());
+  }
+  return gap(text.length);
+};
+
 // (a root of no width, which the parser makes when it recovers from an error, has nothing to replace: CodeMirror refuses the decoration)
 const drawn = (n: BNode): boolean =>
   n.kind !== "error" && !(n.to === n.from && n.parent?.kind === "program");
@@ -785,6 +802,13 @@ export function createLezerBlockEditor(
           frags = [];
           tree = parser.parse(s);
         }
+      }
+      // (Lezer's incremental parse can also lose blocks: after an edit inside a long comment that follows other statements, the tree has the
+      // comment and what is after it, and nothing of the statements before it, though there is no error. Text that no top-level node covers
+      // is the sign; the cost of being wrong is one more parse)
+      if (frags.length && lostText(tree, s)) {
+        frags = [];
+        tree = parser.parse(s);
       }
       const tq = performance.now();
       stats.parseMs += tq - tp;
