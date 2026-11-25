@@ -195,6 +195,14 @@ export class Renderer {
       throw new Error("the program node is not drawn");
     const have = this.els.get(node);
     if (have) return have;
+    // (a block inside a block that is not drawn: its element is made with the others, in the drawing of the root. One made alone is not
+    // in any block's element, and `apply` does not reach it, so its numbers (aria-setsize) went stale when the blocks around it changed)
+    const parent = node.parent;
+    if (parent && parent.kind !== "program" && !this.els.has(parent)) {
+      this.element(parent);
+      const made = this.els.get(node);
+      if (made) return made;
+    }
     return this.build(node);
   }
 
