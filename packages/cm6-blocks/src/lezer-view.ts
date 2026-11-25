@@ -3220,14 +3220,17 @@ export function createLezerBlockEditor(
       }
     },
   });
+  // (an edit box, such as the pending one of a top-level entry, goes out of the page with a block when the scroll leaves it: its focus is
+  // kept in the editor the same way; soak seed 1847)
+  const holdsFocus = (t: HTMLElement | null): t is HTMLElement =>
+    !!t && (!!renderer.nodeOf(t) || t.classList.contains("blocks-edit"));
   view.dom.addEventListener("focusin", (e) => {
     const t = e.target as HTMLElement | null;
-    focusedEl = t && renderer.nodeOf(t) ? t : null;
+    focusedEl = holdsFocus(t) ? t : null;
   });
   view.dom.addEventListener("focusout", (e) => {
     const t = e.target as HTMLElement | null;
-    if (blockMode && !e.relatedTarget && t && renderer.nodeOf(t))
-      lostBlockFocus = true;
+    if (blockMode && !e.relatedTarget && holdsFocus(t)) lostBlockFocus = true;
     if (t === focusedEl) focusedEl = null;
   });
   injectSheets(view.dom, table);
