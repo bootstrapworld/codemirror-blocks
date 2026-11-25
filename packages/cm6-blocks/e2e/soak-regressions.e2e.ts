@@ -666,6 +666,16 @@ test("soak seed 1337: exception after after undo/redo: uncaught: focusedNode() i
         },
       ],
       motion: "full",
+      editor: {
+        lineNumbers: false,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
     },
     { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
   );
@@ -812,6 +822,16 @@ test("soak seed 4569: exception after search: uncaught: focusedNode() is only av
         },
       ],
       motion: "full",
+      editor: {
+        lineNumbers: false,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
     },
     { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
   );
@@ -919,6 +939,16 @@ test("soak seed 261: a comment next to a block in a document scrolled past the d
         },
       ],
       motion: "full",
+      editor: {
+        lineNumbers: false,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
     },
     { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
   );
@@ -1040,6 +1070,59 @@ test("soak seed 6258: an unclosed ( typed at the top level reads on over later r
         },
       ],
       motion: "full",
+      editor: {
+        lineNumbers: false,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    },
+    { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
+  );
+  expect(v).toBeNull();
+});
+
+test("soak seed 141: a finger pressing within 4 px of the left edge of the window, with the editor scrolled sideways, lands on the page (Chromium), not on the block that `elementFromPoint` finds: the soak presses a finger at least 12 px in, and the focus stays on the block", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 141,
+      language: "javascript",
+      code: 'n() ? total - y : "s5" * 70 === null;\nlet f = 36 - x.h(true, {a: 32, b: true});\n// note\nlet h = total("s9" ? null : "s9" ? ["s8", "s6"] : true, true, true);\nfunction n(h, acc) {\n  while (acc.y((fact) => h, "s5")) {\n    n = n(y(true, 27, true));\n    g;\n  }\n  return (acc) => 67 ? true : total();\n}\n// TODO\nfunction y(h, f) {\n  function total(n, acc) {\n    null;\n    ({a: {a: true, b: y(19, null, true)}, b: (x) => 68});\n    return acc(true, "s4", [null]);\n  }\n  return [g(72, true)];\n}\n\nif (h(true, total, n) * null ? null : f) {\n  if (60) {\n    var g = true;\n    x(x("s5", 39) < total(null), (acc) => "s2" ? "s1" : true);\n  }\n  for (const fact of ["s3", true]) {\n    (x) => ({a: null, b: "s5"}) + acc.lst(lst(83, null, null));\n    const lst = {a: total(x, null) ? 91 : x(), b: {a: n.x(), b: (fact) => x}};\n    let g = lst.f(null ? true : "s3" ? x(12, null, null) : acc(lst));\n  }\n  var h = true;\n}\ng();\n',
+      steps: [
+        {
+          op: "replaceDoc",
+          text: 'let fact = acc;\ng = f(fact(24, g, 86), null ? 17 : null);\nfor (const y of {a: "s7", b: null}) {\n  var total = true;\n  function fact(acc, f) {\n    return true;\n  }\n  ({a: [null, 44], b: f()} ? ["s6", f, 7] ? fact(94, x, "s0") : h(null, 82) : null ? f - true : g(44, null, "s2"));\n}\n',
+        },
+        {
+          op: "touchDrag",
+          a: 0.6176962102763355,
+          b: 0.8825520123355091,
+          where: "gap",
+        },
+        { op: "swipe", a: 0.7138197321910411, dir: "down" },
+        { op: "undoRun", n: 2, redo: true },
+        { op: "editBox", a: 0.4813648834824562, text: "(((", accept: true },
+        { op: "longPress", a: 0.5447568707168102 },
+      ],
+      motion: "full",
+      editor: {
+        lineNumbers: false,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
     },
     { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
   );

@@ -147,10 +147,15 @@ export async function runChromium(
    * it), moved into the window when the block is wider than it (its left edge can be scrolled out of view) and down when its top is under the
    * demo's own toolbar (a click there hits the toolbar and the page loses the editor's focus). Null when there is none.
    */
-  const grabPoint = async (t: {
-    box: { x: number; y: number; width: number; height: number };
-  }): Promise<{ x: number; y: number } | null> => {
-    const x = Math.max(t.box.x + 3, 4);
+  // (`edge`: the least x. A finger is given 12: with the editor scrolled sideways, Chromium sends a touch that lands within 4 px of the left edge of the
+  // window to the page (<html>) although `elementFromPoint` finds the block there, and a press on the page takes the focus away: not a thing the editor does)
+  const grabPoint = async (
+    t: {
+      box: { x: number; y: number; width: number; height: number };
+    },
+    edge = 4
+  ): Promise<{ x: number; y: number } | null> => {
+    const x = Math.max(t.box.x + 3, edge);
     if (x > t.box.x + t.box.width - 2) return null;
     const ys = [8, 20, 60, t.box.height / 2, t.box.height - 6]
       .filter((d) => d > 0 && d < t.box.height)
@@ -412,7 +417,7 @@ export async function runChromium(
       case "tap": {
         if (!blocks) return;
         const t = await blockBox(s.a);
-        const p = t && (await grabPoint(t));
+        const p = t && (await grabPoint(t, 12));
         if (!p) return;
         await page.touchscreen.tap(p.x, p.y);
         if (s.twice) {
@@ -427,7 +432,7 @@ export async function runChromium(
         // (the finger lets go where it pressed: the drag has begun, and ends over the block itself)
         if (!blocks) return;
         const t = await blockBox(s.a);
-        const p = t && (await grabPoint(t));
+        const p = t && (await grabPoint(t, 12));
         if (!p) return;
         await touch("touchStart", [p]);
         await page.waitForTimeout(LONG_PRESS_WAIT);
@@ -440,7 +445,7 @@ export async function runChromium(
         if (!blocks) return;
         const src = await blockBox(s.a);
         const dst = await target(String(s.where), s.b);
-        const from = src && (await grabPoint(src));
+        const from = src && (await grabPoint(src, 12));
         if (!from || !dst) return;
         await touch("touchStart", [from]);
         await page.waitForTimeout(LONG_PRESS_WAIT);
@@ -462,7 +467,7 @@ export async function runChromium(
         // a finger that moves before the long press is over is scrolling the page: the program must not change
         if (!blocks) return;
         const t = await blockBox(s.a);
-        const p = t && (await grabPoint(t));
+        const p = t && (await grabPoint(t, 12));
         if (!p) return;
         const before = await text();
         const dy = s.dir === "up" ? -14 : 14;
