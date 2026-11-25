@@ -229,6 +229,8 @@ const sequenceOf = (r) => ({
   code: r.code,
   steps: r.steps,
   motion: r.motion,
+  // (the editor's options: a record from before them has none, and the runner then uses the options of then)
+  ...(r.editor ? { editor: r.editor } : {}),
 });
 
 /** A regression test for the record, ready to paste (jsdom: into a spec file; Chromium: into an e2e file) */

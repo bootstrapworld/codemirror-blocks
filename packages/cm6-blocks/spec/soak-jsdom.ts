@@ -3,18 +3,22 @@
  * its key handlers, with the invariants checked after EVERY step. `runJsdom` returns the first violation, or null.
  */
 import { redo, redoDepth, undo, undoDepth } from "@codemirror/commands";
+import { EditorView, lineNumbers } from "@codemirror/view";
 import { walk } from "../src/doc";
 import {
   checkLezerEditor,
   divergences,
   createLezerBlockEditor,
   LezerBlockEditor,
+  LezerOptions,
 } from "../src/lezer-view";
 import type { BNode, Slot } from "../src/types";
 import { removeOracle, LANGS } from "./steps";
 import { a11yProblems, focusProblem } from "./soak-dom";
 import {
   at,
+  defaultEditor,
+  EditorChoice,
   makeSequence,
   Sequence,
   shrink,
@@ -120,6 +124,27 @@ const firstDifference = (a: string, b: string): string => {
   return `first difference at block ${i} of ${x.length} and ${y.length}: ${near(x).slice(0, 160)} vs ${near(y).slice(0, 160)}`;
 };
 
+/** the options of the editor under test: the language's, and the sequence's choice (a record from before the choice has the old ones) */
+export function editorOptions(
+  base: LezerOptions,
+  choice: EditorChoice
+): LezerOptions {
+  const extensions = [
+    ...(choice.lineNumbers ? [lineNumbers()] : []),
+    ...(choice.lineWrapping ? [EditorView.lineWrapping] : []),
+  ];
+  return {
+    ...base,
+    ...(extensions.length ? { extensions } : {}),
+    ...(choice.collapseAll ? { collapseAll: true } : {}),
+    ...(choice.reconcile ? {} : { reconcile: false }),
+    ...(choice.anchors ? {} : { anchors: false }),
+    ...(choice.fastErrors ? {} : { fastErrors: false }),
+    ...(choice.skipRoots ? {} : { skipRoots: false }),
+    ...(choice.activityLimit ? { activityLimit: choice.activityLimit } : {}),
+  };
+}
+
 export interface JsdomOptions {
   /** a step that takes longer than this (ms) is "stuck" */
   stepTimeoutMs?: number;
@@ -173,7 +198,11 @@ export function runJsdom(
     return v;
   };
   try {
-    ed = createLezerBlockEditor(parent, seq.code, L.opts);
+    ed = createLezerBlockEditor(
+      parent,
+      seq.code,
+      editorOptions(L.opts, seq.editor ?? defaultEditor("jsdom"))
+    );
   } catch (e) {
     return done({
       invariant: "exception",

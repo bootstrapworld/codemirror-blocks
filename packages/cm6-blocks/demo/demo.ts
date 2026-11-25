@@ -1,6 +1,6 @@
 // EXPERIMENT: a page that runs the Lezer block editor in a browser.
 import { redo, undo } from "@codemirror/commands";
-import { lineNumbers } from "@codemirror/view";
+import { EditorView, lineNumbers } from "@codemirror/view";
 import {
   checkLezerEditor,
   createLezerBlockEditor,
@@ -78,7 +78,22 @@ function bigDoc(l: LangName): string {
   return s.repeat(Math.ceil(3000 / per));
 }
 
-function show(text: string, reconcile = true, anchors = true): void {
+/** the options a page (the soak's Chromium runner) may choose per editor; the defaults are those of the demo */
+interface ShowOptions {
+  lineNumbers?: boolean;
+  lineWrapping?: boolean;
+  collapseAll?: boolean;
+  fastErrors?: boolean;
+  skipRoots?: boolean;
+  activityLimit?: number | null;
+}
+
+function show(
+  text: string,
+  reconcile = true,
+  anchors = true,
+  more: ShowOptions = {}
+): void {
   const mode = ed?.mode ?? "blocks"; // (the mode stays across a new document or language)
   toggle?.destroy();
   ed?.destroy();
@@ -86,9 +101,16 @@ function show(text: string, reconcile = true, anchors = true): void {
   const t0 = performance.now();
   ed = createLezerBlockEditor($("editor"), text, {
     ...LANGS[lang].opts,
-    extensions: [lineNumbers()],
+    extensions: [
+      ...(more.lineNumbers === false ? [] : [lineNumbers()]),
+      ...(more.lineWrapping ? [EditorView.lineWrapping] : []),
+    ],
     reconcile,
     anchors,
+    ...(more.collapseAll ? { collapseAll: true } : {}),
+    ...(more.fastErrors === false ? { fastErrors: false } : {}),
+    ...(more.skipRoots === false ? { skipRoots: false } : {}),
+    ...(more.activityLimit ? { activityLimit: more.activityLimit } : {}),
     focusToolbar: () =>
       ($("templates").querySelector("button") as HTMLElement | null)?.focus(),
   });

@@ -239,6 +239,14 @@ describe("promote", () => {
       "steps",
     ]);
   });
+  test("the editor's options are kept in the sequence a worker replays and in the test that promote prints", () => {
+    const editor = { lineNumbers: true, collapseAll: true };
+    expect(lib.sequenceOf({ ...rec, editor }).editor).toEqual(editor);
+    expect(lib.promoteCase({ ...rec, editor })).toContain(
+      '"collapseAll": true'
+    );
+    expect(lib.promoteCase(rec)).not.toContain('"editor"');
+  });
 });
 
 describe("summarize", () => {
