@@ -503,6 +503,57 @@ export function createLezerBlockEditor(
       })
     );
   };
+  /**
+   * CodeMirror's measure loop gives up after six rounds ("Measure loop restarted more than 5 times"): a collapse of everything in a long
+   * document shrinks the content by thousands of pixels, and each round re-reads only the lines it draws. The last round's heights are
+   * kept but its update is dropped, so the gutter keeps the heights of the round before (line numbers 4 to 8 px off their blocks, and more
+   * further down, until the next scroll; soak seeds 3832, 4489, 3034, 3443). After an update that moved the viewport or the heights the
+   * numbers are compared with the lines two frames later, and when they disagree the gutter is drawn again from the heights CodeMirror
+   * holds (its own `syncGutters`, which only an update that reports a height change calls; a read of the heights from scratch finds
+   * nothing new to report, as the heights are right). One try per disagreement.
+   */
+  let gutterChecking = false;
+  let gutterRepairs = 0;
+  const gutterStale = (): boolean => {
+    const els = view.dom.querySelectorAll(".cm-lineNumbers .cm-gutterElement");
+    for (const e of Array.from(els) as HTMLElement[]) {
+      const n = Number(e.textContent);
+      if (!(n >= 1 && n <= view.state.doc.lines)) continue;
+      const h = parseFloat(e.style.height);
+      if (!(h >= 0)) continue;
+      const b = view.lineBlockAt(view.state.doc.line(n).from);
+      if (Math.abs(b.height - h) > 1) return true;
+    }
+    return false;
+  };
+  const checkGutterLater = (): void => {
+    if (gutterChecking || typeof requestAnimationFrame === "undefined") return;
+    gutterChecking = true;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        gutterChecking = false;
+        if (gone || !blockMode) return;
+        if (!gutterStale()) {
+          gutterRepairs = 0;
+          return;
+        }
+        if (gutterRepairs++ >= 2) return;
+        const plugins = (
+          view as unknown as {
+            plugins?: {
+              value?: { gutters?: unknown; syncGutters?: unknown };
+            }[];
+          }
+        ).plugins;
+        const gutterView = plugins
+          ?.map((p) => p.value)
+          .find((v) => v && v.gutters && typeof v.syncGutters === "function");
+        (
+          gutterView as { syncGutters(d: boolean): void } | undefined
+        )?.syncGutters(false);
+      })
+    );
+  };
   /** the text of the document as the tree stands now (the renderer asks where a comment sits) */
   let curDoc = text;
   /**
@@ -1225,9 +1276,10 @@ export function createLezerBlockEditor(
   }
   const blockExtension: Extension = [
     pendingField,
-    EditorView.updateListener.of(() => {
+    EditorView.updateListener.of((u) => {
       marks();
       keepFocusOnScroll();
+      if (u.heightChanged || u.viewportChanged) checkGutterLater();
     }),
     // typing or pasting at the top level (no block under the change) is held in a pending box, not written: nothing half-typed
     // reaches the document or the undo history
