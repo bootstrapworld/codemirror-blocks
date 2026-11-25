@@ -1968,3 +1968,193 @@ it("seed 158348: the undo of an edit that changed thousands of children of one b
     })
   ).toBeNull();
 }, 120_000);
+it("soak seed 190100: an edit inside a long block comment that follows other statements does not leave the tree without the statements before it (Lezer's incremental parse loses them: the text is read again)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 190100,
+      language: "javascript",
+      code: 'if ((x) => true) {\n  const total = n;\n  let h = true;\n  for (const fact of true * true) {\n    x = x;\n    let acc = "s3";\n  }\n}\n// a b c\nfor (const x of x()) {\n  while (h(true * 34, null, 88)) {\n    let lst = "s0";\n    let g = 2;\n    acc();\n  }\n}\nconst fact = 12;\n// a b c\ny;\nn = lst.acc(total(f, null, "s2"));\n// a b c\nwhile (f(acc, 59, 18)) {\n  if ({a: total, b: fact(f, 99, g)}) {\n    var y = {a: null, b: h};\n    x = g(fact, "s0") ? "s3" : total(27, null);\n  }\n}\n// note\nh.x(y.x(12), true);\n\ng(h(true - 39));\nvar fact = x(null, n(fact.acc(), 39));\nvar g = n.f({a: fact, b: (n) => "s2"});\n// note\nfact ? "s6" : true - n ? n : 21 ? [(x) => 16] : x();\nvar x = lst([(acc) => 66, null < null]);\n\n// note\nh();\nvar acc = y("s9", {a: 15, b: g}, null + []);\n// TODO\nif (x()) {\n  while (88) {\n    const n = f(true, {a: x(null, "s9", null), b: null ? f : 31}, 50 ? n() : y("s2", "s6"));\n    let x = "s5";\n    var acc = 34 + [y(null)];\n  }\n  x = y(lst) < null === n;\n}\nacc = g() < h("s5", "s4");\nacc;\nfunction f(a, b) { return a * b; }\nf(1, 2);\nif (x) { f(1, 2); } else { g(); }\nfunction f(a, b) { return a * b; }\nf(1, 2);\nif (x) { f(1, 2); } else { g(); }\ndescribe("results of a worker", () => {\n  const lines =\n    JSON.stringify({ seed: 1, ok: true }) +\n    "\\n" +\n    JSON.stringify({ seed: 2, invariant: "focus", steps: [{ op: "key" }] }) +\n    "\\n" +\n    \'{"seed": 3, "ok"\'; // (cut: the worker was killed in the middle of a line)\n  test("passed, failed, and what was done", () => {\n    const r = lib.readResults(lines);\n    expect(r.passed).toBe(1);\n    expect(r.failures.map((f) => f.seed)).toEqual([2]);\n    expect([...r.done]).toEqual([1, 2]);\n  });\n  test("the first seed that was not done is the one that was running", () => {\n    expect(lib.missingSeeds([1, 2, 3, 4], lib.readResults(lines).done)).toEqual(\n      [3, 4]\n    );\n    expect(lib.readResults("").done.size).toBe(0);\n  });\n});\n\nwhile (y(6 + true, g("s4", "s4"), acc("s2"))) {\n  while ([]) {\n    y = lst(true ? 40 : 77, true, null);\n    const h = true;\n  }\n  if (true) {\n    lst;\n    let n = 9 ? y(f(true, 25, null), true) : {a: (h) => "s7", b: lst.acc(78, true)};\n  }\n  function h(total, n) {\n    return "s8";\n    return h(fact(null), acc(true, h), g(86));\n  }\n}\nfor (const f of h) {\n  35;\n}\nconst lst = true;\nif (lst - true) {\n  let n = x;\n} else {\n  let f = g(x());\n  n(x(null, (acc) => "s3"), n.h({a: n, b: null}), x < "s1" ? {a: true, b: null} : "s4" ? true : true);\n}\nwhile (total(null < 23, [98, true, true], x(h, 75))) {\n  var h = {a: {a: "s3", b: "s9"}, b: [[null, true], true]};\n  (x) => h() === g("s2", true);\n}\nwhile (f()) {\n  fact = n();\n  var acc = 71 ? ["s8", 28, 51] - (h) => 99 : [{a: null, b: acc}, true ? null : "s8", [y, null]];\n}\n\n// note\nn([null] < true);\n// note\nfor (const f of "s9" + acc) {\n  function g(fact, total) {\n    acc = f(total.fact(lst), g(true, f, 38), acc());\n  }\n  for (const x of 5) {\n    var n = {a: h([], 88 ? true : null, "s8" < null), b: x};\n    true;\n  }\n}\n\n// note\nfor (const lst of [97, null]) {\n  total = [f, true];\n  if (null) {\n    g;\n    const y = acc.fact({a: h, b: true} ? true : "s8");\n    f.n([]);\n  }\n}\nconst g = (lst) => (g) => total();\nif (lst) {\n  while (true) {\n    var f = true;\n    const lst = (acc) => (acc) => null;\n    const x = n("s5");\n  }\n  h(g(lst, 62, x), true, {a: 59, b: null}) < y(null, "s0") < true;\n  ({a: [x(), {a: null, b: true}, fact(null, "s5", 64)], b: 7 ? null : 43});\n} else {\n  for (const x of 26 < "s0") {\n    var fact = {a: 81 ? null < true : 92, b: g((g) => null, {a: true, b: "s3"}, total(63, 77, g))};\n    g([[]]);\n    true;\n  }\n}\nif (total("s1", y, null) ? h.fact() : (acc) => "s5") {\n  g = g(x * "s6", true, 49 ? 78 : 13);\n} else {\n  function h(fact, total) {\n    y(true ? true : null + total(), null, y());\n    h();\n  }\n}\nfor (const g of "s7") {\n  y(acc((h) => true, (lst) => h), null);\n  h();\n  total(null, (x) => g - 18);\n}\n\nwhile (true) {\n  function fact(lst, lst) {\n    acc([y], g.n(true, "s7"), h(47, 2, null)) ? y() : 82 < [];\n  }\n}\n// note\nif ((y) => "s7" + "s7") {\n  var acc = acc(null, x) ? lst + "s5" : fact ? "s4" : fact - acc(x.lst(fact));\n  var total = h(true, null, true);\n}\n\n// note\nf({a: total, b: true}) === lst([66]);\n({a: 87, b: [10, 80]} ? [lst.fact()] : total);\n\nfunction lst(h, f) {\n  true;\n}\nlst = 86;\ntotal = h(null * "s5");\nconst base = require("../../../packages/codemirror-blocks/webpack/example.config.js");\n\nconst group = (name, test, priority = 20) => ({\n  name,\n  test,\n  chunks: "all",\n  priority,\n  enforce: true,\n});\n\n\nconst f = n(acc(67, true), fact(true * "s0"));\n\nnull ? n.lst(acc(lst, 83, x), true < 97) : "s0";\n\nclass A {\n  m() {\n    return 1;\n  }\n}\nnew A().m();\ndescribe("promoting a failure to a regression test", () => {\n  const replay = JSON.stringify({\n    code: "(f x)\\n(g)",\n    steps: [{ op: "cut", r: [1, 2, 3, 4] }],\n  });\n  const records = [\n    { seed: 7, signature: "cut :: bad", problem: "bad", shrunkTo: 3, replay },\n    { seed: 9, signature: "cut :: bad", problem: "bad", shrunkTo: 1, replay },\n    { type: "crash", seed: 7 },\n  ];\n\n  it("finds a failure by seed or by signature text (the smallest)", () => {\n    expect(lib.findForPromote(records, "7").shrunkTo).toBe(3);\n    expect(lib.findForPromote(records, "CUT").seed).toBe(9);\n    expect(lib.findForPromote(records, "nothing")).toBeNull();\n  });\n\n  it("prints an it() in the format of the once-broke block", () => {\n    expect(lib.promoteCase(records[0])).toBe(\n      [\n        \'  it("seed 7: bad", () => {\',\n        "    check({",\n        \'      code: "(f x)\\\\n(g)",\',\n        "      steps: [",\n        "        {",\n        \'          "op": "cut",\',\n        \'          "r": [\',\n        "            1,",\n        "            2,",\n        "            3,",\n        "            4",\n        "          ]",\n        "        }",\n        "      ],",\n        "    });",\n        "  }, 120_000);",\n      ].join("\\n")\n    );\n  });\n});\n// TODO\nconst url = (name) =>\n  "data:audio/mpeg;base64," +\n  fs.readFileSync(path.join(dir, name)).toString("base64");\n\n\nlet fact = "s7";\n\nconst x = n();\nif (g((acc) => true)) {\n  var h = {a: fact(), b: x};\n} else {\n  var h = (lst) => h() - h();\n  n(g, null, acc() - h());\n}\nfact = fact(1, g) * "s3" + true;\nvar g = fact.y();\n// a b c\nfunction n(x, total) {\n  let lst = true;\n  let h = lst({a: null, b: y}, fact(null, "s1")) - "s2";\n}\nfunction f(a, b) { return a * b; }\nf(1, 2);\nif (x) { f(1, 2); } else { g(); }\n\nmodule.exports = require("../codemirror-blocks/.babelrc.js");\n\n\nconst total = true * fact;\nconst lst = lst.lst();\n\nfunction n(f, g) {\n  g;\n  function f(g, g) {\n    return [lst];\n    return y([true, null], "s5" - "s3", [null, 24, null]);\n  }\n  while (x.h(total(true, 44, 2), x(null, fact))) {\n    return null;\n  }\n}\nwhile (total * 86) {\n  if (g.n(6)) {\n    const g = fact((acc) => fact(1, acc), (total) => (x) => 29, {a: null, b: "s6"} - total(y));\n    acc();\n    const h = true;\n  } else {\n    let total = null;\n  }\n}\nfunction total(y, x) {\n  const y = 57;\n}\n\n// note\nconst x = "s8";\nnull;\nconst fact = x(h) ? n(fact - "s5", "s0") : null;\n(lst) => (fact) => true;\nconst total = total;\nacc(null, [] ? 93 === x : (y) => null);\ntrue;\nfunction y(lst, acc) {\n  if (h([true, null, true], true * "s2")) {\n    return lst(y(), x, 94 < true);\n    var x = n({a: true ? true : null, b: h ? "s9" : true});\n  }\n}\n({a: null, b: "s3"});\n\nx.g(null, "s6") - true - n() - y("s1", true, 88);\n// TODO\nlet f = lst.y();\n// TODO\nfor (const acc of acc(null)) {\n  const acc = true;\n}\nfunction n(n, lst) {\n  while (true) {\n    let h = 81;\n  }\n}\n\n// a b c\n6;\n\nif (89) {\n  var acc = fact(x.total(), x.lst(h - "s6"), x(n(f, null, h), true, 32 ? true : 8));\n} else {\n  if ([true, 25] ? {a: 70, b: null} : null < null) {\n    var x = h() - "s0" ? "s2" : null + f(true);\n    const x = total({a: 35, b: n}, acc, true);\n  }\n}\n// a b c\nnull;\nfunction lst(g, h) {\n  x(null * null);\n  x(h(), true === 56, {a: null, b: null}) < {a: "s6", b: acc(3, true)};\n}\n\nimport "codemirror/lib/codemirror.css";\nimport "../lib/css/codemirror-blocks.css";\nimport "@bootstrapworld/wescheme/css/wescheme.css";\nimport "@bootstrapworld/routine/css/routine.css";\nvar x = null;\nfor (const f of n("s5")) {\n  acc = [true];\n  null;\n}\n\n\ny(lst, null, [x, null] ? true : f.acc());\n// TODO\nif (g(fact(), y, y())) {\n  1 + null;\n  var fact = null;\n  if (86) {\n    var total = (x) => y;\n    var n = y(null ? "s8" : true) ? (n) => true ? total : 53 : true ? null : (h) => true;\n  } else {\n    81;\n    let n = null + acc(true, 11) === n(true, fact);\n  }\n}\n// TODO\nfact();\ny();\n// note\nn = f(acc.h("s9", null));\ntrue;\n\n// TODO\nfor (const fact of (fact) => 87) {\n  g({a: (h) => total, b: "s2" ? null : 40}, 97, 18);\n}\nacc(x(), n(), 33);\nconst validAction = (a) =>\n  !!a && (Object.hasOwn(EVENTS, a.type) ? EVENTS[a.type](a) : validState(a));\n\nconst validState = (a) =>\n  ACTIONS.has(a.type) &&\n  (a.type !== "SET_AST" || typeof a.code === "string") &&\n  (a.type !== "SET_BLOCK_MODE" || typeof a.enabled === "boolean") &&\n  (!["COLLAPSE", "UNCOLLAPSE"].includes(a.type) || Number.isInteger(a.nid)) &&\n  (a.type !== "SET_FOCUS" || a.nid === null || Number.isInteger(a.nid));\n\n/**\n * The report in an issue body: `{ report, warnings }`, or `{ skip }` with the\n * reason when there is none we can use (an old-format issue, a block that\n * does not parse, the wrong shape).\n */\n\nif (true) {\n  function fact(f, acc) {\n    ({a: x.fact("s0"), b: []});\n    y = (x) => n === null;\n    let lst = 47;\n  }\n}\nif ("s9" - x.y()) {\n  n((x) => y("s3", "s3", null), true, true);\n  g;\n} else {\n  true;\n  g({a: n, b: 64}, lst(45, "s8", null), true) - lst ? n : "s7" ? f : h;\n  y.n(n() * g);\n}\ny - (n) => g(true, 24, true);\nx = [n] + y;\n// note\nvar lst = "s3";\n\nfunction fact(acc, fact) {\n  const f = null;\n  total;\n}\n\n// note\ntrue ? true : (x) => 7;\nx = y(g(null, lst), lst("s1"), true);\nif ((y) => y === y * null) {\n  var h = y(25, fact) ? g() : [] === {a: h(true, 93, lst), b: null};\n  function g(x, g) {\n    [];\n  }\n} else {\n  const f = (y) => "s9";\n}\n\nif (80) {\n  null;\n  n.h("s3", 50);\n  const n = "s3";\n} else {\n  while (null) {\n    total();\n  }\n}\nvar f = fact(true ? f : n(), true, lst("s9" === null, "s3"));\nconst h = y(null) < f(53) - [] < true === null;\nvar fact = (f) => g;\n',
+      steps: [
+        {
+          op: "textEdit",
+          a: 0.6268443816807121,
+          len: 0,
+          w: '"',
+        },
+        {
+          op: "pasteText",
+          a: 0.35469670267775655,
+          text: "true",
+          before: false,
+        },
+        {
+          op: "key",
+          key: "Shift+ArrowRight",
+          a: 0.9802694618701935,
+        },
+        {
+          op: "editBox",
+          a: 0.9442341290414333,
+          text: "",
+          accept: true,
+        },
+        {
+          op: "moveNode",
+          a: 0.23414846695959568,
+          b: 0.5315286284312606,
+        },
+        {
+          op: "textEdit",
+          a: 0.8761020463425666,
+          len: 3,
+          w: "12",
+        },
+        {
+          op: "insertText",
+          a: 0.8594940348993987,
+          b: 0.19388199946843088,
+          text: "[1, 2]",
+        },
+        {
+          op: "pasteMulti",
+          a: 0.8914717386942357,
+          text: '"s"\n1',
+          accept: true,
+        },
+        {
+          op: "moveNode",
+          a: 0.4231138832401484,
+          b: 0.6861899769864976,
+        },
+        {
+          op: "insertTemplate",
+          t: 0.5317302881740034,
+          a: 0.35939228697679937,
+        },
+        {
+          op: "brokenText",
+          a: 0.40154886641539633,
+          w: "/* open",
+          nl: true,
+          back: true,
+        },
+        {
+          op: "textEdit",
+          a: 0.5825368252117187,
+          len: 2,
+          w: "12",
+        },
+        {
+          op: "editBox",
+          a: 0.7509843742009252,
+          text: "x",
+          accept: true,
+        },
+      ],
+      motion: "reduced",
+      editor: {
+        lineNumbers: false,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    })
+  ).toBeNull();
+}, 120_000);
+it("soak seed 197686: removing a stray `#` that touches a `|...|` token the grammar has no block for is no separator question (the removal oracle skips it)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 197686,
+      language: "scheme",
+      code: '(f "say \\"hi\\" now" "a\\tb")\n',
+      steps: [
+        {
+          op: "pasteMulti",
+          a: 0.2659437854308635,
+          text: "(g 1)\n(f)",
+          accept: false,
+        },
+        {
+          op: "brokenText",
+          a: 0.9345934998709708,
+          w: "#|",
+          nl: true,
+          back: true,
+        },
+        {
+          op: "brokenText",
+          a: 0.4619680840987712,
+          w: "#|",
+          nl: false,
+          back: true,
+        },
+        {
+          op: "removeNode",
+          a: 0.6841320854146034,
+          b: 0.5753326220437884,
+        },
+      ],
+      motion: "reduced",
+      editor: {
+        lineNumbers: false,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    })
+  ).toBeNull();
+}, 120_000);
+it("soak seed 202784: removing the element after a JavaScript elision leaves the elision's comma (`[, 2]` is `[,]`: the oracle does not count it as a stray comma)", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 202784,
+      language: "javascript",
+      code: 'const n = n.lst(total(true, null) ? "s7" ? null : "s2" : total * "s9", g(true ? true : true, total, [64, null]));\nvar fact = 93;\nlst = (g) => f;\nif (lst("s0" + y)) {\n  fact = f.n(lst);\n}\n"s8";',
+      steps: [
+        {
+          op: "replaceDoc",
+          text: "[1, 2]\ng(2)\n[1, 2]\n",
+        },
+        {
+          op: "textEdit",
+          a: 0.05530253006145358,
+          len: 0,
+          w: "`",
+        },
+        {
+          op: "textEdit",
+          a: 0.0701411368791014,
+          len: 2,
+          w: "",
+        },
+        {
+          op: "removeNode",
+          a: 0.2974080480635166,
+          b: 0.3749263465870172,
+        },
+      ],
+      motion: "full",
+      editor: {
+        lineNumbers: false,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    })
+  ).toBeNull();
+}, 120_000);
