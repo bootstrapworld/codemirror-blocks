@@ -18,6 +18,15 @@
  * (select 2 to 5 blocks, then Delete / cut / copy and paste by key), `commentNear` (a comment next to another comment), and multi-form snippets
  * in the API's insertText, pasteText, replaceText and replaceDoc. All of them are in both engines except `scrollKey` and `scrollToggle`
  * (Chromium only: jsdom has no layout).
+ *
+ * EDITOR OPTIONS AND TOUCH (forty-seventh round): a sequence also has an `editor` (`EditorChoice`: line numbers, line wrapping, collapseAll at
+ * the start, the "for measuring" switches `reconcile` / `anchors` / `fastErrors` / `skipRoots` off, a small `activityLimit`), chosen from
+ * the seed by a generator of its own, so the steps of a seed are those of before. A record that has no `editor` is one made before: it runs
+ * with the options of then (`defaultEditor`). There is no read-only option: the editor has none (it never reads `EditorState.readOnly`), so
+ * a soak of one would report a feature that is not there. In Chromium a share of the sequences (`touchShare()`, 30%) are TOUCH sequences:
+ * a second generator turns their clicks into taps and their block drags into long-press-and-drag with a finger, and adds long presses that
+ * let go in place and quick swipes (which must scroll, never drag). jsdom has none of them: its events carry no coordinates a drop could be
+ * found from (no layout), and the editor's touch logic is already in spec/touch.test.ts.
  */
 import * as fs from "fs";
 import * as path from "path";
@@ -27,6 +36,67 @@ export type Lang = "scheme" | "javascript" | "python";
 export const LANG_NAMES: Lang[] = ["scheme", "javascript", "python"];
 export type Step = { op: string } & Record<string, unknown>;
 export type Engine = "jsdom" | "chromium";
+
+/** how the editor is created for a sequence (the options of `createLezerBlockEditor` that change what it does, and the page's `lineNumbers()` / `lineWrapping` extensions) */
+export interface EditorChoice {
+  lineNumbers: boolean;
+  lineWrapping: boolean;
+  /** start with every block collapsed */
+  collapseAll: boolean;
+  /** the four switches that exist "for measuring": off, the editor does the same thing the slow way (the invariants are the same) */
+  reconcile: boolean;
+  anchors: boolean;
+  fastErrors: boolean;
+  skipRoots: boolean;
+  /** how many entries the activity log keeps; null: the default (200) */
+  activityLimit: number | null;
+}
+/** the options a sequence had before the choice existed: the demo page has line numbers, the jsdom runner had none */
+export const defaultEditor = (engine: Engine): EditorChoice => ({
+  lineNumbers: engine === "chromium",
+  lineWrapping: false,
+  collapseAll: false,
+  reconcile: true,
+  anchors: true,
+  fastErrors: true,
+  skipRoots: true,
+  activityLimit: null,
+});
+/** the fraction of sequences with options other than the default (0.5; `CMB6_SOAK_OPTIONS`, 0 turns it off) */
+export function optionShare(): number {
+  const v = Number(process.env.CMB6_SOAK_OPTIONS);
+  return process.env.CMB6_SOAK_OPTIONS === undefined ||
+    process.env.CMB6_SOAK_OPTIONS === "" ||
+    !Number.isFinite(v)
+    ? 0.5
+    : Math.max(0, Math.min(1, v));
+}
+/** the editor options of `seed`: from a generator of their own, so the program and the steps of a seed do not depend on them */
+export function chooseEditor(engine: Engine, seed: number): EditorChoice {
+  const rnd = mulberry32(seed * 104729 + (engine === "jsdom" ? 3 : 4));
+  const e = defaultEditor(engine);
+  if (!(rnd() < optionShare())) return e;
+  let changed = false;
+  const maybe = (p: number, cur: boolean): boolean => {
+    if (!(rnd() < p)) return cur;
+    changed = true;
+    return !cur;
+  };
+  e.lineNumbers = maybe(0.3, e.lineNumbers);
+  e.lineWrapping = maybe(0.3, e.lineWrapping);
+  e.collapseAll = maybe(0.2, e.collapseAll);
+  e.reconcile = maybe(0.12, e.reconcile);
+  e.anchors = maybe(0.12, e.anchors);
+  e.fastErrors = maybe(0.12, e.fastErrors);
+  e.skipRoots = maybe(0.12, e.skipRoots);
+  if (rnd() < 0.15) {
+    e.activityLimit = pick(rnd, [2, 5, 20]);
+    changed = true;
+  }
+  // (a sequence chosen for other options has at least one)
+  if (!changed) e.lineWrapping = true;
+  return e;
+}
 
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
@@ -806,6 +876,40 @@ export function genStep(
   return all[0][1](rnd, lang);
 }
 
+// ---- touch (Chromium) ----
+
+/** the steps that are a finger's (they need a context with a touch screen) */
+export const TOUCH_OPS = ["tap", "longPress", "touchDrag", "swipe"];
+/** the fraction of Chromium sequences that are touch sequences (0.3; `CMB6_SOAK_TOUCH`, 0 turns it off) */
+export function touchShare(): number {
+  const v = Number(process.env.CMB6_SOAK_TOUCH);
+  return process.env.CMB6_SOAK_TOUCH === undefined ||
+    process.env.CMB6_SOAK_TOUCH === "" ||
+    !Number.isFinite(v)
+    ? 0.3
+    : Math.max(0, Math.min(1, v));
+}
+/**
+ * Turn some steps of a Chromium sequence into a finger's, in place, with a generator of its own (the other sequences, and the other steps
+ * of this one, are what they were): a click becomes a tap (a second tap on a focused leaf opens its box), a drag of a block a long press
+ * and a drag, and one step in nine a long press that lets go in place or a quick swipe.
+ */
+export function touchify(steps: Step[], seed: number): void {
+  const rnd = mulberry32(seed * 15485863 + 11);
+  if (!(rnd() < touchShare())) return;
+  steps.forEach((s, i) => {
+    if (s.op === "click" && rnd() < 0.8)
+      steps[i] = { op: "tap", a: s.a, twice: rnd() < 0.35 };
+    else if (s.op === "dragBlock" && rnd() < 0.85)
+      steps[i] = { op: "touchDrag", a: s.a, b: s.b, where: s.where };
+    else if (rnd() < 0.11)
+      steps[i] =
+        rnd() < 0.5
+          ? { op: "longPress", a: f(rnd) }
+          : { op: "swipe", a: f(rnd), dir: pick(rnd, ["up", "down"]) };
+  });
+}
+
 export interface Sequence {
   engine: Engine;
   seed: number;
@@ -814,6 +918,8 @@ export interface Sequence {
   steps: Step[];
   /** Chromium: "full" motion (the morph on) or "reduced" */
   motion?: "full" | "reduced";
+  /** the options the editor is created with; absent in a record from before the round: `defaultEditor(engine)` */
+  editor?: EditorChoice;
 }
 
 /** the whole sequence of `seed`: its language, program, motion setting and steps. The same seed always gives the same sequence. */
@@ -831,7 +937,9 @@ export function makeSequence(
   const steps = Array.from({ length: stepsFor(code, nSteps) }, () =>
     genStep(rnd, language, engine, !!opts.motion, long)
   );
-  return { engine, seed, language, code, steps, motion };
+  const editor = chooseEditor(engine, seed);
+  if (engine === "chromium") touchify(steps, seed);
+  return { engine, seed, language, code, steps, motion, editor };
 }
 
 /**

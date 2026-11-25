@@ -1,6 +1,8 @@
 // The soak runner's generator (spec/soak-gen.ts): the same seed gives the same sequence, steps are fractions, a failing list shrinks.
 import {
   BROKEN,
+  chooseEditor,
+  defaultEditor,
   genStep,
   LANG_NAMES,
   longDocs,
@@ -11,7 +13,9 @@ import {
   shrink,
   Step,
   stepsFor,
+  TOUCH_OPS,
   topLevelForms,
+  touchShare,
 } from "./soak-gen";
 
 describe("soak generator", () => {
@@ -187,5 +191,109 @@ describe("soak generator: long documents and wider steps (forty-sixth round)", (
       expect(
         steps.some((s) => s.op === op && String(s.text).includes("\n"))
       ).toBe(true);
+  });
+});
+
+describe("soak generator: editor options and touch (forty-seventh round)", () => {
+  const withEnv = (k: string, v: string | undefined, fn: () => void) => {
+    const old = process.env[k];
+    if (v === undefined) delete process.env[k];
+    else process.env[k] = v;
+    try {
+      fn();
+    } finally {
+      if (old === undefined) delete process.env[k];
+      else process.env[k] = old;
+    }
+  };
+  test("a seed gives the same options, and they are part of the sequence", () => {
+    for (const engine of ["jsdom", "chromium"] as const) {
+      const a = makeSequence(engine, 77, 10);
+      expect(a.editor).toEqual(chooseEditor(engine, 77));
+      expect(makeSequence(engine, 77, 10).editor).toEqual(a.editor);
+    }
+  });
+  test("about half of the sequences have options other than the default, each of them at least one; 0 turns it off", () => {
+    for (const engine of ["jsdom", "chromium"] as const) {
+      let other = 0;
+      withEnv("CMB6_SOAK_OPTIONS", undefined, () => {
+        for (let seed = 0; seed < 400; seed++)
+          if (
+            JSON.stringify(chooseEditor(engine, seed)) !==
+            JSON.stringify(defaultEditor(engine))
+          )
+            other++;
+      });
+      expect(other / 400).toBeGreaterThan(0.4);
+      expect(other / 400).toBeLessThan(0.6);
+      withEnv("CMB6_SOAK_OPTIONS", "0", () => {
+        for (let seed = 0; seed < 100; seed++)
+          expect(chooseEditor(engine, seed)).toEqual(defaultEditor(engine));
+      });
+    }
+  });
+  test("every option takes both its values over the seeds", () => {
+    const seen: Record<string, Set<unknown>> = {};
+    for (let seed = 0; seed < 600; seed++)
+      for (const [k, v] of Object.entries(chooseEditor("jsdom", seed)))
+        (seen[k] ??= new Set()).add(v);
+    for (const [k, vs] of Object.entries(seen))
+      expect([k, vs.size > 1]).toEqual([k, true]);
+    expect(seen.activityLimit.has(null)).toBe(true);
+  });
+  test("the options do not change the program or the steps of a seed (the old steps of a seed stay)", () => {
+    withEnv("CMB6_SOAK_OPTIONS", "0", () => {
+      withEnv("CMB6_SOAK_TOUCH", "0", () => {
+        const off = makeSequence("chromium", 12, 30);
+        withEnv("CMB6_SOAK_OPTIONS", "1", () => {
+          const on = makeSequence("chromium", 12, 30);
+          expect({ ...on, editor: undefined }).toEqual({
+            ...off,
+            editor: undefined,
+          });
+        });
+      });
+    });
+  });
+  test("jsdom has no touch steps; Chromium has them in about 30% of its sequences, as the old ones elsewhere", () => {
+    expect(touchShare()).toBe(0.3);
+    for (let seed = 0; seed < 40; seed++)
+      for (const s of makeSequence("jsdom", seed, 40).steps)
+        expect(TOUCH_OPS).not.toContain(s.op);
+    let touch = 0;
+    for (let seed = 0; seed < 200; seed++)
+      if (
+        makeSequence("chromium", seed, 40).steps.some((s) =>
+          TOUCH_OPS.includes(s.op)
+        )
+      )
+        touch++;
+    expect(touch / 200).toBeGreaterThan(0.15);
+    expect(touch / 200).toBeLessThan(0.45);
+    withEnv("CMB6_SOAK_TOUCH", "0", () => {
+      for (let seed = 0; seed < 50; seed++)
+        for (const s of makeSequence("chromium", seed, 40).steps)
+          expect(TOUCH_OPS).not.toContain(s.op);
+    });
+  });
+  test("touch steps keep the shape of the steps they replace, and all four ops appear", () => {
+    const seen = new Set<string>();
+    withEnv("CMB6_SOAK_TOUCH", "1", () => {
+      for (let seed = 0; seed < 60; seed++) {
+        const seq = makeSequence("chromium", seed, 60);
+        for (const s of seq.steps) {
+          if (!TOUCH_OPS.includes(s.op)) continue;
+          seen.add(s.op);
+          expect(s.a).toBeGreaterThanOrEqual(0);
+          expect(s.a).toBeLessThan(1);
+          if (s.op === "touchDrag")
+            expect(["gap", "block", "whitespace", "end", "trash"]).toContain(
+              s.where
+            );
+          if (s.op === "swipe") expect(["up", "down"]).toContain(s.dir);
+        }
+      }
+    });
+    expect([...seen].sort()).toEqual([...TOUCH_OPS].sort());
   });
 });
