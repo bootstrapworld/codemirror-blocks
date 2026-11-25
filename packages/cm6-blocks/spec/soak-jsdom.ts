@@ -136,7 +136,10 @@ export function runJsdom(
 ): Violation | null {
   const L = LANGS[seq.language];
   const skip = new Set(options.skip ?? []);
-  const stepTimeout = options.stepTimeoutMs ?? 10000;
+  // (jsdom is very slow at the work a long document needs, such as one block that takes thousands of children, one at a time: about 14 s
+  // for a 29 KB document, 0.2 s in Chromium. The limit grows with the size of the document, so that a real hang is still found)
+  const stepTimeout =
+    options.stepTimeoutMs ?? 10000 + 2 * (seq.code?.length ?? 0);
   const parent = document.createElement("div");
   document.body.appendChild(parent);
   const errors: string[] = [];
