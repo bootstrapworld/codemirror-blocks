@@ -1716,3 +1716,89 @@ it("soak seed 10569: a comment next to a block that is drawn, outside the drawn 
     })
   ).toBeNull();
 }, 120_000);
+it("seed 25338: a block removed from a list whose recovered blocks are out of order (a text that does not parse) does not make a change that ends before it starts", () => {
+  expect(
+    runJsdom({
+      engine: "jsdom",
+      seed: 25338,
+      language: "python",
+      code: "def _format_pipe(fd):\n    if fd == subprocess.PIPE:\n        return '<pipe>'\n    elif fd == subprocess.STDOUT:\n        return '<stdout>'\n    else:\n        return repr(fd)\n\n\n",
+      steps: [
+        {
+          op: "multiSelect",
+          a: 0.2867485862225294,
+          n: 2,
+          then: "cutPaste",
+          b: 0.8163717177230865,
+        },
+        {
+          op: "pasteText",
+          a: 0.07092454773373902,
+          text: "1",
+          before: false,
+        },
+        {
+          op: "insertTemplate",
+          t: 0.7347870701923966,
+          a: 0.19509052205830812,
+        },
+        {
+          op: "insertText",
+          a: 0.17380753438919783,
+          b: 0.48145601782016456,
+          text: "[1, 2]",
+        },
+        {
+          op: "textEdit",
+          a: 0.45606922870501876,
+          len: 2,
+          w: "f(",
+        },
+        {
+          op: "insertText",
+          a: 0.8378749657422304,
+          b: 0.7708620433695614,
+          text: '"s"',
+        },
+        {
+          op: "undoRun",
+          n: 5,
+          redo: false,
+        },
+        {
+          op: "replaceText",
+          a: 0.09540216205641627,
+          text: '"s"',
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "textEdit",
+          a: 0.2447069357149303,
+          len: 3,
+          w: "lambda",
+        },
+        {
+          op: "collapseBurst",
+          a: 0.21199007472023368,
+          n: 5,
+          on: true,
+        },
+        {
+          op: "multiSelect",
+          a: 0.5664089899510145,
+          n: 3,
+          then: "cutPaste",
+          b: 0.44846663996577263,
+        },
+        {
+          op: "removeNode",
+          a: 0.6697500410955399,
+          b: 0.569190019974485,
+        },
+      ],
+      motion: "full",
+    })
+  ).toBeNull();
+}, 120_000);

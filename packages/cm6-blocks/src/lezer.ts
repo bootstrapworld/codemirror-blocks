@@ -968,7 +968,8 @@ export function removeChanges(nodes: BNode[], text?: string): TextChange[] {
       const last = ns[j];
       if (j + 1 < ns.length) {
         // up to the next block of the list, but not over another block of the owner (a comment before the operator) or a stray token
-        let to = ns[j + 1].from;
+        // (a text that does not parse can list recovered blocks out of order: the next one may start before this one ends)
+        let to = Math.max(last.to, ns[j + 1].from);
         for (const o of others)
           if (o.from >= last.to && o.from < to) to = o.from;
         if (text) {
