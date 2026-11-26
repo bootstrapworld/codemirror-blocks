@@ -673,6 +673,25 @@ export function createLezerBlockEditor(
     });
     return off;
   };
+  /**
+   * The gutters' own minimum height is the height of the content, and CodeMirror sets it only in an update that reports a change of
+   * geometry. A measure that changes the content's height without one (a collapse of everything at a page zoom of 1.75, soak seed 74987:
+   * 3190 px against 3250) leaves it lower than the lines, and the gutter's flex column then shrinks every number a little, so that they drift
+   * off their lines more and more down the page; the numbers' own heights are right. It is set to the content's height when it is not.
+   */
+  const fixGutterMin = (): boolean => {
+    let off = false;
+    for (const g of Array.from(
+      view.dom.querySelectorAll(".cm-gutters")
+    ) as HTMLElement[]) {
+      const min = parseFloat(g.style.minHeight);
+      const want = view.contentHeight / (view.scaleY || 1);
+      if (!(Math.abs(min - want) > 0.5)) continue;
+      g.style.minHeight = want + "px";
+      off = true;
+    }
+    return off;
+  };
   /** the heights CodeMirror holds for the lines it draws (read only after a repair, which is rare) */
   const heightSignature = (): string =>
     view.contentHeight +
@@ -714,6 +733,7 @@ export function createLezerBlockEditor(
         if (gone) return;
         const heightsOld = heightsStale();
         if (fixGaps()) hstats.gapFixes++;
+        if (fixGutterMin()) hstats.gapFixes++;
         if (!heightsOld && !gutterStale()) {
           gutterRepairs = 0;
           return;

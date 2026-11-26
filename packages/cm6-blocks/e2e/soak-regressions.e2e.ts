@@ -1437,6 +1437,115 @@ test("seed 71254: a copy with a block focused and none selected, whose event doe
   expect(out.text).toBe("(g 2)");
 });
 
+test("soak seed 74987: collapsing everything at a page zoom of 1.75 leaves the gutters' minimum height at the old content height, so its flex column shrinks every number (the gutter is set to the content's height again)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 74987,
+      language: "scheme",
+      code: '; note\n(define y \'((< #f (< #t #f))))\n(define (x h) (lambda (f) (f (y "s9" "s7") \'a (x))))\n\n; TODO\n(define (x x) (let ([lst (if #f g (x #f))]) (f)))\n\n; a b c\n(define x (x 12 (g "s8" (* acc 57))))\n\n(define (f n) \'a)\n(* (y) (fact))\n(define (y f) (x f \'a (h #t)))\n(define (total f) \'((g (f acc acc #t) (let ([n 9]) 90) 88) (g (let ([f #f]) x)) (if (total) (acc lst 96 "s6") "s7")))\n(y)\n; note\n(define (lst y) 99)\n(fact)\n(add secondVar) (sub fourthVar firstVar)\n\n; a b c\n(define (f y) (lambda (n) (< (+ #f 90) (- \'a #t))))\n(define n (let ([acc (let ([n acc]) (if acc "s3" #t))]) (if #f (let ([lst #t]) #t) (lambda (x) \'a))))\n(let ([y (fact)]) (if (g (fact \'a \'a) \'("s9" "s2") (let ([h "s1"]) #f)) (n (total 81 y) (h #f "s8" #t)) \'a))\n\n(define (g acc) #f)\n(define g (if \'((let ([y 43]) #f)) #f \'(#f)))\n(define y \'((f)))\n(define (lst n) \'a)\n(define n (n 7 (if 19 "s9" 62) (cond [#t (f "s5" \'a "s4")] [else (total #f "s1" \'a)])))\n(define f (x #t 77 (h (cond [31 74] [else #t]))))\n(define (total total) (lambda (n) #f))\n(define total (f (fact (y)) (lambda (lst) (lst))))\n(define (n fact) (fact (y) (n (let ([y 15]) "s3"))))\n\n"s3"\n(define (sq n) (* n n))\n(sq 4)\n\n; note\n(if t (then a) (else c d))\n; TODO\n(provide (struct-out p))\n(define acc (x \'((* \'a 66) (if #f \'a #f)) (cond [(total total #f y) (fact #f "s8")] [else (if #f "s2" "s5")]) (< (lambda (h) \'a) #t)))\n(define (y acc) (cond [#t (h)] [else (total)]))\n\n(define y (- (< (if total y 98) (y n 62 f)) \'a))\n\n(let ([a 1] [b 2]) (+ a b))\n(lambda (x) x)\n\'(1 2 3)\n; TODO\n(define (f fact) \'(\'a))\n(define lst \'a)\n\n#f\n(define f (f))\n(define (total fact) #f)\n(define (g lst) (if #f n (acc)))\n\n(define (y acc) (if (if #t (lst #t) (f #t)) (lst (= "s7" f)) 12))\n; note\n(define (n n) (- (lambda (fact) (y)) (total (y "s2") (g) (lst 65))))\n; TODO\n(define fact (total))\n(define h (fact (if #f (fact) f) (n) (f (x 94) (fact 0 "s7") (if #t fact #t))))\n\n(g (fact) (n (cond [(if #f #f \'a) (x \'a #t)] [else (+ #f 51)])))\n; TODO\n(total (lambda (n) #t) (fact))\n; a b c\n"s7"\n"s7"\n(define (fact total) (y))\n(define total total)\n(if \'a \'(h) 54)\n(f x)\n#| the second one |#\n(g y)\n(if (> x 3) "big" "small")\n(let ([a 1] [b 2]) (+ a b))\n(lambda (x) x)\n\'(1 2 3)\n; TODO\n(define n (let ([n #f]) (acc (lst) \'a (if #t acc #f))))\n\'(#f (total) y)\n(define (acc fact) (h (g (lambda (g) \'a) (x lst) (x \'a)) (g (- #t acc))))\n(define total (let ([lst 7]) (y)))\n(define (fact g) acc)\n(define (acc h) #f)\n(define fact (* (< "s2" \'(\'a)) (fact)))\n#f\n\n',
+      steps: [
+        {
+          op: "resize",
+          w: 0.4271083786152303,
+          h: 0.9356732072774321,
+          wrap: "keep",
+        },
+        {
+          op: "resize",
+          w: 0.17410557228140533,
+          h: 0.08447544206865132,
+          wrap: "keep",
+        },
+        {
+          op: "zoom",
+          z: 0.6448668034281582,
+        },
+        {
+          op: "dragTemplate",
+          t: 0.2912474316544831,
+          b: 0.2612787049729377,
+          where: "whitespace",
+        },
+        {
+          op: "click",
+          a: 0.5180982947349548,
+          shift: false,
+        },
+        {
+          op: "undoRun",
+          n: 2,
+          redo: false,
+        },
+        {
+          op: "scroll",
+          a: 0.08385684434324503,
+        },
+        {
+          op: "pasteMulti",
+          a: 0.44352945499122143,
+          text: "(f)\nx",
+          accept: false,
+        },
+        {
+          op: "key",
+          key: "Delete",
+          a: 0.17408693651668727,
+        },
+        {
+          op: "scroll",
+          a: 0.3429419598542154,
+        },
+        {
+          op: "insertText",
+          a: 0.012422037543728948,
+          b: 0.14855382917448878,
+          text: "'(1 2)\n(define y 2)\n7",
+        },
+        {
+          op: "resize",
+          w: 0.9120609317906201,
+          h: 0.7805412085726857,
+          wrap: "off",
+        },
+        {
+          op: "ime",
+          a: 0.934574571903795,
+          target: "box",
+          parts: ["e", "é"],
+          final: "é",
+          cancel: true,
+          accept: false,
+          back: false,
+        },
+        {
+          op: "undo",
+        },
+        {
+          op: "collapseAll",
+          on: true,
+        },
+      ],
+      motion: "reduced",
+      editor: {
+        lineNumbers: true,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    },
+    { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
+  );
+  expect(v).toBeNull();
+});
+
 test("soak seed 9057: CodeMirror measures the page in the middle of a drag (the gap under the mouse still open) and the end of the drag changes the heights again with no change any observer reports: the line numbers follow (the heights are compared with the lines when the pointer is released)", async ({
   browser,
 }) => {
