@@ -2142,3 +2142,88 @@ test("seed 604247: after a scroll in a long document in a window a few lines hig
   );
   expect(v).toBeNull();
 });
+
+test("seed 604858: a composition whose committed text is the text composed ends (a compositionend), and a switch to blocks after it draws the roots", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 604858,
+      language: "python",
+      code: '# a comment\ntotal = 0\nfor x in [1, 2, 3]:\n    total = total + x\nprint(total, "done")\n',
+      steps: [
+        {
+          op: "search",
+          text: "x",
+          next: true,
+        },
+        {
+          op: "zoom",
+          z: 0.8378396455664188,
+        },
+        {
+          op: "brokenText",
+          a: 0.08474085130728781,
+          w: '"""abc',
+          nl: true,
+          back: true,
+        },
+        {
+          op: "redo",
+        },
+        {
+          op: "brokenText",
+          a: 0.6369563331827521,
+          w: "if x",
+          nl: false,
+          back: true,
+        },
+        {
+          op: "ime",
+          a: 0.39949769619852304,
+          target: "text",
+          parts: ["n", "ni"],
+          final: "你",
+          cancel: false,
+          accept: false,
+          back: false,
+        },
+        {
+          op: "resize",
+          w: 0.018508961889892817,
+          h: 0.24144001165404916,
+          wrap: "keep",
+        },
+        {
+          op: "replaceDoc",
+          text: "def f(a, b):\n    y = a\n    return y\nf(1, 2)\n",
+        },
+        {
+          op: "ime",
+          a: 0.7827975044492632,
+          target: "text",
+          parts: ["1", "12"],
+          final: "12",
+          cancel: false,
+          accept: true,
+          back: true,
+        },
+      ],
+      motion: "full",
+      editor: {
+        lineNumbers: true,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    },
+    { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
+  );
+  expect(v).toBeNull();
+});

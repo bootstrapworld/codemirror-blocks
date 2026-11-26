@@ -767,7 +767,22 @@ export async function runChromium(
             selectionStart: 0,
             selectionEnd: 0,
           });
-        else await cdp.send("Input.insertText", { text: String(s.final) });
+        else {
+          await cdp.send("Input.insertText", { text: String(s.final) });
+          // (Chrome does not end the composition when the committed text is the text that is being composed ("12" after "12"): no
+          // compositionend comes, and CodeMirror goes on composing, keeps the lines under it as they are and draws no block over them, whatever
+          // comes next. A real input method always ends it: the step does what it does. Seed 604858 of round 12)
+          await evaluate(() => {
+            const ed = (window as any).demo.ed;
+            if (ed.view.composing)
+              (document.activeElement ?? ed.view.contentDOM).dispatchEvent(
+                new CompositionEvent("compositionend", {
+                  data: "",
+                  bubbles: true,
+                })
+              );
+          });
+        }
         if (s.target === "box") {
           if (await boxOpen().count())
             await page.keyboard.press(s.accept ? "Enter" : "Escape");
