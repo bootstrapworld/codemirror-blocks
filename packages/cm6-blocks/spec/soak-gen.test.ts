@@ -429,3 +429,40 @@ describe("soak generator: long documents and the browser's steps in Chromium (fo
     expect(ZOOM_LEVELS.some((z) => z !== Math.round(z))).toBe(true);
   });
 });
+
+describe("programs from bug reports", () => {
+  it("are used when issue-programs.json sits beside the corpus file, and not otherwise", () => {
+    const fs = require("fs") as typeof import("fs");
+    const os = require("os") as typeof import("os");
+    const path = require("path") as typeof import("path");
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cmb6-issues-"));
+    const old = process.env.CMB6_SOAK_CORPUS;
+    try {
+      fs.writeFileSync(path.join(dir, "corpus-chunks.json"), "{}");
+      process.env.CMB6_SOAK_CORPUS = path.join(dir, "corpus-chunks.json");
+      const draw = (): string[] => {
+        let out: string[] = [];
+        jest.isolateModules(() => {
+          const gen = require("./soak-gen") as typeof import("./soak-gen");
+          out = Array.from({ length: 400 }, (_, i) =>
+            gen.randomProgram("python", gen.mulberry32(i + 1))
+          );
+        });
+        return out;
+      };
+      expect(draw()).not.toContain("issue_program = 1\n");
+      fs.writeFileSync(
+        path.join(dir, "issue-programs.json"),
+        JSON.stringify({ python: ["issue_program = 1\n"] })
+      );
+      const used = draw().filter((p) => p === "issue_program = 1\n").length;
+      // (about one program in ten)
+      expect(used).toBeGreaterThan(10);
+      expect(used).toBeLessThan(90);
+    } finally {
+      if (old === undefined) delete process.env.CMB6_SOAK_CORPUS;
+      else process.env.CMB6_SOAK_CORPUS = old;
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

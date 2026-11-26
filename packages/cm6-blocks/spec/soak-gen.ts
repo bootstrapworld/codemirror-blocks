@@ -485,6 +485,23 @@ function corpusChunks(lang: Lang): string[] {
   const all = rawChunks(lang);
   return (cleanCache[lang] ??= all.filter((c) => parsesClean(lang, c)));
 }
+let issueCache: Record<string, string[]> | null = null;
+/** programs from the bug reports of the repository (`npm run soak -- --ingest-issues` writes issue-programs.json beside corpus-chunks.json); none if the file is absent */
+function issuePrograms(lang: Lang): string[] {
+  issueCache ??= (() => {
+    const dir = process.env.CMB6_SOAK_CORPUS
+      ? path.dirname(process.env.CMB6_SOAK_CORPUS)
+      : path.join(__dirname, "..", "soak-results");
+    try {
+      return JSON.parse(
+        fs.readFileSync(path.join(dir, "issue-programs.json"), "utf8")
+      );
+    } catch (_) {
+      return {};
+    }
+  })();
+  return issueCache?.[lang] ?? [];
+}
 function rawChunks(lang: Lang): string[] {
   if (!chunkCache) {
     const file =
@@ -600,6 +617,9 @@ export function randomProgram(
   rnd: Rnd,
   engine: Engine = "jsdom"
 ): string {
+  // (a program from a bug report, when some were ingested: no draw is made without them, so the seeds of a soak without any do not change)
+  const ip = issuePrograms(lang);
+  if (ip.length && rnd() < 0.1) return pick(rnd, ip);
   if (rnd() < longDocs(engine)) return longProgram(lang, rnd);
   const r = rnd();
   if (r < 0.25) return pick(rnd, START[lang]);
