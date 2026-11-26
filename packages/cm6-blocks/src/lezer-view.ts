@@ -22,6 +22,7 @@
  * state computed by `state.update` and then dropped has already changed them.
  */
 import {
+  ChangeDesc,
   Compartment,
   EditorSelection,
   EditorState,
@@ -480,6 +481,37 @@ const sameBefore = (a: Tree, b: Tree, limit: number): boolean => {
     if (!x.nextSibling()) return true;
     if (!y.nextSibling()) return false;
   }
+};
+
+/**
+ * Whether the top-level nodes of `b` that start after the change (`toB`) are those of `a` that started after it (`toA`), moved by the change
+ * (`map`): the same types, the same ranges. The text after a change reads as it did unless the change reaches into it (an unclosed bracket,
+ * a changed indentation: then a fresh parse says how) or the incremental parse that made `b` went wrong
+ */
+const sameAfter = (
+  a: Tree,
+  b: Tree,
+  toA: number,
+  toB: number,
+  map: ChangeDesc
+): boolean => {
+  const x = a.cursor();
+  const y = b.cursor();
+  let hx = x.childAfter(toA);
+  let hy = y.childAfter(toB);
+  while (hx && x.from <= toA) hx = x.nextSibling();
+  while (hy && y.from <= toB) hy = y.nextSibling();
+  while (hx && hy) {
+    if (
+      x.type !== y.type ||
+      y.from !== map.mapPos(x.from, 1) ||
+      y.to !== map.mapPos(x.to, -1)
+    )
+      return false;
+    hx = x.nextSibling();
+    hy = y.nextSibling();
+  }
+  return !hx && !hy;
 };
 
 // (a root of no width, which the parser makes when it recovers from an error, has nothing to replace: CodeMirror refuses the decoration)
@@ -1038,6 +1070,16 @@ export function createLezerBlockEditor(
           else lo = m + 1;
         }
         if (lo > 1 && !sameBefore(v.tree, tree, v.roots[lo - 1].from)) {
+          frags = [];
+          tree = parser.parse(s);
+        }
+      }
+      // (and the statements AFTER the change: Lezer can reuse one of them with a body that it keeps from before, over what is now there,
+      // after an edit far above it. The top-level nodes after the change are those of the old tree moved by it, or the parse is read again
+      // from nothing: the same cost, and a real change of what follows (an unclosed bracket) is read the same way)
+      if (frags.length && cr.length) {
+        const last = cr[cr.length - 1];
+        if (!sameAfter(v.tree, tree, last.toA, last.toB, tr.changes.desc)) {
           frags = [];
           tree = parser.parse(s);
         }

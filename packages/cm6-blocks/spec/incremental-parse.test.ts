@@ -40,3 +40,31 @@ it("soak seed 206576: an undo that makes Lezer read a loop's body over the state
   });
   expect(ed.roots().length).toBe(ref.roots().length);
 });
+
+// soak seed 400160 (Chromium, paste at the top level): the document has an `else:` with no body far below the paste; the incremental parse then
+// gives the `if` after the paste a body that goes on over the statements after it (443 roots, a fresh parse has 478)
+const PRE_400160 =
+  'demo_dir = os.path.dirname(os.path.abspath(__file__))\ndarwin = sys.platform == \'darwin\'\n# a b c\nclass IncrementalDecoder(codecs.IncrementalDecoder):\n    def decode(self, input, final=False):\n        return codecs.charmap_decode(input,self.errors,decoding_table)[0]\n\ndef fixb2context(root):\n    \'\'\'Removed bad AquaTk Button-2 (right) and Paste bindings.\n\n    They prevent context menu access and seem to be gone in AquaTk8.6.\n    See issue #24801.\n    \'\'\'\n    root.unbind_class(\'Text\', \'<B2>\')\n    root.unbind_class(\'Text\', \'<B2-Motion>\')\n    root.unbind_class(\'Text\', \'<<PasteSelection>>\')\n\n# a comment\ntotal = 0\nfor x in [1, 2, 3]:\n    total = total + x\nprint(total, "done")\n{fact(): n(y)}\nNone\n\ng(lst.acc(total(24, total), [n]), True + n(None, None, h), acc({total: 67}, lambda lst: True))\nwhile x(lst.total(), g(), y()):\n    def acc(acc, x):\n        return None\n\nwhile f.x(True, lambda n: 74):\n    lambda fact: y.y(f(True, "s3"))\n    while fact():\n        lambda acc: lambda acc: [True, True]\n        []\n    while f:\n        lst = None\n[lst(True * "s4", fact(62), "s5" == None), acc(fact, 80) < lst * True]\n# TODO\ndef h(fact, g):\n    return y(True) * [True, True]\n    "s2"\nn\ng.lst(None)\n[]\n\nfor f in True:\n    y(None)\n    fact = "s2"\n\ny = total(y(lst), {{fact: "s7"}: f("s3", 34, acc)})\n# note\ndef lst(fact, n):\n    y(x(x(True, "s8", None), "s9" < None), True * None, "s0")\n    None\n    [n(lambda total: True, f(total))]\ng = y([], [70, None, "s1"], x(None, lst, True)) * "s6"\ng = True\nfact = True\n\ndef total(x, total):\n    {total: lambda x: lambda y: True}\n    def fact(n, fact):\n        f = lambda y: 12\n        n.lst(x.h(g()), fact(10, True) + x(lst, x, True))\nNone\n# TODO\n[fact(acc.lst(True)), h.n(), 7]\n# a b c\nif acc([10], f("s5", "s9")):\n    if g.x():\n        lst()\n# note\nacc(None - "s6" == y(None, total, lst))\n# TODO\nwhile fact:\n    f = {x({"s9": None}, total(n), 2): []}\n    f(y(y, True), "s1" < y) * {{True: True}: n(True, acc, "s0")}\n    while ["s9", lst, None] < None:\n        y = None * {None: fact} == total - n(g)\n[]';
+const PASTE_400160 = "f()\nf()\ng(2)\nTrue";
+const POST_400160 =
+  '\nif (lambda h: []):\n    x(total(lambda y: None, None, 24), y(acc("s1", True), f.total(n, None), True), True)\n    if True + True:\n        y = True\nelse:\n    for total in None == 14:\n        n()\n        h()\n        g(9)\nwhile True:\n    n(acc(fact)) * True\nfact = h(h(lst(41)))\n# TODO\nx = 1 + 2\nf(x, 3)\nwhile x < 9:\n    x = x + 1\n    g(x)\ny = 2\n\ndef _format_pipe(fd):\n    if fd == subprocess.PIPE:\n        return \'<pipe>\'\n    elif fd == subprocess.STDOUT:\n        return \'<stdout>\'\n    else:\n        return repr(fd)\n# note\n# note\n[lambda lst: g.x(True)]\nfor fact in 66 < 45:\n    lst = 5\n    h = 34\n    for total in 89:\n        fact.x(f("s1"))\n        "s1"\n\n# a b c\n17\n# TODO\n58\n\nif lst(None, lst.total("s7"), None * "s2"):\n    None\n    total = 71\nelse:\n    lambda f: y(x(), ["s7", total, 98])\n# TODO\nn.f("s2", 43) + "s7" + y\n# note\nfact = [24, True, n(f, True * lst, "s1" < None)]\n\nif fact(None, 17):\n    def lst(fact, lst):\n        total(n(fact(None)))\n    while g:\n        total = fact([None], acc(fact(), True, y(32)), [])\n    while h(None):\n        acc = lambda y: f(None - True, True * None)\n        x = "s9"\nelse:\nwhile lst(lambda lst: "s0"):\n    n = [h, "s8"]\n    g = x.total()\n    for lst in (lambda n: None):\n        None\n        38\n        total = f\n# a b c\nif total(x, "s7", 34) < 23:\n    None\n    if acc(lst("s0")):\n        f = g() + {19 - 60: x(74, "s9")}\n        g = lambda acc: {n(): lambda fact: 78}\n    g = lst\nelse:\n    total = acc(acc(g), 82, "s8") + None\n    f\n    while [] == 55 * "s8":\n        None - []\n        total = None\nfor h in y:\n    g(fact("s7", f, "s9") - True * "s3", "s5", n("s8") < y(True, True, None))\n    while (lambda acc: lst(True, fact, True)):\n        {acc(): fact({4: n}, None, y.acc(48))}\n        lambda n: y()\n        n = True\n    fact = True\nx(lst.lst(), True, fact(g(88), g("s1", 83, True)))\nfact = lst.x("s7")\nfact = True\n# note\nwhile "s6":\n    if x("s0"):\n        y = [] == n\n        lambda n: lambda total: 65 * True\n    lambda total: 33\n    49 * {(lambda total: g): 23}\nif ...:\n    ...\nelse:\n    ...';
+
+it("soak seed 400160: a statement after the change that Lezer reads over what follows it is read again from nothing", () => {
+  const old = PRE_400160 + POST_400160;
+  const at = PRE_400160.length;
+  const doc = PRE_400160 + PASTE_400160 + POST_400160;
+  const incremental = pythonParser.parse(
+    doc,
+    TreeFragment.applyChanges(TreeFragment.addTree(pythonParser.parse(old)), [
+      { fromA: at, toA: at, fromB: at, toB: at + PASTE_400160.length },
+    ])
+  );
+  // (the fault is Lezer's: if a newer Lezer reads this right, the test no longer shows anything)
+  expect(incremental.toString()).not.toBe(pythonParser.parse(doc).toString());
+
+  const ed = createLezerBlockEditor(host(), old, { ...LANGS.python.opts });
+  ed.view.dispatch({ changes: { from: at, insert: PASTE_400160 } });
+  expect(checkLezerEditor(ed)).toEqual([]);
+  const ref = createLezerBlockEditor(host(), doc, { ...LANGS.python.opts });
+  expect(ed.roots().length).toBe(ref.roots().length);
+});
