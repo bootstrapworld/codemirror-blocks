@@ -1032,6 +1032,16 @@ export function attachInteraction(ed: LezerBlockEditor): {
       () => !d.text
     );
   };
+  // (a page selection OUTSIDE the editor, a label above it say, makes the browser send the copy there though a block of the editor has the
+  // keyboard focus: the copy is the editor's when the focus is in a block, as a copy of a selection that starts in the editor's own lines)
+  const onOutsideEv = (e: Event) => {
+    const t = e.target as Node | null;
+    const a = dom.ownerDocument.activeElement;
+    if (!t || dom.contains(t) || !a || !dom.contains(a)) return;
+    if (a.closest(".blocks-edit") || (t as Element).closest?.(".cm-editor"))
+      return; // (a box of ours, or the copy of another editor)
+    (e.type === "cut" ? onCutEv : onCopyEv)(e);
+  };
   const onPasteEv = (e: Event) => {
     const d: Record<string, unknown> = {};
     ed.act(
@@ -1645,6 +1655,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
   dom.addEventListener("click", onClick, true);
   dom.addEventListener("copy", onCopyEv, true);
   dom.addEventListener("cut", onCutEv, true);
+  doc.addEventListener("copy", onOutsideEv, true);
+  doc.addEventListener("cut", onOutsideEv, true);
   dom.addEventListener("paste", onPasteEv, true);
   dom.addEventListener("pointerdown", onDown as EventListener, true);
   return {
@@ -1664,6 +1676,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
       dom.removeEventListener("dblclick", onDblClick, true);
       dom.removeEventListener("copy", onCopyEv, true);
       dom.removeEventListener("cut", onCutEv, true);
+      doc.removeEventListener("copy", onOutsideEv, true);
+      doc.removeEventListener("cut", onOutsideEv, true);
       dom.removeEventListener("paste", onPasteEv, true);
       dom.removeEventListener("pointerdown", onDown as EventListener, true);
       clearDrag();

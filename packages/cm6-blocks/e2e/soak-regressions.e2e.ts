@@ -1401,6 +1401,49 @@ test("seed 277: a copy of selected blocks whose event targets a `.cm-line` takes
   expect(out.text).toBe("(f 1)\n(g 2)");
 });
 
+test("seed 207675: a copy with a block focused, whose event targets an element OUTSIDE the editor (a page selection in a label above it), takes the focused block", async ({
+  page,
+}) => {
+  await page.goto(`${baseURL}/index.html?lang=scheme`);
+  await page.waitForSelector(".cm-content [role=treeitem]");
+  const out = await page.evaluate(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ed = (window as any).demo.ed;
+    ed.view.dispatch({
+      changes: {
+        from: 0,
+        to: ed.view.state.doc.length,
+        insert: "(f 1)\n(g 2)\n",
+      },
+    });
+    ed.focusNode(ed.roots()[1]);
+    const label = document.querySelector("label") as HTMLElement;
+    const data = new DataTransfer();
+    const ev = new ClipboardEvent("copy", {
+      clipboardData: data,
+      bubbles: true,
+      cancelable: true,
+    });
+    label.dispatchEvent(ev);
+    // (a copy elsewhere, with the focus outside the editor, is the browser's)
+    (document.querySelector("#lang") as HTMLElement).focus();
+    const other = new ClipboardEvent("copy", {
+      clipboardData: new DataTransfer(),
+      bubbles: true,
+      cancelable: true,
+    });
+    label.dispatchEvent(other);
+    return {
+      text: data.getData("text/plain"),
+      handled: ev.defaultPrevented,
+      otherHandled: other.defaultPrevented,
+    };
+  });
+  expect(out.handled).toBe(true);
+  expect(out.text).toBe("(g 2)");
+  expect(out.otherHandled).toBe(false);
+});
+
 test("seed 71254: a copy with a block focused and none selected, whose event does not target a block (a page selection elsewhere), takes the focused block, not the browser's own copy", async ({
   page,
 }) => {
