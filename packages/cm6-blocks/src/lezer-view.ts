@@ -543,6 +543,28 @@ export function createLezerBlockEditor(
     }
     return false;
   };
+  /**
+   * CodeMirror's own heights of the lines it draws are older than the page: a line is taller than the height CodeMirror holds for it (a
+   * block laid out again after a drop, with nothing that told the measure loop: soak seed 9057, `lineWrapping` on, a gutter 5 px off
+   * for every line below the block, the numbers and the lines each drawn from a different height until the next scroll).
+   */
+  const heightsStale = (): boolean => {
+    for (const el of Array.from(
+      view.contentDOM.querySelectorAll(":scope > .cm-line")
+    ) as HTMLElement[]) {
+      let pos: number;
+      try {
+        pos = view.posAtDOM(el, 0);
+      } catch (_) {
+        continue;
+      }
+      const b = view.lineBlockAt(pos);
+      if (b.height === 0) continue;
+      if (Math.abs(el.getBoundingClientRect().height - b.height) > 1)
+        return true;
+    }
+    return false;
+  };
   const checkGutterLater = (): void => {
     if (gutterChecking || typeof requestAnimationFrame === "undefined") return;
     gutterChecking = true;
@@ -550,11 +572,16 @@ export function createLezerBlockEditor(
       requestAnimationFrame(() => {
         gutterChecking = false;
         if (gone || !blockMode) return;
-        if (!gutterStale()) {
+        const heightsOld = heightsStale();
+        if (!heightsOld && !gutterStale()) {
           gutterRepairs = 0;
           return;
         }
         if (gutterRepairs++ >= 2) return;
+        if (heightsOld) {
+          remeasureHeights();
+          return;
+        }
         const plugins = (
           view as unknown as {
             plugins?: {
@@ -3284,6 +3311,10 @@ export function createLezerBlockEditor(
     if (t === focusedEl) focusedEl = null;
   });
   injectSheets(view.dom, table);
+  // the end of a press or a drag lays the blocks out again (the gap under the mouse goes) after CodeMirror's last measure of the drag, and a
+  // size that went down and up again between two frames is reported by no observer: the heights are compared with the lines once it is over
+  for (const type of ["pointerup", "pointercancel", "mouseup", "touchend"])
+    view.dom.addEventListener(type, () => checkGutterLater(), true);
 
   // the next key or touch of the pointer settles which block an edit left focused (a redo goes back to it)
   for (const type of ["keydown", "pointerdown", "mousedown", "touchstart"])

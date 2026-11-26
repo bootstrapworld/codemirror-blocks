@@ -1353,3 +1353,44 @@ test("soak seed 4681: a block dragged by a finger leaves no `blocks-hole` mark o
   );
   expect(v).toBeNull();
 });
+
+test("soak seed 9057: CodeMirror measures the page in the middle of a drag (the gap under the mouse still open) and the end of the drag changes the heights again with no change any observer reports: the line numbers follow (the heights are compared with the lines when the pointer is released)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 9057,
+      language: "python",
+      code: '# a comment\ntotal = 0\nfor x in [1, 2, 3]:\n    total = total + x\nprint(total, "done")\nif x:\n    f(1)\nelif y:\n    g()\nelse:\n    h()\n[1, 2]\ndef f(a, b):\n    y = a\n    return y\nf(1, 2)\n# a b c\nwhile fact:\n    lambda acc: h(f("s4", None, None))\n    if x("s7" + h, 89):\n        n = y("s8", {(lambda acc: fact): None}, {(lambda fact: True): f})\n        total = None\n    else:\n        n = [y(), lst, lambda f: 65]\n        f = None\n\nNone\nTrue\n\n# a comment\ntotal = 0\nfor x in [1, 2, 3]:\n    total = total + x\nprint(total, "done")\nlambda fact: [[68, 42, "s7"], "s2"]\ntotal = fact()\nlst = acc([True, None - True, "s6"])\n(lambda h: fact(None)) - None\n# a b c\nn = f.g()\nfor fact in (lambda y: h):\n    acc = "s9"\n"s5"\n"""Find modules used by a script, using introspection."""\n\nimport dis\nimport importlib._bootstrap_external\nlst = [78]\n# TODO\nTrue\n[total(acc(None), [], {n: total})]\nx = 1 + 2\nf(x, 3)\nwhile x < 9:\n    x = x + 1\n    g(x)\ny = 2\ndef tree(tlist, size, level, widthfactor, branchlists, angledist=10, sizedist=5):\n    # benutzt Liste von turtles und Liste von Zweiglisten,\n    # fuer jede turtle eine!\n    if level > 0:\n        lst = []\n        brs = []\n        for t, branchlist in list(zip(tlist,branchlists)):\n            t.pensize( size * widthfactor )\n            t.pencolor( 255 - (180 - 11 * level + symRandom(15)),\n                        180 - 11 * level + symRandom(15),\n                        0 )\n            t.pendown()\n            randomfd(t, size, level, angledist )\n            yield 1\n            for angle, sizefactor in branchlist:\n                t.left(angle)\n                lst.append(t.clone())\n                brs.append(randomize(branchlist, angledist, sizedist))\n                t.right(angle)\n        for x in tree(lst, size*sizefactor, level-1, widthfactor, brs,\n                      angledist, sizedist):\n            yield None\n\n\nf = {y.x(x("s0", "s1")): lambda f: total(True)}\nlambda h: fact("s1", True)\n\nf()\ndef acc(total, total):\n    total(None, n(), fact(total.lst("s6"), lambda lst: g, [None, None, None]))\n\nfor total in (lambda total: "s6"):\n    fact = []\n    x = "s5"\nacc = "s1"\ndef g(lst, h):\n    n("s1", lst * y)\nif (lambda y: "s3" < 67):\n    if n(58 < "s7", lambda lst: "s2"):\n        f = []\n        f = fact(None, fact("s4" * "s8", total == True), fact - (lambda n: 92))\n    while n(None):\n        lst = True\n        total = acc()\n        y = lambda total: ["s9" - 95, "s8"]\n\n\n# a b c\nTrue + True * 53 == acc\n\ndef total(lst, g):\n    fact = None\ndef fact(n, n):\n    lst = lambda g: lambda h: True\n# a b c\nif x():\n    while [h(), f(True, total)]:\n        48\n        g\n# note\nacc = True < fact.f(lambda fact: True, y(y))\n\n# a b c\ndef h(g, h):\n    g(f < g, "s4", lst())\n    if g():\n        return 3 + (lambda acc: True)\n    else:\n        return f(lambda g: True, True)\n        g = lst.fact()\n    lambda lst: y(lambda fact: None)\n8\nwhile y:\n    while [True + 0]:\n        "s1"\n        n({{89: "s8"}: lst(69, "s4", True)})\n\nTrue\n\n# note\ndef lst(acc, lst):\n    75\n    total(fact(y()))\n    {(lambda acc: [None, f, "s1"]): True}\n\nif True:\n    while total(True == h):\n        y = f.h()\n        f\n        fact = x\n    "s5"\nelse:\n    for g in fact("s8"):\n        acc = acc()\n    def lst(y, n):\n        return (lambda x: True) < g()\n        return lst\n        x = None == True\n    total = "s5"\n\nwhile (lambda f: "s6" < 40):\n    acc = [["s4", n("s4"), "s4"]]\n    def g(g, y):\n        [None < True, lambda y: [None, None]]\n        7 < x(None, None == f)\n    for f in [True, f, True]:\n        g = True\n        f = "s0"\n        lst = g.fact(lambda h: 81)\nh = f()\nh("s2" + [f])\nlst(f("s7" == 54, None, True), n)\n# TODO\ny = lambda acc: fact(lst, None) == (lambda acc: True)\n"s2"\ng(f(x, lambda y: x), x(lambda g: True, "s1"))\nacc = "s6"\n\n"s8"\ny = lambda total: x({None: True}, n(), h())\nx = 1 + 2\nf(x, 3)\nwhile x < 9:\n    x = x + 1\n    g(x)\ny = 2\nif True:\n    fact = acc.acc(None)\nelse:\n    h(total(None))\nfor fact in lst("s4", True, h):\n    if ["s5" + 34, lambda x: 59, f.f("s9", None)]:\n        total(90, total(None < "s9"), f() * "s3")\n        lst = None\n    else:\n        n = lambda acc: "s5"\n# note\nTrue\ndef total(acc, x):\n    x(91 * [2, True, "s8"])\n    for acc in "s3":\n        return {True: True - 92}\n    if 42:\n        h(70)\nwhile "s8" == x():\n    def g(n, f):\n        return h\nf = None\n# TODO\nif y(None) * y.n():\n    while {"s5": x(None)}:\n        True < True == "s3" + None\n        f\n        fact = n("s1")\n    lambda n: total\n    "s1"\nelse:\n    lambda f: {(lambda fact: "s1"): fact(86, "s1")}\n    f = y()\n    "s2"\n# note\ndef acc(acc, fact):\n    for acc in h(fact):\n        return 22\n        return f("s3" * None, fact(), [])\nx = lambda g: 26\n\nif [n(n), lambda h: 55, lambda acc: 67]:\n    while lst(True == 45):\n        total = x(49) * lst(x < 58)\n        x()\n        x = True\n    n({99 - "s4": None})\nelse:\n    "s8" < fact("s5" + total, fact.total())\n    x()\n\nn = h()\nif {f(True): acc * None}:\n    def acc(total, total):\n        return []\n        return {acc: "s7"} == g.fact()\nelse:\n    x()\n    while True:\n        acc = [n(), lambda fact: f.h(), lambda fact: 5 - True]\n        f = True * True\n        total = 69\n    if (lambda y: f(True)):\n        y = total(x(n.x(), True, "s3"), "s7", g(None) + lst())\nh = {acc() + 55: g.f() - [True]}\nx = f()\nfact = 96\nif [True + fact]:\n    h(f(None, "s6", "s9") == f(g), [lambda acc: 78, total.lst(total), total("s1")], "s4")\n\nh = None\nlambda fact: None\ntotal = fact() < None - None == {None: "s6"} * None < None\nacc = 37\nfor total in x(fact, None):\n    def g(h, acc):\n        return True\n        h = None\nfor y in f < True:\n    None\n    fact = 84\n    def n(y, h):\n        return True\nx = None\nlambda lst: lst.x({None: None}, 22)\nx = {y: x * True} + acc(8)\n["s1" == True == h + "s8", "s8", h()]\n# note\nif h(lambda acc: 4):\n    while {{True: None}: [f, "s5"]}:\n        y = "s8"\n        acc = lambda g: {"s0" < True: f(None, None, True)}\n        h = [x(f(lst, acc), total("s7")), n, 3]\n    "s4" == (lambda total: n())\n    lst(48, acc(), y)\nelse:\n    total = g(fact.f(True), {y(None): None})\n    if x(g()):\n        y = {{g: 16}: True * fact} - total("s0", fact(n))\n    else:\n        fact = "s5" * (lambda acc: lambda f: None)\nx = 1 + 2\nf(x, 3)\nwhile x < 9:\n    x = x + 1\n    g(x)\ny = 2\n',
+      steps: [
+        {
+          op: "dragBlock",
+          a: 0.057062783278524876,
+          b: 0.5652636853046715,
+          where: "block",
+        },
+        {
+          op: "dragSelection",
+          a: 0.05667509837076068,
+          b: 0.6965691703371704,
+          n: 2,
+        },
+      ],
+      motion: "reduced",
+      editor: {
+        lineNumbers: true,
+        lineWrapping: true,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});
