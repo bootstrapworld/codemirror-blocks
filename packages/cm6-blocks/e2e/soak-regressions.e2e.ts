@@ -1354,6 +1354,53 @@ test("soak seed 4681: a block dragged by a finger leaves no `blocks-hole` mark o
   expect(v).toBeNull();
 });
 
+test("seed 277: a copy of selected blocks whose event targets a `.cm-line` takes the selected blocks, not the caret's line", async ({
+  page,
+}) => {
+  await page.goto(`${baseURL}/index.html?lang=scheme`);
+  await page.waitForSelector(".cm-content [role=treeitem]");
+  await page.evaluate(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ed = (window as any).demo.ed;
+    ed.view.dispatch({
+      changes: {
+        from: 0,
+        to: ed.view.state.doc.length,
+        insert: "(f 1)\n(g 2)\n(h 3)\n",
+      },
+    });
+    ed.focusNode(ed.roots()[0]);
+  });
+  await page.keyboard.press("Space");
+  await page.evaluate(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ed = (window as any).demo.ed;
+    ed.focusNode(ed.roots()[1]);
+  });
+  await page.keyboard.press("Space");
+  const out = await page.evaluate(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ed = (window as any).demo.ed;
+    const sel = ed.selectedBlocks().length;
+    const line = document.querySelector(".cm-line") as HTMLElement;
+    const data = new DataTransfer();
+    const ev = new ClipboardEvent("copy", {
+      clipboardData: data,
+      bubbles: true,
+      cancelable: true,
+    });
+    line.dispatchEvent(ev);
+    return {
+      sel,
+      text: data.getData("text/plain"),
+      handled: ev.defaultPrevented,
+    };
+  });
+  expect(out.sel).toBe(2);
+  expect(out.handled).toBe(true);
+  expect(out.text).toBe("(f 1)\n(g 2)");
+});
+
 test("soak seed 9057: CodeMirror measures the page in the middle of a drag (the gap under the mouse still open) and the end of the drag changes the heights again with no change any observer reports: the line numbers follow (the heights are compared with the lines when the pointer is released)", async ({
   browser,
 }) => {

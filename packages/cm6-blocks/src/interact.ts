@@ -906,6 +906,19 @@ export function attachInteraction(ed: LezerBlockEditor): {
     if (!t || !t.closest || t.closest(".blocks-edit")) return null;
     return renderer.nodeOf(t);
   };
+  /**
+   * the block a copy or cut is about: the one the event is on, else (the event is on a `.cm-line`: the browser's copy of a selection that
+   * spans lines targets the line, not the block) the focused one, or the first selected, when blocks are selected
+   */
+  const copyActive = (e: Event): BNode | null => {
+    const node = active(e);
+    if (node) return node;
+    const t = e.target as Element | null;
+    if (!t || !t.closest || t.closest(".blocks-edit") || ed.mode === "text")
+      return null;
+    const sel = ed.selectedBlocks();
+    return sel.length ? (ed.focusedNode() ?? sel[0]) : null;
+  };
   /** the selected blocks, else the focused one: what copy and cut take (in document order) */
   const takes = (node: BNode): BNode[] => {
     const sel = ed.selectedBlocks();
@@ -916,7 +929,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     cut: boolean,
     d: Record<string, unknown>
   ): void {
-    const node = active(e);
+    const node = copyActive(e);
     if (!node) return;
     if (cut && !ed.selectedBlocks().length) {
       // CHANGED from the old editor, which says "Nothing selected" without a sound (thirteenth round, the owner): cut takes only the
@@ -1002,7 +1015,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     const d: Record<string, unknown> = {};
     ed.act(
       "copy",
-      active(e),
+      copyActive(e),
       d,
       () => onCopy(e as ClipboardEvent, false, d),
       () => !d.text
@@ -1012,7 +1025,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     const d: Record<string, unknown> = {};
     ed.act(
       "cut",
-      active(e),
+      copyActive(e),
       d,
       () => onCopy(e as ClipboardEvent, true, d),
       () => !d.text
