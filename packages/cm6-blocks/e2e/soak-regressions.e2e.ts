@@ -1672,3 +1672,36 @@ test("soak seed 6000: in text mode the spacer for the lines CodeMirror does not 
   );
   expect(v).toBeNull();
 });
+
+test("seed 5667 and 4299 (round 8): a template button that a zoom and a narrow window leave nowhere is not pressed: a press on the page takes the focus away, and that is not the editor's doing", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 5667,
+      language: "scheme",
+      code: "(define n y)\n(fact 5)\n",
+      steps: [
+        { op: "zoom", z: 0.8532045430038124 },
+        {
+          op: "resize",
+          w: 0.10889589926227927,
+          h: 0.10519157839007676,
+          wrap: "off",
+        },
+        { op: "focus", a: 0.3 },
+        {
+          op: "dragTemplate",
+          t: 0.5234600754920393,
+          b: 0.86,
+          where: "whitespace",
+        },
+      ],
+      motion: "full",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});

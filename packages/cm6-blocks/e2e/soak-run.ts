@@ -613,7 +613,18 @@ export async function runChromium(
               bb.y + bb.height > win.height))
         )
           return;
-        await drag({ x: bb.x + bb.width / 2, y: bb.y + bb.height / 2 }, dst);
+        // (a press that lands on the page and not on the button (a zoomed or narrow window leaves the box where nothing is) is a press on
+        // the page, which takes the focus away: not a thing the editor does. Seeds 5667 and 4299 of round 8)
+        const from = { x: bb.x + bb.width / 2, y: bb.y + bb.height / 2 };
+        const onButton = await evaluate(
+          (p: { x: number; y: number }) =>
+            !!document
+              .elementFromPoint(p.x, p.y)
+              ?.closest("#templates button[data-template]"),
+          from
+        );
+        if (!onButton) return;
+        await drag(from, dst);
         editsMade++;
         return;
       }
