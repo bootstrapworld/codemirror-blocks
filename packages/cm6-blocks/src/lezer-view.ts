@@ -817,6 +817,41 @@ export function createLezerBlockEditor(
       })
     );
   };
+  /**
+   * The lines CodeMirror draws are those of its viewport. A scroll in a long document whose content changes height under it (a window a few
+   * lines high, blocks that grow once they are drawn) can end the measure loop in the round that moves the viewport, with the update that
+   * draws it dropped: the viewport is new, the page still shows the old lines, and the roots that the viewport holds have their elements
+   * out of the page (soak seed 604247). A root of the viewport that has an element and none in the page, a moment after the editor went
+   * quiet, is the sign; an update of nothing draws the viewport again. One try per scroll or update.
+   */
+  let drawnChecking = false;
+  const checkDrawnLater = (): void => {
+    if (drawnChecking || typeof requestAnimationFrame === "undefined") return;
+    drawnChecking = true;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        drawnChecking = false;
+        if (gone || !blockMode) return;
+        const vp = view.viewport;
+        const rs = rootsSlot.nodes;
+        let lo = 0;
+        let hi = rs.length;
+        while (lo < hi) {
+          const m = (lo + hi) >> 1;
+          if (rs[m].from >= vp.from) hi = m;
+          else lo = m + 1;
+        }
+        for (let k = lo; k < rs.length && rs[k].to <= vp.to; k++) {
+          const r = rs[k];
+          if (!drawn(r) || !renderer.has(r)) continue;
+          if (!renderer.element(r).isConnected) {
+            view.dispatch({});
+            return;
+          }
+        }
+      })
+    );
+  };
   /** the text of the document as the tree stands now (the renderer asks where a comment sits) */
   let curDoc = text;
   /**
@@ -1604,6 +1639,7 @@ export function createLezerBlockEditor(
       marks();
       keepFocusOnScroll();
       if (u.heightChanged || u.viewportChanged) checkGutterLater();
+      if (u.viewportChanged) checkDrawnLater();
     }),
     // typing or pasting at the top level (no block under the change) is held in a pending box, not written: nothing half-typed
     // reaches the document or the undo history
@@ -3759,6 +3795,7 @@ export function createLezerBlockEditor(
     }
   };
   view.scrollDOM.addEventListener("scroll", placePopup);
+  view.scrollDOM.addEventListener("scroll", checkDrawnLater);
   view.dom.addEventListener("focusin", (e) => {
     const n = renderer.nodeOf(e.target as Element);
     if (n) lastNode = n;

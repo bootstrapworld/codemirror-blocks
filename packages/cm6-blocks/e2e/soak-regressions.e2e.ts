@@ -1966,3 +1966,179 @@ test("seed 5561 (round 8): a composition in an edit box waits for the scroll of 
   );
   expect(v).toBeNull();
 });
+
+test("seed 604247: after a scroll in a long document in a window a few lines high, CodeMirror can end its measure loop with the viewport moved and the lines not drawn: the roots of the viewport are drawn again (the editor checks after a scroll)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 604247,
+      language: "javascript",
+      code: 'module.exports = require("../codemirror-blocks/.babelrc.js");\n\n\n// note\nconst n = n(54, true);\nif ("s1") {\n  if (true) {\n    const h = null;\n    true ? null : n();\n    [true === lst.lst(70), x];\n  }\n} else {\n  if (acc()) {\n    let lst = g() ? null : null;\n    const total = 87 - true ? acc : g - "s7";\n  } else {\n    true;\n    [71, [], g.lst("s3") * "s0"];\n    true;\n  }\n  if (x(h(76, "s9", true), true, lst())) {\n    let h = [true ? "s2" : 85] + f.n(lst, [null, y, 63]);\n    const total = true;\n    let x = 64;\n  } else {\n    g("s8", acc(null) ? 23 : "s3");\n    let lst = "s9";\n  }\n  var acc = h;\n}\nvar f = (lst) => [null, x("s8", true)];\nwhile ({a: null, b: (g) => true}) {\n  var f = acc(x(), acc(total, lst, lst(null)), y(total ? g : f, 97, 88));\n}\nvar fact = fact(true) ? total.h(33) : x(81) ? n() : n(f(true, "s9", true), [acc], h("s9"));\nvar total = [g(true) ? "s7" : "s4"];\n// a comment\nfor (const x of [1, 2, 3]) {\n  total = total + x;\n}\nconsole.log(total, "done");\nconst {\n  getWebpackBundleConfig,\n} = require("@bootstrapworld/cmb-toolkit/lib/webpack");\n\n// EXPERIMENT: the editor for a <script> tag, with Preact in place of React (which is\n// most of the bundle: react-dom is half of codemirror-blocks-min.js). Everything\n// that asks for react or react-dom gets preact/compat. Not the build that is shipped.\n\n42 === "s5";\nn = h(f.fact(), {a: null, b: "s3"}, x.f(g));\n\ntrue;\nconst fact = 33;\n\nlet g = [];\n// note\nn = (fact) => 43 ? true : "s2";\nwhile (fact.total(x(x, "s0", "s7"), true)) {\n  var acc = lst(n());\n  while (33) {\n    let y = acc;\n    n;\n    var h = acc;\n  }\n  total();\n}\nfunction y(g, g) {\n  const y = (n) => lst ? null : true < total("s5", "s8");\n  while ({a: null, b: "s6"} ? ["s4", n, n] : 74) {\n    return {a: g < true, b: g()};\n  }\n}\nfor (const y of g("s5")) {\n  const total = (y) => ({a: g - "s7", b: y(21, 70)});\n  var g = lst((acc) => "s2") === f;\n}\n// TODO\nconst lst = [{a: lst, b: g()}, true];\n\nn();\nwhile (n((total) => f, null, (total) => fact)) {\n  function f(f, lst) {\n    return true ? h : "s7" < "s9";\n    var x = {a: n(), b: g};\n  }\n}\nlet fact = [42, null];\n// a b c\ntrue;\nif (fact(h ? 73 : x, (lst) => "s0")) {\n  if (y) {\n    const x = [] + 30;\n  }\n  if ({a: {a: null, b: null}, b: y(g, "s5", 35)}) {\n    total() < f.acc(f(g, 64, null));\n    const lst = fact.fact();\n    const n = [];\n  }\n}\n// note\nwhile (fact) {\n  if (y(null, {a: h, b: y})) {\n    let f = fact ? x("s1" * "s1", h(null), null - true) : f(h, "s0") ? 55 - "s1" : lst(null, null);\n    const y = 90;\n  }\n  61;\n  total(total(), "s9", [null]) ? (fact) => [] : "s3";\n}\nx(x(total(true, 15), n.acc(null)), total(g(true)));\n\nif (f ? 49 : "s4" - f) {\n  while (total()) {\n    const n = true;\n    var acc = x.f() < fact("s5");\n    y = 66;\n  }\n  let acc = "s6";\n}\nif (h(g.x("s0", null), total(), {a: null, b: 41})) {\n  x({a: null, b: "s0"});\n  let y = 92;\n} else {\n  var fact = true;\n  n.x(h(total, x, null)) ? n.g(f()) : "s6";\n  "s6";\n}\nif (h(null, 36) ? fact : (n) => "s5") {\n  let fact = {a: true < y(true), b: lst()};\n  let g = {a: null, b: true} * lst(38, g, "s2") ? "s3" * null ? [null] : f() : {a: 16 * x, b: g.acc(null)};\n  let y = y(true);\n}\nn(lst, true, "s0");\nconst url = (name) =>\n  "data:audio/mpeg;base64," +\n  fs.readFileSync(path.join(dir, name)).toString("base64");\n\n// TODO\nimport {\n  CodeMirrorBlocks,\n  setLogReporter,\n} from "@bootstrapworld/codemirror-blocks";\n// TODO\nconst acc = "s5";\n// a b c\nconst at = process.argv.indexOf("--port");\nconst port = at >= 0 ? Number(process.argv[at + 1]) : 8080;\nconst types = {\n  ".html": "text/html",\n  ".js": "text/javascript",\n  ".css": "text/css",\n  ".json": "application/json",\n  ".map": "application/json",\n  ".rkt": "text/plain",\n};\n\n// note\nconst n = null;\ny() + total.n(null < acc);\nconst lst = g;\ntotal;\n// a b c\nwhile (x(fact, total(), fact.total())) {\n  var acc = x(null, {a: 61, b: f} < y ? null : x, true);\n}\n// a b c\nfunction f(a, b) { return a * b; }\nf(1, 2);\nif (x) { f(1, 2); } else { g(); }\n// a b c\nconst lst = (lst) => total.f();\n\n[true < "s0" ? y.fact(null) : total, g];\n\nif (null === fact + true) {\n  true;\n  let g = 6;\n  const g = y({a: 87, b: 20} ? (fact) => "s7" : null ? null : n, x(null ? true : "s2", acc === null));\n}\nfunction f(lst, n) {\n  var y = total.g();\n  fact = "s5" + x.acc(null);\n}\n\nvar y = total(lst("s7") ? 32 : "s5" ? 73 : x);\nfor (const n of h) {\n  let lst = true * 49 + null === {a: true, b: true};\n  const n = f(h === {a: null, b: 66}, fact(x, 13 === true), lst());\n  const acc = true;\n}\ntotal = 51 === x();\nnull === 85 * [true];\n\nasync function main() {\n  for (const { from, to, prepend } of targets) {\n    const file = path.join(root, from);\n    const source = fs.readFileSync(file, "utf8");\n    const result = await less.render(source, { filename: file });\n    const dest = path.join(out, to);\n    fs.mkdirSync(path.dirname(dest), { recursive: true });\n    fs.writeFileSync(dest, (prepend ? prepend() + "\\n" : "") + result.css);\n    process.stdout.write(\n      `lib/css/${to}  ${Math.round(result.css.length / 1024)} KB\\n`\n    );\n  }\n}\n\nvar lst = [true ? "s9" : 68, lst(true), x()];\nfunction lst(acc, total) {\n  while (h ? acc(true, 99) : g("s8")) {\n    null;\n    (f) => total("s6");\n    [lst(88, null, true), {a: 49, b: null}, true ? "s5" : true] * [g(true, 49, h), lst()];\n  }\n}\n"s6";\n11;\n35;\n[];\ntotal;\n\nmodule.exports = getLanguageBundleConfig({\n  name: "routine",\n  global: "CMBRoutine",\n  entry: "./src/index.ts",\n});\n\n// note\nclass A {\n  m() {\n    return 1;\n  }\n}\nnew A().m();\nmodule.exports = require("../codemirror-blocks/.babelrc.js");\n\n(x) => y(x(true, null, null), g(), lst("s2", true));\n\n// note\n(g) => true;\ng(null, lst(n("s6", acc, n), {a: true, b: null}, null), 12);\n"s1" + g();\nconst lst = [g, h(61), x(67)] - null;\ntotal = true ? "s2" ? 80 : 48 : x();\n\nfunction g(lst, f) {\n  if (null < "s2") {\n    const fact = total([g(null, 79, null), 97], true, g() === acc);\n    acc(acc.acc(fact(), 91), 39, 9);\n    return (total) => (h) => "s1";\n  } else {\n    null;\n  }\n  const f = ["s2", h + "s6"] ? true : "s5";\n  while (fact.fact() + y.total()) {\n    x = (x) => f();\n    return acc - g ? "s3" : 82;\n    var fact = [(lst) => 4, f(), true] + true;\n  }\n}\nvar y = true;\n// TODO\nfunction y(acc, g) {\n  h.y(h);\n}\n// note\nfunction g(h, total) {\n  var f = {a: n.x(), b: n(g())};\n  while ((f) => h(true, null)) {\n    return "s7";\n  }\n  for (const x of null < 8) {\n    return [total(null, 69), null === fact];\n    g.h();\n  }\n}\ng = total;\nlet x = 1 + 2;\nf(x, 3);\nwhile (x < 9) { x = x + 1; g(x); }\nimport "codemirror/lib/codemirror.css";\nimport "../lib/css/codemirror-blocks.css";\nimport "@bootstrapworld/wescheme/css/wescheme.css";\nimport "@bootstrapworld/routine/css/routine.css";\nfunction total(n, total) {\n  true;\n  91;\n}\nh(null, 23, 33);\n\nvar total = acc;\nconst g = x((f) => "s3" ? x(true, true, 65) : fact());\nh();\n\nconst fact = lst.lst();\nclass A {\n  m() {\n    return 1;\n  }\n}\nnew A().m();\ntrue;\ndescribe("promoting a failure to a regression test", () => {\n  const replay = JSON.stringify({\n    code: "(f x)\\n(g)",\n    steps: [{ op: "cut", r: [1, 2, 3, 4] }],\n  });\n  const records = [\n    { seed: 7, signature: "cut :: bad", problem: "bad", shrunkTo: 3, replay },\n    { seed: 9, signature: "cut :: bad", problem: "bad", shrunkTo: 1, replay },\n    { type: "crash", seed: 7 },\n  ];\n\n  it("finds a failure by seed or by signature text (the smallest)", () => {\n    expect(lib.findForPromote(records, "7").shrunkTo).toBe(3);\n    expect(lib.findForPromote(records, "CUT").seed).toBe(9);\n    expect(lib.findForPromote(records, "nothing")).toBeNull();\n  });\n\n  it("prints an it() in the format of the once-broke block", () => {\n    expect(lib.promoteCase(records[0])).toBe(\n      [\n        \'  it("seed 7: bad", () => {\',\n        "    check({",\n        \'      code: "(f x)\\\\n(g)",\',\n        "      steps: [",\n        "        {",\n        \'          "op": "cut",\',\n        \'          "r": [\',\n        "            1,",\n        "            2,",\n        "            3,",\n        "            4",\n        "          ]",\n        "        }",\n        "      ],",\n        "    });",\n        "  }, 120_000);",\n      ].join("\\n")\n    );\n  });\n});\n// TODO\n// a b c\nif ({a: h(10, null, true), b: x(null, "s1", y)}) {\n  h(fact(x(fact, true, "s6"), h(f, true), h(18, "s0", "s9")));\n  g(f());\n  "s0" - lst * 73 + h;\n}\n(f) => h();\nfunction x(g, lst) {\n  fact = "s5";\n}\nif ("s3") {\n  if (x()) {\n    var x = 70;\n  }\n  function fact(y, f) {\n    total();\n    return x;\n  }\n} else {\n  var x = (acc) => h(null, "s3", 66) ? "s4" : [null, "s6"];\n  while ([]) {\n    let x = 14;\n    const fact = fact([[], "s1", true * h]);\n    let fact = y();\n  }\n  "s1";\n}\nfor (const x of n.fact(null)) {\n  85;\n}\n41;\na.b(c);\n[1, 2, 3];\nlet y = 5;\n\n',
+      steps: [
+        {
+          op: "editBox",
+          a: 0.15197383472695947,
+          text: "  ",
+          accept: true,
+        },
+        {
+          op: "toggleMode",
+          a: 0.2975227856077254,
+          rush: 0.42,
+        },
+        {
+          op: "pasteMulti",
+          a: 0.06453102501109242,
+          text: "x\n1",
+          accept: true,
+        },
+        {
+          op: "key",
+          key: "ArrowUp",
+          a: 0.2977653939742595,
+        },
+        {
+          op: "scrollToggle",
+          a: 0.825394318671897,
+        },
+        {
+          op: "topLevelType",
+          a: 0.015440197428688407,
+          text: "x",
+          accept: false,
+          how: "type",
+        },
+        {
+          op: "key",
+          key: "Escape",
+          a: 0.7171991341747344,
+        },
+        {
+          op: "topLevelType",
+          a: 0.9805742704775184,
+          text: "x",
+          accept: true,
+          how: "type",
+        },
+        {
+          op: "tap",
+          a: 0.6310291418340057,
+          twice: true,
+        },
+        {
+          op: "scrollKey",
+          a: 0.37449449487030506,
+          key: "End",
+        },
+        {
+          op: "editBox",
+          a: 0.24534168979153037,
+          text: "1 2",
+          accept: true,
+        },
+        {
+          op: "zoom",
+          z: 0.510809350758791,
+        },
+        {
+          op: "clipboard",
+          a: 0.07037276565097272,
+          b: 0.5432065445929766,
+          n: 2,
+          how: "copy",
+          to: "block",
+          accept: false,
+        },
+        {
+          op: "textEdit",
+          a: 0.49113085167482495,
+          len: 0,
+          w: "\n",
+        },
+        {
+          op: "key",
+          key: "Space",
+          a: 0.7206034795381129,
+        },
+        {
+          op: "longPress",
+          a: 0.9424673516768962,
+        },
+        {
+          op: "key",
+          key: "ArrowRight",
+          a: 0.2885712271090597,
+        },
+        {
+          op: "scroll",
+          a: 0.7995768813416362,
+        },
+        {
+          op: "insertText",
+          a: 0.7370498708914965,
+          b: 0.08117402717471123,
+          text: "[1, 2]",
+        },
+        {
+          op: "clipboard",
+          a: 0.5599932603072375,
+          b: 0.7280152249149978,
+          n: 3,
+          how: "copy",
+          to: "over",
+          accept: true,
+        },
+        {
+          op: "resize",
+          w: 0.0957647836767137,
+          h: 0.5793029309716076,
+          wrap: "keep",
+        },
+        {
+          op: "ime",
+          a: 0.5461956693325192,
+          target: "box",
+          parts: ["n", "ni"],
+          final: "你",
+          cancel: false,
+          accept: false,
+          back: true,
+        },
+        {
+          op: "editBox",
+          a: 0.33022585744038224,
+          text: "x",
+          accept: false,
+        },
+        {
+          op: "zoom",
+          z: 0.816612496972084,
+        },
+        {
+          op: "scroll",
+          a: 0.04898931737989187,
+        },
+        {
+          op: "scroll",
+          a: 0.8433440125081688,
+        },
+      ],
+      motion: "full",
+      editor: {
+        lineNumbers: true,
+        lineWrapping: true,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    },
+    { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
+  );
+  expect(v).toBeNull();
+});
