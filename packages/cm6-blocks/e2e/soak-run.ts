@@ -568,6 +568,12 @@ export async function runChromium(
       case "swipe": {
         // a finger that moves before the long press is over is scrolling the page: the program must not change
         if (!blocks || !cdp) return;
+        // (an edit box that is still open, left by an earlier step such as a refused paste, takes the finger's press as a click elsewhere: it
+        // loses the focus and writes its text, as for a mouse. That is the box's doing, not a drag: it is closed first. Seed 73955)
+        if (await boxOpen().count()) {
+          await boxOpen().press("Escape");
+          await page.waitForTimeout(50);
+        }
         const t = await blockBox(s.a);
         const p = t && (await grabPoint(t, 12));
         if (!p) return;
