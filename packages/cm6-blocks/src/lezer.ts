@@ -417,10 +417,22 @@ export function lezerLanguage(
     offset: number,
     extra: Partial<BNode> = {}
   ): BNode {
-    const src = text.slice(c.from, c.to);
+    // (Lezer's incremental parse can put the comment that follows a statement without a `;` INSIDE the last token of it: `x` + a line
+    // break + `/* c */` is then one VariableName that ends after the comment. A leaf does not hold the comments that end it)
+    let end = c.to;
+    if (c.firstChild) {
+      for (
+        let k = c.lastChild;
+        k && table.nodes[keyOf(k, text)]?.kind === "comment";
+        k = k.prevSibling
+      )
+        end = k.from;
+      if (end < c.to) end = c.from + text.slice(c.from, end).trimEnd().length;
+    }
+    const src = text.slice(c.from, end);
     const b = makeNode(kind, [], {
       from: c.from + offset,
-      to: c.to + offset,
+      to: end + offset,
       value: src.trim(),
       ...extra,
     });
