@@ -465,6 +465,23 @@ const lostText = (tree: Tree, text: string): boolean => {
   return gap(text.length);
 };
 
+/**
+ * Whether the top-level nodes of `a` that end by `limit` are the top-level nodes of `b` at the same places (the same type, the same range):
+ * the text before a change reads as it did, unless the incremental parse that made `b` went wrong
+ */
+const sameBefore = (a: Tree, b: Tree, limit: number): boolean => {
+  const x = a.cursor();
+  if (!x.firstChild()) return true;
+  const y = b.cursor();
+  if (!y.firstChild()) return x.to > limit;
+  for (;;) {
+    if (x.to > limit) return true;
+    if (x.type !== y.type || x.from !== y.from || x.to !== y.to) return false;
+    if (!x.nextSibling()) return true;
+    if (!y.nextSibling()) return false;
+  }
+};
+
 // (a root of no width, which the parser makes when it recovers from an error, has nothing to replace: CodeMirror refuses the decoration)
 const drawn = (n: BNode): boolean =>
   n.kind !== "error" && !(n.to === n.from && n.parent?.kind === "program");
@@ -1006,6 +1023,24 @@ export function createLezerBlockEditor(
       if (frags.length && lostText(tree, s)) {
         frags = [];
         tree = parser.parse(s);
+      }
+      // (and it can read statements BEFORE the change differently, with no error: a Python body that goes on over the statements after it
+      // when an edit at the end of the document is undone. The top-level nodes that end before the roots next to the change are what they
+      // were, or the parse is read again from nothing: one more parse, the same as when the text is lost)
+      if (frags.length && cr.length) {
+        let first = Infinity;
+        for (const c of cr) first = Math.min(first, c.fromA);
+        let lo = 0;
+        let hi = v.roots.length;
+        while (lo < hi) {
+          const m = (lo + hi) >> 1;
+          if (v.roots[m].to >= first) hi = m;
+          else lo = m + 1;
+        }
+        if (lo > 1 && !sameBefore(v.tree, tree, v.roots[lo - 1].from)) {
+          frags = [];
+          tree = parser.parse(s);
+        }
       }
       const tq = performance.now();
       stats.parseMs += tq - tp;
