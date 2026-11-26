@@ -13,7 +13,7 @@ import {
   LezerOptions,
 } from "../src/lezer-view";
 import type { BNode, Slot } from "../src/types";
-import { removeOracle, LANGS } from "./steps";
+import { removeOracle, LANGS, shape } from "./steps";
 import { a11yProblems, focusProblem } from "./soak-dom";
 import {
   at,
@@ -605,16 +605,29 @@ export function runJsdom(
         const b = treeShape(fresh);
         // (a text with a parse error, which a document cut from a real file can have: Lezer's incremental parse is not guaranteed to
         // recover from an error the way a fresh parse does, and the editor draws what its own tree gives: checkLezerEditor holds it to that)
-        if (
-          a !== b &&
-          !diverged &&
-          ed!.modeProblem() === null &&
-          fresh.modeProblem() === null
-        )
+        const clean =
+          ed!.modeProblem() === null && fresh.modeProblem() === null;
+        if (a !== b && !diverged && clean)
           return {
             invariant: "reparse",
             message: `the blocks differ from a fresh parse of the text ${JSON.stringify(text().slice(0, 80))}: ${firstDifference(a, b)}`,
           };
+        // (forty-ninth round: with no error in either tree, a divergence can only be in where a comment sits, and the ranges of a statement
+        // that takes the comment after it. Everything else, which block holds which, the kinds and the texts, is still a fresh parse's)
+        if (a !== b && diverged && clean) {
+          const loose = (x: LezerBlockEditor): string =>
+            JSON.stringify(
+              x
+                .roots()
+                .filter((r) => r.kind !== "comment")
+                .map((r) => shape(r, new Set()))
+            );
+          if (loose(ed!) !== loose(fresh))
+            return {
+              invariant: "reparse",
+              message: `the blocks differ from a fresh parse of the text ${JSON.stringify(text().slice(0, 80))}, in more than where a comment sits: ${firstDifference(loose(ed!), loose(fresh))}`,
+            };
+        }
       } finally {
         fresh?.destroy();
         host.remove();

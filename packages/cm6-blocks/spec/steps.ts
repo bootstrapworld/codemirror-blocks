@@ -109,15 +109,19 @@ export function mulberry32(seed: number): () => number {
  * a block and what is in it as plain data (kind, text, slots), leaving out the blocks in `skip` and the comments (a comment is not counted,
  * and one left alone in an emptied list is no node at all: `f((a) =>//c` is `f(() =>//c` with the comment gone from the parameters)
  */
-function shape(n: BNode, skip: Set<BNode>): unknown {
+export function shape(
+  n: BNode,
+  skip: Set<BNode> | ((c: BNode) => boolean)
+): unknown {
+  const skipped = typeof skip === "function" ? skip : (c: BNode) => skip.has(c);
   return [
     n.kind,
     n.value ?? null,
     n.slots.map((sl) => [
       sl.name,
       sl.nodes
-        .filter((c) => !skip.has(c) && c.kind !== "comment")
-        .map((c) => shape(c, skip)),
+        .filter((c) => !skipped(c) && c.kind !== "comment")
+        .map((c) => shape(c, skipped)),
     ]),
   ];
 }
@@ -174,10 +178,25 @@ export function removeOracle(
     checkLezerEditor(ed);
     return divergences.count > d0;
   };
+  const key = (n: BNode): string => `${n.kind}:${n.from}-${n.to}`;
+  const goneKeys = new Set(gone.map(key));
+  const mayCompare = check && shapes && !emptiesBraces;
+  const editorDiverged = mayCompare && diverges();
   const before =
-    check && shapes && !emptiesBraces && !diverges()
+    mayCompare && !editorDiverged
       ? ed.roots().map((r) => shape(r, new Set(gone)))
       : null;
+  // (forty-ninth round: the tree the editor holds differs from a fresh parse of the same text only in where a comment sits, so the editor's
+  // tree is not what to compare with. The text itself still has a meaning: the fresh parse of the text before, minus the removed blocks
+  // (found in it by kind and range), must be what a fresh parse of the text after gives. The editor's own state does not enter.)
+  let beforeFresh: unknown[] | null = null;
+  if (editorDiverged) {
+    const present = new Set<string>();
+    const fresh = ed.language.parse(text);
+    fresh.forEach((r) => walk(r, (n) => present.add(key(n))));
+    if (gone.every((n) => present.has(key(n))))
+      beforeFresh = fresh.map((r) => shape(r, (c) => goneKeys.has(key(c))));
+  }
   // the text, whatever the blocks: only the removed blocks and the blanks and commas between blocks may be different
   const norm = (x: string): string =>
     x
@@ -216,11 +235,19 @@ export function removeOracle(
       `a removal changed more than the removed blocks and the separators\nbefore: ${JSON.stringify(text)}\nafter: ${JSON.stringify(ed.view.state.doc.toString())}\nlog: ${log.join(" | ")}`
     );
   }
-  if (!before) return;
+  if (!before && !beforeFresh) return;
   if (!clean(ed)) return; // (the text no longer parses: a removal can break a statement, nothing to compare)
-  if (diverges()) return;
-  const after = ed.roots().map((r) => shape(r, new Set()));
-  if (JSON.stringify(before) !== JSON.stringify(after)) {
+  let after: unknown[];
+  if (before) {
+    if (diverges()) return;
+    after = ed.roots().map((r) => shape(r, new Set()));
+  } else {
+    after = ed.language
+      .parse(ed.view.state.doc.toString())
+      .map((r) => shape(r, new Set()));
+  }
+  const before2 = before ?? beforeFresh;
+  if (JSON.stringify(before2) !== JSON.stringify(after)) {
     throw new Error(
       `a removal changed more than the removed blocks\nbefore: ${JSON.stringify(text)}\nafter: ${JSON.stringify(ed.view.state.doc.toString())}\nlog: ${log.join(" | ")}`
     );
