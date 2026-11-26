@@ -538,11 +538,16 @@ export function createLezerBlockEditor(
     cappedStale: 0,
     gutterSyncs: 0,
   };
-  const remeasureHeights = (): void => {
+  /**
+   * `refresh` also has CodeMirror measure its line height and character width again ("refresh" is its own flag for it): after a zoom or a
+   * window of another width those can be the old ones (soak seed 200: a zoom of 4, the heights it held for wrapped lines were those of
+   * unwrapped ones, whatever the plain re-read of the lines found) and every height it estimates comes from them.
+   */
+  const remeasureHeights = (refresh = false): void => {
     hstats.remeasures++;
     (
       view as unknown as { viewState: { mustMeasureContent: unknown } }
-    ).viewState.mustMeasureContent = true;
+    ).viewState.mustMeasureContent = refresh ? "refresh" : true;
     view.requestMeasure();
   };
   /**
@@ -628,9 +633,24 @@ export function createLezerBlockEditor(
       requestAnimationFrame(() => {
         if (gone) return;
         if (heightSignature() === before) hstats.falsePositives++;
-        if (heightsStaleUntimed()) hstats.stillStale++;
+        if (heightsStaleUntimed()) {
+          hstats.stillStale++;
+          // (the page did not settle in two frames, e.g. a zoom still being applied: look again, the cap bounds the tries)
+          retryCheckLater();
+        }
       })
     );
+  };
+  /** a later check, after a quiet moment: used where a repair left the page stale and where the cap refused one (the cap is reset first) */
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  const retryCheckLater = (resetCap = false): void => {
+    if (retryTimer !== null || typeof setTimeout === "undefined") return;
+    retryTimer = setTimeout(() => {
+      retryTimer = null;
+      if (gone) return;
+      if (resetCap) gutterRepairs = 0;
+      checkGutterLater();
+    }, 400);
   };
   const checkGutterLater = (): void => {
     if (gutterChecking || typeof requestAnimationFrame === "undefined") return;
@@ -648,12 +668,13 @@ export function createLezerBlockEditor(
         if (gutterRepairs++ >= 2) {
           hstats.capped++;
           if (heightsOld) hstats.cappedStale++;
+          retryCheckLater(true);
           return;
         }
         if (heightsOld) {
           hstats.repairs++;
           const before = heightSignature();
-          remeasureHeights();
+          remeasureHeights(true);
           afterRepair(before);
           return;
         }
@@ -3281,6 +3302,8 @@ export function createLezerBlockEditor(
       region.remove();
       interaction.detach();
       heightWatch?.disconnect();
+      sizeWatch?.disconnect();
+      resizeWin?.removeEventListener("resize", onResize);
       view.destroy();
     },
   };
@@ -3391,7 +3414,37 @@ export function createLezerBlockEditor(
   // the end of a press or a drag lays the blocks out again (the gap under the mouse goes) after CodeMirror's last measure of the drag, and a
   // size that went down and up again between two frames is reported by no observer: the heights are compared with the lines once it is over
   for (const type of ["pointerup", "pointercancel", "mouseup", "touchend"])
-    view.dom.addEventListener(type, () => checkGutterLater(), true);
+    view.dom.addEventListener(
+      type,
+      () => {
+        gutterRepairs = 0;
+        checkGutterLater();
+      },
+      true
+    );
+  // a window resize or a page zoom wraps lines differently (a wrapped line gets taller or shorter) without any editor update: the heights
+  // are read again and compared with the page, with a second look after the browser has settled
+  const onResize = (): void => {
+    if (gone) return;
+    gutterRepairs = 0;
+    remeasureHeights(true);
+    checkGutterLater();
+    retryCheckLater(true);
+  };
+  const resizeWin = view.dom.ownerDocument.defaultView;
+  resizeWin?.addEventListener("resize", onResize);
+  let sizeWatch: ResizeObserver | null = null;
+  if (typeof ResizeObserver !== "undefined") {
+    let lastWidth = -1;
+    sizeWatch = new ResizeObserver(() => {
+      const w = view.dom.clientWidth;
+      if (w === lastWidth) return;
+      const first = lastWidth < 0;
+      lastWidth = w;
+      if (!first) onResize();
+    });
+    sizeWatch.observe(view.dom);
+  }
 
   // the next key or touch of the pointer settles which block an edit left focused (a redo goes back to it)
   for (const type of ["keydown", "pointerdown", "mousedown", "touchstart"])

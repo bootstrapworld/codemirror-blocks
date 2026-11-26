@@ -1441,3 +1441,31 @@ test("soak seed 9057: CodeMirror measures the page in the middle of a drag (the 
   );
   expect(v).toBeNull();
 });
+
+test("seed 200: a zoom with line wrapping and line numbers (an editor squeezed to no visible height by the toolbar is not measured, and is not compared with the page)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 200,
+      language: "scheme",
+      code: "(or true false)\n\n(define (f a b c) (+ a c))\n",
+      steps: [{ op: "zoom", z: 0.99 }],
+      motion: "reduced",
+      editor: {
+        lineNumbers: true,
+        lineWrapping: true,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});

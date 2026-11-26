@@ -976,6 +976,9 @@ export async function runChromium(
     evaluate(() => {
       const view = (window as any).demo.ed.view;
       const out: string[] = [];
+      // (an editor with no visible area, a zoomed window whose toolbar fills it: CodeMirror does not measure what nobody sees, and measures it
+      // when it is seen again; nothing to compare)
+      if (!view.inView) return out;
       for (const el of Array.from(
         view.contentDOM.querySelectorAll(":scope > .cm-line")
       ) as HTMLElement[]) {
@@ -1000,6 +1003,9 @@ export async function runChromium(
       const ed = (window as any).demo.ed;
       const view = ed.view;
       const out: string[] = [];
+      // (an editor with no visible area, a zoomed window whose toolbar fills it: CodeMirror does not measure what nobody sees, and measures it
+      // when it is seen again; nothing to compare)
+      if (!view.inView) return out;
       const els = Array.from(
         view.dom.querySelectorAll(".cm-lineNumbers .cm-gutterElement")
       ) as HTMLElement[];
