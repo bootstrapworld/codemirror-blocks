@@ -10,9 +10,12 @@ import {
   makeSequence,
   Sequence,
   shrink,
+  RESIZE_HEIGHTS,
+  RESIZE_WIDTHS,
   Step,
   TOUCH_OPS,
   Violation,
+  ZOOM_LEVELS,
 } from "../spec/soak-gen";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -32,6 +35,16 @@ function firstDifference(a: string, b: string): string {
   while (i < a.length && i < b.length && a[i] === b[i]) i++;
   const from = Math.max(0, i - 10);
   return ` (they differ from character ${i}: ${JSON.stringify(a.slice(from, i + 30))} / ${JSON.stringify(b.slice(from, i + 30))})`;
+}
+
+/** a finding of a step itself (the clipboard that does not hold what was copied): its own invariant, not an "exception" */
+class Finding extends Error {
+  constructor(
+    public invariant: string,
+    message: string
+  ) {
+    super(message);
+  }
 }
 
 export interface ChromiumOptions {
@@ -57,11 +70,16 @@ export async function runChromium(
   const actionMs = o.actionMs ?? 5000;
   const stepMs = o.stepTimeoutMs ?? 30000;
   const skip = new Set(o.skip ?? []);
+  // (CMB6_SOAK_BROWSER=firefox|webkit: the steps that need Chromium's DevTools protocol (a finger's long press and drag, the composition of an
+  // IME, the page zoom, the accessibility tree) and its clipboard permissions are left out; see e2e/soak.config.ts)
+  const isChromium = browser.browserType().name() === "chromium";
   const context = await browser.newContext({
     baseURL: o.baseURL,
     viewport: { width: 1100, height: 800 },
     reducedMotion: seq.motion === "reduced" ? "reduce" : "no-preference",
-    permissions: ["clipboard-read", "clipboard-write"],
+    ...(isChromium
+      ? { permissions: ["clipboard-read", "clipboard-write"] }
+      : {}),
     // (a touch screen only for a sequence with a finger's steps: the mouse sequences are what they were)
     hasTouch: seq.steps.some((s) => TOUCH_OPS.includes(s.op)),
   });
@@ -74,6 +92,8 @@ export async function runChromium(
       errors.push(`console.error: ${m.text().slice(0, 300)}`);
   });
   let cdp: CDPSession | null = null;
+  // (the options the editor is created with: a `resize` that switches line wrapping makes it again)
+  let choice = seq.editor ?? defaultEditor("chromium");
   const close = async (v: Violation | null): Promise<Violation | null> => {
     if (o.onHeightStats)
       o.onHeightStats(
@@ -96,7 +116,6 @@ export async function runChromium(
     await page.goto(`/index.html?lang=${seq.language}`);
     await page.waitForFunction(() => !!(window as any).demo);
     // (the demo's own program is replaced by the sequence's: that replacement is not a step to undo)
-    const choice = seq.editor ?? defaultEditor("chromium");
     await evaluate(
       (a: { code: string; c: any }) => {
         (window as any).demo.show(a.code, a.c.reconcile, a.c.anchors, a.c);
@@ -104,8 +123,10 @@ export async function runChromium(
       },
       { code: seq.code, c: choice }
     );
-    cdp = await context.newCDPSession(page);
-    await cdp.send("Accessibility.enable");
+    if (isChromium) {
+      cdp = await context.newCDPSession(page);
+      await cdp.send("Accessibility.enable");
+    }
   } catch (e) {
     return close({
       invariant: "exception",
@@ -265,6 +286,81 @@ export async function runChromium(
     await settle();
   };
 
+  /** text mode back to blocks (refused while the text does not parse: the dialog is closed, the step is over) */
+  const returnToBlocks = async (): Promise<void> => {
+    await toggleAndSettle();
+    toolbarOk = true; // (the focus stays on the mode button: the step went there on purpose)
+    for (
+      let k = 0;
+      k < 3 && (await page.locator("[role=dialog]").count());
+      k++
+    ) {
+      await page
+        .locator("[role=dialog] .closeDialog")
+        .first()
+        .click()
+        .catch(() => undefined);
+      await page.waitForTimeout(50);
+    }
+    if ((await mode()) === "blocks") {
+      // (the editor's rule: back to blocks after text edits starts the history over)
+      historyReset = true;
+      textEditedInText = false;
+    }
+  };
+  /** the text mode's caret at the place of the text that the fraction `a` stands for */
+  const caretAt = (a: unknown): Promise<void> =>
+    evaluate(
+      (a: any) => {
+        const v = (window as any).demo.ed.view;
+        const len = v.state.doc.length;
+        const from = Math.min(len, Math.floor(a * (len + 1)));
+        v.focus();
+        v.dispatch({ selection: { anchor: from } });
+      },
+      Number(a) as any
+    );
+  /** the viewport and page zoom of the page, in CSS pixels of the window at zoom 1 (a `resize` or `zoom` changes them) */
+  const screen = { w: 1100, h: 800, z: 1 };
+  /**
+   * Apply the window size and the zoom. A browser's page zoom shows fewer CSS pixels in the same window and more device pixels per CSS pixel
+   * (and `devicePixelRatio` changes with it): that is what the DevTools override does, with the window's size divided by the zoom level and
+   * the device scale factor set to it (the levels are fractional, so heights round off differently from 1). Without the protocol (Firefox,
+   * WebKit) only the window size changes.
+   */
+  const applyScreen = async (): Promise<void> => {
+    const width = Math.max(200, Math.round(screen.w / screen.z));
+    const height = Math.max(200, Math.round(screen.h / screen.z));
+    if (cdp)
+      await cdp.send("Emulation.setDeviceMetricsOverride", {
+        width,
+        height,
+        deviceScaleFactor: screen.z,
+        mobile: false,
+      });
+    else await page.setViewportSize({ width, height });
+    await settle();
+    // (the observers of the editor and of CodeMirror get their notice a frame later)
+    await page.waitForTimeout(60);
+  };
+  /** the system clipboard's text, null where the page may not read it */
+  const readClip = (): Promise<string | null> =>
+    page.evaluate(() =>
+      navigator.clipboard.readText().then(
+        (t) => t,
+        () => null
+      )
+    );
+  const writeClip = (t: string): Promise<boolean> =>
+    page.evaluate(
+      (t: string) =>
+        navigator.clipboard.writeText(t).then(
+          () => true,
+          () => false
+        ),
+      t
+    );
+
   let armed = false;
   let toolbarOk = false;
   let textEditedInText = false;
@@ -397,10 +493,8 @@ export async function runChromium(
         }, s as any);
         if (!placed) return;
         if (s.how === "paste") {
-          await evaluate(
-            (t: string) => navigator.clipboard.writeText(t),
-            String(s.text)
-          );
+          // (Firefox and WebKit do not let a page write the clipboard without a gesture: no paste then)
+          if (!(await writeClip(String(s.text)))) return;
           await press("Mod+v");
         } else await page.keyboard.type(String(s.text));
         await page.waitForTimeout(30);
@@ -438,7 +532,7 @@ export async function runChromium(
       }
       case "longPress": {
         // (the finger lets go where it pressed: the drag has begun, and ends over the block itself)
-        if (!blocks) return;
+        if (!blocks || !cdp) return;
         const t = await blockBox(s.a);
         const p = t && (await grabPoint(t, 12));
         if (!p) return;
@@ -450,7 +544,7 @@ export async function runChromium(
         return;
       }
       case "touchDrag": {
-        if (!blocks) return;
+        if (!blocks || !cdp) return;
         const src = await blockBox(s.a);
         const dst = await target(String(s.where), s.b);
         const from = src && (await grabPoint(src, 12));
@@ -473,7 +567,7 @@ export async function runChromium(
       }
       case "swipe": {
         // a finger that moves before the long press is over is scrolling the page: the program must not change
-        if (!blocks) return;
+        if (!blocks || !cdp) return;
         const t = await blockBox(s.a);
         const p = t && (await grabPoint(t, 12));
         if (!p) return;
@@ -497,8 +591,38 @@ export async function runChromium(
         const btns = page.locator("#templates button[data-template]");
         const i = at(s.t, await btns.count());
         const dst = await target(String(s.where), s.b);
+        // (in a narrow window the toolbar is wider than it: a button scrolled out of sight is brought into view, and one that is still out of
+        // the window cannot be pressed: a press there is a press on the page, which takes the focus away. Seed 222 of the round-49 smoke)
+        if (i >= 0)
+          await btns
+            .nth(i)
+            .scrollIntoViewIfNeeded()
+            .catch(() => undefined);
         const bb = i >= 0 ? await btns.nth(i).boundingBox() : null;
-        if (!bb || !dst) return;
+        const win = await evaluate(() => ({
+          width: innerWidth,
+          height: innerHeight,
+        }));
+        if (
+          !bb ||
+          !dst ||
+          (win &&
+            (bb.x < 0 ||
+              bb.y < 0 ||
+              bb.x + bb.width > win.width ||
+              bb.y + bb.height > win.height))
+        )
+          return;
+        // (in a window about 480 px wide the demo's mode button lies over one of the toolbar's buttons: a press there is a press on the mode
+        // button, and the focus goes there. Not a thing a drag of a template can do: leave that button alone)
+        const hit = await evaluate(
+          ([px, py]: number[]) =>
+            !!document
+              .elementFromPoint(px, py)
+              ?.closest("#templates button[data-template]"),
+          [bb.x + bb.width / 2, bb.y + bb.height / 2]
+        );
+        if (!hit) return;
         await drag({ x: bb.x + bb.width / 2, y: bb.y + bb.height / 2 }, dst);
         editsMade++;
         return;
@@ -556,28 +680,151 @@ export async function runChromium(
         await page.keyboard.type(String(s.w));
         textEditedInText = true;
         editsMade++;
-        if (s.back) {
-          await toggleAndSettle();
-          toolbarOk = true; // (the focus stays on the mode button: the step went there on purpose)
-          // (a refused switch shows a dialog: close it, the step is over)
-          for (
-            let k = 0;
-            k < 3 && (await page.locator("[role=dialog]").count());
-            k++
-          ) {
-            await page
-              .locator("[role=dialog] .closeDialog")
-              .first()
-              .click()
-              .catch(() => undefined);
-            await page.waitForTimeout(50);
-          }
-          if ((await mode()) === "blocks") {
-            // (the editor's rule: back to blocks after text edits starts the history over)
+        if (s.back) await returnToBlocks();
+        return;
+      }
+      // ---- the browser's own (spec/soak-gen.ts `browserStep`) ----
+      case "resize":
+      case "zoom": {
+        if (s.op === "resize") {
+          screen.w = RESIZE_WIDTHS[at(s.w, RESIZE_WIDTHS.length)];
+          screen.h = RESIZE_HEIGHTS[at(s.h, RESIZE_HEIGHTS.length)];
+        } else if (cdp) screen.z = ZOOM_LEVELS[at(s.z, ZOOM_LEVELS.length)];
+        await applyScreen();
+        if (s.op === "resize" && s.wrap !== "keep") {
+          // (line wrapping is a choice of the page's own, made when the editor is created: the same text, a new editor, an empty history)
+          const wrap = s.wrap === "on";
+          if (wrap !== choice.lineWrapping) {
+            choice = { ...choice, lineWrapping: wrap, collapseAll: false };
+            await evaluate(
+              (a: { code: string; c: any }) => {
+                (window as any).demo.show(
+                  a.code,
+                  a.c.reconcile,
+                  a.c.anchors,
+                  a.c
+                );
+                (window as any).demo.ed.clearHistory?.();
+              },
+              { code: await text(), c: choice }
+            );
             historyReset = true;
-            textEditedInText = false;
+            armed = false; // (the focus was in the editor that is gone)
+            await settle();
           }
         }
+        return;
+      }
+      case "ime": {
+        // a composition through the input method events (the text grows underlined, then is committed or cancelled), into the edit box of a
+        // block or into the text
+        if (!cdp) return;
+        const parts = (s.parts as string[]) ?? [];
+        let before: string | null = null;
+        if (s.target === "box") {
+          if (!blocks || !(await clickBlock(s.a))) return;
+          // (a click on a leaf opens its box at once; Enter opens the box of the others, or none)
+          if (!(await boxOpen().count())) await press("Enter");
+          if (!(await boxOpen().count())) return;
+          await page.keyboard.press("ControlOrMeta+a");
+        } else {
+          if (blocks) await toggleAndSettle();
+          if ((await mode()) !== "text") return;
+          await caretAt(s.a);
+          before = await text();
+        }
+        for (const p of parts)
+          await cdp.send("Input.imeSetComposition", {
+            text: p,
+            selectionStart: p.length,
+            selectionEnd: p.length,
+          });
+        if (s.cancel)
+          await cdp.send("Input.imeSetComposition", {
+            text: "",
+            selectionStart: 0,
+            selectionEnd: 0,
+          });
+        else await cdp.send("Input.insertText", { text: String(s.final) });
+        if (s.target === "box") {
+          if (await boxOpen().count())
+            await page.keyboard.press(s.accept ? "Enter" : "Escape");
+        } else {
+          if ((await text()) !== before) textEditedInText = true;
+          if (s.back) await returnToBlocks();
+        }
+        editsMade++;
+        return;
+      }
+      case "clipboard": {
+        // the real clipboard: a copy or cut by key of the focused block or of selected blocks, what the system clipboard then holds, and a
+        // paste by key
+        // (a click on a leaf opens its edit box: Escape closes it, the block keeps the focus, and the keys go to the block again)
+        const focusBlock = async (a: number): Promise<boolean> => {
+          if (!(await clickBlock(a))) return false;
+          if (await boxOpen().count()) await page.keyboard.press("Escape");
+          return true;
+        };
+        if (!blocks || !(await focusBlock(Number(s.a)))) return;
+        const n = Number(s.n);
+        if (n > 1) {
+          await page.keyboard.press("Space");
+          for (let k = 1; k < n; k++)
+            if (await focusBlock((Number(s.a) + k * 0.137) % 1))
+              await page.keyboard.press("Space");
+        }
+        const sentinel = "\u0001soak";
+        const canRead =
+          (await writeClip(sentinel)) && (await readClip()) === sentinel;
+        // (what a copy takes: the selected blocks, else the focused one; a cut takes only the selected ones)
+        const expected: string | null = await evaluate((cut: boolean) => {
+          const ed = (window as any).demo.ed;
+          const sel = ed.selectedBlocks();
+          const f = ed.focusedNode();
+          const nodes = sel.length ? sel : f && f.slot && !cut ? [f] : [];
+          return nodes.length ? ed.copyTexts(nodes).join("\n") : null;
+        }, s.how === "cut");
+        const before = await text();
+        await press(s.how === "cut" ? "Mod+x" : "Mod+c");
+        await page.waitForTimeout(30);
+        if (canRead && !skip.has("clipboard")) {
+          const got = await readClip();
+          const want = expected ?? sentinel;
+          if (got !== want)
+            throw new Finding(
+              "clipboard",
+              `${s.how} left ${JSON.stringify(String(got).slice(0, 60))} on the clipboard, not ${JSON.stringify(want.slice(0, 60))}`
+            );
+        }
+        if (
+          s.how === "copy" &&
+          !skip.has("clipboard") &&
+          (await text()) !== before
+        )
+          throw new Finding("clipboard", "a copy changed the program");
+        if (s.how === "cut" && expected !== null) editsMade++;
+        if (!canRead && !expected) return;
+        if (s.to === "gap") {
+          const placed = await evaluate((a: any) => {
+            const ed = (window as any).demo.ed;
+            ed.view.focus();
+            const len = ed.view.state.doc.length;
+            let pos = Math.min(len, Math.floor(a.b * (len + 1)));
+            while (pos <= len && !ed.isWhitespaceAt(pos)) pos++;
+            if (pos > len) return false;
+            ed.view.dispatch({ selection: { anchor: pos } });
+            return true;
+          }, s as any);
+          if (!placed) return;
+        } else {
+          if (!(await clickBlock(s.b))) return;
+          if (s.to === "over") await page.keyboard.press("Space");
+        }
+        await press("Mod+v");
+        await page.waitForTimeout(30);
+        if (await page.locator(".blocks-pending .blocks-edit").count())
+          await page.keyboard.press(s.accept ? "Enter" : "Escape");
+        editsMade++;
         return;
       }
       case "undoRun":
@@ -694,6 +941,9 @@ export async function runChromium(
           const v = (window as any).demo.ed.view;
           v.dispatch({
             changes: { from: 0, to: v.state.doc.length, insert: t },
+            // (CodeMirror maps a selection that lies inside the replaced text to a range that ends before it starts, and the editor's own
+            // Delete then throws: a host that replaces the document sets the selection, as the jsdom runner does)
+            selection: { anchor: 0 },
           });
         }, String(s.text));
         editsMade++;
@@ -732,6 +982,29 @@ export async function runChromium(
     for (const c of tree.childIds ?? []) walk(byId.get(c), 0);
     return out.slice(0, 5);
   };
+  const heightProblems = (): Promise<string[]> =>
+    evaluate(() => {
+      const view = (window as any).demo.ed.view;
+      const out: string[] = [];
+      for (const el of Array.from(
+        view.contentDOM.querySelectorAll(":scope > .cm-line")
+      ) as HTMLElement[]) {
+        let pos: number;
+        try {
+          pos = view.posAtDOM(el, 0);
+        } catch (_) {
+          continue;
+        }
+        const b = view.lineBlockAt(pos);
+        if (b.height === 0) continue;
+        const h = el.getBoundingClientRect().height;
+        if (Math.abs(h - b.height) > 1.5)
+          out.push(
+            `the line at ${pos} is ${h.toFixed(1)} px high, CodeMirror holds ${b.height.toFixed(1)}`
+          );
+      }
+      return out.slice(0, 3);
+    });
   const lineNumberProblems = (): Promise<string[]> =>
     evaluate(() => {
       const ed = (window as any).demo.ed;
@@ -826,7 +1099,7 @@ export async function runChromium(
         const hit = v("a11y", a11y.join(" | "));
         if (hit) return hit;
       }
-      if (stepIndex % 3 === 0) {
+      if (stepIndex % 3 === 0 && cdp) {
         const ax = await axProblems();
         if (ax.length) {
           const hit = v("a11y", `accessibility tree: ${ax.join(" | ")}`);
@@ -843,6 +1116,18 @@ export async function runChromium(
     }
     if (ln.length) {
       const hit = v("line-numbers", ln.join(" | "));
+      if (hit) return hit;
+    }
+    // (the heights CodeMirror holds for the lines it draws are the page's: a wrapped line, a zoom or a window of another width that it
+    // has not measured again leaves it scrolling and drawing from numbers that are wrong, with the gutter still beside the lines)
+    let hp = await heightProblems();
+    for (let k = 0; k < 5 && hp.length; k++) {
+      await page.waitForTimeout(120);
+      await settle();
+      hp = await heightProblems();
+    }
+    if (hp.length) {
+      const hit = v("heights", hp.join(" | "));
       if (hit) return hit;
     }
     if (await evaluate(() => !!document.activeElement?.closest(".cm-editor")))
@@ -873,6 +1158,8 @@ export async function runChromium(
         };
     } catch (e) {
       const msg = String((e as Error).message ?? e).split("\n")[0];
+      if (e instanceof Finding)
+        return { invariant: e.invariant, message: msg, step: i, op: s.op };
       if (await frozen())
         return {
           invariant: "stuck",
@@ -1008,6 +1295,7 @@ export interface ChromiumRecord extends Sequence {
   step: number;
   op: string;
   originalSteps: number;
+  browser?: string;
 }
 
 /** run seed `seed`; on a violation, shrink the steps (same invariant, a few tries: each is a browser session) and return the record */
@@ -1043,5 +1331,12 @@ export async function soakSeedChromium(
     },
     o.shrinkRuns ?? 12
   );
-  return { ...seq, steps, ...found, originalSteps: seq.steps.length };
+  return {
+    ...seq,
+    steps,
+    ...found,
+    originalSteps: seq.steps.length,
+    // (the browser the failure was found in: a replay needs CMB6_SOAK_BROWSER to be the same)
+    browser: browser.browserType().name(),
+  };
 }
