@@ -179,6 +179,8 @@ export interface HeightStats {
   cappedStale: number;
   /** gutter redraws (`syncGutters`) the check made, when only the numbers disagreed with the lines */
   gutterSyncs: number;
+  /** spacers for the lines CodeMirror does not draw that were set to the height of the lines they stand for */
+  gapFixes: number;
 }
 
 export interface LezerStats {
@@ -537,6 +539,7 @@ export function createLezerBlockEditor(
     capped: 0,
     cappedStale: 0,
     gutterSyncs: 0,
+    gapFixes: 0,
   };
   /**
    * `refresh` also has CodeMirror measure its line height and character width again ("refresh" is its own flag for it): after a zoom or a
@@ -621,6 +624,55 @@ export function createLezerBlockEditor(
     }
     return false;
   };
+  /**
+   * The spacers CodeMirror puts for the lines it does not draw (`.cm-gap`) are as high as its height map says the lines they stand for are,
+   * read line by line (the bottom of the last line before the next drawn line minus the top of the first). For lines it has not measured the
+   * map's estimate for a single line and the estimate for the range disagree by a pixel or two (soak seed 6000: a zoom of 0.64 and a window
+   * of another width, a spacer 2 px higher than the top of the line it ends at), so every drawn line sits that far below the place its
+   * number is put (the number comes from the top of the line's block). Where a spacer is not as high as the next drawn line's top says,
+   * it is set to that: CodeMirror leaves a spacer alone while its own height value does not change, and the next check puts it right again
+   * after one that does.
+   */
+  const fixGaps = (): boolean => {
+    const vp = (
+      view as unknown as {
+        viewState: { viewports: { from: number; to: number }[] };
+      }
+    ).viewState.viewports;
+    if (!vp || vp.length < 1) return false;
+    const gaps = Array.from(
+      view.contentDOM.querySelectorAll(":scope > .cm-gap")
+    ) as HTMLElement[];
+    if (!gaps.length) return false;
+    const doc = view.state.doc;
+    // (the gaps are in document order: before the first viewport, between viewports, after the last)
+    const want: number[] = [];
+    let pos = 0;
+    for (let i = 0; i <= vp.length; i++) {
+      const next = i < vp.length ? vp[i] : null;
+      const end = next ? next.from - 1 : doc.length;
+      if (end > pos) {
+        const top = view.lineBlockAt(pos).top;
+        want.push(
+          (next
+            ? view.lineBlockAt(next.from).top
+            : view.lineBlockAt(end).bottom) - top
+        );
+      }
+      if (!next) break;
+      pos = next.to + 1;
+    }
+    if (want.length !== gaps.length) return false;
+    let off = false;
+    gaps.forEach((g, i) => {
+      const h = want[i] / (view.scaleY || 1);
+      if (Math.abs(parseFloat(g.style.height) - h) > 0.5) {
+        off = true;
+        g.style.height = h + "px";
+      }
+    });
+    return off;
+  };
   /** the heights CodeMirror holds for the lines it draws (read only after a repair, which is rare) */
   const heightSignature = (): string =>
     view.contentHeight +
@@ -659,8 +711,9 @@ export function createLezerBlockEditor(
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         gutterChecking = false;
-        if (gone || !blockMode) return;
+        if (gone) return;
         const heightsOld = heightsStale();
+        if (fixGaps()) hstats.gapFixes++;
         if (!heightsOld && !gutterStale()) {
           gutterRepairs = 0;
           return;
@@ -2427,6 +2480,10 @@ export function createLezerBlockEditor(
       selection: !on && had ? EditorSelection.cursor(had.from) : undefined,
     });
     if (on && editedAsText) clearHistory();
+    // (the mode changes the lines' heights; a measure that follows without an update that says so leaves the gutter on the old ones)
+    gutterRepairs = 0;
+    remeasureHeights();
+    checkGutterLater();
     // (edits made as text may have brought a comment next to a block that stayed drawn)
     if (on) renderer.refreshComments(true);
     editedAsText = false;
@@ -3329,6 +3386,11 @@ export function createLezerBlockEditor(
         keymap.of([...defaultKeymap, ...historyKeymap]),
         field,
         compartment.of(blockExtension),
+        // (the heights are checked in text mode too: the gutter's numbers go stale there the same way)
+        EditorView.updateListener.of((u) => {
+          if (u.heightChanged || u.viewportChanged || u.geometryChanged)
+            checkGutterLater();
+        }),
       ],
     }),
     dispatchTransactions(trs, v) {
