@@ -908,7 +908,8 @@ export function attachInteraction(ed: LezerBlockEditor): {
   };
   /**
    * the block a copy or cut is about: the one the event is on, else (the event is on a `.cm-line`: the browser's copy of a selection that
-   * spans lines targets the line, not the block) the focused one, or the first selected, when blocks are selected
+   * spans lines targets the line, not the block, and a page selection somewhere else targets what it starts in) the focused one, or the
+   * first selected when blocks are selected; with none selected, the focused one (a copy takes it; a cut takes only selected blocks)
    */
   const copyActive = (e: Event): BNode | null => {
     const node = active(e);
@@ -917,7 +918,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     if (!t || !t.closest || t.closest(".blocks-edit") || ed.mode === "text")
       return null;
     const sel = ed.selectedBlocks();
-    return sel.length ? (ed.focusedNode() ?? sel[0]) : null;
+    return sel.length ? (ed.focusedNode() ?? sel[0]) : ed.focusedNode();
   };
   /** the selected blocks, else the focused one: what copy and cut take (in document order) */
   const takes = (node: BNode): BNode[] => {
