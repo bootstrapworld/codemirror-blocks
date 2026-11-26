@@ -777,9 +777,12 @@ export async function runChromium(
         const before = await text();
         await press(s.how === "cut" ? "Mod+x" : "Mod+c");
         await page.waitForTimeout(30);
-        if (canRead && !skip.has("clipboard")) {
+        // (with no block selected, and none focused for a copy, the blocks layer does nothing and the browser's own line-wise copy and cut run, as
+        // in the old editor and CodeMirror 5: the clipboard then holds the caret's line, whatever it is, and a cut removes that line: only the
+        // blocks' own copies are checked)
+        if (canRead && expected !== null && !skip.has("clipboard")) {
           const got = await readClip();
-          const want = expected ?? sentinel;
+          const want = expected;
           if (got !== want)
             throw new Finding(
               "clipboard",
@@ -792,7 +795,8 @@ export async function runChromium(
           (await text()) !== before
         )
           throw new Finding("clipboard", "a copy changed the program");
-        if (s.how === "cut" && expected !== null) editsMade++;
+        if (s.how === "cut" && (expected !== null || (await text()) !== before))
+          editsMade++;
         if (!canRead && !expected) return;
         if (s.to === "gap") {
           const placed = await evaluate((a: any) => {
