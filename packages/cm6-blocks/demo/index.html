@@ -91,7 +91,9 @@
     <div class="Editor blocks" id="app">
       <div class="toolbar-pane">
         <!-- (the one child of the pane has no padding or border: it must be able to shrink to nothing) -->
-        <div>
+        <!-- (the mode button floats over the top right corner of the editor, 34 px wide and 24 px from the edge: the bar stops short of it, so that a
+             narrow window scrolls the buttons instead of putting one under it) -->
+        <div style="padding-right: 64px">
           <div
             id="templates"
             aria-label="templates"

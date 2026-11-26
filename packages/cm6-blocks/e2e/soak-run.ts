@@ -613,16 +613,6 @@ export async function runChromium(
               bb.y + bb.height > win.height))
         )
           return;
-        // (in a window about 480 px wide the demo's mode button lies over one of the toolbar's buttons: a press there is a press on the mode
-        // button, and the focus goes there. Not a thing a drag of a template can do: leave that button alone)
-        const hit = await evaluate(
-          ([px, py]: number[]) =>
-            !!document
-              .elementFromPoint(px, py)
-              ?.closest("#templates button[data-template]"),
-          [bb.x + bb.width / 2, bb.y + bb.height / 2]
-        );
-        if (!hit) return;
         await drag({ x: bb.x + bb.width / 2, y: bb.y + bb.height / 2 }, dst);
         editsMade++;
         return;
