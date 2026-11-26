@@ -1741,3 +1741,40 @@ test("seed 3429 (round 8): a composition in the text that ends where it began st
   );
   expect(v).toBeNull();
 });
+
+test("seed 5561 (round 8): a composition in an edit box waits for the scroll of the click to end, and stops if the box loses the focus (it would go on in the editor's own text, which never sees it end, and a redo then finds the keys ignored)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 5561,
+      language: "python",
+      code: "x = 1\ny = 2\nz = 3\n",
+      steps: [
+        {
+          op: "topLevelType",
+          a: 0.36678730277344584,
+          text: "(f 1)",
+          accept: true,
+          how: "paste",
+        },
+        {
+          op: "ime",
+          a: 0.2996100657619536,
+          target: "box",
+          parts: ["\u314e", "\ud558", "\ud55c"],
+          final: "\ud55c",
+          cancel: false,
+          accept: true,
+          back: false,
+        },
+        { op: "scrollToggle", a: 0.28369030985049903 },
+      ],
+      motion: "full",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});

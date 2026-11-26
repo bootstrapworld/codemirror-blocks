@@ -728,18 +728,33 @@ export async function runChromium(
           if (!(await boxOpen().count())) await press("Enter");
           if (!(await boxOpen().count())) return;
           await page.keyboard.press("ControlOrMeta+a");
+          // (the scroll that the click on the block set going ends first: a scroll update of the editor in the middle of the composition
+          // takes the focus from the box, and the next parts of the composition reach the editor's own text, which then never sees it end.
+          // A real input method keeps its element. Seed 5561 of round 8)
+          await settle();
+          await page.waitForTimeout(150);
+          if (!(await boxOpen().count())) return;
         } else {
           if (blocks) await toggleAndSettle();
           if ((await mode()) !== "text") return;
           await caretAt(s.a);
           before = await text();
         }
-        for (const p of parts)
+        for (const p of parts) {
+          // (the composition goes to the element that has the focus: if the box lost it, there is no composition to go on with)
+          if (
+            s.target === "box" &&
+            !(await evaluate(() =>
+              document.activeElement?.classList.contains("blocks-edit")
+            ))
+          )
+            break;
           await cdp.send("Input.imeSetComposition", {
             text: p,
             selectionStart: p.length,
             selectionEnd: p.length,
           });
+        }
         if (s.cancel)
           await cdp.send("Input.imeSetComposition", {
             text: "",
