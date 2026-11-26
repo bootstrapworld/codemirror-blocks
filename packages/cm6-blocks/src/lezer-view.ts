@@ -154,6 +154,33 @@ export interface LezerOptions {
   activityLimit?: number;
 }
 
+/**
+ * What the height check did (`ed.heightStats()`), to watch it in the soak for false positives and for cost. Plain counters: nothing is
+ * measured or read for them beyond what the check does anyway, except the clock around `heightsStale` (its own cost is the point).
+ */
+export interface HeightStats {
+  /** `checkGutterLater` calls that scheduled a check (a call while one is pending is not counted) */
+  checks: number;
+  /** `heightsStale` calls, and how many of them said the page's lines are not the heights CodeMirror holds */
+  staleCalls: number;
+  staleTrue: number;
+  /** milliseconds spent inside `heightsStale` in all (the page's layout is read there) */
+  staleMs: number;
+  /** `remeasureHeights` calls from anywhere (a collapse, an edit box, the check) and those made by the check itself */
+  remeasures: number;
+  repairs: number;
+  /** repairs after which the line heights CodeMirror holds were the same (nothing changed: the check had cried wolf) */
+  falsePositives: number;
+  /** repairs after which `heightsStale` still said stale (the repair did not help) */
+  stillStale: number;
+  /** checks that found something to repair (stale heights, or a gutter that disagrees with the lines) and did not, because `gutterRepairs` had reached its cap of 2 */
+  capped: number;
+  /** of those, the ones where the heights were stale (a repair `remeasureHeights` should have made) */
+  cappedStale: number;
+  /** gutter redraws (`syncGutters`) the check made, when only the numbers disagreed with the lines */
+  gutterSyncs: number;
+}
+
 export interface LezerStats {
   edits: number;
   reparses: number;
@@ -395,6 +422,8 @@ export interface LezerBlockEditor extends ViewSurface {
   /** are the blocks showing (not the text mode) */
   isBlockMode(): boolean;
   stats(): LezerStats;
+  /** counters of the height check (see `HeightStats`) */
+  heightStats(): HeightStats;
   destroy(): void;
 }
 
@@ -496,7 +525,21 @@ export function createLezerBlockEditor(
   const language = lezerLanguage(parser, table);
   const renderer = new Renderer(language);
   /** a block's height changed without a document change (collapse, expand): CodeMirror re-reads the line heights only when its content's height changed or a redraw happened, and the editor box has a fixed height, so it is told (`mustMeasureContent`, the flag its own redraw sets) or the gutter's line numbers keep the old heights */
+  const hstats: HeightStats = {
+    checks: 0,
+    staleCalls: 0,
+    staleTrue: 0,
+    staleMs: 0,
+    remeasures: 0,
+    repairs: 0,
+    falsePositives: 0,
+    stillStale: 0,
+    capped: 0,
+    cappedStale: 0,
+    gutterSyncs: 0,
+  };
   const remeasureHeights = (): void => {
+    hstats.remeasures++;
     (
       view as unknown as { viewState: { mustMeasureContent: unknown } }
     ).viewState.mustMeasureContent = true;
@@ -549,6 +592,14 @@ export function createLezerBlockEditor(
    * for every line below the block, the numbers and the lines each drawn from a different height until the next scroll).
    */
   const heightsStale = (): boolean => {
+    const t0 = performance.now();
+    const r = heightsStaleUntimed();
+    hstats.staleCalls++;
+    hstats.staleMs += performance.now() - t0;
+    if (r) hstats.staleTrue++;
+    return r;
+  };
+  const heightsStaleUntimed = (): boolean => {
     for (const el of Array.from(
       view.contentDOM.querySelectorAll(":scope > .cm-line")
     ) as HTMLElement[]) {
@@ -565,9 +616,26 @@ export function createLezerBlockEditor(
     }
     return false;
   };
+  /** the heights CodeMirror holds for the lines it draws (read only after a repair, which is rare) */
+  const heightSignature = (): string =>
+    view.contentHeight +
+    ":" +
+    view.viewportLineBlocks.map((b) => b.height).join(",");
+  /** two frames after a repair: did it change anything (else the check cried wolf), and is the page still not what CodeMirror holds */
+  const afterRepair = (before: string): void => {
+    if (typeof requestAnimationFrame === "undefined") return;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (gone) return;
+        if (heightSignature() === before) hstats.falsePositives++;
+        if (heightsStaleUntimed()) hstats.stillStale++;
+      })
+    );
+  };
   const checkGutterLater = (): void => {
     if (gutterChecking || typeof requestAnimationFrame === "undefined") return;
     gutterChecking = true;
+    hstats.checks++;
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         gutterChecking = false;
@@ -577,11 +645,19 @@ export function createLezerBlockEditor(
           gutterRepairs = 0;
           return;
         }
-        if (gutterRepairs++ >= 2) return;
-        if (heightsOld) {
-          remeasureHeights();
+        if (gutterRepairs++ >= 2) {
+          hstats.capped++;
+          if (heightsOld) hstats.cappedStale++;
           return;
         }
+        if (heightsOld) {
+          hstats.repairs++;
+          const before = heightSignature();
+          remeasureHeights();
+          afterRepair(before);
+          return;
+        }
+        hstats.gutterSyncs++;
         const plugins = (
           view as unknown as {
             plugins?: {
@@ -3195,6 +3271,7 @@ export function createLezerBlockEditor(
     },
     clearHistory,
     stats: () => ({ ...stats }),
+    heightStats: () => ({ ...hstats }),
     destroy() {
       gone = true;
       stopWatching?.();

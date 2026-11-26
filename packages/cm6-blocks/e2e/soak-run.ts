@@ -44,6 +44,8 @@ export interface ChromiumOptions {
   skip?: string[];
   /** called after each step, before the invariants are read (for looking at the page by hand when a failure is being understood) */
   onStep?: (page: Page, i: number) => Promise<void>;
+  /** called with the editor's `heightStats()` at the end of the run (the soak's result record carries them: false positives and cost of the height check) */
+  onHeightStats?: (stats: Record<string, number>) => void;
 }
 
 /** the sequence's step `s` as a function of the page; returns when the step has been made (the page may still be settling) */
@@ -73,6 +75,12 @@ export async function runChromium(
   });
   let cdp: CDPSession | null = null;
   const close = async (v: Violation | null): Promise<Violation | null> => {
+    if (o.onHeightStats)
+      o.onHeightStats(
+        await page
+          .evaluate(() => (window as any).demo.ed.heightStats())
+          .catch(() => null)
+      );
     await context.close().catch(() => undefined);
     return v;
   };

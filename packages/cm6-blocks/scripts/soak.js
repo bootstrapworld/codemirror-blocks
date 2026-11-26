@@ -404,6 +404,7 @@ for (const e of engines) {
       crashes: saved?.crashes ?? [],
       loadFlakes: saved?.loadFlakes ?? 0,
       distinct: saved?.distinct ?? {},
+      heights: saved?.heights,
       head,
       dirty,
     },
@@ -488,7 +489,13 @@ const runBatch = async (job, engine, seeds, steps, timeoutMs) => {
     fs.writeFileSync(file, r.output.slice(-200000));
     crash = { kind, log: file };
   }
-  return { passed: res.passed, failures: res.failures, missing, crash };
+  return {
+    passed: res.passed,
+    failures: res.failures,
+    heights: res.heights,
+    missing,
+    crash,
+  };
 };
 
 const countFailures = (state, failures) => {
@@ -515,6 +522,8 @@ const doJob = async (job, engine, from, size, steps) => {
     const r = await runBatch(job, engine, seeds, steps, batchTimeoutMs);
     passed += r.passed;
     failures.push(...r.failures);
+    for (const x of r.heights)
+      lib.addHeights((progress.heights ??= {}), x.seed, x.h);
     if (!r.crash) break;
     const culprit = r.missing[0];
     const rest = r.missing.slice(1);

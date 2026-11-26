@@ -30,16 +30,19 @@ test("soak", async ({ browser }) => {
   }
   for (const seed of job.seeds as number[]) {
     const t0 = Date.now();
+    // (the height check's counters of the first run: the whole sequence, not a shrink run)
+    let heights: Record<string, number> | null = null;
     const rec = await soakSeedChromium(browser, seed, job.steps, {
       ...job,
       baseURL,
+      onHeightStats: (h) => (heights ??= h),
     });
     fs.appendFileSync(
       job.out,
       JSON.stringify(
         rec
-          ? { ...rec, ms: Date.now() - t0 }
-          : { seed, ok: true, ms: Date.now() - t0 }
+          ? { ...rec, ms: Date.now() - t0, heights }
+          : { seed, ok: true, ms: Date.now() - t0, heights }
       ) + "\n"
     );
   }

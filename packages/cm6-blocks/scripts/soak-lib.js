@@ -93,10 +93,47 @@ function signature(f) {
   return `${f.engine ?? "?"} :: ${f.invariant ?? "?"} @ ${f.op ?? "?"} :: ${normalizeMessage(f.message)}`;
 }
 
+/** a sequence whose `heightsStale` took more than this many ms in all is flagged in the summary */
+const SLOW_STALE_MS = 50;
+
+/**
+ * Totals of the height check's counters (`ed.heightStats()`, one set per Chromium sequence) over a run: sums, the largest number of repairs
+ * in one sequence, the sequences where `heightsStale` took over SLOW_STALE_MS in all (the seeds of the first ten kept).
+ */
+function addHeights(total, seed, h) {
+  if (!h) return total;
+  total.sequences = (total.sequences ?? 0) + 1;
+  for (const k of [
+    "checks",
+    "staleCalls",
+    "staleTrue",
+    "staleMs",
+    "remeasures",
+    "repairs",
+    "falsePositives",
+    "stillStale",
+    "capped",
+    "cappedStale",
+    "gutterSyncs",
+  ])
+    total[k] = (total[k] ?? 0) + (h[k] ?? 0);
+  if ((h.repairs ?? 0) > (total.maxRepairs ?? 0)) {
+    total.maxRepairs = h.repairs;
+    total.maxRepairsSeed = seed;
+  }
+  if ((h.staleMs ?? 0) > SLOW_STALE_MS) {
+    total.slow = (total.slow ?? 0) + 1;
+    total.slowSeeds ??= [];
+    if (total.slowSeeds.length < 10) total.slowSeeds.push(seed);
+  }
+  return total;
+}
+
 /** What a worker wrote (one JSON line per seed: `{seed, ok: true}` or a failure record) */
 function readResults(text) {
   const done = new Set();
   const failures = [];
+  const heights = [];
   let passed = 0;
   for (const line of String(text ?? "").split("\n")) {
     if (!line.trim()) continue;
@@ -108,10 +145,11 @@ function readResults(text) {
     }
     if (r.seed === undefined) continue;
     done.add(r.seed);
+    if (r.heights) heights.push({ seed: r.seed, h: r.heights });
     if (r.ok) passed++;
     else failures.push(r);
   }
-  return { passed, failures, done };
+  return { passed, failures, done, heights };
 }
 
 /** The seeds of a batch that no line says anything about, in order: the first is the one that was running when the worker died */
@@ -303,6 +341,21 @@ function summarize(progress, distinct, known = []) {
     );
     lines.push(``);
   }
+  const hh = progress.heights;
+  if (hh?.sequences) {
+    lines.push(
+      `## Height check (Chromium, ${hh.sequences} sequences)`,
+      ``,
+      `- ${hh.checks} checks, ${hh.staleCalls} reads of the heights (${hh.staleMs.toFixed(0)} ms in all), ${hh.staleTrue} found them stale`,
+      `- ${hh.repairs} repairs (most in one sequence: ${hh.maxRepairs ?? 0}${hh.maxRepairsSeed !== undefined ? `, seed ${hh.maxRepairsSeed}` : ""}), ${hh.remeasures} re-measures in all`,
+      `- false positives (a repair that changed no height): ${hh.falsePositives}; repairs after which the page was still stale: ${hh.stillStale}; refused by the cap of two: ${hh.capped} (${hh.cappedStale} of them with stale heights); gutter redraws: ${hh.gutterSyncs}`
+    );
+    if (hh.slow)
+      lines.push(
+        `- SLOW: ${hh.slow} sequences spent over ${SLOW_STALE_MS} ms in heightsStale (seeds ${hh.slowSeeds.join(", ")})`
+      );
+    lines.push(``);
+  }
   if (!split.fresh.length)
     lines.push(
       split.known.length ? `No new failures.` : `No failures so far.`,
@@ -321,6 +374,8 @@ function summarize(progress, distinct, known = []) {
 }
 
 module.exports = {
+  SLOW_STALE_MS,
+  addHeights,
   EXAMPLE_CAP,
   busyCores,
   classifyCrash,
