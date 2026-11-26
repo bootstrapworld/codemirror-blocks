@@ -8,7 +8,7 @@ describe("parseArgs", () => {
       engines: ["jsdom", "chromium"],
       minCores: 2,
       maxCores: 14,
-      e2eCores: 4,
+      e2eCores: 6,
       ramp: true,
       alternate: false,
       smoke: false,

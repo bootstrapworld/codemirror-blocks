@@ -9,7 +9,14 @@
  *   npm run soak -w @bootstrapworld/cm6-blocks -- --smoke              about 30 s, both engines, results in soak-results/smoke
  *   npm run soak -w @bootstrapworld/cm6-blocks -- --hours 8            eight hours, both engines (jsdom and Chromium), 2 to 14 workers
  *   nohup npm run soak -w @bootstrapworld/cm6-blocks -- --hours 8 > /tmp/soak.log 2>&1 &     the same, in the background
- *   npm run soak -w @bootstrapworld/cm6-blocks -- --hours 0            until you stop it (Ctrl-C, or `kill <pid>`: it saves and prints the summary)
+ *   npm run soak -w @bootstrapworld/cm6-blocks -- --forever            until you stop it (--hours 0 is the same); stop it with --stop (below)
+ *   npm run soak -w @bootstrapworld/cm6-blocks -- --status             a table of what a run (or the last one) has found; changes nothing
+ *   npm run soak -w @bootstrapworld/cm6-blocks -- --stop               a clean stop: finishes the running batches, writes the summary
+ *
+ * ONE SOAK PER RESULTS DIRECTORY. A lock file (soak.lock: pid, start time, arguments) is taken before anything else; a second soak on the same
+ * directory refuses to start and says who holds it. A lock whose pid is dead (or is no soak) is stale: the next run takes it over. `--stop`
+ * sends SIGINT to the pid in the lock (never to a guessed one) and waits until it is gone; Ctrl-C and `kill <pid>` (SIGINT, SIGTERM) are the
+ * same clean stop: no new batches, the running ones finish (a second signal ends them now), then the summary is written.
  *
  * WHAT IT COVERS. Two engines, random language per sequence (scheme, javascript, python) and a random program per sequence (a hand-written
  * one, a generated one, or a piece of a real file from the corpora of scripts/corpus-lib.ts); the step lists are plain data (spec/soak-gen.ts).
@@ -45,7 +52,7 @@
  * whole (a drop that puts the block in the wrong place is not a failure).
  *
  * FLAGS (all optional):
- *   --hours H            how long to start new batches (default 1; 0 = no limit)
+ *   --hours H            how long to start new batches (default 1; 0 or --forever = until --stop)
  *   --smoke              about 30 s, small batches, results in soak-results/smoke
  *   --jsdom | --e2e      only that engine (default: both; --e2e is Chromium)
  *   --alternate          jsdom, plus ONE Chromium batch at a time, every --e2e-every (20th) batch (instead of both at once)
@@ -56,7 +63,13 @@
  *   --seed N             start there (it resumes where it stopped by default); --fresh forgets the saved progress
  *   --steps N            steps per sequence (default: a ramp, 20 and up to 100 for jsdom, 15 up to 60 for Chromium)
  *   --batch N            seeds per worker process (default 40 for jsdom, 6 for Chromium); --batches N stops after N batches
- *   --cores MIN-MAX      workers at once (default 2-14); --e2e-cores N: at most N of them Chromium (default 4)
+ *   --cores MIN-MAX      workers at once (default 2-14: jsdom may use all of them); --e2e-cores N: at most N of them Chromium (default: half
+ *                        of MAX and no more than 6, so 6; Chromium flaked under load at 10 workers). Of the workers that run, half run
+ *                        Chromium (4 of 8) up to that cap, the rest jsdom
+ *   --ingest-issues      first read the open issues of bootstrapworld/codemirror-blocks that have a "bug" label (READ-ONLY: gh issue list),
+ *                        take the first code block of each that looks like a program (language from its tag or a file name) and write them
+ *                        to <out>/issue-programs.json (+ issue-programs.sources.json, the issue numbers) for the generator; gh missing, not
+ *                        logged in or offline: a message, and the run goes on. --ingest-only does just that and exits
  *   --skip a11y,focus    do not check these invariants (a known finding that hides others)
  *   --shrink-runs N      tries to shorten a failing sequence (default 60 jsdom, 12 Chromium)
  *   --timeout-min N      a worker that runs this long (default 25 min of running time) is killed
@@ -74,13 +87,16 @@
  *   npm run soak -w @bootstrapworld/cm6-blocks -- --known "<text>"          mark failures whose signature contains <text> as known
  * Files in the results directory: failures.jsonl (a line per failing sequence: engine, seed, language, program, shrunk steps, invariant, message;
  * at most 20 full records per signature, the rest are only counted), progress-<engine>.json, summary.md, status.log, known.json, logs/ (the
- * output of each crashed worker), workers.json (the pids; a runner that was killed hard cannot leave workers stopped: the next start ends them).
+ * output of each crashed worker), workers.json (the pids; a runner that was killed hard cannot leave workers stopped: the next start ends them),
+ * soak.lock, flakes.jsonl (the FULL record of every load flake: a failure that passed when run again alone, so it can still be replayed: copy
+ * its line into failures.jsonl), lost.jsonl (a batch whose worker was killed or timed out: its seeds, how far it got, the last progress line
+ * and the tail of the output; the summary counts them), issue-programs.json (from --ingest-issues).
  *
  * HOW IT RUNS: batches of seeds run in parallel in worker processes (jest for jsdom, Playwright for Chromium) on disjoint seed ranges, at low
  * priority (nice 19). A governor measures every 10 s how busy the machine is apart from the workers and pauses surplus workers (SIGSTOP) to keep
  * it under about 70%, and starts or resumes one more after two quiet samples. A worker that dies without a report is a crash: the seed that was
- * running is run once more alone, and recorded if it dies again; the rest of the batch is run again. A Chromium failure is run once more alone and
- * counts only if it fails again. Run it on a tree that is not being edited: a half-saved file looks like a bug.
+ * running is run once more alone, and recorded if it dies again; the rest of the batch is run again. A Chromium failure, and a jsdom "stuck"
+ * (a step too slow by the clock, which depends on how busy the machine is), is run once more alone and counts only if it fails again. Run it on a tree that is not being edited: a half-saved file looks like a bug.
  */
 /* eslint-disable no-console */
 const { spawn, spawnSync } = require("child_process");
@@ -144,6 +160,7 @@ const stamp = () => new Date().toTimeString().slice(0, 8);
 const log = (text) => console.log(`[${stamp()}] ${text}`);
 const engines = opts.engines;
 const modeFile = (e) => path.join(out, `progress-${e}.json`);
+const lockFile = path.join(out, "soak.lock");
 const writeSummaries = (progressByEngine, known) => {
   const parts = [];
   for (const e of Object.keys(progressByEngine)) {
@@ -162,6 +179,46 @@ const savedProgress = () =>
   );
 
 // ---- commands that run nothing, or run one sequence ----
+
+/** the lock, if a live soak holds it */
+const liveLock = () => {
+  const l = lib.readLock(lockFile);
+  return l && lib.soakAlive(l.pid) ? l : null;
+};
+if (opts.status) {
+  console.log(
+    lib.statusTable(savedProgress(), readJson(knownFile, []), liveLock())
+  );
+  process.exit(0);
+}
+if (opts.stop) {
+  const holder = liveLock();
+  if (!holder) {
+    fs.rmSync(lockFile, { force: true });
+    console.log(`no soak is running on ${out}`);
+    process.exit(0);
+  }
+  console.log(
+    `stopping the soak (${lib.describeLock(holder)}): SIGINT, then waiting until it is gone (it finishes the running batches first)`
+  );
+  process.kill(holder.pid, "SIGINT");
+  const t0 = Date.now();
+  let lastSaid = t0;
+  setInterval(() => {
+    const secs = Math.round((Date.now() - t0) / 1000);
+    if (!lib.soakAlive(holder.pid)) {
+      console.log(
+        `stopped after ${secs} s; see ${path.join(out, "summary.md")}`
+      );
+      process.exit(0);
+    }
+    if (Date.now() - lastSaid > 60000) {
+      lastSaid = Date.now();
+      console.log(`  still running (${secs} s)`);
+    }
+  }, 500);
+  return;
+}
 
 if (opts.known !== undefined) {
   const known = readJson(knownFile, []);
@@ -232,7 +289,7 @@ const pwBin = [
 ];
 
 /** One worker process to completion: resolves {status, signal, output, timedOut} */
-const runWorker = (engine, env, { niceness = true, onChild } = {}) =>
+const runWorker = (engine, env, { niceness = true, onChild, timeoutMs } = {}) =>
   new Promise((resolve) => {
     const cmd = engine === "chromium" ? pwBin : jestBin;
     const [bin, ...rest] = niceness ? [...lowPriority, ...cmd] : cmd;
@@ -251,13 +308,23 @@ const runWorker = (engine, env, { niceness = true, onChild } = {}) =>
     const keep = (d) => (output = (output + d).slice(-300000));
     child.stdout.on("data", keep);
     child.stderr.on("data", keep);
-    const timedOut = false;
-    child.on("error", (e) =>
-      resolve({ status: null, signal: null, output: String(e), timedOut })
-    );
-    child.on("close", (status, signal) =>
-      resolve({ status, signal, output, timedOut })
-    );
+    let timedOut = false;
+    // (only for the reruns, which are not counted by the governor's clock: a worker of a batch is timed by checkTimeouts)
+    const timer = timeoutMs
+      ? setTimeout(() => {
+          timedOut = true;
+          group(child.pid, "SIGCONT");
+          group(child.pid, "SIGKILL");
+        }, timeoutMs)
+      : null;
+    child.on("error", (e) => {
+      clearTimeout(timer);
+      resolve({ status: null, signal: null, output: String(e), timedOut });
+    });
+    child.on("close", (status, signal) => {
+      clearTimeout(timer);
+      resolve({ status, signal, output, timedOut });
+    });
   });
 
 const group = (pid, sig) => {
@@ -374,6 +441,50 @@ const sampleMs = opts.sampleSec * 1000;
 const hours = opts.hours;
 const shrinkRuns = (e) => opts.shrinkRuns ?? (e === "chromium" ? 12 : 60);
 
+// ---- the lock: one soak per results directory (before anything is changed or ended) ----
+
+const lock = lib.acquireLock(lockFile, { argv: process.argv.slice(2) });
+if (!lock.ok) {
+  console.error(
+    `another soak holds ${lockFile}: ${lib.describeLock(lock.holder)}.\n` +
+      `Stop it with: npm run soak -w @bootstrapworld/cm6-blocks -- --stop${opts.out ? ` --out ${opts.out}` : ""}, or use another --out directory.`
+  );
+  process.exit(1);
+}
+if (lock.tookOver)
+  log(
+    `taking over a stale lock (${lib.describeLock(lock.tookOver)}: that process is gone)`
+  );
+const unlock = () => lib.releaseLock(lockFile);
+process.on("exit", unlock);
+
+// ---- bug reports as programs (read-only) ----
+
+const ingestIssues = () => {
+  const r = lib.fetchIssues();
+  if (r.error) {
+    log(`--ingest-issues skipped: ${r.error}`);
+    return;
+  }
+  const { programs, sources } = lib.issuePrograms(r.issues);
+  fs.writeFileSync(
+    path.join(out, "issue-programs.json"),
+    JSON.stringify(programs, null, 2)
+  );
+  fs.writeFileSync(
+    path.join(out, "issue-programs.sources.json"),
+    JSON.stringify(sources, null, 2)
+  );
+  log(
+    `--ingest-issues: ${r.issues.length} open issues, ${sources.length} with a bug label and a program (` +
+      `${Object.entries(programs)
+        .map(([l, a]) => `${l} ${a.length}`)
+        .join(", ")}) in ${path.join(out, "issue-programs.json")}`
+  );
+};
+if (opts.ingestIssues || opts.ingestOnly) ingestIssues();
+if (opts.ingestOnly) process.exit(0);
+
 // ---- leftovers of a runner that was killed hard ----
 
 for (const pid of readJson(workersFile, [])) {
@@ -403,6 +514,10 @@ for (const e of engines) {
       failures: saved?.failures ?? 0,
       crashes: saved?.crashes ?? [],
       loadFlakes: saved?.loadFlakes ?? 0,
+      flakes: saved?.flakes ?? [],
+      lost: saved?.lost ?? 0,
+      lostKilled: saved?.lostKilled ?? 0,
+      lostTimeouts: saved?.lostTimeouts ?? 0,
       distinct: saved?.distinct ?? {},
       heights: saved?.heights,
       head,
@@ -417,12 +532,13 @@ const save = () => {
     fs.writeFileSync(modeFile(e), JSON.stringify(states[e].progress, null, 2));
   writeSummaries(progressAll(), readJson(knownFile, []));
 };
-const record = (engine, entry) =>
+const appendRecord = (file, engine, entry) =>
   fs.appendFileSync(
-    failuresFile,
+    path.join(out, file),
     JSON.stringify({ engine, head, at: new Date().toISOString(), ...entry }) +
       "\n"
   );
+const record = (engine, entry) => appendRecord("failures.jsonl", engine, entry);
 
 // ---- the jobs ----
 
@@ -473,9 +589,10 @@ const runBatch = async (job, engine, seeds, steps, timeoutMs) => {
   job.timedOut = false;
   job.child = null;
   writeWorkers();
-  const res = lib.readResults(
-    fs.existsSync(resFile) ? fs.readFileSync(resFile, "utf8") : ""
-  );
+  const resText = fs.existsSync(resFile)
+    ? fs.readFileSync(resFile, "utf8")
+    : "";
+  const res = lib.readResults(resText);
   fs.rmSync(resFile, { force: true });
   fs.rmSync(jobFile, { force: true });
   const missing = lib.missingSeeds(seeds, res.done);
@@ -488,6 +605,27 @@ const runBatch = async (job, engine, seeds, steps, timeoutMs) => {
     const file = path.join(out, "logs", `${kind.split(" ")[0]}-${id}.txt`);
     fs.writeFileSync(file, r.output.slice(-200000));
     crash = { kind, log: file };
+    if (lib.isKillOrTimeout(kind)) {
+      // (such a worker leaves an empty log: keep what is known about its batch, so that the seeds can be run again by hand)
+      const { progress } = states[engine];
+      progress.lost++;
+      if (kind === "timeout") progress.lostTimeouts++;
+      else progress.lostKilled++;
+      appendRecord(
+        "lost.jsonl",
+        engine,
+        lib.lostRecord({
+          engine,
+          seeds,
+          done: res.done,
+          kind,
+          steps,
+          lastLine: resText.trim().split("\n").filter(Boolean).at(-1),
+          tail: r.output,
+          log: file,
+        })
+      );
+    }
   }
   return {
     passed: res.passed,
@@ -579,10 +717,15 @@ const doJob = async (job, engine, from, size, steps) => {
     }
     seeds = rest;
   }
-  if (engine === "chromium" && !hardStop && failures.length) {
-    // A Chromium failure may only be the machine being busy: run each once more, alone. It counts only if it fails again.
+  if (!hardStop && failures.some((f) => lib.mayBeLoad(f, engine))) {
+    // A Chromium failure, or a jsdom "stuck" step, may only be the machine being busy: run each once more, alone. It counts only if it
+    // fails again; if it passes, its FULL record is kept in flakes.jsonl (it could not be replayed otherwise).
     const again = [];
     for (const f of failures) {
+      if (!lib.mayBeLoad(f, engine)) {
+        again.push(f);
+        continue;
+      }
       const tmp = path.join(out, `replay-${f.seed}-${++batchCounter}.json`);
       fs.writeFileSync(tmp, JSON.stringify(lib.sequenceOf(f)));
       const r = await runWorker(
@@ -594,8 +737,17 @@ const doJob = async (job, engine, from, size, steps) => {
       if (r.status === 0) {
         progress.loadFlakes++;
         passed++;
+        appendRecord("flakes.jsonl", engine, lib.flakeRecord(f));
+        progress.flakes.push({
+          seed: f.seed,
+          language: f.language,
+          invariant: f.invariant,
+          op: f.op,
+          message: String(f.message ?? "").slice(0, 300),
+        });
+        progress.flakes = progress.flakes.slice(-200);
         log(
-          `  chromium seed ${f.seed} failed under load but passed again: a load flake`
+          `  ${engine} seed ${f.seed} (${f.invariant}) failed under load but passed again: a load flake (kept in flakes.jsonl)`
         );
       } else again.push(f);
     }
@@ -684,9 +836,8 @@ const chooseEngine = () => {
     return !chromiumRunning && startedBatches - lastE2e >= opts.e2eEvery - 1
       ? "chromium"
       : "jsdom";
-  // both at once: Chromium gets about a third of the slots, at most --e2e-cores
-  return chromiumRunning <
-    Math.min(chromiumCap, Math.max(1, Math.ceil(limit() / 3)))
+  // both at once: Chromium gets half of the slots (4 of 8), at most --e2e-cores (default 6)
+  return chromiumRunning < lib.chromiumSlots(limit(), chromiumCap)
     ? "chromium"
     : "jsdom";
 };
@@ -784,7 +935,7 @@ const status = (startSeqs, startFails, startedAt) => {
     `status after ${((Date.now() - startedAt) / 3600000).toFixed(1)} h: ${seqs} sequences, ${fails} failures this run ` +
     `(rate ${rate(fails, seqs)}; ${totals("failures")} in all, ${rate(totals("failures"), totals("sequences"))}; ${distinctCount()} distinct), ` +
     `${engines.reduce((n, e) => n + states[e].progress.crashes.length, 0)} crashes, ` +
-    `${totals("loadFlakes")} Chromium load flakes passed on a rerun`;
+    `${totals("loadFlakes")} load flakes passed on a rerun, ${totals("lost")} batches lost to kills and timeouts`;
   log(line);
   fs.appendFileSync(
     path.join(out, "status.log"),
@@ -817,7 +968,7 @@ const status = (startSeqs, startFails, startedAt) => {
   log(
     `soak (${engines.join("+")}${opts.alternate ? ", alternating" : ""}${opts.motion ? ", motion" : ""}${smoke ? ", smoke" : ""}) at ${head}${dirty ? "+changes" : ""}, ` +
       `${minCores}-${maxCores} workers on ${ncpu} cores, seeds ${engines.map((e) => `${e} ${states[e].progress.nextSeed}`).join(", ")}, ` +
-      `${hours > 0 ? `${hours} h` : "no time limit"}, results in ${out}${port !== "0" ? `, page server on port ${port}` : ""}`
+      `${hours > 0 ? `${hours} h` : "until --stop"}, results in ${out}${port !== "0" ? `, page server on port ${port}` : ""}`
   );
   const startSeqs = totals("sequences");
   const startFails = totals("failures");

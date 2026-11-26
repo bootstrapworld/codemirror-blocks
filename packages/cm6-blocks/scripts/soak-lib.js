@@ -1,8 +1,22 @@
 // The pure parts of scripts/soak.js (arguments, signatures, results, the governor, the summary, `--promote`), kept apart so that jest can test them.
 
+const fs = require("fs");
+const { spawnSync } = require("child_process");
+
 const ESC = String.fromCharCode(27);
 const stripAnsi = (s) =>
   String(s).replace(new RegExp(`${ESC}\\[[0-9;]*m`, "g"), "");
+
+const MAX_E2E_CORES = 6;
+/** Chromium workers at most: half of the workers, and never more than MAX_E2E_CORES */
+function defaultE2eCores(maxWorkers) {
+  return Math.max(1, Math.min(MAX_E2E_CORES, Math.floor(maxWorkers / 2)));
+}
+
+/** How many of `limit` workers may run Chromium now: half of them (at least one), at most `cap` */
+function chromiumSlots(limit, cap) {
+  return Math.min(Math.max(1, cap), Math.max(1, Math.floor(limit / 2)));
+}
 
 /** The command line as options. Every flag has a default; `--x v` and `--x=v` both work. */
 function parseArgs(argv) {
@@ -32,9 +46,13 @@ function parseArgs(argv) {
   const [minCores, maxCores] = String(raw.cores ?? "2-14")
     .split("-")
     .map(Number);
+  const hours = smoke ? 0.01 : num("hours", 1);
+  const forever = !smoke && (has("forever") || hours === 0);
+  const maxWorkers = smoke ? 2 : maxCores;
   return {
     smoke,
-    hours: smoke ? 0.01 : num("hours", 1),
+    forever,
+    hours: forever ? 0 : hours,
     engines: e2eOnly
       ? ["chromium"]
       : jsdomOnly
@@ -56,8 +74,9 @@ function parseArgs(argv) {
     steps: raw.steps === undefined ? undefined : Number(raw.steps),
     ramp: has("ramp") || (!has("no-ramp") && raw.steps === undefined),
     minCores: smoke ? 1 : minCores,
-    maxCores: smoke ? 2 : maxCores,
-    e2eCores: num("e2e-cores", 4),
+    maxCores: maxWorkers,
+    // (half of the workers may run Chromium, and no more than 6: more flaked under load, round 3)
+    e2eCores: num("e2e-cores", defaultE2eCores(maxWorkers)),
     timeoutMin: num("timeout-min", 25),
     sampleSec: num("sample-sec", 10),
     statusMin: num("status-min", 30),
@@ -70,6 +89,10 @@ function parseArgs(argv) {
     known: raw.known,
     promote: raw.promote,
     replay: raw.replay,
+    stop: has("stop"),
+    status: has("status"),
+    ingestIssues: has("ingest-issues"),
+    ingestOnly: has("ingest-only"),
     replaySeed:
       raw["replay-seed"] === undefined ? undefined : Number(raw["replay-seed"]),
     help: has("help"),
@@ -330,6 +353,28 @@ function summarize(progress, distinct, known = []) {
     }
     lines.push(``);
   }
+  if (progress.flakes?.length || progress.loadFlakes) {
+    lines.push(
+      `## Load flakes (${progress.loadFlakes ?? 0}: failed under load, passed on a rerun)`,
+      ``
+    );
+    for (const f of (progress.flakes ?? []).slice(-30))
+      lines.push(
+        `- seed ${f.seed} (${f.language}): ${f.invariant} after ${f.op}: ${ascii(normalizeMessage(f.message))}`
+      );
+    lines.push(
+      `- the full records are in flakes.jsonl (replay one with \`--replay <seed>\` after copying its line into failures.jsonl)`,
+      ``
+    );
+  }
+  if (progress.lost) {
+    lines.push(
+      `## Lost to kills and timeouts (${progress.lost} batches: ${progress.lostKilled ?? 0} killed, ${progress.lostTimeouts ?? 0} timed out)`,
+      ``,
+      `Their seeds and last progress are in lost.jsonl; the seeds were run again.`,
+      ``
+    );
+  }
   for (const [sig, d] of split.fresh) {
     const ex = d.example;
     lines.push(`## ${d.count}x  ${sig}`, ``);
@@ -373,9 +418,299 @@ function summarize(progress, distinct, known = []) {
   return lines.join("\n");
 }
 
+// ---- the lock: one soak per results directory ----
+
+/** Is `pid` a live soak runner? (a dead pid, or one that a later program reused, is not) */
+function soakAlive(pid) {
+  try {
+    process.kill(pid, 0);
+  } catch (e) {
+    if (e.code !== "EPERM") return false;
+  }
+  const r = spawnSync("ps", ["-o", "command=", "-p", String(pid)], {
+    encoding: "utf8",
+  });
+  return r.status !== 0 || !r.stdout.trim() || /soak/.test(r.stdout);
+}
+
+function readLock(file) {
+  try {
+    const l = JSON.parse(fs.readFileSync(file, "utf8"));
+    return Number.isInteger(l.pid) ? l : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
+ * Take the lock file: `{ok: true}` (with `tookOver: <old lock>` when the holder was dead) or `{ok: false, holder}`. The file is created
+ * exclusively, so two runners that start together cannot both get it.
+ */
+function acquireLock(
+  file,
+  { pid = process.pid, now = Date.now(), alive = soakAlive, argv = [] } = {}
+) {
+  const mine = JSON.stringify({
+    pid,
+    startedAt: new Date(now).toISOString(),
+    argv,
+  });
+  let tookOver;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      fs.writeFileSync(file, mine, { flag: "wx" });
+      return tookOver ? { ok: true, tookOver } : { ok: true };
+    } catch (e) {
+      if (e.code !== "EEXIST") throw e;
+    }
+    const holder = readLock(file);
+    if (holder && holder.pid !== pid && alive(holder.pid))
+      return { ok: false, holder };
+    tookOver = holder ?? { pid: null };
+    fs.rmSync(file, { force: true });
+  }
+  return { ok: false, holder: readLock(file) ?? { pid: null } };
+}
+
+/** Give the lock back (only if it is still ours) */
+function releaseLock(file, pid = process.pid) {
+  if (readLock(file)?.pid === pid) fs.rmSync(file, { force: true });
+}
+
+/** One line on who holds a lock */
+function describeLock(l) {
+  return `pid ${l.pid}, started ${l.startedAt ?? "at an unknown time"}${l.argv?.length ? `, arguments: ${l.argv.join(" ")}` : ""}`;
+}
+
+// ---- records that keep the evidence ----
+
+/** The full record of a failure that passed on a rerun (a load flake), so that it can be replayed: seed, language, code, steps, options */
+function flakeRecord(f, extra = {}) {
+  return { type: "flake", ...extra, ...f };
+}
+
+/** The record of a batch whose worker was killed or timed out: its seeds, how far it got, and the end of what it printed */
+function lostRecord({ engine, seeds, done, kind, lastLine, tail, steps, log }) {
+  const doneSet = new Set(done);
+  return {
+    type: "lost",
+    engine,
+    kind,
+    seeds,
+    done: doneSet.size,
+    missing: seeds.filter((s) => !doneSet.has(s)),
+    steps,
+    lastProgress: lastLine ?? null,
+    outputTail: String(tail ?? "").slice(-3000),
+    log,
+  };
+}
+
+/** Is the crash kind one of the two that leave no logs: a kill (signal) or a timeout */
+const isKillOrTimeout = (kind) => /^(timeout|killed)/.test(kind);
+
+/** A failure that depends on how busy the machine is: a Chromium one, or a jsdom step that ran out of time */
+function mayBeLoad(f, engine = f.engine) {
+  return engine === "chromium" || f.invariant === "stuck";
+}
+
+// ---- the status table (`--status`), in ASCII ----
+
+const ascii = (s) =>
+  String(s ?? "")
+    .replace(/[^\x20-\x7e]/g, "?")
+    .replace(/\|/g, "/");
+
+/** Markdown: one row per engine, then the distinct failures with a seed to replay */
+function statusTable(progressByEngine, known = [], lock = null) {
+  const lines = [];
+  lines.push(
+    lock
+      ? `Soak running: ${ascii(describeLock(lock))}`
+      : `No soak is running on this results directory.`,
+    ``,
+    `| engine | sequences | failures | distinct | crashes | load flakes | lost batches | next seed |`,
+    `|---|---|---|---|---|---|---|---|`
+  );
+  for (const [e, p] of Object.entries(progressByEngine)) {
+    if (!p) continue;
+    lines.push(
+      `| ${e} | ${p.sequences ?? 0} | ${p.failures ?? 0} | ${Object.keys(p.distinct ?? {}).length} | ${p.crashes?.length ?? 0} | ${p.loadFlakes ?? 0} | ${p.lost ?? 0} | ${p.nextSeed} |`
+    );
+  }
+  lines.push(``, `Distinct failures (new first):`, ``);
+  let any = false;
+  for (const [e, p] of Object.entries(progressByEngine)) {
+    if (!p) continue;
+    const split = splitKnown(p.distinct ?? {}, known);
+    for (const [label, list] of [
+      ["new", split.fresh],
+      ["known", split.known],
+    ])
+      for (const [sig, d] of list) {
+        any = true;
+        lines.push(
+          `- ${e} ${label}: ${d.count}x seed ${d.example?.seed ?? "?"} - ${ascii(sig).slice(0, 160)}`
+        );
+      }
+  }
+  if (!any) lines.push(`- none`);
+  return lines.join("\n") + "\n";
+}
+
+// ---- bug reports from GitHub issues (`--ingest-issues`) ----
+
+const TAG_LANGUAGE = {
+  scheme: "scheme",
+  scm: "scheme",
+  rkt: "scheme",
+  racket: "scheme",
+  wescheme: "scheme",
+  lisp: "scheme",
+  js: "javascript",
+  javascript: "javascript",
+  jsx: "javascript",
+  mjs: "javascript",
+  py: "python",
+  python: "python",
+  python3: "python",
+};
+const EXT_LANGUAGE = {
+  rkt: "scheme",
+  scm: "scheme",
+  ss: "scheme",
+  js: "javascript",
+  mjs: "javascript",
+  py: "python",
+};
+
+/** The language of a block: its tag, else a file name in the text around it, else a guess from the code; null if none fits */
+function languageOfBlock(tag, code, context = "") {
+  const t = String(tag ?? "")
+    .trim()
+    .toLowerCase();
+  if (TAG_LANGUAGE[t]) return TAG_LANGUAGE[t];
+  const ext = /[\w.-]+\.(rkt|scm|ss|mjs|js|py)\b/i.exec(context);
+  if (ext) return EXT_LANGUAGE[ext[1].toLowerCase()];
+  if (/^\s*\(\s*(define|let|cond|if|lambda|begin|require)\b/m.test(code))
+    return "scheme";
+  if (
+    /^\s*(def \w+\(.*\)\s*:|import \w+|from \w+ import|class \w+.*:)/m.test(
+      code
+    )
+  )
+    return "python";
+  if (
+    /\b(function\s*\w*\s*\(|const |let |var |=>|console\.log)/.test(code) &&
+    /[;{}]/.test(code)
+  )
+    return "javascript";
+  return null;
+}
+
+/** Does a block look like a program rather than a log, a stack, a shell session or data? */
+function looksLikeProgram(code) {
+  const text = String(code ?? "");
+  if (text.trim().length < 3 || text.length > 4000) return false;
+  if (/^\s+at .+\(.*:\d+:\d+\)/m.test(text)) return false; // a stack
+  if (/^\s*(\$|>|npm |yarn |git |cd |node |gh )/m.test(text)) return false; // a shell session
+  if (/^\s*(Error|TypeError|RangeError|Uncaught|Warning)\b/m.test(text))
+    return false;
+  if (/^\s*[{[]\s*"/.test(text)) return false; // JSON
+  if (/^\s*<\w+/.test(text)) return false; // markup
+  return /[()[\]{}=:;]/.test(text);
+}
+
+/**
+ * The first program in an issue body: `{language, code}` or null. Only fenced blocks count. Nothing of the issue but the code is kept.
+ */
+function programFromIssueBody(body) {
+  const text = String(body ?? "").replace(/\r\n/g, "\n");
+  const fence = /^(`{3,}|~{3,})[ \t]*([^\n`]*)\n([\s\S]*?)\n\1[ \t]*$/gm;
+  let m;
+  while ((m = fence.exec(text))) {
+    const code = m[3];
+    if (!looksLikeProgram(code)) continue;
+    const context = text.slice(Math.max(0, m.index - 300), m.index);
+    const language = languageOfBlock(m[2].split(/\s/)[0], code, context);
+    if (language) return { language, code: code.replace(/\s+$/, "") + "\n" };
+  }
+  return null;
+}
+
+/** The issues (as `gh issue list --json number,labels,body` gives them) that carry a bug label, as programs by language */
+function issuePrograms(issues) {
+  const programs = { scheme: [], javascript: [], python: [] };
+  const sources = [];
+  for (const issue of issues ?? []) {
+    const isBug = (issue.labels ?? []).some((l) =>
+      /bug|user.?submitted/i.test(typeof l === "string" ? l : (l?.name ?? ""))
+    );
+    if (!isBug) continue;
+    const p = programFromIssueBody(issue.body);
+    if (!p || programs[p.language].includes(p.code)) continue;
+    programs[p.language].push(p.code);
+    sources.push({ issue: issue.number, language: p.language });
+  }
+  return { programs, sources };
+}
+
+const ISSUE_REPO = "bootstrapworld/codemirror-blocks";
+/** The open issues, read-only (`gh issue list`); `{issues}` or `{error: <what to tell the user>}` */
+function fetchIssues(run = spawnSync) {
+  const r = run(
+    "gh",
+    [
+      "issue",
+      "list",
+      "--repo",
+      ISSUE_REPO,
+      "--state",
+      "open",
+      "--limit",
+      "300",
+      "--json",
+      "number,labels,body",
+    ],
+    { encoding: "utf8", timeout: 60000 }
+  );
+  if (r.error)
+    return {
+      error: `gh could not be run (${r.error.code ?? r.error.message})`,
+    };
+  if (r.status !== 0)
+    return {
+      error: `gh failed (not logged in with \`gh auth login\`, or offline): ${String(r.stderr).trim().split("\n")[0]}`,
+    };
+  try {
+    return { issues: JSON.parse(r.stdout) };
+  } catch (_) {
+    return { error: "gh printed something that is not JSON" };
+  }
+}
+
 module.exports = {
   SLOW_STALE_MS,
   addHeights,
+  MAX_E2E_CORES,
+  acquireLock,
+  ascii,
+  chromiumSlots,
+  defaultE2eCores,
+  describeLock,
+  fetchIssues,
+  flakeRecord,
+  isKillOrTimeout,
+  issuePrograms,
+  languageOfBlock,
+  looksLikeProgram,
+  lostRecord,
+  mayBeLoad,
+  programFromIssueBody,
+  readLock,
+  releaseLock,
+  soakAlive,
+  statusTable,
   EXAMPLE_CAP,
   busyCores,
   classifyCrash,
