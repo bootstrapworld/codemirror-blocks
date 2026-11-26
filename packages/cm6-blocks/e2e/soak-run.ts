@@ -751,7 +751,9 @@ export async function runChromium(
           if (await boxOpen().count())
             await page.keyboard.press(s.accept ? "Enter" : "Escape");
         } else {
-          if ((await text()) !== before) textEditedInText = true;
+          // (a composition in the text is an edit even when it ends where it began: CodeMirror writes the composed text and takes it out again,
+          // and the editor drops the history when the text that was edited comes back to blocks. Seed 3429 of round 8)
+          if (before !== null) textEditedInText = true;
           if (s.back) await returnToBlocks();
         }
         editsMade++;

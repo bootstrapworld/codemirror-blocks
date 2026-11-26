@@ -1705,3 +1705,39 @@ test("seed 5667 and 4299 (round 8): a template button that a zoom and a narrow w
   );
   expect(v).toBeNull();
 });
+
+test("seed 3429 (round 8): a composition in the text that ends where it began still counts as a text edit (the editor drops the history when that text comes back to blocks), so undo-all is not asked of it", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 3429,
+      language: "scheme",
+      code: "(a b)\n(c d)\n(e f)\n",
+      steps: [
+        {
+          op: "insertText",
+          a: 0.5,
+          b: 0.8,
+          text: "'(1 2)\n(f)\n'(1 2)\nx",
+        },
+        {
+          op: "ime",
+          a: 0.49,
+          target: "text",
+          parts: ["x"],
+          final: "x y",
+          cancel: true,
+          accept: false,
+          back: false,
+        },
+        { op: "scrollToggle", a: 0.9 },
+      ],
+      motion: "full",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});
