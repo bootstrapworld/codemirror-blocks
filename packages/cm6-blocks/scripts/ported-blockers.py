@@ -34,6 +34,9 @@ def skip_index(path):
     for i, l in enumerate(lines):
         m = re.search(r"//\s*SKIPPED \((\w)\)[^:]*:\s*(.*)", l)
         if m: pend = (m.group(1), m.group(2)); continue
+        # `// MOVED to Chromium (...)`: the test runs elsewhere, so the skip here is not a blocker (class V: counted apart, not in the csv)
+        m = re.search(r"//\s*MOVED\b\s*(.*)", l)
+        if m: pend = ("V", m.group(1)); continue
         if re.search(r"\.(skip|fixme)\b", l):
             tm = re.search(r"""(?:skip|fixme)(?:\.each\([^)]*\))?\(\s*(["'`])(.*?)\1""", l)
             title = tm.group(2) if tm else ""
@@ -47,7 +50,7 @@ def match(idx, title):
         if chunks and all(ch in title for ch in chunks[:2]) : best = best or (c, r)
         if chunks and chunks[0] and title.startswith(chunks[0]) : return (c, r)
     return best
-jest = json.load(open(sys.argv[1])); stat = collections.Counter(); passed = collections.Counter()
+jest = json.load(open(sys.argv[1])); stat = collections.Counter(); passed = collections.Counter(); moved = collections.Counter()
 for f in jest["testResults"]:
     name = os.path.relpath(f["name"], PKG); src = skip_index(f["name"])
     # file-level variant skip reason (undo-matrix)
@@ -58,7 +61,9 @@ for f in jest["testResults"]:
         title = t["title"]; m = match(src, title)
         if "undo-matrix" in name and re.search(r"top level", t["fullName"]): m = ("M", "typing and pasting at the top level (no quarantine)")
         elif "undo-matrix" in name and re.search(r"onto whitespace", t["fullName"]): m = ("M", "a drop onto bare whitespace (not built)")
-        m = m or filedefault; d, rest = classify(*m)
+        m = m or filedefault
+        if m[0] == "V": moved["jest"] += 1; continue
+        d, rest = classify(*m)
         rows.append((t["fullName"], name, d, f"({m[0]}) {m[1][:160]}" + (f" | also: {','.join(rest)}" if rest else ""), "jest"))
 if len(sys.argv) > 2:
     pw = json.load(open(sys.argv[2]))
@@ -83,4 +88,4 @@ for r in rows: tab[r[2]][0 if r[4] == "jest" else 1] += 1; tab[r[2]][2].add(os.p
 print("passed:", dict(passed), dict(stat))
 print("dependency | jest | pw | total | files")
 for d, (a, b, fs) in sorted(tab.items(), key=lambda x: -(x[1][0] + x[1][1])): print(f"{d} | {a} | {b} | {a+b} | {', '.join(sorted(fs))[:150]}")
-print("total skipped:", len(rows))
+print("total skipped:", len(rows), "(not counted: %d jest skips marked MOVED, they run in Chromium)" % moved["jest"] if moved["jest"] else "")
