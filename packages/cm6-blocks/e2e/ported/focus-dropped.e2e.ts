@@ -71,6 +71,21 @@ test("focus goes to the block that replaces the focused one when an API edit cha
     .toBe("treeitem");
 });
 
+test("focus goes to the first of several blocks that replace the focused one", async ({
+  page,
+}) => {
+  // added (cm6 only): an API edit replaces the focused call by two calls; the first has the focus
+  await openInBlockMode(page, "(f x y)\n(g z)");
+  await block(page, /a f expression /).click({ position: { x: 4, y: 4 } });
+  await page.evaluate(() => {
+    const v = (window as any).demo.ed.view;
+    v.dispatch({ changes: { from: 0, to: 7, insert: "(a 1)\n(b 2)" } });
+  });
+  await expect
+    .poll(() => page.evaluate(() => document.activeElement?.textContent))
+    .toBe("a1");
+});
+
 const FIXME = new Set<string>([
   "focus goes to the focused block once it is back on the page",
 ]);
