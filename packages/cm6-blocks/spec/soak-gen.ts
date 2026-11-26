@@ -27,6 +27,14 @@
  * a second generator turns their clicks into taps and their block drags into long-press-and-drag with a finger, and adds long presses that
  * let go in place and quick swipes (which must scroll, never drag). jsdom has none of them: its events carry no coordinates a drop could be
  * found from (no layout), and the editor's touch logic is already in spec/touch.test.ts.
+ *
+ * THE BROWSER'S OWN DOINGS (forty-ninth round, Chromium only): `longDocs("chromium")` is 40% (jsdom stays 18%: `CMB6_SOAK_LONG_DOCS_CHROMIUM`
+ * sets Chromium alone), and a third generator, `browserify` (60% of the Chromium sequences, `CMB6_SOAK_BROWSER_STEPS`; it replaces one
+ * step in seven), adds `resize` (window width and height, narrow phone widths included, line wrapping switched on or off by making the
+ * editor again), `zoom` (page zoom: fewer CSS px, more device px per CSS px, fractional levels), `ime` (a composition through the CDP
+ * input method events, into an edit box or into the text, then committed or cancelled) and `clipboard` (copy or cut by key of the focused
+ * block or of selected blocks, the real system clipboard read back, then a paste by key at a gap, onto a block or over a selected one).
+ * The steps of a seed that are not replaced are what they were.
  */
 import * as fs from "fs";
 import * as path from "path";
@@ -523,14 +531,24 @@ function rawChunks(lang: Lang): string[] {
   return chunkCache?.[lang] ?? [];
 }
 
-/** the fraction of sequences that start from a LONG document (default 0.18; `CMB6_SOAK_LONG_DOCS`, set by `soak.js --long-docs`, 0 turns it off) */
-export function longDocs(): number {
-  const v = Number(process.env.CMB6_SOAK_LONG_DOCS);
-  return process.env.CMB6_SOAK_LONG_DOCS === undefined ||
-    process.env.CMB6_SOAK_LONG_DOCS === "" ||
-    !Number.isFinite(v)
-    ? 0.18
-    : Math.max(0, Math.min(1, v));
+/**
+ * The fraction of sequences that start from a LONG document: 0.18 for jsdom, 0.4 for Chromium (forty-ninth round: nearly all the real
+ * bugs of the soaks came from Chromium, from layout, scrolling and virtualization, which a long document exercises). `CMB6_SOAK_LONG_DOCS`
+ * (set by `soak.js --long-docs`) sets it for both engines, `CMB6_SOAK_LONG_DOCS_CHROMIUM` for Chromium alone; 0 turns it off.
+ */
+export function longDocs(engine: Engine = "jsdom"): number {
+  const read = (name: string): number | null => {
+    const raw = process.env[name];
+    const v = Number(raw);
+    return raw === undefined || raw === "" || !Number.isFinite(v)
+      ? null
+      : Math.max(0, Math.min(1, v));
+  };
+  return (
+    (engine === "chromium" ? read("CMB6_SOAK_LONG_DOCS_CHROMIUM") : null) ??
+    read("CMB6_SOAK_LONG_DOCS") ??
+    (engine === "chromium" ? 0.4 : 0.18)
+  );
 }
 const LONG_MIN = 60;
 const LONG_MAX = 400;
@@ -577,8 +595,12 @@ export function longProgram(lang: Lang, rnd: Rnd): string {
 }
 
 /** a program for `lang`: mostly a small one (a hand-written one, a generated one or a piece of a real file), sometimes a long document */
-export function randomProgram(lang: Lang, rnd: Rnd): string {
-  if (rnd() < longDocs()) return longProgram(lang, rnd);
+export function randomProgram(
+  lang: Lang,
+  rnd: Rnd,
+  engine: Engine = "jsdom"
+): string {
+  if (rnd() < longDocs(engine)) return longProgram(lang, rnd);
   const r = rnd();
   if (r < 0.25) return pick(rnd, START[lang]);
   if (r < 0.75) return gen[lang](rnd);
@@ -910,6 +932,91 @@ export function touchify(steps: Step[], seed: number): void {
   });
 }
 
+// ---- the browser's own doings (Chromium): the window, the zoom, an IME, the real clipboard ----
+
+/** the steps that only the browser can do (a window of another size, a zoom, a composition, the system clipboard) */
+export const BROWSER_OPS = ["resize", "zoom", "ime", "clipboard"];
+/** window sizes (CSS px at zoom 1): the first half are phones (a narrow window wraps lines and folds the toolbar) */
+export const RESIZE_WIDTHS = [
+  280, 320, 360, 375, 414, 480, 600, 768, 1024, 1100, 1400, 1920,
+];
+export const RESIZE_HEIGHTS = [480, 568, 667, 800, 1000, 1200];
+/** page zoom levels (1 is none): most are fractional, which is where heights round differently */
+export const ZOOM_LEVELS = [
+  0.5, 0.67, 0.8, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4,
+];
+/** what an IME sends: the composition as it grows (what is shown underlined), then the text that is committed */
+export const IME_SAMPLES: { parts: string[]; final: string }[] = [
+  { parts: ["n", "ni"], final: "你" },
+  { parts: ["k", "ka", "かn"], final: "かな" },
+  { parts: ["ㅎ", "하", "한"], final: "한" },
+  { parts: ["e", "é"], final: "é" },
+  { parts: ["(", "(a"], final: "(a)" },
+  { parts: ["x"], final: "x y" },
+  { parts: ["1", "12"], final: "12" },
+];
+/** the fraction of Chromium sequences that have the browser's steps (0.6; `CMB6_SOAK_BROWSER_STEPS`, 0 turns it off) */
+export function browserShare(): number {
+  const v = Number(process.env.CMB6_SOAK_BROWSER_STEPS);
+  return process.env.CMB6_SOAK_BROWSER_STEPS === undefined ||
+    process.env.CMB6_SOAK_BROWSER_STEPS === "" ||
+    !Number.isFinite(v)
+    ? 0.6
+    : Math.max(0, Math.min(1, v));
+}
+/**
+ * One step of the browser's own. `resize`: the window's width and height (the fractions `w`, `h` index RESIZE_WIDTHS and RESIZE_HEIGHTS), and
+ * `wrap` "on" or "off" to make the editor again from the same text with line wrapping so (the page's own choice: the editor is created with
+ * its extensions) or "keep". `zoom`: the zoom level (`z` indexes ZOOM_LEVELS). `ime`: a composition (`parts`, then `final` committed, or
+ * cancelled) into an open edit box (`target` "box") or into the text of the text mode, then the box accepted or not, and `back`: to blocks
+ * again. `clipboard`: the real copy or cut of the focused block (`n` 1) or of `n` selected blocks, then the paste by key at a gap (`to`
+ * "gap"), onto a block ("block") or over a selected one ("over").
+ */
+export function browserStep(rnd: Rnd): Step {
+  const r = rnd() * 13;
+  if (r < 4)
+    return {
+      op: "resize",
+      w: f(rnd),
+      h: f(rnd),
+      wrap: pick(rnd, ["keep", "keep", "on", "off"]),
+    };
+  if (r < 6) return { op: "zoom", z: f(rnd) };
+  if (r < 9) {
+    const sample = pick(rnd, IME_SAMPLES);
+    return {
+      op: "ime",
+      a: f(rnd),
+      target: pick(rnd, ["box", "box", "text"]),
+      parts: sample.parts,
+      final: sample.final,
+      cancel: rnd() < 0.3,
+      accept: rnd() < 0.7,
+      back: rnd() < 0.5,
+    };
+  }
+  return {
+    op: "clipboard",
+    a: f(rnd),
+    b: f(rnd),
+    n: pick(rnd, [1, 1, 2, 3]),
+    how: pick(rnd, ["copy", "cut", "copy"]),
+    to: pick(rnd, ["gap", "block", "over"]),
+    accept: rnd() < 0.7,
+  };
+}
+/**
+ * Replace some steps of a Chromium sequence with the browser's own, in place, with a generator of its own (the other sequences, and the
+ * other steps of this one, are what they were).
+ */
+export function browserify(steps: Step[], seed: number): void {
+  const rnd = mulberry32(seed * 49979687 + 17);
+  if (!(rnd() < browserShare())) return;
+  steps.forEach((s, i) => {
+    if (rnd() < 0.14) steps[i] = browserStep(rnd);
+  });
+}
+
 export interface Sequence {
   engine: Engine;
   seed: number;
@@ -931,14 +1038,17 @@ export function makeSequence(
 ): Sequence {
   const rnd = mulberry32(seed * 7919 + (engine === "jsdom" ? 1 : 2));
   const language = opts.language ?? pick(rnd, LANG_NAMES);
-  const code = randomProgram(language, rnd);
+  const code = randomProgram(language, rnd, engine);
   const motion = rnd() < (opts.motion ? 0.8 : 0.35) ? "full" : "reduced";
   const long = topLevelForms(code) > 60;
   const steps = Array.from({ length: stepsFor(code, nSteps) }, () =>
     genStep(rnd, language, engine, !!opts.motion, long)
   );
   const editor = chooseEditor(engine, seed);
-  if (engine === "chromium") touchify(steps, seed);
+  if (engine === "chromium") {
+    touchify(steps, seed);
+    browserify(steps, seed);
+  }
   return { engine, seed, language, code, steps, motion, editor };
 }
 

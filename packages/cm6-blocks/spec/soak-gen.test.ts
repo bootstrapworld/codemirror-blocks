@@ -1,6 +1,10 @@
 // The soak runner's generator (spec/soak-gen.ts): the same seed gives the same sequence, steps are fractions, a failing list shrinks.
 import {
+  at,
   BROKEN,
+  BROWSER_OPS,
+  browserShare,
+  browserStep,
   chooseEditor,
   defaultEditor,
   genStep,
@@ -10,12 +14,14 @@ import {
   makeSequence,
   mulberry32,
   randomProgram,
+  RESIZE_WIDTHS,
   shrink,
   Step,
   stepsFor,
   TOUCH_OPS,
   topLevelForms,
   touchShare,
+  ZOOM_LEVELS,
 } from "./soak-gen";
 
 describe("soak generator", () => {
@@ -295,5 +301,131 @@ describe("soak generator: editor options and touch (forty-seventh round)", () =>
       }
     });
     expect([...seen].sort()).toEqual([...TOUCH_OPS].sort());
+  });
+});
+
+const withEnvValue = <T>(k: string, v: string, fn: () => T): T => {
+  const old = process.env[k];
+  process.env[k] = v;
+  try {
+    return fn();
+  } finally {
+    if (old === undefined) delete process.env[k];
+    else process.env[k] = old;
+  }
+};
+
+describe("soak generator: long documents and the browser's steps in Chromium (forty-ninth round)", () => {
+  const withEnv = (k: string, v: string | undefined, fn: () => void) => {
+    const old = process.env[k];
+    if (v === undefined) delete process.env[k];
+    else process.env[k] = v;
+    try {
+      fn();
+    } finally {
+      if (old === undefined) delete process.env[k];
+      else process.env[k] = old;
+    }
+  };
+  const longShare = (engine: "jsdom" | "chromium") => {
+    let long = 0;
+    for (let seed = 0; seed < 300; seed++)
+      if (topLevelForms(makeSequence(engine, seed, 1).code) > 60) long++;
+    return long / 300;
+  };
+  test("long documents: 18% for jsdom, 40% for Chromium; the environment sets both, or Chromium alone", () => {
+    withEnv("CMB6_SOAK_LONG_DOCS", undefined, () =>
+      withEnv("CMB6_SOAK_LONG_DOCS_CHROMIUM", undefined, () => {
+        expect(longDocs()).toBe(0.18);
+        expect(longDocs("jsdom")).toBe(0.18);
+        expect(longDocs("chromium")).toBe(0.4);
+        expect(longShare("chromium")).toBeGreaterThan(0.3);
+        expect(longShare("chromium")).toBeLessThan(0.5);
+      })
+    );
+    withEnv("CMB6_SOAK_LONG_DOCS", "0.7", () =>
+      withEnv("CMB6_SOAK_LONG_DOCS_CHROMIUM", undefined, () => {
+        expect(longDocs("jsdom")).toBe(0.7);
+        expect(longDocs("chromium")).toBe(0.7);
+      })
+    );
+    withEnv("CMB6_SOAK_LONG_DOCS", "0.7", () =>
+      withEnv("CMB6_SOAK_LONG_DOCS_CHROMIUM", "0", () => {
+        expect(longDocs("jsdom")).toBe(0.7);
+        expect(longDocs("chromium")).toBe(0);
+        expect(longShare("chromium")).toBe(0);
+      })
+    );
+  });
+  test("jsdom sequences are what they were: no browser step, the same long share", () => {
+    for (let seed = 0; seed < 40; seed++)
+      for (const s of makeSequence("jsdom", seed, 40).steps)
+        expect(BROWSER_OPS).not.toContain(s.op);
+    withEnv("CMB6_SOAK_LONG_DOCS", undefined, () =>
+      withEnv("CMB6_SOAK_LONG_DOCS_CHROMIUM", undefined, () => {
+        expect(longShare("jsdom")).toBeLessThan(0.3);
+      })
+    );
+  });
+  test("about 60% of the Chromium sequences have browser steps, all four ops appear, 0 turns them off", () => {
+    expect(browserShare()).toBe(0.6);
+    const seen = new Set<string>();
+    let some = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const ops = makeSequence("chromium", seed, 40).steps.map((s) => s.op);
+      if (ops.some((o) => BROWSER_OPS.includes(o))) some++;
+      ops.filter((o) => BROWSER_OPS.includes(o)).forEach((o) => seen.add(o));
+    }
+    expect(some / 200).toBeGreaterThan(0.4);
+    expect(some / 200).toBeLessThan(0.75);
+    expect([...seen].sort()).toEqual([...BROWSER_OPS].sort());
+    withEnv("CMB6_SOAK_BROWSER_STEPS", "0", () => {
+      for (let seed = 0; seed < 50; seed++)
+        for (const s of makeSequence("chromium", seed, 40).steps)
+          expect(BROWSER_OPS).not.toContain(s.op);
+    });
+  });
+  test("the steps of a seed that are not browser steps stay as they were", () => {
+    for (let seed = 0; seed < 30; seed++) {
+      const off = withEnvValue("CMB6_SOAK_BROWSER_STEPS", "0", () =>
+        makeSequence("chromium", seed, 40)
+      );
+      const on = withEnvValue("CMB6_SOAK_BROWSER_STEPS", "1", () =>
+        makeSequence("chromium", seed, 40)
+      );
+      expect(on.code).toBe(off.code);
+      expect(on.steps).toHaveLength(off.steps.length);
+      on.steps.forEach((s, i) => {
+        if (!BROWSER_OPS.includes(s.op)) expect(s).toEqual(off.steps[i]);
+      });
+    }
+  });
+  test("browser steps have valid fields", () => {
+    const rnd = mulberry32(5);
+    for (let i = 0; i < 400; i++) {
+      const s = browserStep(rnd);
+      expect(BROWSER_OPS).toContain(s.op);
+      if (s.op === "resize") {
+        for (const k of ["w", "h"]) {
+          expect(s[k]).toBeGreaterThanOrEqual(0);
+          expect(s[k]).toBeLessThan(1);
+        }
+        expect(["keep", "on", "off"]).toContain(s.wrap);
+      } else if (s.op === "zoom") {
+        expect(at(s.z, ZOOM_LEVELS.length)).toBeGreaterThanOrEqual(0);
+      } else if (s.op === "ime") {
+        expect(["box", "text"]).toContain(s.target);
+        expect((s.parts as string[]).length).toBeGreaterThan(0);
+        expect(typeof s.final).toBe("string");
+        expect(typeof s.cancel).toBe("boolean");
+      } else {
+        expect([1, 2, 3]).toContain(s.n);
+        expect(["copy", "cut"]).toContain(s.how);
+        expect(["gap", "block", "over"]).toContain(s.to);
+      }
+    }
+    // (narrow phone widths are in the table, and zoom has fractional levels)
+    expect(RESIZE_WIDTHS.filter((w) => w <= 414).length).toBeGreaterThan(2);
+    expect(ZOOM_LEVELS.some((z) => z !== Math.round(z))).toBe(true);
   });
 });
