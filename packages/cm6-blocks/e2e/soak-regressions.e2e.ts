@@ -2978,3 +2978,64 @@ test("seed 4117171: a document replaced in text mode by the same text is a net-z
   );
   expect(v).toBeNull();
 });
+
+test("seed 4128147: the second tap of a double tap lands where the first tap moved the toolbar over its point: it presses the page and the focus goes, not the editor's doing (the harness finds the point again)", async () => {
+  const browser = await webkit.launch();
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 4128147,
+      language: "python",
+      code: "def f(a, b):\n    y = a\n    return y\nf(1, 2)\n",
+      steps: [
+        { op: "collapse", a: 0.7465789818670601, on: true },
+        {
+          op: "pasteMulti",
+          a: 0.9937620330601931,
+          text: 'True\n"s"\n{1: 2}\ng(2)',
+          accept: true,
+        },
+        { op: "collapse", a: 0.8363841136451811, on: false },
+        {
+          op: "insertText",
+          a: 0.2560134525410831,
+          b: 0.45749225397594273,
+          text: "x",
+        },
+        {
+          op: "touchDrag",
+          a: 0.10333857289515436,
+          b: 0.06645959080196917,
+          where: "block",
+        },
+        {
+          op: "multiSelect",
+          a: 0.24383879452943802,
+          n: 2,
+          then: "cutPaste",
+          b: 0.10037838784046471,
+        },
+        {
+          op: "replaceDoc",
+          text: '# a b c\n"s4"\nfor h in "s3":\n    fact(x(total, True) == 23, x(), {69: n})\n    None\ndef y(h, acc):\n    for x in y.acc("s0", 33):\n        return n()\n        return True\n    if f(None):\n        acc = g(g.x("s3", lst(True, None, 41)))\n        True\n    else:\n        "s4"\n        35\ntotal = True == h(f(), None)\n# a b c\nif y(n(lst), h * "s5", "s1"):\n    fact = {[lambda y: "s9", fact(None), acc()]: y(y.g(), True, n(n))}\n    {h(acc(16), None): lambda g: lst(99)}\nx(total("s1"), f.lst()) + (lambda total: total())\nif acc:\n    "s6"\n    "s7"\n    {total.acc(True, None): total < "s8"} - total({55: True}, total)\n\nif acc():\n    f = g([g("s1", True, 15), fact(fact, 39)], x(None + 71))\nelse:\n    acc = g.x()\n    h = []\n',
+        },
+        { op: "tap", a: 0.004568848758935928, twice: true },
+      ],
+      motion: "reduced",
+      editor: {
+        lineNumbers: false,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: false,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    } as Sequence,
+    { baseURL }
+  );
+  await browser.close();
+  expect(v).toBeNull();
+});

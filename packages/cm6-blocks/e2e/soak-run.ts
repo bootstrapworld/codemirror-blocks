@@ -564,7 +564,12 @@ export async function runChromium(
         if (s.twice) {
           // (a second tap, after the time of a double tap, on the focused block: a leaf opens its box, any other block its whole text)
           await page.waitForTimeout(450);
-          await page.touchscreen.tap(p.x, p.y);
+          // (the first tap can scroll the block into view or move the toolbar over the point: the second finger needs the editor around its
+          // point as the first did, or it presses the page and takes the focus away, which is not the editor's doing. Seed 4128147, WebKit)
+          const t2 = await blockBox(s.a);
+          const p2 = t2 && (await grabPoint(t2, 12));
+          if (!p2) return;
+          await page.touchscreen.tap(p2.x, p2.y);
           editsMade++;
         }
         return;
