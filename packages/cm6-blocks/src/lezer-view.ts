@@ -821,8 +821,8 @@ export function createLezerBlockEditor(
    * The lines CodeMirror draws are those of its viewport. A scroll in a long document whose content changes height under it (a window a few
    * lines high, blocks that grow once they are drawn) can end the measure loop in the round that moves the viewport, with the update that
    * draws it dropped: the viewport is new, the page still shows the old lines, and the roots that the viewport holds have their elements
-   * out of the page (soak seed 604247). A root of the viewport that has an element and none in the page, a moment after the editor went
-   * quiet, is the sign; an update of nothing draws the viewport again. One try per scroll or update.
+   * out of the page (soak seed 604247). A root of the viewport that has no element, or one outside the page, a moment after the editor went
+   * quiet, is the sign (seed 4303813: a collapse of everything moved the viewport and the roots it took in were never drawn); an update of nothing draws the viewport again. One try per scroll or update.
    */
   let drawnChecking = false;
   const checkDrawnLater = (): void => {
@@ -843,8 +843,8 @@ export function createLezerBlockEditor(
         }
         for (let k = lo; k < rs.length && rs[k].to <= vp.to; k++) {
           const r = rs[k];
-          if (!drawn(r) || !renderer.has(r)) continue;
-          if (!renderer.element(r).isConnected) {
+          if (!drawn(r)) continue;
+          if (!renderer.has(r) || !renderer.element(r).isConnected) {
             view.dispatch({});
             return;
           }
