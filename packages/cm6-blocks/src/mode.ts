@@ -121,6 +121,10 @@ export function mountModeToggle(
     );
   };
   const onClick = (): void => {
+    // (Safari does not focus a button that is clicked, and the press took the focus from the editor: it is on the page body then. Chrome
+    // puts it on the button; so does this, so that the keyboard goes on from the toolbar and is never lost on the page)
+    const a = doc.activeElement;
+    if (!a || a === doc.body || a === doc.documentElement) button.focus();
     // (a press while the toolbar is still opening makes the switch that is on its way, at once, and that is all it does)
     if (morphing() && endMorph()) return;
     toggle();

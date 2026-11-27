@@ -2,7 +2,7 @@
  * Regressions found by the soak runner's Chromium engine (scripts/soak.js, e2e/soak-run.ts): each case is a shrunk sequence of steps, replayed
  * with every invariant checked after every step. `npm run soak -w @bootstrapworld/cm6-blocks -- --promote <seed>` prints a case.
  */
-import { expect, test } from "@playwright/test";
+import { expect, test, webkit } from "@playwright/test";
 import type { Sequence } from "../spec/soak-gen";
 import { runChromium } from "./soak-run";
 
@@ -2226,4 +2226,83 @@ test("seed 604858: a composition whose committed text is the text composed ends 
     { baseURL: `http://127.0.0.1:${process.env.CMB6_PORT || 8177}` }
   );
   expect(v).toBeNull();
+});
+
+// WebKit (Safari): a press on a button does not focus it, and a focused block that CodeMirror takes out and puts back loses its focus with no event.
+test.describe("in WebKit", () => {
+  test("seed 3000025: a click on the mode button leaves the focus on the page body in WebKit (it does not focus a button): the button takes it, as in Chromium", async () => {
+    const browser = await webkit.launch();
+    const v = await runChromium(
+      browser,
+      {
+        engine: "chromium",
+        seed: 3000025,
+        language: "scheme",
+        code: "(a b c)\n(d)\n(e (f g) (h i))",
+        steps: [
+          { op: "focus", a: 0.5730477983597666 },
+          { op: "toggleMode", a: 0.20160175510682166, rush: 0.26 },
+        ],
+        motion: "reduced",
+        editor: {
+          lineNumbers: true,
+          lineWrapping: false,
+          collapseAll: false,
+          reconcile: true,
+          anchors: true,
+          fastErrors: true,
+          skipRoots: true,
+          activityLimit: null,
+        },
+      } as Sequence,
+      { baseURL }
+    );
+    await browser.close();
+    expect(v).toBeNull();
+  });
+  test("seed 3000072: collapsing every block while a block is focused loses the focus in WebKit (the block is taken out and put back with no event): it gets the focus back", async () => {
+    const browser = await webkit.launch();
+    const v = await runChromium(
+      browser,
+      {
+        engine: "chromium",
+        seed: 3000072,
+        language: "scheme",
+        code: '(if (> x 3) "big" "small")\n(let ([a 1] [b 2]) (+ a b))\n(lambda (x) x)\n\'(1 2 3)\n; a b c\n(lambda (f) \'a)\n(f "s7" (if (cond [(g) (h)] [else (- #f #t)]) (x (acc) (fact f) total) (let ([fact #f]) (fact \'a))))\n(define lst (+ \'(\'(#f)) (cond [90 76] [else (g #t)])))\n(define (f fact) (lambda (f) (lambda (total) (cond [#t lst] [else 36]))))\n(define x 5)\n(f 1 2)\n(if (> x 1) 2 3)\n(define acc 62)\n(define h (g (fact (lst 82 \'a #f)) (let ([acc #t]) #t) #t))\n(define (acc n) (g))\n; a b c\n(define y (x #f total f))\n(define (mouse w mx my me)\n  (if (string=? me "move") \n    (make-world mx (world-shots w) (world-aliens w))\n    (if (string=? me "button-down") \n      (make-world (world-player w) (add-bullet mx (world-shots w)) (world-aliens w))\n      w)))\n; test for clicking a button: add a bullet to the world at the mouse\'s x-coordinate      \n(define x 5)\n(f 1 2)\n(if (> x 1) 2 3)\n(define total (let ([n (n "s5" #f (n "s7" #f 61))]) 52))\n; a b c\n(define (n f) #f)\n\n(h (let ([x \'a]) "s6") 91 (cond [(total) (* #f (lambda (acc) "s4"))] [else (let ([lst (= 11 "s6")]) (n))]))\n(fact (* (+ #f (x 31)) #t))\n(define (g acc) \'((h)))\n(define (total x) (lst (x (lambda (fact) #f) 48 (let ([total "s9"]) #f)) fact (f)))\n; a b c\n(define (fact g) "s1")\n(define (total f) h)\n(n (if (< h 71) "s0" "s5") \'a \'a)\n; a b c\n(lambda (total) (fact (let ([x #t]) (total #f #t)) (if (= #f acc) (cond [lst #t] [else 60]) "s1")))\n(define (fact total) (if 66 #f (lambda (g) (total #t))))\n(define lst (acc \'a f))\n(define g #t)\n; TODO\n(define (h x) \'((if \'a (lambda (g) #f) (y x)) (x (h \'a \'a) (+ #f g))))\n(define (f f) x)\n; TODO\n(define x (n "s5" #f (let ([h (x #f #t)]) (cond [#t "s3"] [else "s8"]))))\n(define y "s3")\n; TODO\n#t\n(define WIDTH 600)\n(define HEIGHT 400)\n(define ALIEN-SIZE 20)\n(define CHANCE-OF-ALIEN 3)  ;as a percentage\n(switch ... (1 a) (2 b) (default c))\n(a b c)\n(d)\n(e (f g) (h i))\n(define (n f) (lambda (fact) (if (h \'a) (f) (total))))\n(define total \'(y (x \'a (if y 87 fact))))\n(define x (let ([lst (cond ["s0" (lambda (x) \'a)] [else (let ([y fact]) "s9")])]) (if (if total "s4" #t) (+ y "s1") (lambda (y) #t))))\n(define h (= (fact h) (let ([f (acc #f #t 98)]) (if \'a g #t))))\n(define (n n) \'(#t total "s6"))\n(define h (if (let ([acc (- acc #f)]) (let ([lst "s9"]) 54)) (cond [(n #f #f total) (x)] [else (f)]) (n (cond [acc #f] [else #t]) (y 90 #f 95) (if f \'a 5))))\n(< f (h (= (h #f) \'("s9" "s5")) 95 (lambda (lst) 32)))\n; a b c\n(g (h (let ([x fact]) (let ([total #t]) \'a)) "s0") (h) (- #f #f))\n\n(define (x acc) (cond [\'a #t] [else (n (f #t #f #t) (h \'a lst #f))]))\n\n(define (total fact) (let ([f #f]) (cond [(fact) (lst lst "s2")] [else (x \'a 94 "s8")])))\n(define (y fact) #t)\n\n#t\n(cond\n  [a 1]\n\n  #| apart |#\n\n  [b 2])\n(define (x h) (acc (f \'a) (g (cond [#f #t] [else "s0"]) #t (acc 6)) \'((cond ["s5" n] [else #f]) #f (g 40))))\n; a b c\n"s2"\n\n(define (f x) #f)\n(define (acc f) "s6")\n(define (lst acc) (let ([x (fact)]) \'a))\n; note\n63\n(define (n acc) \'a)\n(define fact \'("s3"))\n(define (lst total) (< \'("s2" (acc) #f) (x)))\n; TODO\n(define (f lst) \'a)\n\n(define n \'((let ([total (lst \'a #f #f)]) (lambda (total) total))))\n(add fifthVar firstVar secondVar) (sub fourthVar)\n(let ([a 1] [b 2]) (+ a b))\n(lambda (x) x)\n\'(1 2 3)\n\n; a b c\nn\n; a b c\n(define h (fact (y (< y 96) (g lst "s7") "s1")))\n12\n(a b c)\n(d)\n(e (f g) (h i))\n(< total n)\n; note\n(lst 89 (let ([acc 5]) (fact (lst "s1" x))))\n(let ([y "s9"]) (lst (f (if 99 "s5" #f) (= \'a 43) (if #t total "s0")) (lst) \'a))\n(define g #f)\n(define (fact f) (g))\n(h)\n\n(define (h n) (let ([h (- 18 19)]) "s4"))\n(define y (lambda (g) (total #t)))\n\n(define f x)\n(define lst fact)\n(define (lst x) (lambda (x) (cond [(lambda (y) #t) "s0"] [else (if "s4" "s1" fact)])))\n(doSomething (add 34 foo 5234) param2)\n(doOtherThing param3)\n\n(cond [3 (- (+ (lambda (total) "s5") (if "s7" \'a "s2")) (acc))] [else \'a])\n\n(define f x)\n(define (n lst) 3)\n(define fact (lambda (lst) (h)))\n(y)\n; a b c\n(define (fact acc) (= (y) (y)))\n(define (h fact) (x))\n(define (h f) \'a)\n\n\n; TODO\n; TODO\n(define total \'a)\n\'((cond [37 \'((h 29 #t))] [else (< (total \'a) (h "s5" "s7"))]) (f))\n(let ([n 69]) #f)\n(define (f g) (lst (if (cond [#t \'a] [else 58]) (cond [#t \'a] [else 91]) \'a) (acc #t (- #f #t) (f)) \'a))\n; TODO\n(f fact (let ([total (cond [#t (lst g)] [else \'a])]) (acc (f \'a #t) (* #f y))))\n(define (total n) #t)\n\n(define g \'((= (< 32 #t) 9)))\n(define lst (cond [#t (total (if #t "s0" #t) (lst #t) \'("s9"))] [else \'a]))\n(define (fact g) (fact (= fact (x \'a \'a \'a)) "s8"))\n(cond [\'a (x (g (= #t 94)) 75)] [else (lambda (fact) (if (h #f #t) (if #t #t fact) (if 89 \'a "s2")))])\n(h "s0" "s7" 24)\n\n; a b c\n(let ([lst (x)]) #f)\n(define h 9)\n"s5"\n(h total (* (lambda (f) \'(acc)) (total)))\n(define (g n) (let ([fact (n \'(#t #f "s3") (fact #f) "s4")]) (if "s5" (fact 59 #t #f) (lst #t))))\n(define lst \'a)\n(if (cond [(x (n x) (* #f "s2") \'a) (fact (total #t) #f (h #f))] [else 55]) (lambda (g) (total (total) (n x) (acc))) #f)\n(define (n fact) (h (= \'a (let ([acc n]) "s5"))))\n(let ([a 1] [b 2]) (+ a b))\n(lambda (x) x)\n\'(1 2 3)\n; a b c\n(define (g x) (* (h) (lambda (g) (= "s2" 60))))\n\n(define (sq x) (* x x))\n(sq 3)\n(cond [(= x 2) 3] [else 4])\n42\n; a b c\n(cond [(cond [(h \'(fact 2) (let ([lst 17]) 31)) (cond [\'a 96] [else "s7"])] [else (x (let ([acc acc]) #t) (let ([total #t]) #t))]) 49] [else (lambda (n) (x (g 85) (cond [#f #f] [else #t]) (cond [#f #f] [else \'a])))])\n(< (acc) (g \'a \'(lst (if #f #t 76) (let ([total "s2"]) 98))))\n(define (fact y) (- (= (x "s9" #f) 54) #f))\n\n(f \'a)\n(define (f a b) (+ a b))\n(define h 98)\n; TODO\n(define (f lst) (f (h (g #t h)) (if (y "s6" \'a #t) #f (lambda (y) #t)) #f))\n\n; TODO\n(define total 95)\n; TODO\n(define (f acc) (lst #f))\n(define (n total) (h))\n(define (acc total) \'a)\n(define fact 12)\n(= (g) (acc (if (x 52 total) (x 73 #t) "s9")))\n(define f (* (if (- 3 acc) (fact \'a g) (n acc 31)) \'a))\n(fact 56 93 (y (n \'(23 \'a total) (acc 10 fact y) (let ([y #t]) #t))))\n; a b c\n(define h (if #f #t (= (n) #t)))\n; note\n(define x 5)\n(f 1 2)\n(if (> x 1) 2 3)\n(define g "s9")\n\n(define f (let ([n (total \'(n "s4" #t))]) (let ([h (f \'a g #f)]) y)))\n; note\n(define (h acc) (n (fact (cond [86 #t] [else "s4"]) #f (g #t \'a \'a)) (lambda (fact) (if "s5" #t "s8"))))\n(define g (- (lst (if "s7" \'a "s0")) (< (y #t #f total) (if #t "s8" #t))))\n(f x) ; after\n#| two |# (g y) ; tail\n; last\n; note\n(define (sq x) (* x x))\n(sq 3)\n(cond [(= x 2) 3] [else 4])\n42\n; a comment\n(define (fact n)\n  (if (<= n 1)\n      1\n      (* n (fact (- n 1)))))\n(fact 5)\n(ifs t (then a) (otherwise b c))\n; TODO\n(n (- total (cond [(cond [\'a #f] [else #t]) #t] [else (lambda (f) #f)])) 13 (if \'a (< (n 90 \'a) "s6") (cond [(let ([acc #t]) 31) (* "s3" 57)] [else (+ #f "s4")])))\n(define (acc f) (fact (acc (total) (lambda (h) 29) (cond ["s9" \'a] [else #t]))))\n(* (y (x) (* (let ([x "s7"]) "s1") (< #f "s3"))) (y (- \'(#f) #t) #f))\n\n(define (y h) (+ \'a (g (cond [fact total] [else \'a]) (f 72 62))))\n\n(define-struct p (a b))\n(define (f n) 87)\n(= #t 29)\n; TODO\n"s5"\n(define (fact g) #t)\n(define x \'a)\n; TODO\n(define h #f)\n; a b c\n(define (g x) (lst (h \'a (= #f #t) (n g #t #t)) "s3" (acc (lst) #f)))\n(define n lst)\n; note\n(fact \'a)\n\nx\n; TODO\n',
+        steps: [
+          {
+            op: "typeIntoBlock",
+            a: 0.7805477529764175,
+            text: "ab",
+            accept: true,
+          },
+          { op: "focus", a: 0.9003325067460537 },
+          { op: "comment", a: 0.9188779043033719, text: "a b c", accept: true },
+          { op: "textEdit", a: 0.025890168035402894, len: 0, w: ")" },
+          { op: "swipe", a: 0.8297969091217965, dir: "down" },
+          {
+            op: "collapseAllThen",
+            on: true,
+            a: 0.13669995963573456,
+            text: "  ",
+            accept: true,
+          },
+        ],
+        motion: "full",
+        editor: {
+          lineNumbers: false,
+          lineWrapping: false,
+          collapseAll: false,
+          reconcile: true,
+          anchors: true,
+          fastErrors: true,
+          skipRoots: true,
+          activityLimit: null,
+        },
+      } as Sequence,
+      { baseURL }
+    );
+    await browser.close();
+    expect(v).toBeNull();
+  });
 });
