@@ -2887,3 +2887,72 @@ test("seed 3514237 (WebKit): replacing the text under a selection leaves it orde
   );
   expect(v).toBeNull();
 });
+
+test("seed 4114316 (WebKit): an open edit box that is the first thing on its line sits a pixel or two below the line's top in WebKit: the number is beside the line, the check measures the line, not the box", async () => {
+  test.setTimeout(60000);
+  const browser = await webkit.launch();
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 4114316,
+      language: "scheme",
+      code: "; note\n(< (x) (f))\n\n",
+      steps: [
+        {
+          op: "clearSelection",
+        },
+        {
+          op: "click",
+          a: 0.041258914628997445,
+          shift: false,
+        },
+        {
+          op: "replaceDoc",
+          text: "(a b c)\n(d)\n(e (f g) (h i))",
+        },
+        {
+          op: "undoRun",
+          n: 4,
+          redo: false,
+        },
+        {
+          op: "dragBlock",
+          a: 0.044435552321374416,
+          b: 0.17577370326034725,
+          where: "gap",
+        },
+        {
+          op: "clearSelection",
+        },
+        {
+          op: "topLevelType",
+          a: 0.0049713291227817535,
+          text: "(",
+          accept: true,
+          how: "type",
+        },
+        {
+          op: "editBox",
+          a: 0.0570413984823972,
+          text: '"',
+          accept: true,
+        },
+      ],
+      motion: "reduced",
+      editor: {
+        lineNumbers: true,
+        lineWrapping: true,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    } as Sequence,
+    { baseURL }
+  );
+  await browser.close();
+  expect(v).toBeNull();
+});

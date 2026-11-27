@@ -1140,6 +1140,10 @@ export async function runChromium(
           r.setEndBefore(first);
           if (r.toString() !== "") first = null;
         }
+        // (an open edit box that is the line's first element sits inside a line that is taller than it, and WebKit places it a pixel or
+        // two below the line's top, where Chromium does not: the number is beside the line, which is what the editor draws it from)
+        if (first?.matches("textarea.blocks-edit, input.blocks-edit"))
+          first = null;
         const box = (first ?? lineEl)?.getBoundingClientRect();
         if (!box || !box.height) continue;
         if (Math.abs(g.top - box.top) > 2)
