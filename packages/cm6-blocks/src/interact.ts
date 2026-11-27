@@ -310,7 +310,7 @@ export function attachInteraction(ed: LezerBlockEditor): {
     input.addEventListener("blur", (e) => {
       // (Chromium sends the blur of a focused input that an update has just taken out of the page while that update is still going on, and
       // CodeMirror takes no dispatch then: the box is closed and its text written when the update is over, if its block is still there)
-      if ((view as unknown as { updateState: number }).updateState === 2)
+      if ((view as unknown as { updateState: number }).updateState !== 0)
         queueMicrotask(() => onBlur(e));
       else onBlur(e);
     });

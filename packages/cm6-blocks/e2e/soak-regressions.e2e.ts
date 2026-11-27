@@ -2306,3 +2306,42 @@ test.describe("in WebKit", () => {
     expect(v).toBeNull();
   });
 });
+
+test("seeds 3102171, 3106234: an edit box that blurs while CodeMirror is measuring (WebKit moves the selection then) commits after the update, with no re-entrant dispatch", async ({
+  page,
+}) => {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text());
+  });
+  await page.goto(`${baseURL}/index.html?lang=scheme`);
+  await page.waitForSelector(".cm-content [role=treeitem]");
+  await page.evaluate(() => {
+    const d = (window as any).demo;
+    d.ed.view.dispatch({
+      changes: {
+        from: 0,
+        to: d.ed.view.state.doc.length,
+        insert: "(f 1)\n(g 2)",
+      },
+    });
+    d.ed.focusNode(d.ed.roots()[0]);
+  });
+  await page.keyboard.press("Control+]");
+  await expect(page.locator("input.blocks-edit")).toBeFocused();
+  await page.keyboard.type("(h 3)");
+  // (the blur comes from inside a measure, as WebKit's does when CodeMirror moves the selection there)
+  await page.evaluate(() => {
+    const d = (window as any).demo;
+    d.ed.view.requestMeasure({
+      read: () => (document.activeElement as HTMLElement).blur(),
+    });
+  });
+  await expect(page.locator("input.blocks-edit")).toHaveCount(0);
+  expect(errors).toEqual([]);
+  expect(
+    await page.evaluate(() => (window as any).demo.ed.view.state.doc.toString())
+  ).toContain("(h 3)");
+});

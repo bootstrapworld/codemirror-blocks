@@ -2690,7 +2690,7 @@ export function createLezerBlockEditor(
     clearPending() {
       // (the box is taken out of the page by an update that has just removed its widget; Chromium sends its blur while the update is
       // still going on, and CodeMirror does not take a dispatch then: it is made when the update is over)
-      if ((view as unknown as { updateState: number }).updateState === 2) {
+      if ((view as unknown as { updateState: number }).updateState !== 0) {
         queueMicrotask(() => {
           if (!gone) ed.clearPending();
         });
