@@ -2956,3 +2956,25 @@ test("seed 4114316 (WebKit): an open edit box that is the first thing on its lin
   await browser.close();
   expect(v).toBeNull();
 });
+test("seed 4117171: a document replaced in text mode by the same text is still an edit made as text: the undo-all check expects the history dropped on the return to blocks (oracle)", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 4117171,
+      language: "javascript",
+      code: "f(1, 2);\nlet y = 5;",
+      steps: [
+        { op: "replaceDoc", text: "a.b(c);\n[1, 2, 3];\nlet y = 5;" },
+        { op: "toggleMode", a: 0.6361591252498329, rush: 0.03 },
+        { op: "replaceDoc", text: "a.b(c);\n[1, 2, 3];\nlet y = 5;" },
+        { op: "scrollToggle", a: 0.32154565560631454 },
+      ],
+      motion: "full",
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});

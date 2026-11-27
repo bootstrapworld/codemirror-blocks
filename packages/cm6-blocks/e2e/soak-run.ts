@@ -1026,6 +1026,9 @@ export async function runChromium(
         editsMade++;
         return;
       case "replaceDoc":
+        // (a document replaced in text mode is an edit made as text even when the new text is the old one: the editor's rule looks at the
+        // transaction, not at the text, so the return to blocks drops the history. Seed 4117171 of round 8)
+        if ((await mode()) === "text") textEditedInText = true;
         await evaluate((t: string) => {
           const v = (window as any).demo.ed.view;
           v.dispatch({
