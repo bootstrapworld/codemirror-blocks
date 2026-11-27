@@ -995,7 +995,6 @@ export function removeChanges(nodes: BNode[], text?: string): TextChange[] {
         const glue =
           prevCh !== undefined &&
           nextCh !== undefined &&
-          to === ns[j + 1].from &&
           !/[\s([{]/.test(prevCh) &&
           !/[\s)\]}]/.test(nextCh) &&
           prevCh !== "," &&

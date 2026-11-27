@@ -321,6 +321,13 @@ describe("7. removing several arguments leaves tidy separators", () => {
     expect(textOf(ed)).toBe("(a b 7 c)");
     ok(ed);
   });
+  test("a comment between a stray token and the next one does not glue them", () => {
+    // (`#` is no block; the next block is further on, past `#;`, so the gap to it is cut at the stray `#;`)
+    const ed = make("scheme", '[aria#;\n#;"false"]');
+    const c = all(ed).find((x) => x.n.kind === "comment" && x.n.from === 6)!.n;
+    ed.removeNode(c);
+    expect(textOf(ed)).toBe('[aria# #;"false"]');
+  });
   test("a comment before the operator goes alone", () => {
     const ed = make("scheme", "(; c\n 1 7)");
     const c = all(ed).find((x) => x.n.kind === "comment")!.n;
