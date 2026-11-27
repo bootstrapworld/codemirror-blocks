@@ -1624,6 +1624,22 @@ export function createLezerBlockEditor(
   let focusedEl: HTMLElement | null = null;
   function keepFocusOnScroll(): void {
     if (focusedEl && !focusedEl.isConnected) lostBlockFocus = true;
+    // (a block that CodeMirror takes out and puts back, as a viewport that is redrawn does, loses the focus in WebKit with no event at all:
+    // it is on the page body while the block that had it is in the page again: the block gets it back)
+    if (
+      focusedEl &&
+      focusedEl.isConnected &&
+      !gone &&
+      blockMode &&
+      !holdFocus
+    ) {
+      const d = view.dom.ownerDocument;
+      const a = d.activeElement;
+      if (!a || a === d.body || a === d.documentElement) {
+        focusedEl.focus({ preventScroll: true });
+        if (d.activeElement === focusedEl) return;
+      }
+    }
     if (!lostBlockFocus) return;
     lostBlockFocus = false;
     focusedEl = null;
