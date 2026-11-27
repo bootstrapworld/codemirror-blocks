@@ -2456,3 +2456,51 @@ for (const [what, typed] of [
     else expect(doc).toBe("(f 1)\n(g 2)");
   });
 }
+
+test("seed 3504867: a block that takes the focus after a focusout with nowhere to go (an edit box closed by Escape) is still watched when a scroll takes it out of the viewport", async ({
+  page,
+}) => {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  await page.goto(`${baseURL}/index.html?lang=scheme`);
+  await page.waitForSelector(".cm-content [role=treeitem]");
+  await page.evaluate(() => {
+    const d = (window as any).demo;
+    const forms = Array.from({ length: 300 }, (_, i) => `(f ${i})`).join("\n");
+    d.ed.view.dispatch({
+      changes: { from: 0, to: d.ed.view.state.doc.length, insert: forms },
+      selection: { anchor: forms.length },
+    });
+    d.ed.view.scrollDOM.scrollTop = 0;
+  });
+  await page.waitForTimeout(200);
+  await page.evaluate(() => {
+    const d = (window as any).demo;
+    const items = Array.from(
+      document.querySelectorAll<HTMLElement>(".cm-content [role=treeitem]")
+    );
+    items[0].focus();
+    const a = document.activeElement as HTMLElement;
+    // (the box of an Escape: its focusout has no related target; the block that takes the focus next is heard before the update that sees the loss)
+    a.dispatchEvent(
+      new FocusEvent("focusout", { bubbles: true, relatedTarget: null })
+    );
+    const b = items[2];
+    b.focus();
+    (window as any).__b = b;
+    // (an update in which that block is still drawn: the loss is looked at here)
+    d.ed.view.dispatch({});
+  });
+  await page.waitForTimeout(100);
+  await page.evaluate(() => {
+    const sd = (window as any).demo.ed.view.scrollDOM as HTMLElement;
+    sd.scrollTop = 0.8 * sd.scrollHeight;
+  });
+  // (the block is taken out of the page by the scroll: the focus must not stay on the body)
+  await expect
+    .poll(() => page.evaluate(() => !(window as any).__b.isConnected))
+    .toBe(true);
+  await page.waitForTimeout(300);
+  expect(
+    await page.evaluate(() => !!document.activeElement?.closest(".cm-editor"))
+  ).toBe(true);
+});

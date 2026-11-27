@@ -3615,6 +3615,9 @@ export function createLezerBlockEditor(
   view.dom.addEventListener("focusin", (e) => {
     const t = e.target as HTMLElement | null;
     focusedEl = holdsFocus(t) ? t : null;
+    // (a loss that an earlier focusout reported is over: the focus went on to this element, which the update must not forget. Soak seed 3504867:
+    // a box closed by Escape reports its loss, the block takes the focus, and the update that reads the report then wiped the block it had just seen)
+    lostBlockFocus = false;
   });
   view.dom.addEventListener("focusout", (e) => {
     const t = e.target as HTMLElement | null;
