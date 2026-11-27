@@ -83,6 +83,12 @@ export async function runChromium(
     // (a touch screen only for a sequence with a finger's steps: the mouse sequences are what they were)
     hasTouch: seq.steps.some((s) => TOUCH_OPS.includes(s.op)),
   });
+  // (Firefox and WebKit really play the editor's beep and wrap sounds through the computer's speakers, which Chromium's headless mode
+  // does not: their `play()` does nothing here; the editor still asks for the sound and still calls it)
+  if (!isChromium)
+    await context.addInitScript(() => {
+      HTMLMediaElement.prototype.play = () => Promise.resolve();
+    });
   const page = await context.newPage();
   page.setDefaultTimeout(actionMs);
   const errors: string[] = [];
