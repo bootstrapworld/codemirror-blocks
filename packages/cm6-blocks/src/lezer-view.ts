@@ -1649,6 +1649,35 @@ export function createLezerBlockEditor(
     if (a && a !== d.body && a !== d.documentElement && a.isConnected) return;
     view.contentDOM.focus({ preventScroll: true });
   }
+  /**
+   * CodeMirror maps a selection range through a change by mapping its `from` with assoc 1 and its `to` with assoc -1; when a change
+   * replaces the whole range (a block replaced, moved or cut: the selection was not set), `from` lands after the new text and `to`
+   * before it: an INVERTED range (from > to). The next paste, delete or any `changeByRange` then throws "Invalid change range". A range
+   * that comes out inverted becomes a cursor where the replaced text begins.
+   */
+  const keepRangesOrdered = EditorState.transactionFilter.of((tr) => {
+    if (!tr.docChanged || tr.selection) return tr;
+    const sel = tr.startState.selection;
+    if (sel.ranges.every((r) => r.empty)) return tr;
+    let bad = false;
+    const ranges = sel.ranges.map((r) => {
+      if (r.empty) return r.map(tr.changes);
+      const a = tr.changes.mapPos(r.from, 1);
+      const b = tr.changes.mapPos(r.to, -1);
+      if (a <= b) return r.map(tr.changes);
+      bad = true;
+      return EditorSelection.cursor(b);
+    });
+    return bad
+      ? [
+          tr,
+          {
+            selection: EditorSelection.create(ranges, sel.mainIndex),
+            sequential: true,
+          },
+        ]
+      : tr;
+  });
   const blockExtension: Extension = [
     pendingField,
     EditorView.updateListener.of((u) => {
@@ -3534,6 +3563,7 @@ export function createLezerBlockEditor(
         historyComp.of(history()),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         field,
+        keepRangesOrdered,
         compartment.of(blockExtension),
         // (the heights are checked in text mode too: the gutter's numbers go stale there the same way)
         EditorView.updateListener.of((u) => {

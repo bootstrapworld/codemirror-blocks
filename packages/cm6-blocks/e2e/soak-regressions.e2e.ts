@@ -2609,3 +2609,96 @@ test("seed 3505899 (WebKit): a sequence that ends with a drag of selected blocks
   expect(v).toBeNull();
   expect(ms).toBeLessThan(40000);
 });
+
+test("seed 3514237 (WebKit): replacing the text under a selection leaves it ordered, so the next paste does not throw an invalid change range", async ({
+  browser,
+}) => {
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 3514237,
+      language: "scheme",
+      code: '(define f (acc (y (n #t "s6")) (lst (cond ["s9" "s9"] [else "s2"]) (lambda (y) "s2")) (f)))\n(define acc (lambda (f) (< (lambda (x) #f) (y 55 #t "s3"))))\n(define (y g) (acc \'a \'((x x \'a) (if \'a #f g)) (f (x "s1" \'a) (< 50 #f) (lambda (f) \'a))))\n; a b c\n(define (y f) #f)\n',
+      steps: [
+        {
+          op: "brokenText",
+          a: 0.8819435460027307,
+          w: "'",
+          nl: true,
+          back: false,
+        },
+        { op: "typeIntoBlock", a: 0.6395794411655515, text: "x", accept: true },
+        { op: "key", key: "ArrowUp", a: 0.7750174077227712 },
+        {
+          op: "typeIntoBlock",
+          a: 0.3728128890506923,
+          text: "ab",
+          accept: true,
+        },
+        { op: "key", key: "Delete", a: 0.10362963355146348 },
+        {
+          op: "insertText",
+          a: 0.9309838395565748,
+          b: 0.7557337787002325,
+          text: "7",
+        },
+        { op: "toggleMode", a: 0.4322965145111084, rush: 0.19 },
+        {
+          op: "collapseAllThen",
+          on: true,
+          a: 0.024721447844058275,
+          text: "a b c",
+          accept: false,
+        },
+        { op: "search", text: "1", next: true },
+        { op: "clearSelection" },
+        { op: "focus", a: 0.2656046892516315 },
+        { op: "clearSelection" },
+        { op: "key", key: "Escape", a: 0.19372122664935887 },
+        { op: "focus", a: 0.3993663773871958 },
+        { op: "key", key: "ArrowRight", a: 0.47199243796058 },
+        { op: "undo" },
+        { op: "select", a: 0.664045687764883 },
+        { op: "undoRun", n: 5, redo: false },
+        { op: "key", key: "End", a: 0.001921077724546194 },
+        { op: "collapse", a: 0.6166192144155502, on: true },
+        { op: "editBox", a: 0.15823798323981464, text: "", accept: true },
+        { op: "key", key: "ArrowRight", a: 0.023146795807406306 },
+        {
+          op: "dragTemplate",
+          t: 0.9893354980740696,
+          b: 0.9090826911851764,
+          where: "whitespace",
+        },
+        { op: "textEdit", a: 0.6915282502304763, len: 1, w: "\n" },
+        { op: "key", key: "Control+[", a: 0.32639207248575985 },
+        { op: "key", key: "Mod+y", a: 0.9962726021185517 },
+        { op: "toggleMode", a: 0.49629073846153915, rush: 0.59 },
+        { op: "textEdit", a: 0.9617404656019062, len: 2, w: "" },
+        { op: "scroll", a: 0.7025381522253156 },
+        { op: "typeIntoBlock", a: 0.9361861541401595, text: "7", accept: true },
+        {
+          op: "multiSelect",
+          a: 0.6179334572516382,
+          n: 4,
+          then: "cut",
+          b: 0.8106621010228992,
+        },
+      ],
+      motion: "full",
+      editor: {
+        lineNumbers: true,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    } as Sequence,
+    { baseURL }
+  );
+  expect(v).toBeNull();
+});
