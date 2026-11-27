@@ -1732,8 +1732,8 @@ export function createLezerBlockEditor(
     }),
   ];
   let blockMode = true;
-  /** text was edited while in text mode since the blocks were last shown: the history starts over on the way back (see `setMode`) */
-  let editedAsText = false;
+  /** the document when text mode was entered: the history starts over on the way back only if the text differs (an edit that nets to zero keeps it); only compared on the mode switch */
+  let textAtEntry: Text | null = null;
   const modeListeners = new Set<(m: "text" | "blocks") => void>();
   let gone = false;
   // eslint-disable-next-line prefer-const -- read by closures made before the view exists
@@ -2646,6 +2646,10 @@ export function createLezerBlockEditor(
     const inEditor = view.contentDOM.contains(
       view.contentDOM.ownerDocument.activeElement
     );
+    const editedAsText = !on
+      ? false
+      : !!textAtEntry && !textAtEntry.eq(view.state.doc);
+    textAtEntry = on ? null : view.state.doc;
     blockMode = on;
     done.length = 0;
     undone.length = 0;
@@ -2664,7 +2668,6 @@ export function createLezerBlockEditor(
     checkGutterLater();
     // (edits made as text may have brought a comment next to a block that stayed drawn)
     if (on) renderer.refreshComments(true);
-    editedAsText = false;
     if (inEditor && !on) view.focus();
     sayLater(`${on ? "Block" : "Text"} Mode Enabled`, 500);
     if (on) summarize();
@@ -3577,7 +3580,6 @@ export function createLezerBlockEditor(
     dispatchTransactions(trs, v) {
       for (const t of trs) recorder.transaction(t);
       if (trs.some((t) => t.docChanged)) settleHistoryFocus();
-      if (!blockMode && trs.some((t) => t.docChanged)) editedAsText = true;
       const snap = trs.some((t) => t.docChanged) ? takeSnapshot() : null;
       const focusBefore = snap && snap.node ? pathOf(snap.node) : null;
       const before = v.state;

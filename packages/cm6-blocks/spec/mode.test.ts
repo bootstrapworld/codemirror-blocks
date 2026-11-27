@@ -3,7 +3,7 @@
  * Twenty-ninth round: the text/blocks toggle. `ed.setMode` and `ed.mode` (lezer-view.ts), the button and the dialog (mode.ts). The animation is
  * morph.ts (Playwright: e2e/ported/morph.e2e.ts); jsdom has no `Element.animate`, so every switch here is at once, as with reduced motion.
  */
-import { undoDepth } from "@codemirror/commands";
+import { redo, undo, undoDepth } from "@codemirror/commands";
 import { make } from "./helpers";
 import { mountModeToggle } from "../src/mode";
 
@@ -54,6 +54,69 @@ describe("the mode of the editor", () => {
     ed.setMode("blocks");
     expect(undoDepth(ed.view.state)).toBe(0);
   });
+
+  describe.each(["scheme", "javascript", "python"])(
+    "%s: text-mode edits that net to zero keep the history",
+    (l) => {
+      const prep = () => {
+        const ed = make(l);
+        const start = ed.view.state.doc.toString();
+        ed.removeNode(ed.roots()[0]);
+        const after = ed.view.state.doc.toString();
+        const depth = undoDepth(ed.view.state);
+        expect(depth).toBeGreaterThan(0);
+        ed.setMode("text");
+        return { ed, start, after, depth };
+      };
+      const type = (ed: ReturnType<typeof make>, from: number, ins = "x") =>
+        ed.view.dispatch({ changes: { from, insert: ins } });
+      test("a letter typed and deleted", () => {
+        const { ed, after, start, depth } = prep();
+        type(ed, 0, " ");
+        ed.view.dispatch({ changes: { from: 0, to: 1 } });
+        expect(ed.setMode("blocks")).toBeNull();
+        expect(undoDepth(ed.view.state)).toBeGreaterThanOrEqual(depth);
+        expect(ed.view.state.doc.toString()).toBe(after);
+        while (undo(ed.view));
+        expect(ed.view.state.doc.toString()).toBe(start);
+        while (redo(ed.view));
+        expect(ed.view.state.doc.toString()).toBe(after);
+      });
+      test("the document replaced by the same text", () => {
+        const { ed, after, depth } = prep();
+        ed.view.dispatch({
+          changes: { from: 0, to: after.length, insert: after },
+        });
+        ed.setMode("blocks");
+        expect(undoDepth(ed.view.state)).toBeGreaterThanOrEqual(depth);
+      });
+      test("a net-zero edit and then a real one clears it", () => {
+        const { ed } = prep();
+        type(ed, 0, " ");
+        ed.view.dispatch({ changes: { from: 0, to: 1 } });
+        ed.view.dispatch({
+          changes: { from: ed.view.state.doc.length, insert: " " },
+        });
+        ed.setMode("blocks");
+        expect(undoDepth(ed.view.state)).toBe(0);
+      });
+      test("a real edit clears it", () => {
+        const { ed } = prep();
+        type(ed, 0, " ");
+        ed.setMode("blocks");
+        expect(undoDepth(ed.view.state)).toBe(0);
+      });
+      test("an undo in text mode that restores the starting text keeps it", () => {
+        const { ed, after } = prep();
+        type(ed, 0, " ");
+        // (the text-mode edit is in the history too: undo it)
+        undo(ed.view);
+        expect(ed.view.state.doc.toString()).toBe(after);
+        ed.setMode("blocks");
+        expect(undoDepth(ed.view.state)).toBeGreaterThan(0);
+      });
+    }
+  );
 
   test("a block that has the focus leaves it with the text cursor at its start; the focus stays in the editor", () => {
     const ed = make("scheme", SRC);
