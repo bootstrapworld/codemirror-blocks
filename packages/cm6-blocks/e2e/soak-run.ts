@@ -226,15 +226,20 @@ export async function runChromium(
     if (modifiers.length) await page.keyboard.up("Shift");
     return true;
   };
-  // (Playwright's WebKit takes Backspace on a page whose focus is on the body as "back" and leaves the page, which destroys the execution
-  // context; no editor or demo code is involved, and Safari itself no longer does it: a Backspace with nothing focused is not pressed there)
+  // (Playwright's WebKit takes Backspace as "back" and leaves the page, which destroys the execution context, whenever the focus is on
+  // something that is not a text field: the page body, or a button such as a dialog's Close that keeps the focus after the editor's own
+  // `focus()`; no editor or demo code is involved, and Safari itself no longer does it: such a Backspace is not pressed there)
+  const backspaceIsBack = async () =>
+    !isChromium &&
+    (await page.evaluate(() => {
+      const a = document.activeElement as HTMLElement | null;
+      return !(
+        a &&
+        (a.isContentEditable || /^(input|textarea|select)$/i.test(a.tagName))
+      );
+    }));
   const press = async (k: string) => {
-    if (
-      !isChromium &&
-      k === "Backspace" &&
-      (await page.evaluate(() => document.activeElement === document.body))
-    )
-      return;
+    if (k === "Backspace" && (await backspaceIsBack())) return;
     await page.keyboard.press(keyName(k));
   };
   const boxOpen = () => page.locator(".blocks-edit").first();
@@ -491,7 +496,7 @@ export async function runChromium(
               selection: { anchor: from, head: Math.min(len, from + a.len) },
             });
           }, s as any);
-          if (s.w === "") await page.keyboard.press("Backspace");
+          if (s.w === "") await press("Backspace");
           else await page.keyboard.type(String(s.w));
           textEditedInText = true;
         }

@@ -2247,6 +2247,51 @@ test.describe("in WebKit", () => {
     await browser.close();
     expect(v).toBeNull();
   });
+  test("seed 3300578: a Backspace with the focus on a dialog's Close button is back in Playwright's WebKit (not only one on the body) and destroys the page's context (the harness leaves it out)", async () => {
+    const browser = await webkit.launch();
+    const v = await runChromium(
+      browser,
+      {
+        engine: "chromium",
+        seed: 3300578,
+        language: "python",
+        code: 'total = "s5"\n\ng = y.total()\nwhile h:\n    fact = fact(acc(True))\n4\n\n',
+        steps: [
+          { op: "editBox", a: 0.2521042665466666, text: "  ", accept: true },
+          {
+            op: "brokenText",
+            a: 0.38442511786706746,
+            w: "else:",
+            nl: true,
+            back: true,
+          },
+          { op: "key", key: "ArrowRight", a: 0.01994558866135776 },
+          { op: "toggleMode", a: 0.8207531976513565, rush: 0.37 },
+          {
+            op: "dragBlock",
+            a: 0.9085384279023856,
+            b: 0.5607596200425178,
+            where: "gap",
+          },
+          { op: "textEdit", a: 0.28365078126080334, len: 0, w: "" },
+        ],
+        motion: "full",
+        editor: {
+          lineNumbers: true,
+          lineWrapping: false,
+          collapseAll: false,
+          reconcile: true,
+          anchors: true,
+          fastErrors: true,
+          skipRoots: true,
+          activityLimit: null,
+        },
+      } as Sequence,
+      { baseURL }
+    );
+    await browser.close();
+    expect(v).toBeNull();
+  });
   test("seed 3000025: a click on the mode button leaves the focus on the page body in WebKit (it does not focus a button): the button takes it, as in Chromium", async () => {
     const browser = await webkit.launch();
     const v = await runChromium(
