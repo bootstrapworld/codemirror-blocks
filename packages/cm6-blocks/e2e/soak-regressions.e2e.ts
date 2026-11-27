@@ -2362,3 +2362,52 @@ test("seeds 3102171, 3106234: an edit box that blurs while CodeMirror is measuri
     await page.evaluate(() => (window as any).demo.ed.view.state.doc.toString())
   ).toContain("(h 3)");
 });
+
+for (const [what, typed] of [
+  ["commits its text", "(h 3)"],
+  ["is refused and stays closed with the focus in the editor", "(h 3"],
+] as const) {
+  test(`seeds 3106414, 3104337, 3101210, 3103239: an edit box that the page loses without a blur (WebKit, when a scroll takes its block out of the viewport) ${what}`, async ({
+    page,
+  }) => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    await page.goto(`${baseURL}/index.html?lang=scheme`);
+    await page.waitForSelector(".cm-content [role=treeitem]");
+    await page.evaluate(() => {
+      const d = (window as any).demo;
+      d.ed.view.dispatch({
+        changes: {
+          from: 0,
+          to: d.ed.view.state.doc.length,
+          insert: "(f 1)\n(g 2)",
+        },
+      });
+      d.ed.focusNode(d.ed.roots()[0]);
+    });
+    await page.keyboard.press("Control+]");
+    await expect(page.locator("input.blocks-edit")).toBeFocused();
+    await page.keyboard.type(typed);
+    // (WebKit sends no blur for a focused input that is taken out of the page: the event is held back here, then the input is removed)
+    await page.evaluate(() => {
+      window.addEventListener(
+        "blur",
+        (e) => e.stopImmediatePropagation(),
+        true
+      );
+      document.querySelector("input.blocks-edit")!.remove();
+    });
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const a = document.activeElement;
+          return !!a && a !== document.body;
+        })
+      )
+      .toBe(true);
+    const doc: string = await page.evaluate(() =>
+      (window as any).demo.ed.view.state.doc.toString()
+    );
+    if (typed === "(h 3)") expect(doc).toContain("(h 3)");
+    else expect(doc).toBe("(f 1)\n(g 2)");
+  });
+}

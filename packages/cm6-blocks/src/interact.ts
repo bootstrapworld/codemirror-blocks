@@ -314,6 +314,26 @@ export function attachInteraction(ed: LezerBlockEditor): {
         queueMicrotask(() => onBlur(e));
       else onBlur(e);
     });
+    // (a box that CodeMirror takes out of the page, as a scroll that leaves its block outside the viewport does: Chromium sends the blur of
+    // a focused input that is removed, WebKit sends nothing and the focus is on the body. The box then closes as a blur closes it. A box
+    // that is moved and put back in the same update is in the page again when this runs)
+    let seen = false;
+    const lost = new MutationObserver(() => {
+      if (finished) return lost.disconnect();
+      if (input.isConnected) seen = true;
+      const d = input.ownerDocument;
+      if (
+        seen &&
+        !input.isConnected &&
+        (!d.activeElement || d.activeElement === d.body)
+      ) {
+        input.dispatchEvent(new FocusEvent("blur"));
+        // (the box is closed or refused: the focus is not left on the page body, it stays in the editor, as Chromium leaves it)
+        const a = d.activeElement;
+        if (!a || a === d.body) view.contentDOM.focus({ preventScroll: true });
+      }
+    });
+    lost.observe(dom, { childList: true, subtree: true });
     put(input);
     ed.remeasureHeights();
     open = self;
