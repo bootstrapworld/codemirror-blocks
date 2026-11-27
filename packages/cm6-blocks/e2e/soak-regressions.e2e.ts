@@ -1894,7 +1894,7 @@ test("seed 5667 and 4299 (round 8): a template button that a zoom and a narrow w
   expect(v).toBeNull();
 });
 
-test("seed 3429 (round 8): a composition in the text that ends where it began still counts as a text edit (the editor drops the history when that text comes back to blocks), so undo-all is not asked of it", async ({
+test("seed 3429 (round 8): a composition in the text that ends where it began is a net-zero edit: the history survives the return to blocks, and undo-all (asked of it) returns the starting text", async ({
   browser,
 }) => {
   const v = await runChromium(
@@ -2956,7 +2956,7 @@ test("seed 4114316 (WebKit): an open edit box that is the first thing on its lin
   await browser.close();
   expect(v).toBeNull();
 });
-test("seed 4117171: a document replaced in text mode by the same text is still an edit made as text: the undo-all check expects the history dropped on the return to blocks (oracle)", async ({
+test("seed 4117171: a document replaced in text mode by the same text is a net-zero edit: the history survives the return to blocks, and undo-all (asked of it) returns the starting text", async ({
   browser,
 }) => {
   const v = await runChromium(

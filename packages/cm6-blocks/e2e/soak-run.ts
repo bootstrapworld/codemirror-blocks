@@ -348,11 +348,6 @@ export async function runChromium(
         .catch(() => undefined);
       await page.waitForTimeout(50);
     }
-    if ((await mode()) === "blocks") {
-      // (the editor's rule: back to blocks after text edits starts the history over)
-      historyReset = true;
-      textEditedInText = false;
-    }
   };
   /** the text mode's caret at the place of the text that the fraction `a` stands for */
   const caretAt = (a: unknown): Promise<void> =>
@@ -409,7 +404,6 @@ export async function runChromium(
 
   let armed = false;
   let toolbarOk = false;
-  let textEditedInText = false;
   let historyReset = false;
   let editsMade = 0;
   let rushed = false;
@@ -512,7 +506,6 @@ export async function runChromium(
           }, s as any);
           if (s.w === "") await press("Backspace");
           else await page.keyboard.type(String(s.w));
-          textEditedInText = true;
         }
         editsMade++;
         return;
@@ -731,7 +724,6 @@ export async function runChromium(
         }, s as any);
         if (s.nl) await page.keyboard.press("Enter");
         await page.keyboard.type(String(s.w));
-        textEditedInText = true;
         editsMade++;
         if (s.back) await returnToBlocks();
         return;
@@ -773,7 +765,6 @@ export async function runChromium(
         // block or into the text
         if (!cdp) return;
         const parts = (s.parts as string[]) ?? [];
-        let before: string | null = null;
         if (s.target === "box") {
           if (!blocks || !(await clickBlock(s.a))) return;
           // (a click on a leaf opens its box at once; Enter opens the box of the others, or none)
@@ -790,7 +781,6 @@ export async function runChromium(
           if (blocks) await toggleAndSettle();
           if ((await mode()) !== "text") return;
           await caretAt(s.a);
-          before = await text();
         }
         for (const p of parts) {
           // (the composition goes to the element that has the focus: if the box lost it, there is no composition to go on with)
@@ -833,9 +823,6 @@ export async function runChromium(
           if (await boxOpen().count())
             await page.keyboard.press(s.accept ? "Enter" : "Escape");
         } else {
-          // (a composition in the text is an edit even when it ends where it began: CodeMirror writes the composed text and takes it out again,
-          // and the editor drops the history when the text that was edited comes back to blocks. Seed 3429 of round 8)
-          if (before !== null) textEditedInText = true;
           if (s.back) await returnToBlocks();
         }
         editsMade++;
@@ -1026,9 +1013,6 @@ export async function runChromium(
         editsMade++;
         return;
       case "replaceDoc":
-        // (a document replaced in text mode is an edit made as text even when the new text is the old one: the editor's rule looks at the
-        // transaction, not at the text, so the return to blocks drops the history. Seed 4117171 of round 8)
-        if ((await mode()) === "text") textEditedInText = true;
         await evaluate((t: string) => {
           const v = (window as any).demo.ed.view;
           v.dispatch({
@@ -1281,29 +1265,56 @@ export async function runChromium(
 
   try {
     await settle();
-    let lastMode = await mode();
     const noteReturnToBlocks = async (): Promise<void> => {
-      const m = await mode();
-      if (m === "blocks" && lastMode === "text" && textEditedInText) {
-        historyReset = true;
-        textEditedInText = false;
-      }
-      lastMode = m;
+      // (the editor's rule: going back to blocks starts the undo history over when the text is not the one the text mode began with; an
+      // edit that nets to zero (a composition that ends where it began, a document replaced by the same text, a letter typed and deleted)
+      // keeps it. The probe compares the texts at each switch)
+      const r = await evaluate(() => {
+        const w = window as any;
+        const r = !!w.__historyReset;
+        w.__historyReset = false;
+        return r;
+      });
+      if (r) historyReset = true;
     };
+    /** the text mode is on and its text is not the one it began with */
+    const textEditedInText = (): Promise<boolean> =>
+      evaluate(() => {
+        const w = window as any;
+        return (
+          w.__textEntry != null &&
+          w.__textEntry !== w.demo.ed.view.state.doc.toString()
+        );
+      });
+    /** a listener on the current editor that notes the text at each switch of the mode (an editor made again is a new one: it is asked again before each step) */
+    const probe = (): Promise<void> =>
+      evaluate(() => {
+        const w = window as any;
+        const ed = w.demo.ed;
+        if (ed.__probed) return;
+        ed.__probed = true;
+        w.__textEntry =
+          ed.mode === "text" ? ed.view.state.doc.toString() : null;
+        ed.onModeChange((m: string) => {
+          const t = ed.view.state.doc.toString();
+          if (m === "text") w.__textEntry = t;
+          else {
+            if (w.__textEntry != null && w.__textEntry !== t)
+              w.__historyReset = true;
+            w.__textEntry = null;
+          }
+        });
+      });
     const initial = await text();
     const first = await check(-1, "initial");
     if (first) return close(first);
     for (let i = 0; i < seq.steps.length; i++) {
       const s = seq.steps[i];
-      // (the editor's rule: going back to blocks after the text was edited in text mode starts the undo history over, and ONLY then. A
-      // step that begins in text mode and leaves another text is an edit made as text, whatever it was (typing, a replaced document, an
-      // undo, a paste); the return to blocks may come after the step (a switch in the middle of the morph): the mode is read after each
-      // step, rushed or not, and at the end)
-      const m0 = await mode();
-      const t0 = m0 === "text" ? await text() : "";
+      // (the return to blocks may come after the step (a switch in the middle of the morph): the mode is read after each step, rushed or
+      // not, and at the end)
+      await probe();
       const g = await guarded(s, i);
       if (g) return close(g);
-      if (m0 === "text" && (await text()) !== t0) textEditedInText = true;
       await noteReturnToBlocks();
       if (!rushed) await settle();
       await noteReturnToBlocks();
@@ -1314,12 +1325,12 @@ export async function runChromium(
     }
     await settle();
     await noteReturnToBlocks();
-    // ---- undo everything, redo everything (not after a return to blocks that cleared the history: textEditedInText says so) ----
+    // ---- undo everything, redo everything (not after a return to blocks that cleared the history, nor in a text mode whose text is not the one it began with) ----
     if (
       editsMade > 0 &&
       editsMade < 90 &&
       !historyReset &&
-      !textEditedInText &&
+      !(await textEditedInText()) &&
       !skip.has("undo-all")
     ) {
       const final = await text();
