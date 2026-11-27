@@ -190,10 +190,21 @@ export async function runChromium(
       .filter((d) => d > 0 && d < t.box.height)
       .map((d) => t.box.y + d);
     for (const y of ys) {
+      // (a finger (`edge` of 12: the touch steps) presses an area, not a point: Chromium's touch adjustment sends the press to a clickable
+      // element near the point, such as the toolbar below a block that is half out of the window, and that is not the block's press: so
+      // the area around the point must be the editor's too. Seed 807877)
+      const around = edge >= 12 ? [0, 10, -10] : [0];
       const ok = await evaluate(
-        ([px, py]: number[]) =>
-          !!document.elementFromPoint(px, py)?.closest(".cm-content"),
-        [x, y]
+        ([px, py, ds]: any) =>
+          ds.every((dx: number) =>
+            ds.every(
+              (dy: number) =>
+                !!document
+                  .elementFromPoint(px + dx, py + dy)
+                  ?.closest(".cm-content")
+            )
+          ),
+        [x, y, around]
       );
       if (ok) return { x, y };
     }
