@@ -2230,6 +2230,23 @@ test("seed 604858: a composition whose committed text is the text composed ends 
 
 // WebKit (Safari): a press on a button does not focus it, and a focused block that CodeMirror takes out and puts back loses its focus with no event.
 test.describe("in WebKit", () => {
+  test("seed 3100153: a Backspace with the focus on the page body is back in Playwright's WebKit and destroys the page's context (the harness leaves it out)", async () => {
+    const browser = await webkit.launch();
+    const v = await runChromium(
+      browser,
+      {
+        engine: "chromium",
+        seed: 3100153,
+        language: "javascript",
+        code: "f(1);\ng(2);",
+        steps: [{ op: "key", key: "Backspace", a: 0.8820425691083074 }],
+        motion: "reduced",
+      } as Sequence,
+      { baseURL }
+    );
+    await browser.close();
+    expect(v).toBeNull();
+  });
   test("seed 3000025: a click on the mode button leaves the focus on the page body in WebKit (it does not focus a button): the button takes it, as in Chromium", async () => {
     const browser = await webkit.launch();
     const v = await runChromium(

@@ -226,7 +226,17 @@ export async function runChromium(
     if (modifiers.length) await page.keyboard.up("Shift");
     return true;
   };
-  const press = (k: string) => page.keyboard.press(keyName(k));
+  // (Playwright's WebKit takes Backspace on a page whose focus is on the body as "back" and leaves the page, which destroys the execution
+  // context; no editor or demo code is involved, and Safari itself no longer does it: a Backspace with nothing focused is not pressed there)
+  const press = async (k: string) => {
+    if (
+      !isChromium &&
+      k === "Backspace" &&
+      (await page.evaluate(() => document.activeElement === document.body))
+    )
+      return;
+    await page.keyboard.press(keyName(k));
+  };
   const boxOpen = () => page.locator(".blocks-edit").first();
   const fillBox = async (t: string, accept: boolean) => {
     const b = boxOpen();
