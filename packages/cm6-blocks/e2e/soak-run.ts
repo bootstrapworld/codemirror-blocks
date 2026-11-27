@@ -107,7 +107,17 @@ export async function runChromium(
           .evaluate(() => (window as any).demo.ed.heightStats())
           .catch(() => null)
       );
-    await context.close().catch(() => undefined);
+    // (WebKit: after some real mouse drags (a press that starts on the text, not on a block, and ends on a gap) the page keeps working but
+    // `page.close()` / `context.close()` may never return, with the page and both browser processes idle (a mouse release and a moment
+    // sometimes lets it go, not always: a stall of Playwright's WebKit, no code of the editor runs). Without a bound the worker stalls
+    // until the runner kills it and the results of the whole batch are lost: the close is given 10 s, then left to the browser's own close
+    // when the worker ends. Seeds 3505899, 3506316 and the like)
+    const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+    if (browser.browserType().name() !== "chromium") {
+      await Promise.race([page.mouse.up().catch(() => undefined), wait(3000)]);
+      await wait(300);
+    }
+    await Promise.race([context.close().catch(() => undefined), wait(10000)]);
     return v;
   };
   const evaluate = <T, A = undefined>(fn: (a: A) => T, arg?: A): Promise<T> =>

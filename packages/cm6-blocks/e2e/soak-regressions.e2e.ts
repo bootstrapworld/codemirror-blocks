@@ -2504,3 +2504,108 @@ test("seed 3504867: a block that takes the focus after a focusout with nowhere t
     await page.evaluate(() => !!document.activeElement?.closest(".cm-editor"))
   ).toBe(true);
 });
+
+// WebKit: after a real mouse drag that starts on the text (not on a block) and ends on a gap, `context.close()` may never return (page, UI and
+// web-content processes all idle; no editor code runs): the soak worker stalled and the runner killed the whole batch. The harness now bounds the close.
+test("seed 3505899 (WebKit): a sequence that ends with a drag of selected blocks returns, the close of its context does not stall the worker", async () => {
+  test.setTimeout(60000);
+  const browser = await webkit.launch();
+  const t0 = Date.now();
+  const v = await runChromium(
+    browser,
+    {
+      engine: "chromium",
+      seed: 3505899,
+      language: "python",
+      code: 'from queue import Queue\n\n#\n#\n#\n\n\n# note\nimport tkinter\nfrom tkinter.constants import *\ntk = tkinter.Tk()\nframe = tkinter.Frame(tk, relief=RIDGE, borderwidth=2)\nclass A:\n    def m(self):\n        return 1\nA().m()\n\ndef f(a, b):\n    y = a\n    return y\nf(1, 2)\nclass A:\n    def m(self):\n        return 1\nA().m()\n# TODO\nfact.lst("s5", total(x, True, y)) + [total.y(None, True), x - h]\n# note\nNone - (lambda n: None)\ng = x\nfor lst in y:\n    "s6"\n\nn = lst.x(n())\n# TODO\ny = y()\n"s9"\n\ny = {y.n(n, "s6") == {n: n}: total(x(79, None))}\ny = 67\n# TODO\nclass abstractstaticmethod(staticmethod):\n    """\n    A decorator indicating abstract staticmethods.\n\n    Similar to abstractmethod.\n\n    Usage:\n\n        class C(metaclass=ABCMeta):\n            @abstractstaticmethod\n            def my_abstract_staticmethod(...):\n                ...\n\n    \'abstractstaticmethod\' is deprecated. Use \'staticmethod\' with\n    \'abstractmethod\' instead.\n    """\n\n    __isabstractmethod__ = True\n\n    def __init__(self, callable):\n        callable.__isabstractmethod__ = True\n        super().__init__(callable)\n\n\nfor acc in "s9":\n    lst = acc(g.y({None: h}, [None]), lambda lst: acc(True, True, "s0"))\n    acc = g(lst, y(), fact.acc())\n    h = total()\ng = True\n\n74\nn = x()\n# TODO\nTrue\n\n# a b c\nwhile f():\n    y()\n    n()\nfor lst in x(21, 92, acc):\n    def lst(y, fact):\n        [lst.total(), 17, lambda total: {"s5": None}]\n        y = acc.g(y(None, True), 71) + n == (lambda h: None)\n    while (lambda x: x()):\n        h = {lst(94, 38 == "s0", total(True, None, True)): 79}\n    if {"s3" + True: y(99, "s3", 77)}:\n        g = h\n\nfact = None\nh(lambda h: 22, {total.lst(57, None): f(True, 21)})\n\nn = [g(total(), True), {y(True, 26): x(None)}, y(25)]\nacc("s6" + n, 7)\nlst = {g("s0", f, None) == None - True: "s5"}\n# TODO\ny = f.y()\n81 * {12: True}\n# note\ntotal(None, total({None: "s6"}, "s9" - None))\ny = h([])\n\nh = n(acc(), "s5")\n# TODO\ng()\n"s5"\nclass A:\n    def m(self):\n        return 1\nA().m()\nh = None\n{(lambda acc: "s1"): [lambda x: lst]}\n"s8" * h == fact(True)\ny = True < acc(n(g), y.fact(None, None))\n(lambda lst: None) + 56\n# TODO\nx = "s1"\nh = g(29, g([total, x]))\nacc = fact({(lambda fact: 61): lambda lst: 69})\n"s5"\n[h(True - 40), None]\nh = g(55)\nwhile x(lambda lst: None, "s6", g - True):\n    None\n    def total(x, y):\n        acc(y()) == f(x(True, "s9", True), h, "s0")\n        lst(h([None, None, 53], n, h("s9", h, g)))\n        return None\ndef x(f, h):\n    "s2"\nfor x in None:\n    f = h(f(), n(h.n(True, None)))\n    if f({"s7": True}, None):\n        n(True == n - None, acc(True) + 87, [h.g("s1", None), "s1"])\n    else:\n        h = 68\n        {6: 7} < lst() == (lambda x: True)\n        h = total()\nlambda y: None\nfor acc in []:\n    lambda x: g("s3", True, "s5") == 73\n    fact = True\n\n# note\n"s0"\n# TODO\nx = acc(lst({total: None}, []), None, lst)\n# a b c\nh = y() < (lambda n: "s1")\n\ndef acc(g, lst):\n    n\n    "s2"\n    fact.n()\n\nfor total in True:\n    [lambda f: lambda f: None, fact, "s1"]\n\nx.n()\n# a comment\ntotal = 0\nfor x in [1, 2, 3]:\n    total = total + x\nprint(total, "done")\n# TODO\nwhile f:\n    if True:\n        (lambda fact: [73]) + True\n        77 - "s8" < h\n    else:\n        y = lambda x: {(lambda n: "s4"): n("s0", n, True)}\n        n = y\n        fact = acc([[], None < g], acc(x))\n    g = lambda total: x()\nacc(31)\nwhile fact(n(None)):\n    [[n.total(14, None), x(83), lambda y: "s3"], h(g(69, 33))]\n    if 81 < g + 53:\n        x = {h: [13 - y]}\n        lst = lambda g: "s4"\n        h = lambda h: h\n    def fact(total, y):\n        return {fact.f(): h(True)}\n        [None]\n        f = "s8"\n[f, y(True, lambda total: "s6", 9 == 87)]\nfor f in {70: None}:\n    if 21:\n        g = lst() < "s3"\n        g(lst, lambda lst: total("s8", 42, 31), x(h(lst), 24 < None, lambda h: total))\n    [fact(), fact(g), []]\n# TODO\nif g(True, g(None)):\n    x(h(), y, f()) - total(92, f)\n    while f(None):\n        g = None\n\n# TODO\nn(True) < None * acc\nNone\nfrom time import clock\n\n# wrapper for any additional drawing routines\n# that need to know about each other\nif "s2":\n    None\n    h = lambda x: fact.acc()\n    for h in g():\n        lst = 48\n        total = lambda y: lambda fact: {total: True}\n        lambda total: (lambda total: None) < "s9" - True\n\nn(total - {acc: "s3"}, lst.y())\nlambda lst: True\n"s0"\nh = [True, y(None), g()] == h(total(True), n(None, None))\nwhile n(None, {f: f}, True < "s7"):\n    if []:\n        fact = fact()\n        h(y("s3", "s3"), y == x) == [lambda fact: None]\n        f = lambda f: y()\n    else:\n        True\n        acc = [n, x(x(total, None), True, "s0")]\n        acc = lambda n: g(True, 27, 97) - total(32, True, None)\n\n# TODO\nlambda x: x(n - None, None)\nif (lambda acc: 96 * None):\n    h = h({None: {None: 10}})\n    total = total() * acc() + h()\n    f = [lst(lambda g: None, fact), 73 * True + True, True]\n# note\ny = y - f(lst(None, "s0", None))\n# a b c\nif h(total(True), "s7" - x):\n    if lst.total(lambda x: h, None):\n        lst = total(total, x(g("s8", 48, True), [True, True]))\n        lst = [[f(), f(None, True)], True, "s1"]\n    else:\n        y\n    if f():\n        y = [[lambda g: True, h, n(31, 87, True)]]\n        lst = y(fact.n(None)) - (lambda g: 67 + True)\n    def lst(y, g):\n        return g(None, True, True) < [lst, "s5", 8]\n        n({x(): lst()}, lambda acc: [], {(lambda y: 52): None + "s5"})\n        n = h(x("s7", total()), lambda fact: [y, True, lst], h(lst(None), lambda x: "s1"))\n# note\nif 88:\n    for y in h("s2"):\n        y = {35 * (lambda n: 77): None}\n        y = f(51)\n        lst()\n    lst()\nelse:\n    if (lambda y: fact(42, True)):\n        acc.f()\ndef g(y, acc):\n    acc = lambda y: "s1"\ng = n(True)\ndef n(h, n):\n    for lst in x("s0", x, True):\n        return fact\n        [n(True), fact()]\n    while fact(x.total()):\n        return g(True, n.h(True))\n        return lambda acc: 47\n        f()\n    for y in {y: None}:\n        acc = x\n        [[fact, True, fact(lst, True, g)]]\n\n# a comment\ntotal = 0\nfor x in [1, 2, 3]:\n    total = total + x\nprint(total, "done")\n# a b c\n',
+      steps: [
+        { op: "key", key: "Backspace", a: 0.8466972310561687 },
+        { op: "scroll", a: 0.9472985945176333 },
+        { op: "scrollKey", a: 0.020668081007897854, key: "ArrowDown" },
+        {
+          op: "typeIntoBlock",
+          a: 0.7669736966490746,
+          text: "7",
+          accept: false,
+        },
+        {
+          op: "insertText",
+          a: 0.09273513057269156,
+          b: 0.42066744389012456,
+          text: "{1: 2}",
+        },
+        { op: "redo" },
+        {
+          op: "typeIntoBlock",
+          a: 0.18098891666159034,
+          text: "7",
+          accept: false,
+        },
+        {
+          op: "collapseAllThen",
+          on: false,
+          a: 0.3418978746049106,
+          text: "foo",
+          accept: true,
+        },
+        { op: "search", text: "(", next: true },
+        { op: "collapse", a: 0.5839955431874841, on: true },
+        { op: "collapse", a: 0.606752943713218, on: true },
+        { op: "focus", a: 0.19633504352532327 },
+        { op: "undo" },
+        { op: "focus", a: 0.5438481629826128 },
+        { op: "scroll", a: 0.9525840764399618 },
+        { op: "focus", a: 0.8463698306586593 },
+        { op: "removeNode", a: 0.3081013581249863, b: 0.7278074491769075 },
+        {
+          op: "multiSelect",
+          a: 0.03986215218901634,
+          n: 5,
+          then: "copyPaste",
+          b: 0.6446714622434229,
+        },
+        { op: "key", key: "Shift+ArrowLeft", a: 0.018548497930169106 },
+        {
+          op: "commentNear",
+          a: 0.9772494994103909,
+          dir: -1,
+          text: "note",
+          accept: true,
+        },
+        {
+          op: "resize",
+          w: 0.6036904738284647,
+          h: 0.6841811968479306,
+          wrap: "keep",
+        },
+        { op: "removeNode", a: 0.6845806243363768, b: 0.09789435076527297 },
+        { op: "key", key: "Shift+ArrowRight", a: 0.8563138751778752 },
+        {
+          op: "dragSelection",
+          a: 0.7770944149233401,
+          b: 0.8156429096125066,
+          n: 2,
+        },
+      ],
+      motion: "full",
+      editor: {
+        lineNumbers: true,
+        lineWrapping: false,
+        collapseAll: false,
+        reconcile: true,
+        anchors: true,
+        fastErrors: true,
+        skipRoots: true,
+        activityLimit: null,
+      },
+    } as Sequence,
+    { baseURL }
+  );
+  const ms = Date.now() - t0;
+  await Promise.race([
+    browser.close(),
+    new Promise((r) => setTimeout(r, 5000)),
+  ]);
+  expect(v).toBeNull();
+  expect(ms).toBeLessThan(40000);
+});
