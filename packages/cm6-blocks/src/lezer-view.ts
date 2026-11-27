@@ -3539,6 +3539,8 @@ export function createLezerBlockEditor(
       heightWatch?.disconnect();
       sizeWatch?.disconnect();
       resizeWin?.removeEventListener("resize", onResize);
+      for (const type of leaveEvents)
+        leaveWin.removeEventListener(type, noteLeave, true);
       view.destroy();
     },
   };
@@ -3651,9 +3653,48 @@ export function createLezerBlockEditor(
   });
   view.dom.addEventListener("focusout", (e) => {
     const t = e.target as HTMLElement | null;
-    if (blockMode && !e.relatedTarget && holdsFocus(t)) lostBlockFocus = true;
+    if (blockMode && !e.relatedTarget && holdsFocus(t)) {
+      lostBlockFocus = true;
+      recoverFocusLater(t, performance.now() - lastLeaveGesture < 400);
+    }
     if (t === focusedEl) focusedEl = null;
   });
+  /**
+   * A block that has the focus can lose it with no later update to notice: an edit hides it (a collapsed ancestor) or CodeMirror takes it
+   * out and puts it back, and WebKit reports it by a `focusout` with nowhere to go (or by none) AFTER the last update, so the focus rests on
+   * the page body. One macrotask after such a `focusout`, if the body still has the focus, it goes back to the block (or the nearest
+   * enclosing block that is shown, or the editor's text) - unless the user left on purpose: a press outside the editor or a Tab just before.
+   */
+  let lastLeaveGesture = -1e9;
+  const leaveWin = view.dom.ownerDocument;
+  const noteLeave = (e: Event): void => {
+    if (e.type === "keydown" && (e as KeyboardEvent).key !== "Tab") return;
+    if (e.type !== "keydown" && view.dom.contains(e.target as Node)) return;
+    lastLeaveGesture = performance.now();
+  };
+  const leaveEvents = ["keydown", "pointerdown", "mousedown", "touchstart"];
+  for (const type of leaveEvents)
+    leaveWin.addEventListener(type, noteLeave, true);
+  function recoverFocusLater(t: HTMLElement, userLeft: boolean): void {
+    if (userLeft) return;
+    setTimeout(() => {
+      if (gone || !blockMode || holdFocus) return;
+      const d = view.dom.ownerDocument;
+      const a = d.activeElement;
+      if (a && a !== d.body && a !== d.documentElement && a.isConnected) return;
+      for (
+        let el: HTMLElement | null = t;
+        el && el !== view.contentDOM;
+        el = el.parentElement
+      ) {
+        if (!el.isConnected || !holdsFocus(el) || !el.getClientRects().length)
+          continue;
+        el.focus({ preventScroll: true });
+        if (d.activeElement === el) return;
+      }
+      view.contentDOM.focus({ preventScroll: true });
+    }, 0);
+  }
   injectSheets(view.dom, table);
   // the end of a press or a drag lays the blocks out again (the gap under the mouse goes) after CodeMirror's last measure of the drag, and a
   // size that went down and up again between two frames is reported by no observer: the heights are compared with the lines once it is over

@@ -210,17 +210,21 @@ export async function runChromium(
       // element near the point, such as the toolbar below a block that is half out of the window, and that is not the block's press: so
       // the area around the point must be the editor's too. Seed 807877)
       const around = edge >= 12 ? [0, 10, -10] : [0];
+      // (a mouse press takes a few pixels of room above and below too: the toolbar's lower edge is not on a whole pixel, the point that
+      // is 0.5 px under it is the editor's for `elementFromPoint` and the toolbar's for the press, and the page then takes the focus.
+      // Soak seed 3913048, WebKit)
+      const aroundY = edge >= 12 ? around : [0, 3, -3];
       const ok = await evaluate(
-        ([px, py, ds]: any) =>
+        ([px, py, ds, dys]: any) =>
           ds.every((dx: number) =>
-            ds.every(
+            dys.every(
               (dy: number) =>
                 !!document
                   .elementFromPoint(px + dx, py + dy)
                   ?.closest(".cm-content")
             )
           ),
-        [x, y, around]
+        [x, y, around, aroundY]
       );
       if (ok) return { x, y };
     }

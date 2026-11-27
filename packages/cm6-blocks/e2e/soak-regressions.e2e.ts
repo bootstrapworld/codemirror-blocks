@@ -2367,6 +2367,191 @@ test.describe("in WebKit", () => {
     await browser.close();
     expect(v).toBeNull();
   });
+  test("seed 3909020: a focused block that an edit hides (a collapsed ancestor) is reported lost by a focusout after the last update, with the focus on the page body: it goes back to the nearest block that is shown", async () => {
+    const browser = await webkit.launch();
+    const v = await runChromium(
+      browser,
+      {
+        engine: "chromium",
+        seed: 3909020,
+        language: "python",
+        code: "if x:\n    f(1)\nelif y:\n    g()\nelse:\n    h()\n[1, 2]",
+        steps: [
+          { op: "key", key: "ArrowDown", a: 0.5721295189578086 },
+          {
+            op: "brokenText",
+            a: 0.7782297811936587,
+            w: "x = 'a",
+            nl: true,
+            back: true,
+          },
+          {
+            op: "multiSelect",
+            a: 0.002159402472898364,
+            n: 2,
+            then: "cut",
+            b: 0.8425684457179159,
+          },
+          {
+            op: "replaceDoc",
+            text: "g = lambda acc: lst(True, True, True) - [37, True, g]\n# note\nf = f(total(None, []), True)\nfact = fact(g(acc(), f), True == [])\n",
+          },
+          { op: "toggleMode", a: 0.26689364574849606, rush: 0.13 },
+          {
+            op: "resize",
+            w: 0.7413364215753973,
+            h: 0.8691837270744145,
+            wrap: "keep",
+          },
+          {
+            op: "dragBlock",
+            a: 0.9146329641807824,
+            b: 0.6526140437927097,
+            where: "gap",
+          },
+          {
+            op: "ime",
+            a: 0.6338434196077287,
+            target: "text",
+            parts: ["x"],
+            final: "x y",
+            cancel: false,
+            accept: false,
+            back: false,
+          },
+          {
+            op: "dragBlock",
+            a: 0.4821842086967081,
+            b: 0.98065588879399,
+            where: "gap",
+          },
+          { op: "key", key: "Delete", a: 0.49379031197167933 },
+          { op: "clickTemplate", t: 0.46730196569114923 },
+          { op: "collapseBurst", a: 0.3904909584671259, n: 4, on: true },
+          { op: "key", key: "Mod+y", a: 0.43968933005817235 },
+          { op: "scroll", a: 0.21546666836366057 },
+          {
+            op: "clipboard",
+            a: 0.017941589932888746,
+            b: 0.6088427160866559,
+            n: 1,
+            how: "copy",
+            to: "block",
+            accept: false,
+          },
+          {
+            op: "commentNear",
+            a: 0.9513788637705147,
+            dir: 1,
+            text: "",
+            accept: true,
+          },
+          { op: "key", key: "Mod+Shift+z", a: 0.4384457499254495 },
+          {
+            op: "insertText",
+            a: 0.34099920047447085,
+            b: 0.4174888585694134,
+            text: '"s"',
+          },
+        ],
+        motion: "reduced",
+        editor: {
+          lineNumbers: true,
+          lineWrapping: true,
+          collapseAll: false,
+          reconcile: true,
+          anchors: true,
+          fastErrors: true,
+          skipRoots: true,
+          activityLimit: null,
+        },
+      } as Sequence,
+      { baseURL }
+    );
+    await browser.close();
+    expect(v).toBeNull();
+  });
+  test("seed 3913048: a press that lands on the toolbar, not the editor (the point was 0.5 px under its lower edge), takes the focus away in any browser: the harness keeps clear of the edge", async () => {
+    const browser = await webkit.launch();
+    const v = await runChromium(
+      browser,
+      {
+        engine: "chromium",
+        seed: 3913048,
+        language: "python",
+        code: 'acc = h()\n# note\nNone\nwhile x(x(True, 33), 36, None):\n    for n in fact("s1", None, None):\n        total = 31 * fact\n        lst = 3\n    {(lambda g: "s5"): None}\n    g = lst() * (lambda g: True)\ndef x(g, total):\n    acc()\n    f = []\n    while fact(lst.g(56)):\n        return h(60, None < True, 19 + h)\nwhile {y(): g}:\n    if lst(g(True, 10), n):\n        n = ["s9" * True, lambda lst: "s1" - 43]\n        []\n    else:\n        y = "s6"\n        fact = lambda x: g(None)\n        f()\n    h = y([28 == None, fact(True)], [acc == 46, None - "s7", lst], 72)\nTrue\n\nn = fact()\nif n(n, None) - [lst, "s1", g]:\n    fact()\n    "s9" < (lambda n: total)\n',
+        steps: [
+          {
+            op: "topLevelType",
+            a: 0.8974441478494555,
+            text: "x",
+            accept: false,
+            how: "paste",
+          },
+          {
+            op: "resize",
+            w: 0.21343690855428576,
+            h: 0.6174822396133095,
+            wrap: "on",
+          },
+          {
+            op: "typeIntoBlock",
+            a: 0.8956182324327528,
+            text: "x",
+            accept: true,
+          },
+          {
+            op: "pasteMulti",
+            a: 0.1914457380771637,
+            text: '{1: 2}\n"s"',
+            accept: true,
+          },
+          {
+            op: "resize",
+            w: 0.989058954641223,
+            h: 0.14512235508300364,
+            wrap: "off",
+          },
+          {
+            op: "insertText",
+            a: 0.7106169813778251,
+            b: 0.952641200972721,
+            text: "[1, 2]\n1\nx\n[1, 2]",
+          },
+          {
+            op: "insertText",
+            a: 0.9367585291620344,
+            b: 0.5033125409390777,
+            text: "True\nx\nTrue\nf()",
+          },
+          { op: "zoom", z: 0.8035519772674888 },
+          { op: "collapse", a: 0.16793420910835266, on: true },
+          { op: "focus", a: 0.9226305526681244 },
+          {
+            op: "multiSelect",
+            a: 0.816438817884773,
+            n: 3,
+            then: "copyPaste",
+            b: 0.43177500599995255,
+          },
+        ],
+        motion: "full",
+        editor: {
+          lineNumbers: true,
+          lineWrapping: false,
+          collapseAll: false,
+          reconcile: true,
+          anchors: true,
+          fastErrors: true,
+          skipRoots: true,
+          activityLimit: null,
+        },
+      } as Sequence,
+      { baseURL }
+    );
+    await browser.close();
+    expect(v).toBeNull();
+  });
 });
 
 test("seeds 3102171, 3106234: an edit box that blurs while CodeMirror is measuring (WebKit moves the selection then) commits after the update, with no re-entrant dispatch", async ({
