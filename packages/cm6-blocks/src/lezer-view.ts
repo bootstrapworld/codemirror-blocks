@@ -514,6 +514,33 @@ const sameAfter = (
   return !hx && !hy;
 };
 
+/**
+ * Whether a node around an edit (the node at each end of it and the nodes that hold it, but not the top node) has a child outside its own
+ * range: a tree that cannot be, which Lezer's incremental parse makes when it reuses a token that an edit inside a comment changed the
+ * extent of (`null` with an unclosed `/* open` typed in it, then an edit in that comment: the comment holds the identifier before it). A
+ * fresh parse of the same text has the comment inside the identifier, as the other places where one sits. The cost is the children of the
+ * few nodes that hold the edit, not the document
+ */
+const malformedAround = (
+  tree: Tree,
+  changes: { fromB: number; toB: number }[]
+): boolean => {
+  for (const c of changes) {
+    for (const [pos, side] of [
+      [c.fromB, -1],
+      [c.fromB, 1],
+      [c.toB, -1],
+      [c.toB, 1],
+    ] as const) {
+      for (let n = tree.resolveInner(pos, side); n.parent; n = n.parent) {
+        for (let k = n.firstChild; k; k = k.nextSibling)
+          if (k.from < n.from || k.to > n.to) return true;
+      }
+    }
+  }
+  return false;
+};
+
 // (a root of no width, which the parser makes when it recovers from an error, has nothing to replace: CodeMirror refuses the decoration)
 const drawn = (n: BNode): boolean =>
   n.kind !== "error" && !(n.to === n.from && n.parent?.kind === "program");
@@ -1118,6 +1145,12 @@ export function createLezerBlockEditor(
           frags = [];
           tree = parser.parse(s);
         }
+      }
+      // (and a node around the change can come out malformed: a child that is not inside it, after an edit inside a comment. One more
+      // parse, only for a tree that cannot be right)
+      if (frags.length && cr.length && malformedAround(tree, cr)) {
+        frags = [];
+        tree = parser.parse(s);
       }
       const tq = performance.now();
       stats.parseMs += tq - tp;
