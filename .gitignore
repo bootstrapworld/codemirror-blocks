@@ -16,3 +16,4 @@ playwright-report
 # soak test output (npm run soak)
 soak-results/
 packages/cm6-blocks/scripts/parse-fuzz.build.cjs
+packages/cm6-blocks/scripts/leak-check.build.cjs

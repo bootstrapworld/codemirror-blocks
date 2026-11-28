@@ -1898,6 +1898,17 @@ export function createLezerBlockEditor(
   let textAtEntry: Text | null = null;
   const modeListeners = new Set<(m: "text" | "blocks") => void>();
   let gone = false;
+  /** the listeners put on the editor's own elements: taken off by `destroy`, so that an element that something else still holds (a selector cache, a debugger) does not keep the editor alive through them */
+  const ownListeners: (() => void)[] = [];
+  const listen = (
+    t: EventTarget,
+    type: string,
+    fn: EventListener,
+    opts?: boolean | AddEventListenerOptions
+  ): void => {
+    t.addEventListener(type, fn, opts);
+    ownListeners.push(() => t.removeEventListener(type, fn, opts));
+  };
   // eslint-disable-next-line prefer-const -- read by closures made before the view exists
   let view: EditorView;
 
@@ -3698,6 +3709,8 @@ export function createLezerBlockEditor(
       stopWatching?.();
       notice?.remove();
       if (sayTimer) clearTimeout(sayTimer);
+      if (retryTimer !== null) clearTimeout(retryTimer);
+      retryTimer = null;
       unqueue();
       region.remove();
       interaction.detach();
@@ -3706,6 +3719,7 @@ export function createLezerBlockEditor(
       resizeWin?.removeEventListener("resize", onResize);
       for (const type of leaveEvents)
         leaveWin.removeEventListener(type, noteLeave, true);
+      for (const off of ownListeners.splice(0)) off();
       view.destroy();
     },
   };
@@ -3808,21 +3822,21 @@ export function createLezerBlockEditor(
   // kept in the editor the same way; soak seed 1847)
   const holdsFocus = (t: HTMLElement | null): t is HTMLElement =>
     !!t && (!!renderer.nodeOf(t) || t.classList.contains("blocks-edit"));
-  view.dom.addEventListener("focusin", (e) => {
+  listen(view.dom, "focusin", ((e: FocusEvent) => {
     const t = e.target as HTMLElement | null;
     focusedEl = holdsFocus(t) ? t : null;
     // (a loss that an earlier focusout reported is over: the focus went on to this element, which the update must not forget. Soak seed 3504867:
     // a box closed by Escape reports its loss, the block takes the focus, and the update that reads the report then wiped the block it had just seen)
     lostBlockFocus = false;
-  });
-  view.dom.addEventListener("focusout", (e) => {
+  }) as EventListener);
+  listen(view.dom, "focusout", ((e: FocusEvent) => {
     const t = e.target as HTMLElement | null;
     if (blockMode && !e.relatedTarget && holdsFocus(t)) {
       lostBlockFocus = true;
       recoverFocusLater(t, performance.now() - lastLeaveGesture < 400);
     }
     if (t === focusedEl) focusedEl = null;
-  });
+  }) as EventListener);
   /**
    * A block that has the focus can lose it with no later update to notice: an edit hides it (a collapsed ancestor) or CodeMirror takes it
    * out and puts it back, and WebKit reports it by a `focusout` with nowhere to go (or by none) AFTER the last update, so the focus rests on
@@ -3863,7 +3877,8 @@ export function createLezerBlockEditor(
   // the end of a press or a drag lays the blocks out again (the gap under the mouse goes) after CodeMirror's last measure of the drag, and a
   // size that went down and up again between two frames is reported by no observer: the heights are compared with the lines once it is over
   for (const type of ["pointerup", "pointercancel", "mouseup", "touchend"])
-    view.dom.addEventListener(
+    listen(
+      view.dom,
       type,
       () => {
         gutterRepairs = 0;
@@ -3897,7 +3912,7 @@ export function createLezerBlockEditor(
 
   // the next key or touch of the pointer settles which block an edit left focused (a redo goes back to it)
   for (const type of ["keydown", "pointerdown", "mousedown", "touchstart"])
-    view.dom.addEventListener(type, settleHistoryFocus, true);
+    listen(view.dom, type, settleHistoryFocus as EventListener, true);
   // the API entry points that change something are logged as actions of their own when called by a page or a test (inside a key or a mouse
   // handler they are part of that action)
   const named = <K extends keyof LezerBlockEditor>(
@@ -4016,13 +4031,13 @@ export function createLezerBlockEditor(
     if (id) view.scrollDOM.setAttribute("aria-activedescendent", id);
     else view.scrollDOM.removeAttribute("aria-activedescendent");
   };
-  view.dom.addEventListener("focusout", (e) => {
+  listen(view.dom, "focusout", ((e: FocusEvent) => {
     const to = (e as FocusEvent).relatedTarget as Element | null;
     if (!to || !renderer.nodeOf(to) || !view.contentDOM.contains(to))
       setActive(null);
     placed?.classList.remove("blocks-comment-above");
     placed = null;
-  });
+  }) as EventListener);
   /**
    * The popup with a block's comment hangs from the top of the block; where that would put it below the bottom of the editor it is held at
    * the block's bottom edge instead and grows upwards (unless that leaves it above the top too). Placed when a block gets focus, and again
@@ -4048,9 +4063,9 @@ export function createLezerBlockEditor(
         pop.classList.remove("blocks-comment-above");
     }
   };
-  view.scrollDOM.addEventListener("scroll", placePopup);
-  view.scrollDOM.addEventListener("scroll", checkDrawnLater);
-  view.dom.addEventListener("focusin", (e) => {
+  listen(view.scrollDOM, "scroll", placePopup);
+  listen(view.scrollDOM, "scroll", checkDrawnLater);
+  listen(view.dom, "focusin", ((e: FocusEvent) => {
     const n = renderer.nodeOf(e.target as Element);
     if (n) lastNode = n;
     const block = (e.target as Element).closest?.(".blocks-node[data-id]");
@@ -4068,7 +4083,7 @@ export function createLezerBlockEditor(
       !(e.target as Element).closest(".blocks-edit")
     )
       sayLater("Use enter to edit", 1250);
-  });
+  }) as EventListener);
   summarize();
   if (options.collapseAll) ed.collapseAll(true);
   marks();
