@@ -7,6 +7,7 @@
   "scripts": {
     "typecheck": "tsc -p . --noEmit",
     "soak": "node scripts/soak.js",
+    "fuzz:parse": "esbuild scripts/parse-fuzz.ts --bundle --platform=node --format=cjs --loader:.css=text --external:jsdom --external:typescript --log-level=warning --outfile=scripts/parse-fuzz.build.cjs && node scripts/parse-fuzz.build.cjs",
     "build": "npm run build:min && npm run build:min:scheme && npm run build:min:javascript && npm run build:min:python",
     "build:min": "esbuild demo/demo.ts --bundle --format=iife --minify --loader:.css=text --outfile=demo/demo.js",
     "serve": "esbuild demo/demo.ts --bundle --format=iife --sourcemap --loader:.css=text --outfile=demo/demo.js --servedir=demo --serve=8177",
