@@ -550,7 +550,7 @@ const malformedAround = (
 
 /**
  * Whether the top-level nodes around a change (the one before it, and the one that holds its end or comes after it) are other than a fresh
- * parse of just that stretch of text makes of them (`parse`): the types and ranges of the nodes that lie in it. Lezer reuses a node that ends
+ * parse of just that stretch of text makes of them (`parse`): the types and ranges of ALL the nodes that lie in it, nested ones too (when one statement holds the stretch, its top level is the same whatever Lezer did inside it). Lezer reuses a node that ends
  * before the change though what follows it reaches it: a `function f() ` with no body, then a long comment, then a `{...}` pasted after the
  * comment is the body of a fresh parse and a separate block in the incremental one (the node's lookahead does not see past the comment). The
  * cost is a parse of the two statements and what is between them (and of the change), not of the document
@@ -574,9 +574,11 @@ const differsAround = (
     if (to < from) continue;
     const w = parse(text.slice(from, to)).cursor();
     const z = tree.cursor();
-    let hw = w.firstChild();
     let hz = z.childAfter(from);
     while (hz && z.from < from) hz = z.nextSibling();
+    // every node of the stretch, not only the top-level ones: a statement that holds the whole stretch (one huge `({...` with a long
+    // comment in it) has the same top-level node however Lezer placed the comments and the nodes inside it
+    let hw = w.firstChild();
     while (hw) {
       if (
         !hz ||
@@ -585,8 +587,8 @@ const differsAround = (
         z.to !== w.to + from
       )
         return true;
-      hw = w.nextSibling();
-      hz = z.nextSibling();
+      hw = w.next();
+      hz = z.next();
     }
     if (hz && z.from < to) return true;
   }
