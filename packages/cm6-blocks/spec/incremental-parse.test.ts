@@ -76,3 +76,38 @@ it("soak seed 400160: a statement after the change that Lezer reads over what fo
   });
   expect(ed.roots().length).toBe(ref.roots().length);
 });
+
+// soak seed 5503969 (Chromium, paste at the top level): a `function f(a, b) ` with no body, then a long comment, and a `{...}` pasted after
+// the comment. A fresh parse takes it as the body of the function; the incremental one keeps the function as it was (the node's lookahead
+// does not see past the comment) and the block is a root of its own
+it("soak seed 5503969: a node before the change that the pasted text now completes is read again (a bodiless function, a long comment, a block pasted)", () => {
+  const pre = "f();\nfunction f(a, b) /*{";
+  const old =
+    pre +
+    "  return true;\n}\nwhile (x) {\n".repeat(400) +
+    "*/\n\nfunction y(g, n) {}\n";
+  const at = old.indexOf("*/") + 2;
+  const paste = "{a: 1}\n[1, 2]";
+  const doc = old.slice(0, at) + paste + old.slice(at);
+  const js = LANGS.javascript.opts.parser as unknown as typeof pythonParser;
+  const incremental = js.parse(
+    doc,
+    TreeFragment.applyChanges(TreeFragment.addTree(js.parse(old)), [
+      { fromA: at, toA: at, fromB: at, toB: at + paste.length },
+    ])
+  );
+  // (the fault is Lezer's: if a newer Lezer reads this right, the test no longer shows anything)
+  expect(incremental.toString()).not.toBe(js.parse(doc).toString());
+
+  const ed = createLezerBlockEditor(host(), old, {
+    ...LANGS.javascript.opts,
+    freshParseBelow: 0,
+  });
+  ed.view.dispatch({ changes: { from: at, insert: paste } });
+  expect(checkLezerEditor(ed)).toEqual([]);
+  const ref = createLezerBlockEditor(host(), doc, {
+    ...LANGS.javascript.opts,
+    freshParseBelow: 0,
+  });
+  expect(ed.roots().length).toBe(ref.roots().length);
+});

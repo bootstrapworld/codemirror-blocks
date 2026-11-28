@@ -548,6 +548,51 @@ const malformedAround = (
   return false;
 };
 
+/**
+ * Whether the top-level nodes around a change (the one before it, and the one that holds its end or comes after it) are other than a fresh
+ * parse of just that stretch of text makes of them (`parse`): the types and ranges of the nodes that lie in it. Lezer reuses a node that ends
+ * before the change though what follows it reaches it: a `function f() ` with no body, then a long comment, then a `{...}` pasted after the
+ * comment is the body of a fresh parse and a separate block in the incremental one (the node's lookahead does not see past the comment). The
+ * cost is a parse of the two statements and what is between them (and of the change), not of the document
+ */
+const differsAround = (
+  tree: Tree,
+  text: string,
+  changes: { fromB: number; toB: number }[],
+  parse: (text: string) => Tree
+): boolean => {
+  for (const c of changes) {
+    const x = tree.cursor();
+    // (the node before the change, not the comments that come between it and the change)
+    let from = c.fromB;
+    if (x.childBefore(c.fromB)) {
+      while (/comment/i.test(x.name) && x.prevSibling());
+      from = x.from;
+    }
+    const y = tree.cursor();
+    const to = y.childAfter(c.toB) ? y.to : text.length;
+    if (to < from) continue;
+    const w = parse(text.slice(from, to)).cursor();
+    const z = tree.cursor();
+    let hw = w.firstChild();
+    let hz = z.childAfter(from);
+    while (hz && z.from < from) hz = z.nextSibling();
+    while (hw) {
+      if (
+        !hz ||
+        z.type !== w.type ||
+        z.from !== w.from + from ||
+        z.to !== w.to + from
+      )
+        return true;
+      hw = w.nextSibling();
+      hz = z.nextSibling();
+    }
+    if (hz && z.from < to) return true;
+  }
+  return false;
+};
+
 // (a root of no width, which the parser makes when it recovers from an error, has nothing to replace: CodeMirror refuses the decoration)
 const drawn = (n: BNode): boolean =>
   n.kind !== "error" && !(n.to === n.from && n.parent?.kind === "program");
@@ -1223,6 +1268,16 @@ export function createLezerBlockEditor(
       // (and a node around the change can come out malformed: a child that is not inside it, after an edit inside a comment. One more
       // parse, only for a tree that cannot be right)
       if (frags.length && cr.length && malformedAround(tree, cr)) {
+        frags = [];
+        tree = parser.parse(s);
+      }
+      // (and the nodes around the change read as a fresh parse of that stretch alone reads them: one parse of the two nodes and what is
+      // between them, and of the whole text only when they differ)
+      if (
+        frags.length &&
+        cr.length &&
+        differsAround(tree, s, cr, (t) => parser.parse(t))
+      ) {
         frags = [];
         tree = parser.parse(s);
       }
