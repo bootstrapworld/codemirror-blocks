@@ -2623,6 +2623,205 @@ test.describe("in WebKit", () => {
     await browser.close();
     expect(v).toBeNull();
   });
+  test("seed 4800132 (WebKit): an empty last line that no viewport holds (the selection's line is drawn far from the scrolled one) is not measured by CodeMirror: its height is read from the page, so after an undo the heights it holds are the page's", async () => {
+    const browser = await webkit.launch();
+    for (let i = 0; i < 1; i++) {
+      const v = await runChromium(
+        browser,
+        {
+          engine: "chromium",
+          seed: 4800132,
+          language: "javascript",
+          code: 'class A {\n  m() {\n    return 1;\n  }\n}\nnew A().m();\n\n// a b c\nlet x = 1 + 2;\nf(x, 3);\nwhile (x < 9) { x = x + 1; g(x); }\n\n// a b c\nvar x = [f(), h === "s3" ? "s2" : "s6"];\nif (x()) {\n  fact = y();\n  acc({a: fact(null, 13), b: (g) => null}, true === {a: 47, b: null}, y(null < fact));\n  const fact = total();\n}\n// note\nx(null * (g) => true, 35);\nif ({a: (n) => "s1", b: total()}) {\n  while ("s7") {\n    g(lst * n(null, true, null), lst(true < null, f(lst, true)), true ? fact : total());\n    lst(f.acc(total(true), true));\n  }\n  function y(n, n) {\n    return {a: f(null, 44), b: null ? true : fact};\n    let y = acc(lst.x("s1"), [fact.h(true), null]);\n  }\n}\nholes[6] = \'g\';\n\nvar obj = {\n    a: 1,\n    b: [3, 4, undefined, null],\n    c: undefined,\n    d: null,\n    e: {\n        regex: /^x/i,\n        buf: Buffer.from(\'abc\'),\n        holes: holes\n    },\n    now: new Date()\n};\nlet f = f({a: "s7", b: total(n, n, 65)}, {a: f(), b: null}, "s0");\nconst f = (f) => null ? true : "s8" ? x : fact(y, 86, null);\n"s3";\n// a b c\n// a b c\nvar y = x(lst(g("s0", "s6"), true));\nfor (const y of g) {\n  f();\n  var lst = n(true);\n}\n\nf();\nfact = [];\n// note\nfact();\n// note\nfor (const y of {a: null, b: 17}) {\n  fact(null, (y) => "s5") ? (fact) => 62 : {a: null, b: 0 === total};\n}\nvar f = 70 ? null : y(fact(), y(), y - 76);\n({a: {a: acc(29), b: null}, b: {a: g(true, null), b: f(null, "s5", acc)}});\nlet lst = (total) => x;\ntrue ? 35 : g;\nclass A {\n  m() {\n    return 1;\n  }\n}\nnew A().m();\na.b(c);\n[1, 2, 3];\nlet y = 5;\n// note\nconst fact = {a: 31 - true, b: x.h(null)} ? [lst()] : acc.n(27 * true, [65]);\n// a b c\nfunction g(total, total) {\n  y.total(null) + 87;\n  null;\n  g.x(true) - h(f());\n}\n\n73 ? f : fact(true, f) === true;\nwhile ({a: null, b: h} - y(fact, null)) {\n  total(24, (n) => null, "s1" === true) ? null : true * f;\n}\nif (y(true - true)) {\n  ({a: "s1", b: y(fact(y, true))});\n  let acc = h.n(true);\n  var lst = fact;\n}\nfunction validateStringArray(value, name) {\n  validateArray(value, name);\n  for (let i = 0; i < value.length; i++) {\n    validateString(value[i], `${name}[${i}]`);\n  }\n}\n\nlet lst = lst;\nvar y = x();\n// a b c\nfor (const h of 55 ? null : true) {\n  (h) => "s3" ? 17 : {a: null, b: y};\n}\nfor (const y of y(73)) {\n  function g(f, f) {\n    return 29;\n    var acc = true;\n  }\n}\n\n// note\nlet acc = lst({a: n(f, null, true), b: y.f()}, [true]);\nexport function Increment(T) {\n    return (parseInt(T) + 1).toString();\n}\n\nacc("s1");\n// TODO\nconst lst = true;\n\nvar total = lst(["s7", fact(), 28 < "s7"], null);\ng(null, lst.g());\nn = n;\nfunction total(g, total) {\n  while ({a: true * null, b: y.y()}) {\n    return null;\n    return true;\n  }\n}\nconst x = fact(y.y("s1"), true ? x : null ? 69 : true < null);\nwhile (g("s4")) {\n  while (fact(fact, h(43, x, "s2"), "s3")) {\n    lst = [true - null];\n  }\n  n();\n  while ((y) => true) {\n    const n = n() ? y() : "s8";\n    lst(n(32) < (n) => "s4", [f ? null : h, (x) => 88]);\n    g.y(fact("s1"));\n  }\n}\nlst();\n// note\nconst g = true;\nwhile (total(h(h))) {\n  if (true) {\n    null - true;\n    n(null, true, [y(true, acc), [null, true, "s1"]]);\n  }\n  ({a: true, b: 55});\n  null;\n}\nif (g.lst()) {\n  null;\n  f("s0", null + y, {a: lst(77, x), b: null ? "s0" : true});\n  for (const x of (lst) => null) {\n    let h = "s8";\n    let g = [f("s9" ? null : acc, n ? true : true)];\n  }\n} else {\n  let h = true;\n  const g = (lst) => n();\n}\n// TODO\nfunction x(y, fact) {\n  f(fact(81));\n  const fact = fact(null, "s9" ? total.lst(true, g) : true + 18, null);\n}\n// TODO\nif (38) {\n  f(fact);\n  45;\n} else {\n  74 ? true : 59 < y(fact) === null;\n}\nfor (const total of h()) {\n  g = null;\n  var x = g.acc(y(null, lst(81, null, n)));\n  while ("s8" === "s1" ? fact.total() : n()) {\n    "s3";\n  }\n}\nnull;\n\n"s8" === [];\nwhile (fact(fact) ? lst ? true : true : true) {\n  h();\n}\n\n({a: h(), b: null});\n({a: "s8", b: true} ? acc("s1", fact, "s1") : true + fact);\nconst lst = fact.total();\n// note\ng = [];\n\nlet fact = lst ? "s7" : g < {a: true, b: total} === 22 ? fact : h - true * null;\nconst {\n  getLanguageBundleConfig,\n} = require("@bootstrapworld/cmb-toolkit/lib/webpack");\n\n// dist/routine-min.js: this language, for a page that loads it with a <script>\n// tag after the editor\'s (the global `CMBRoutine` is the language, which is\n// also added to the editor, to be asked for by its id: "routine")\nvar url  = \'http://jsonplaceholder.typicode.com/db\';\r\n\r\n// Initialize our GET request with our default (JSON) \r\n// parsers disabled.\r\n\r\nfunction fact(x, lst) {\n  function lst(acc, fact) {\n    return true;\n    y = y(true, null);\n  }\n  if (true) {\n    ["s4" < fact(), {a: [], b: lst(null, null)}];\n  } else {\n    return h;\n  }\n}\n\nfor (const lst of f) {\n  if (acc(h(), fact)) {\n    [56, null + "s7" < h.n(), {a: [], b: {a: 81, b: 43}}];\n  }\n}\n// TODO\n26;\nvar stringify = require(\'../\');\n\nvar obj = { d: 6, c: 5, b: [{z:3,y:2,x:1},9], a: 10 };\nvar s = stringify(obj, function (a, b) {\n    return a.value < b.value ? 1 : -1;\n});\n// TODO\nconst g = true;\nvar y = null;\ny() - h.f(null, null) ? 3 : g(null, "s6");\nlst = (f) => (f) => 1;\n// a b c\nvar lst = n.fact(28);\ng = g();\n\nif ((y) => y * acc) {\n  null;\n} else {\n  if (null - true) {\n    lst.g({a: [true], b: fact});\n    f;\n  }\n  total;\n  if (null) {\n    let fact = y.h((y) => true);\n  }\n}\n[null];\n\nvar n = acc();\n[y(17, true, lst())];\nfunction n(fact, lst) {\n  [true * true ? h() : f ? 67 : x, 4, true];\n  const f = acc.total(11, y.n()) - f.fact({a: null, b: g}, true);\n}\nconst h = f();\nexports.hasOwnProperty = hasOwnProperty;\nconst has = Object.prototype.hasOwnProperty;\n// biome-ignore lint: shadow name is intended\nfunction hasOwnProperty(obj, key) {\n    return has.call(obj, key);\n}\n//# sourceMappingURL=hasOwnProperty.js.map\nclass A {\n  m() {\n    return 1;\n  }\n}\nnew A().m();\nvar fs     = require(\'fs\'),\n    needle = require(\'./..\'),\n    path   = require(\'path\');\n\nlet x = 1 + 2;\nf(x, 3);\nwhile (x < 9) { x = x + 1; g(x); }\n// a b c\nif ([n(), null, f.g("s8")]) {\n  n(true, 74 ? "s6" : fact ? 80 : true);\n}\nwhile (y()) {\n  if (true) {\n    "s3";\n    const h = fact;\n  } else {\n    f(g(), (g) => null, {a: y, b: n}) + 54;\n  }\n}\nfor (const y of (x) => y) {\n  "s9";\n}\nvar n = n();\n87;\ntotal = (x) => true - lst("s5");\n["s9", null];\nif (true) {\n  ["s5", n() === [46, null]];\n  let f = lst(fact(71, total) ? null : h(null, null, true), n);\n  if (null) {\n    const total = y;\n    var total = lst(n(total(n, f, "s8"), null - f, g(null, n, 99)), {a: 83 ? null : n, b: 62});\n    [];\n  } else {\n    total = (g) => acc("s2", "s4");\n  }\n}\n// TODO\nvar f = total(x(58, 37, y()), {a: n, b: null ? null : total}, fact());\n\nlet f = true;\nlet g = [acc("s7", ["s5", true], x()), [y(true)], 33];\n\nx;\n// note\nx(h, 42);\n78;\nlet y = [];\nfor (const h of (total) => true) {\n  const h = (total) => ["s8"];\n  const f = null;\n}\nif (total(h)) {\n  let y = null;\n}\nfunction _classPrivateMethodGet(receiver, privateSet, fn) {\n  _assertClassBrand(privateSet, receiver);\n  return fn;\n}\n\n//# sourceMappingURL=classPrivateMethodGet.js.map\n\n\nwhile (true) {\n  true;\n  function x(x, lst) {\n    true;\n    return f();\n  }\n  const x = g(true ? true : (f) => "s3");\n}\n\nfunction n(g, acc) {\n  function y(acc, g) {\n    return x("s5", null * "s4");\n  }\n  "s7" ? null : true * acc(55) + [null ? 52 : f, "s7"];\n}\nif (f.lst("s5") ? y(true, lst, fact) : "s7" + acc) {\n  var x = acc();\n  for (const y of h("s0")) {\n    const lst = [9, true];\n    var g = (fact) => acc(f) ? g() : x === total;\n    var n = [69];\n  }\n} else {\n  if ((y) => 85) {\n    true;\n    var fact = null === f.h(26 + true);\n    let h = [fact.f(true) ? (lst) => 77 : 54];\n  }\n  f = (g) => true;\n  while (null) {\n    let acc = {a: 92, b: 2};\n    fact;\n    var total = g(null);\n  }\n}\n\nfunction h(x, n) {\n  return x ? null : acc();\n}\nfor (const x of "s1") {\n  const acc = x(true, []);\n}\n\nlet g = n();\nif ("s7") {\n  if (acc(x(21, x, true))) {\n    var y = x((lst) => acc(), 91, null);\n    var n = fact;\n  } else {\n    var total = h(acc({a: f, b: null}, null, 27 - true), total(y("s3", "s9")), acc());\n  }\n  let fact = fact(x("s6", ["s6"]));\n}\nacc = g.y(x, (x) => g);\nvar f = f(y, [true, null] ? 83 : 99 ? 61 : true, 7 === null + 50 === n);\n21 === lst(h);\nif ((h) => null) {\n  if (total(x - true, 4, 97 ? x : 84)) {\n    const total = null;\n  }\n} else {\n  (n) => [] < (g) => true;\n  while (h([null, "s7"])) {\n    (n) => fact((x) => true, total, (lst) => "s3");\n    let y = g("s8" ? null : true ? 80 : "s1", {a: 46, b: 40});\n    var lst = 50;\n  }\n}\n',
+          steps: [
+            {
+              op: "toggleMode",
+              a: 0.8717652941122651,
+              rush: 0.92,
+            },
+            {
+              op: "collapseAllThen",
+              on: false,
+              a: 0.30247375275939703,
+              text: "1 2",
+              accept: true,
+            },
+            {
+              op: "touchDrag",
+              a: 0.303629863075912,
+              b: 0.10864574648439884,
+              where: "end",
+            },
+            {
+              op: "textEdit",
+              a: 0.9930226241704077,
+              len: 2,
+              w: "",
+            },
+            {
+              op: "scroll",
+              a: 0.723060586489737,
+            },
+            {
+              op: "undo",
+            },
+            {
+              op: "scrollToggle",
+              a: 0.7661268105730414,
+            },
+            {
+              op: "textEdit",
+              a: 0.24397103814408183,
+              len: 2,
+              w: "x",
+            },
+            {
+              op: "swipe",
+              a: 0.46450458629988134,
+              dir: "down",
+            },
+            {
+              op: "key",
+              key: "Shift+<",
+              a: 0.26407576096244156,
+            },
+            {
+              op: "longPress",
+              a: 0.8442255367990583,
+            },
+          ],
+          motion: "full",
+          editor: {
+            lineNumbers: true,
+            lineWrapping: false,
+            collapseAll: true,
+            reconcile: true,
+            anchors: true,
+            fastErrors: false,
+            skipRoots: true,
+            activityLimit: null,
+          },
+        } as Sequence,
+        { baseURL }
+      );
+      expect(v).toBeNull();
+    }
+    await browser.close();
+  });
+  test("seed 5002643 (WebKit): an empty first line that no viewport holds is not measured by CodeMirror: its height is read from the page, so after an undo the line numbers sit beside their blocks (it failed about one run in four, so it runs six times)", async () => {
+    const browser = await webkit.launch();
+    for (let i = 0; i < 6; i++) {
+      const v = await runChromium(
+        browser,
+        {
+          engine: "chromium",
+          seed: 5002643,
+          language: "python",
+          code: 'None\nfor g in h:\n    def h(x, total):\n        y = "s6"\n        return acc()\n    for lst in h():\n        acc = lambda x: "s1"\ntotal = y(fact(y(), x(acc)), [acc, "s6"])\n\nx = {y("s2"): f(True, "s3", 43)} < lst(y(True))\n\n\nlambda x: (lambda total: True) * None\nx(lambda acc: [total, True], {"s6" < None: f}, fact)\n\nclass IncrementalDecoder(codecs.IncrementalDecoder):\n    def decode(self, input, final=False):\n        return codecs.charmap_decode(input,self.errors,decoding_table)[0]\n\ndef x(y, total):\n    f = "s5"\n    n = g(f, n(fact(True), 84, acc(None, True, None)), "s8")\n# TODO\nlambda x: g\n(lambda n: x(None)) == True\nwhile lst(g(True, None), y(True, True, "s2")):\n    total = y\n    "s5"\nlambda f: True\nf = n(fact(g(None, "s0", None), 62 < lst), x(h, None, "s5") == 63, [n(n, True, None), h.lst(h, True)])\n# TODO\nif True:\n    lst = y\n    None\nfact = {"s1": "s6"}\ny(None) + acc(lambda f: True, None, [True, None, g])\nacc(total(None == None), total() == acc("s1"))\ndef n(lst, lst):\n    def y(total, lst):\n        g = total()\n        {True: g([0], x(27), [True, 59, True])}\n    for y in []:\n        x = "s9"\n        f = "s8"\n    while (lambda y: lambda n: None):\n        None\n        (lambda fact: fact.lst()) - f()\nacc = total("s4", 53)\nif n.f():\n    lst()\n    acc([None == True], acc(h, None, None) - None == True, fact())\n    if g.x(68 * "s8"):\n        None\n        fact = g.y([lambda acc: True, [None], fact("s6")])\n        [{n: lst}, lambda n: "s0"]\n    else:\n        h = n\n        g = total.y({True: "s1"}, True)\n        g = True\nelse:\n    [None, n, [["s4", "s3", None]]]\nn\nif True:\n    [f(69 == None, "s1" == g, None)]\n    if h():\n        y = x() + None\n    else:\n        x.f(41)\n    "s0" == 75\nelse:\n    for f in "s9":\n        g = [total(total(None), True), None == lst(True), h()]\n        []\n    {fact(): 4 < True * "s0"}\n    while None:\n        []\n        acc = lst.x(25 < f.g(h, True))\n        g = None\nfor n in lst:\n    g = True + (lambda acc: True) + (lambda g: "s3") - [None, True, None]\n    def n(acc, lst):\n        g(g()) + "s8"\n# note\nlst()\nf([fact(g, True)], None)\n"s7"\ng.n() * [[True, True, True], lambda x: 11]\n\ng = 6\nif fact():\n    while f([True, None, 19], 91 * "s4"):\n        acc = 13\n        total = lambda f: lst(acc, {78: None}, n(None, fact))\nimport struct\nimport sys\nimport threading\nimport traceback\n\nacc = {True: None} < h(None, None) < lst(f(lst, 79, n), True)\ny = [n(lambda h: 16, fact * True), total == [], y()]\nx = {f < {None: 65}: lambda g: x(69, h)}\n\ndef h(x, lst):\n    44\n    while x(79, None, True) * lst(True):\n        None\n    lambda g: h(g, total())\n# TODO\ny(lst(x.h(None, y), "s5"))\n\ng = 65\nn = 86\nif 59:\n    acc.x({True: 56} == total())\n    fact = g(17)\nelse:\n    fact = h\nclass abstractstaticmethod(staticmethod):\n    """\n    A decorator indicating abstract staticmethods.\n\n    Similar to abstractmethod.\n\n    Usage:\n\n        class C(metaclass=ABCMeta):\n            @abstractstaticmethod\n            def my_abstract_staticmethod(...):\n                ...\n\n    \'abstractstaticmethod\' is deprecated. Use \'staticmethod\' with\n    \'abstractmethod\' instead.\n    """\n\n    __isabstractmethod__ = True\n\n    def __init__(self, callable):\n        callable.__isabstractmethod__ = True\n        super().__init__(callable)\n\n\n\n# a b c\nh(x)\nacc() * None\n\nNone\n[f(None, g(93), total(fact)), lst([True, None], "s1")]\nwhile True:\n    lst\n    for h in "s7":\n        x()\n        [None, [x(f, None, "s5"), True + True]]\n    acc = "s0"\n\ndef x(acc, f):\n    while (lambda y: lst):\n        lambda lst: n("s1" - "s9", f(None, "s0"))\n        fact(None) == fact({None: 40}, True)\n        lambda h: fact("s9", n(x, 57), "s4")\n    def fact(h, n):\n        {(lambda acc: True): h}\n\nf(y(total * lst, {76: n}, [y, f, None]))\n# note\ndef acc(total, y):\n    acc = [] - (lambda h: 2) * (lambda n: 66)\n    g = lambda f: None - True + None\ny()\ndef g(total, lst):\n    return None\n    def g(n, h):\n        lambda fact: True\nTrue\nf({{acc: "s4"}: [None, "s9", 36]})\ny(None * (lambda n: None), [True < "s4", total], y)\ny = acc(f(), lambda x: x(None, 78))\n86\n# note\n(lambda h: True) - h(None + "s5", 90 < "s0", n())\ng = 64\nif g(f.lst(68, fact), y):\n    g([None, n(True)], lambda fact: lambda acc: True, 5)\n    f = h(None, g(acc(True, 98, f), acc.h()))\n# TODO\nh\nfor f in "s4":\n    60\n    n.y(f(), n)\n    if ["s1", True] == f:\n        total = f([["s7", fact, None], y, []])\n        lambda x: h({"s4": 18}, f(None))\n        lst = True + y\n    else:\n        acc = total(g.fact())\n        acc = fact(acc(n(71, None), y()), "s5")\n\ng = 40\n\nclass A:\n    def m(self):\n        return 1\nA().m()\nfrom time import clock\n\n# wrapper for any additional drawing routines\n# that need to know about each other\ndef lexists(path):\n    """Test whether a path exists.  Returns True for broken symbolic links"""\n    try:\n        st = os.lstat(path)\n    except OSError:\n        return False\n    return True\n\n# Is a path a mount point?\n# Any drive letter root (eg c:\\)\n# Any share UNC (eg \\\\server\\share)\n# Any volume mounted on a filesystem folder\n#\n# No one method detects all three situations. Historically we\'ve lexically\n# detected drive letter roots and share UNCs. The canonical approach to\n# detecting mounted volumes (querying the reparse tag) fails for the most\n# common case: drive letter roots. The alternative which uses GetVolumePathName\n# fails if the drive letter is the result of a SUBST.\n# note\n""" Python Character Mapping Codec iso8859_3 generated from \'MAPPINGS/ISO8859/8859-3.TXT\' with gencodec.py.\n\n"""#"\n\n# note\ng(True, (lambda h: x) * h(), None)\nwhile None:\n    y(h(y(None, None, lst), {62: "s8"}), lambda lst: n)\n    "s5"\n\nif (lambda h: lambda x: None):\n    if h(True):\n        acc = {(lambda total: h(None, 82, y)): [g == True, True]}\n        total\n        h = x(y(), None)\n    "s2"\n    "s0"\nfor total in g(69, 17, True):\n    acc(f - fact(h, None))\n    {None: "s1"} == [79] + "s5"\n# TODO\ntotal = True\nn(total(), [total, "s2", None]) + (lambda fact: None)\nlambda n: "s2"\n\nclass A:\n    def m(self):\n        return 1\nA().m()\nclass abstractstaticmethod(staticmethod):\n    """\n    A decorator indicating abstract staticmethods.\n\n    Similar to abstractmethod.\n\n    Usage:\n\n        class C(metaclass=ABCMeta):\n            @abstractstaticmethod\n            def my_abstract_staticmethod(...):\n                ...\n\n    \'abstractstaticmethod\' is deprecated. Use \'staticmethod\' with\n    \'abstractmethod\' instead.\n    """\n\n    __isabstractmethod__ = True\n\n    def __init__(self, callable):\n        callable.__isabstractmethod__ = True\n        super().__init__(callable)\n\n\nclass A:\n    def m(self):\n        return 1\nA().m()\n\n# a b c\n# note\nif lst(x, {f: fact}):\n    y = x({None: True}, True, []) * fact(lambda lst: "s7", n())\n    [lambda n: lambda g: None, [lambda f: True]]\n    if True:\n        total.f()\n    else:\n        True\n\ng = None\n14\n\n{lst.f(True, True): [True]} * acc == total\n\n# TODO\n"s1"\ndef acc(y, x):\n    return g(h())\n# a comment\ntotal = 0\nfor x in [1, 2, 3]:\n    total = total + x\nprint(total, "done")\nwhile True:\n    fact = []\n    n(27 - y - total("s4", 94, acc), [68 - None, True], True)\n"s6"\n# a b c\nfor y in None:\n    lambda h: g()\n    total = fact()\n# note\ntotal = x(g.f(), lst(y(None), 37), x(83, True))\nif None:\n    def fact(lst, n):\n        return 97\n    while n.g(lambda y: lst, n(True)):\n        x = True - [None, True, "s4"] + (lambda y: "s5")\n        n("s2", True)\ntotal = "s9"\nwhile total({x: None}):\n    x = lst() == [g, True] + acc("s0", n, "s9")\nlst(lst.total())\nlambda acc: lambda x: True\nif n(n(None)):\n    f = lambda acc: "s1"\nelse:\n    acc()\n    lst = lambda acc: x("s8")\nfor h in "s4" - True:\n    lst = True - (lambda x: None)\n    fact = x.fact(n({"s8": None}, f()), [lambda y: "s9"])\n    if "s0":\n        total.h(None, n(True, None, 99)) == 76\n    else:\n        lst = h()\n        h = None\n\n{n("s1", True, total(None, acc)): lst("s6", [n], lambda f: "s3")}\n\nif True:\n    14\n    x = 9\n    x = lambda x: h == None < True + 65\nelse:\n    total.x(True)\nif h("s8", 57):\n    h(lambda h: lambda g: "s7", f, n(f("s4", "s3"), lst(84), "s7" - "s3"))\nNone\nwhile h(fact.x("s1"), [f, "s5"]):\n    y = y(True)\n# note\nf = "s3"\n\nwhile total():\n    def fact(f, total):\n        74\n        None\n        True\n    None\nfact(lst("s0"), x, [True == "s6"])\n# note\ndef acc(y, f):\n    {x(True): 57}\n    if total(acc("s5", True, lst)):\n        n(lambda f: lambda fact: None)\n        return lst.total(x.h(), None + "s3")\n    else:\n        return lst(acc(acc), "s8")\n        return None == "s4" == {71: True}\n        return y()\n    if g.lst(83) + None - y:\n        return [None, 4, None == "s3"]\n        return {None: 71} == "s4"\nx = [fact(x(lst, "s4", g)), fact()]\n# note\nfor fact in ["s7", None, n]:\n    "s6"\n    None\ndef x(lst, lst):\n    if [y(66), "s9" * "s6", 70]:\n        f = lambda n: [n(None)]\n    y(None, y(total + 60, g, None))\ndef interrupt_main():\n    """Set _interrupt flag to True to have start_new_thread raise\n    KeyboardInterrupt upon exiting."""\n    if _main:\n        raise KeyboardInterrupt\n    else:\n        global _interrupt\n        _interrupt = True\n\nif "s2":\n    acc = True\n    y()\nelse:\n    lst = lambda f: n(None + True, ["s9", True, None], g == 2)\nfor x in "s8" < "s5":\n    lambda lst: g.total(x(49, "s6"))\n    acc(n(fact(), lst.y(None, acc), acc.x(41, None)))\n# note\nn = lst(f())\n# a b c\ndef h(x, lst):\n    n + "s5"\n    lst = True\n    fact()\nacc = lambda g: h(y(True, 88))\ng = g.x(None, f(None, True, True))\ny = g({acc(): "s3"})\ny(y(lambda acc: "s6"))\ndef lst(x, x):\n    x = lambda acc: fact(x(True, "s6", 24), {y: y})\nwhile h:\n    "s5" == {[True]: x("s0", None)}\n    n = "s4"\n\nlambda x: 56\n# TODO\nacc = {total(x.fact(None), "s3" + g, f): 82}\nwhile True + g + None:\n    True\nf = True\n\n# a b c\nlst = total(n(total, "s3") + (lambda y: "s3"), [g] - 9, None < g("s2", None))\nlambda x: None\n# note\nn(60 - {"s0": None}, "s3", lambda g: None + 92)\nif (lambda h: 96) == None:\n    if None:\n        x = 44 == x(True == 2, True)\nelse:\n    while {fact(y, None, fact): x(lst, 71)}:\n        []\n        lst(y())\n        y = f(True - (lambda lst: None))\n    x = lambda total: True\n[]\nif y(n(), 1):\n    [n(None, {None: "s5"})]\n    total = lst(h(f, y("s6", "s7", "s0"), lst.total(None, 85)), [x, lambda n: 7, True < None])\n    total = True\n"s9"\nlambda total: 56\nh(f, None == "s4") - fact(True * True, 3 < fact)\nclass A:\n    def m(self):\n        return 1\nA().m()\n# a b c\ntotal(h() < g(g, 5, fact))\ng = x()\n[lst([True, 32, "s4"]), "s6"]\nif lst(["s5"], True, [11, "s3", 24]):\n    while y(["s7", fact, None], g()):\n        lst = f(f(x, [None, None], lambda acc: None), g)\n        acc = x(x(True) < True * True, 84, [])\n    if (lambda fact: h()):\n        y = "s0"\n        fact = g.f(lambda total: "s9")\n        f([y(70), x("s1", 53, None)])\n    else:\n        acc = fact\n        g = lst(acc == "s2" * 83 < None, y(True, total(1, True, True), "s2"))\n    for f in acc * True:\n        x = {59: []}\n        total(x(fact(True, True, "s3"), y(n)), f(lambda f: True), lambda g: lst())\nelse:\n    y = lambda x: lst()\ndef lst(fact, h):\n    y()\n    n(79, g(None, 41, 25)) == [y(None, None, None), None, y(53, "s0")]\n    def f(fact, h):\n        return lambda fact: None\n        total = True\n        return "s0"\n# a b c\nx = (lambda x: lambda g: None) + lst(lst(x, 20, x), x * 89, True - True)\nwhile {86: g("s1", True, g)}:\n    f = acc()\n    while {17: n - 39}:\n        total = lambda f: {[None, True]: total.n(87)}\n    {n([True, 24]): None}\nfact = x\nfor y in True:\n    n = y.g(f.acc(True), acc(fact) + True == "s6")\n# a b c\ng(71)\n# TODO\nfact("s8", n) == {True: None} - x(52, "s3" < None)\nx = fact.x({fact(lst, lst, total): {None: None}})\ng = h\n\ndef f(a, b):\n    y = a\n    return y\nf(1, 2)\n\nfor fact in 18:\n    ["s8" < None, lst(True, "s6"), y(True)] - x\n    if ["s6", 89, "s9"] * h():\n        acc = x("s4", n(total(83, g, 6), True))\n    if {(lambda y: "s0"): h(None, 56)}:\n        x = y(True, x({72: g}, [79, 26], "s0" == 91))\n        f = y(x(h(), True - None))\n        x = f()\n    else:\n        12\n        fact = "s0"\n\nfact = []\ng()\nNone\nwhile True:\n    y\nclass IncrementalEncoder(codecs.IncrementalEncoder):\n    def encode(self, input, final=False):\n        return codecs.charmap_encode(input,self.errors,encoding_table)[0]\n\n\n# note\n# a b c\nwhile fact("s5", lambda fact: 41):\n    if fact(66, h.n(None), acc("s7", lst)):\n        y = True\n    if lst.fact() == 47:\n        n([], x(x(39), f(True, "s8")), x(19, total(h), total(True, 34)))\n    if acc(None, True, None):\n        None\nx.g()\n\nfact(h.fact([], fact(34)))\n# a b c\nif fact:\n    True\n    def x(g, f):\n        fact = lst()\n    def total(h, acc):\n        return "s4"\n        fact = f(True)\nx = 1 + 2\nf(x, 3)\nwhile x < 9:\n    x = x + 1\n    g(x)\ny = 2\nfor fact in h:\n    fact(f())\n    (lambda total: 65) * lst.f(["s8", True, True], lambda h: 69)\n\nwhile (lambda g: lambda total: "s7"):\n    g = total.h()\n    x = n\nacc = f\n# a b c\nacc = h()\n\nif lst():\n    while g(fact, None + h):\n        y = [[], None, x(x())]\n        total = True\n    [lambda lst: lambda n: None]\n    if y(True < 41, f(None, "s6"), fact * total):\n        n = g([], None - 91)\nn(None, f("s2", True) == y(), 54)\nwhile (lambda x: lambda fact: fact):\n    g = h\n    lambda g: n - True < None - True\n\n""" Python Character Mapping Codec cp037 generated from \'MAPPINGS/VENDORS/MICSFT/EBCDIC/CP037.TXT\' with gencodec.py.\n\n"""#"\n\n[]\nn = []\n# TODO\nfor y in acc("s4", "s5"):\n    fact(acc)\n    x = f(f.fact(lambda f: 37), True, [None] < h(None, "s2", None))\nlambda g: "s0"\nf = total(h("s4"))\n\nTrue\nf(x.acc(acc.n(y, "s1")), {n(): "s8"})\n\n# a b c\ndef total(fact, g):\n    4\n    while h.f(f, True) * True:\n        []\n        return None == g("s1")\n        lambda total: y\ng = 8\nif lst({True: None}):\n    n = lambda fact: n({78: 10}, 10)\nelse:\n    h = {total.g(h, 54): 73}\n    n()\n\n# note\nwhile "s3":\n    if total.n(x.acc()):\n        lst(True, True) == fact(None, 78)\n    else:\n        x = y(x, lambda total: None)\n        fact = fact()\n    if acc:\n        lst = total\n        y = True\n        fact = y.x([None, "s4", 92] * fact(True), f(lambda acc: "s0", acc.g(acc, None), "s8"))\n    else:\n        (lambda y: {59: "s2"}) + 43\n    True\nlst = fact.x(x)\n# a b c\n# a b c\nx = x(x(acc(True)), y(fact < True, x(None, 94, None)))\nif lst:\n    while [lst(76, acc, True), [], lst("s1")]:\n        n = None\n        n\n    f = None\n    if f(None == "s7", 24):\n        True\n        lambda acc: lambda y: 15 == "s2"\n    else:\n        f = "s2"\n        [None, x(), g("s4", None, 35)]\nclass c_wchar_p(_SimpleCData):\n    _type_ = "Z"\n    def __repr__(self):\n        return "%s(%s)" % (self.__class__.__name__, c_void_p.from_buffer(self).value)\n\nacc()\n# note\nfor fact in 43:\n    def lst(lst, total):\n        h = h([26 + 68, f], fact(lambda f: None), lambda h: None)\n    while True:\n        h = lst.y(x(n("s4", 27), True), h({None: 75}, acc(True, 2)))\n        n()\n        h = n(f, f, True)\n    for h in True:\n        lst = None\nif total("s3", 93, 54):\n    while None:\n        f = (lambda f: lst(55)) == lst(None, True, f.g(fact, "s6"))\n        h = None\n    acc = h()\nx = lambda fact: None\nfact = [[], n.fact(), g] < {True - None: x * None}\nfor f in 96:\n    if g():\n        h = total(None, total)\n    else:\n        acc(True, True, f(True, True, 58))\n        [total([31, None])]\n        g = lambda n: True\n    total.acc(69, total(y(True, 82), h.acc(None), None == None))\n# a b c\nif True:\n    for acc in x(total, "s0"):\n        lst = [] - {(lambda g: None): {"s4": acc}}\n    def h(n, n):\n        g({total: fact(y, True)})\n        return lst.x(True < None, "s9")\nelse:\n    y = f(x(None + "s9"), [60] * (lambda n: 44))\n    lambda acc: []\n    if f() == [g]:\n        f = acc.h()\n        fact = fact()\nx = {None: g}\n# note\nNone\n\nif lst([fact, None, 84], g()):\n    h(n(fact(total)))\n    def total(lst, y):\n        return "s3"\n    while []:\n        n = [fact(lst(True, 23, None), {None: None}), {True: x(True, True)}]\n        h = None\n        f = []\n\n_magics = {\n    \'__%s__\' % method for method in\n    \' \'.join([magic_methods, numerics, inplace, right]).split()\n}\n\n# note\nx()\nfor lst in y(None, total, None):\n    while fact(fact(y, None, 94), 23 < h):\n        f = g(lambda h: True, lst)\n    for total in None:\n        y\n        lst = n()\n    def h(acc, g):\n        n\n        return n(62)\n        n = ["s4"]\n\n# TODO\n[{[]: fact + 37}]\ndef total(fact, lst):\n    fact = total\n    if lst.acc(True + True):\n        return [lambda fact: "s1", True, None]\n    else:\n        return acc()\n        35\n        f = True\n    f = g(f(True, 56))\n# note\ndef f(g, acc):\n    while lst({10: "s8"}):\n        return lst.g(total("s5", fact, 11))\n        lambda y: "s2"\n        y()\n# a b c\nn = True\nf = y(lambda total: f, h(27 * None, f(True, "s1", "s6")), h())\nfor acc in (lambda lst: None):\n    acc = acc(n(), [g(True, "s9")], True)\n    fact(True)\n    f = total(26) < f.x(True)\nh.lst(None + "s6", True)\nwhile y.lst({65: True}, 30):\n    for fact in "s5":\n        n()\n\ndef _reconstructor(cls, base, state):\n    if base is object:\n        obj = object.__new__(cls)\n    else:\n        obj = base.__new__(cls, state)\n        if base.__init__ != object.__init__:\n            base.__init__(obj, state)\n    return obj\n\n\n# a comment\ntotal = 0\nfor x in [1, 2, 3]:\n    total = total + x\nprint(total, "done")\nfact = lambda n: {g.f(True): 69}\nx = fact("s2" < 27 < "s1")\nfor lst in lst(True, f, n):\n    acc = fact()\n    total = g(60)\n    if 59:\n        fact = lst()\n        h = f(h.acc(), x("s7", x(True), lst(55)))\n        y = {g: 54}\n\n# a b c\n# note\n[[], fact.total(), h()]\n[lambda x: True < None, {[True, None]: y()}]\nlambda f: x({True: "s6"})\n# note\nwhile fact.n():\n    g = lambda total: total\n    lambda total: y()\nif x:\n    f(1)\nelif y:\n    g()\nelse:\n    h()\n[1, 2]\n# TODO\ndef lst(fact, h):\n    total()\n    return total(48, y + fact)\nh("s7" + "s3") == {None: x("s4", True)}\n# TODO\nlst = x()\nTrue\nn = x("s2", "s2")\n[]\nif acc("s6") == (lambda x: True):\n    if g(lst.y(g)):\n        fact = [f(g, True, True), {"s0": 2}] == x({h: h})\n    else:\n        n = f()\n        total = 19\n    for n in {g: 37}:\n        y = None\n    True == y(["s7", "s6", None], lambda n: "s4", {26: True})\nelse:\n    h(acc(n(), n(lst, None)), 61, 34)\nTrue == lst(True, None) + y(h())\n# TODO\n{{"s8" * fact: acc(lst, True)}: None}\nTrue\ntotal((lambda lst: "s9") * fact("s4"))\n# a b c\nn = [x]\nf = 98\ntotal = []\nx = None\ndef fact(g, y):\n    while True:\n        return x(None, [64, None])\n        n = acc(g([x, None, total]), n(True, n, True == h))\n        fact = total()\n    f(True < True, 42) * f.fact([23], 5)\n    total = g("s3", [None, None, True] - 38, True + [])\n# TODO\nif (lambda n: acc.fact(n)):\n    total = fact.fact()\n    fact = lambda n: (lambda fact: g) == (lambda h: True)\n    def y(f, total):\n        return None\n        [total(lambda x: None)]\nelse:\n    49\n    def g(f, g):\n        f(lambda f: h + True, None)\n        return 61 < True * h("s0", True)\nfor x in fact():\n    if 8:\n        lst(lambda x: ["s2"], y(15))\n        [] < True == 58 * True == 50\n    else:\n        f()\n        fact()\n        7\n    total = f(x.y(g(h), [True, h]))\n\n\nif x:\n    f(1)\nelif y:\n    g()\nelse:\n    h()\n[1, 2]\n\nclass A:\n    def m(self):\n        return 1\nA().m()\n\ndef getregentry():\n    return codecs.CodecInfo(\n        name=\'iso8859-13\',\n        encode=Codec().encode,\n        decode=Codec().decode,\n        incrementalencoder=IncrementalEncoder,\n        incrementaldecoder=IncrementalDecoder,\n        streamreader=StreamReader,\n        streamwriter=StreamWriter,\n    )\n\n\n### Decoding Table\n\ndef getregentry():\n    return codecs.CodecInfo(\n        name=\'cp65001\',\n        encode=encode,\n        decode=decode,\n        incrementalencoder=IncrementalEncoder,\n        incrementaldecoder=IncrementalDecoder,\n        streamreader=StreamReader,\n        streamwriter=StreamWriter,\n    )\n\n\n{None: acc(True, "s2", True)} * None\ntotal.x()\nif g([None, None]):\n    f = [acc(f("s6", "s8"), total, "s6")]\n    lst = n()\n    total = y() - h(fact(lst, None), lambda n: 94)\nelse:\n    64\nacc("s9")\n# a b c\nx = True\nif True:\n    total = f(lst())\n    while n([f, h]):\n        None\n    def g(n, x):\n        return "s1"\n        [h(), "s6", [g, 53]] < {n(None): lambda total: 97}\n        return lst.n("s2")\nwhile {None: True} * fact:\n    x.g(None)\n    fact = lst.g(8 == 69, g("s8")) + (lambda g: total.g())\nNone\nx(lst("s5", acc) * (lambda total: "s5"), True)\nwhile total({True: "s5"}, None - None):\n    lst = True\n    "s7"\n(lambda acc: "s1") * x.f() < f(True, True, lambda y: total)\n# a b c\nTrue + (lambda f: {True: "s8"})\ndef y(f, n):\n    "s4"\n    h = "s8"\n    if f.fact({True: None}, lst()):\n        fact = g(True, 56)\n        return g(True)\n        fact = fact(g(fact("s2", "s5"), True), lambda lst: x(y, f))\nif True:\n    {[]: lambda x: g(64, 0, None)}\nelse:\n    def acc(g, y):\n        x([], lst([36, "s7", True], x.lst(4), "s1"))\n        h = []\n    [12, acc(h("s2")), n()]\n    lst = "s3"\n\ndef acc(fact, g):\n    f = "s8"\n    h(lambda acc: ["s6"], True, "s3" + None == [])\n    for lst in "s2":\n        return x(total(), h.y(True, "s5"))\n        None\nacc = None\n\ndef y(n, total):\n    y([67, y] - None, [True, None, fact] == (lambda x: True))\n    if acc("s3" + "s5", True, y(None)):\n        return []\n        h() - h(90) * g(76, "s8", acc)\n        return None\n\n"s4"\n# TODO\nfor n in y("s9", "s7"):\n    if (lambda y: x(True)):\n        total = y((lambda fact: 82) < n(None), fact())\n        g(total, acc < None, fact.f("s4", "s1")) < f(f.n(97))\n        fact = {n: lambda g: []}\n    True\n    if "s6":\n        f = fact({f(y, True, 15): ["s2"]}, lambda h: lambda acc: "s3")\n        total = x(19, "s6")\n        h = "s8"\nif f(65) - y(acc, 18):\n    x([True, "s3" == "s3"], f(acc), acc())\n    total = lambda total: {h(None, y, "s5"): h()}\n    def g(x, h):\n        None\n        h()\n        return f.n(lambda g: total)\nelse:\n    n = True\n    if True:\n        lst = "s6"\n        total = acc\n        acc = h(y(), acc.fact(0) - fact, None)\n    else:\n        True\n        acc\n        fact = [True, fact(lambda total: fact), lambda n: [37]]\ntotal = total(x(), h, acc.acc(True < 62))\n\ndef h(g, fact):\n    x = []\nfact = h.acc(30)\n[[n(), n.acc(True)], acc, lambda h: {f: True}]\n\nfact = lambda total: 48\n\ng()\nwhile y(total(None, y, None)):\n    True\nfor y in "s1":\n    f = True < n(f(h))\n    if 57:\n        g(f(None, "s6") - None + fact)\n        g = f(acc(lst(None, True, True)), acc() < lst, f(lst) == [True])\n        x = None\n    for g in {94: None}:\n        {acc(True, None, "s0") + "s2": None}\n        f(None, "s8", y())\n        g = "s6"\ng = {48: n("s2")}\nwhile (lambda f: n(None, True)):\n    f("s7")\n    for lst in True:\n        []\nlst = acc({"s9": fact("s1")})\n\nclass Codec(codecs.Codec):\n    encode = codec.encode\n    decode = codec.decode\n\nlambda acc: fact("s2")\nif True:\n    f(h() + x(True, None, True))\n    h = 15\nelse:\n    None\n    y = [lambda f: "s9" < f, lst(57, lambda lst: g)]\ng = [total < (lambda x: "s3"), 23]\n67\n"s1" - g.f()\nn = y([], f(68, True, y()))\n{63: fact(True)}\ny < None\nh = "s3"\n# TODO\nf = fact() * n(x(), lst("s4", None))\ndef f(a, b):\n    y = a\n    return y\nf(1, 2)\ndef f(a, b):\n    y = a\n    return y\nf(1, 2)\nif __name__ == \'__main__\':\n    from idlelib.idle_test.htest import run\n    run(show_idlehelp)\n\ntotal = ["s7", "s4", 83] + n("s6") * n()\n# a b c\nh = "s7"\n# a b c\nlambda f: True\nlst = True\ntotal = "s7"\n',
+          steps: [
+            {
+              op: "touchDrag",
+              a: 0.2772110977675766,
+              b: 0.5481621734797955,
+              where: "gap",
+            },
+            {
+              op: "focus",
+              a: 0.8877199022099376,
+            },
+            {
+              op: "scroll",
+              a: 0.5802767442073673,
+            },
+            {
+              op: "search",
+              text: "define",
+              next: false,
+            },
+            {
+              op: "key",
+              key: "Delete",
+              a: 0.9473235795740038,
+            },
+            {
+              op: "zoom",
+              z: 0.6237084777094424,
+            },
+            {
+              op: "scrollKey",
+              a: 0.21950278477743268,
+              key: "ArrowRight",
+            },
+            {
+              op: "clearSelection",
+            },
+            {
+              op: "multiSelect",
+              a: 0.7207308693323284,
+              n: 3,
+              then: "copyPaste",
+              b: 0.36313087306916714,
+            },
+            {
+              op: "commentNear",
+              a: 0.8191127714235336,
+              dir: -1,
+              text: "note",
+              accept: true,
+            },
+            {
+              op: "swipe",
+              a: 0.534771580947563,
+              dir: "up",
+            },
+            {
+              op: "scroll",
+              a: 0.8528794553130865,
+            },
+            {
+              op: "editBox",
+              a: 0.5872559733688831,
+              text: ")",
+              accept: true,
+            },
+            {
+              op: "scroll",
+              a: 0.9185154733713716,
+            },
+            {
+              op: "longPress",
+              a: 0.5343044521287084,
+            },
+            {
+              op: "editBox",
+              a: 0.15348114701919258,
+              text: ")",
+              accept: true,
+            },
+            {
+              op: "key",
+              key: "ArrowDown",
+              a: 0.2093120077624917,
+            },
+          ],
+          motion: "full",
+          editor: {
+            lineNumbers: true,
+            lineWrapping: false,
+            collapseAll: false,
+            reconcile: true,
+            anchors: true,
+            fastErrors: true,
+            skipRoots: true,
+            activityLimit: null,
+          },
+        } as Sequence,
+        { baseURL }
+      );
+      expect(v).toBeNull();
+    }
+    await browser.close();
+  });
 });
 
 test("seeds 3102171, 3106234: an edit box that blurs while CodeMirror is measuring (WebKit moves the selection then) commits after the update, with no re-entrant dispatch", async ({

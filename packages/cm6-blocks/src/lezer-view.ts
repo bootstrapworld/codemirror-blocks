@@ -682,15 +682,34 @@ export function createLezerBlockEditor(
    * block laid out again after a drop, with nothing that told the measure loop: soak seed 9057, `lineWrapping` on, a gutter 5 px off
    * for every line below the block, the numbers and the lines each drawn from a different height until the next scroll).
    */
-  const heightsStale = (): boolean => {
-    const t0 = performance.now();
-    const r = heightsStaleUntimed();
-    hstats.staleCalls++;
-    hstats.staleMs += performance.now() - t0;
-    if (r) hstats.staleTrue++;
-    return r;
-  };
-  const heightsStaleUntimed = (): boolean => {
+  const viewportsOf = (): { from: number; to: number }[] =>
+    (
+      view as unknown as {
+        viewState: { viewports?: { from: number; to: number }[] };
+      }
+    ).viewState.viewports ?? [view.viewport];
+  /**
+   * An empty line next to the viewport the selection keeps drawn far from the scrolled one (the first line before it, the last after it:
+   * soak seeds 4800132 and 5002643, WebKit, right after an undo that put the selection there) is drawn but belongs to no viewport, and
+   * CodeMirror measures only the lines of its viewports: the height it holds for it is its estimate (an empty line is estimated taller than
+   * it is here), and no re-measure changes that until the line is scrolled to. The heights of such lines are given to its height map as
+   * a measure of those lines would (its own `MeasuredHeights`: from, the heights, and a count), and the gutter is drawn from them again.
+   */
+  const feedUnmeasured = (): boolean => {
+    const vs = (view as unknown as { viewState: unknown }).viewState as {
+      heightMap?: {
+        updateHeight(
+          o: unknown,
+          off: number,
+          force: boolean,
+          m: unknown
+        ): unknown;
+      };
+      heightOracle?: unknown;
+    };
+    if (!vs.heightMap || !vs.heightOracle) return false;
+    const vps = viewportsOf();
+    let fed = false;
     for (const el of Array.from(
       view.contentDOM.querySelectorAll(":scope > .cm-line")
     ) as HTMLElement[]) {
@@ -700,6 +719,48 @@ export function createLezerBlockEditor(
       } catch (_) {
         continue;
       }
+      if (vps.some((v) => pos >= v.from && pos <= v.to)) continue;
+      const b = view.lineBlockAt(pos);
+      const h = el.getBoundingClientRect().height / (view.scaleY || 1);
+      if (b.height === 0 || !(h > 0) || Math.abs(h - b.height) <= 1) continue;
+      const m = {
+        from: pos,
+        heights: [h],
+        index: 0,
+        get more() {
+          return this.index < this.heights.length;
+        },
+      };
+      try {
+        vs.heightMap.updateHeight(vs.heightOracle, 0, false, m);
+        fed = true;
+      } catch (_) {
+        // (a CodeMirror whose height map is not this one: the line stays as it was)
+      }
+    }
+    return fed;
+  };
+  const heightsStale = (): boolean => {
+    const t0 = performance.now();
+    const r = heightsStaleUntimed();
+    hstats.staleCalls++;
+    hstats.staleMs += performance.now() - t0;
+    if (r) hstats.staleTrue++;
+    return r;
+  };
+  const heightsStaleUntimed = (): boolean => {
+    const vps = viewportsOf();
+    for (const el of Array.from(
+      view.contentDOM.querySelectorAll(":scope > .cm-line")
+    ) as HTMLElement[]) {
+      let pos: number;
+      try {
+        pos = view.posAtDOM(el, 0);
+      } catch (_) {
+        continue;
+      }
+      // (a line that no viewport holds is not measured by CodeMirror, whatever is asked of it: `feedUnmeasured` is what sets its height)
+      if (!vps.some((v) => pos >= v.from && pos <= v.to)) continue;
       const b = view.lineBlockAt(pos);
       if (b.height === 0) continue;
       if (Math.abs(el.getBoundingClientRect().height - b.height) > 1)
@@ -814,6 +875,7 @@ export function createLezerBlockEditor(
       requestAnimationFrame(() => {
         gutterChecking = false;
         if (gone) return;
+        feedUnmeasured();
         const heightsOld = heightsStale();
         if (fixGaps()) hstats.gapFixes++;
         if (fixGutterMin()) hstats.gapFixes++;
