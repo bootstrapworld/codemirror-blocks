@@ -2822,6 +2822,103 @@ test.describe("in WebKit", () => {
     }
     await browser.close();
   });
+  test("seed 5210082 (WebKit): a drag of several selected blocks is pressed where the last selection's toolbar left the first block, not where it was when it was selected (the press landed on the toolbar and the page took the focus: harness, not editor)", async () => {
+    const browser = await webkit.launch();
+    const v = await runChromium(
+      browser,
+      {
+        engine: "chromium",
+        seed: 5210082,
+        language: "javascript",
+        code: 'if (null) {\n  fact;\n  n;\n} else {\n  var y = n(x * h(acc, true), total(true), null);\n  x = x(g(n, y, true), acc(true));\n  "s2";\n}\n// TODO\nif (f(lst())) {\n  while ({a: acc(20), b: (n) => true}) {\n    let acc = y();\n  }\n  null ? acc() : y;\n  const total = "s0";\n}\nconst lst = {a: {a: f("s4", total, fact), b: acc("s7", n, lst)}, b: total.x(g(true, null, null))};\n\n// note\nx = fact((y) => y, acc(g, 49));\n',
+        steps: [
+          {
+            op: "topLevelType",
+            a: 0.7512133095879108,
+            text: "42",
+            accept: false,
+            how: "paste",
+          },
+          {
+            op: "removeNode",
+            a: 0.51845439709723,
+            b: 0.13127252412959933,
+          },
+          {
+            op: "key",
+            key: "ArrowLeft",
+            a: 0.8382070895750076,
+          },
+          {
+            op: "clearSelection",
+          },
+          {
+            op: "pasteMulti",
+            a: 0.6951237190514803,
+            text: "f()\nx\n1\ntrue",
+            accept: false,
+          },
+          {
+            op: "key",
+            key: "Space",
+            a: 0.1240098166745156,
+          },
+          {
+            op: "click",
+            a: 0.890839779516682,
+            shift: false,
+          },
+          {
+            op: "dragTemplate",
+            t: 0.706137906992808,
+            b: 0.38658613665029407,
+            where: "block",
+          },
+          {
+            op: "removeNode",
+            a: 0.3033392208162695,
+            b: 0.6089129575993866,
+          },
+          {
+            op: "collapseAll",
+            on: true,
+          },
+          {
+            op: "key",
+            key: "ArrowLeft",
+            a: 0.8272990761324763,
+          },
+          {
+            op: "textEdit",
+            a: 0.48135778051801026,
+            len: 0,
+            w: "",
+          },
+          {
+            op: "dragSelection",
+            a: 0.19873727555386722,
+            b: 0.25442299572750926,
+            n: 4,
+          },
+        ],
+        motion: "reduced",
+        editor: {
+          lineNumbers: false,
+          lineWrapping: false,
+          collapseAll: false,
+          reconcile: false,
+          anchors: true,
+          fastErrors: true,
+          skipRoots: true,
+          activityLimit: 5,
+          freshParseBelow: 0,
+        },
+      } as Sequence,
+      { baseURL }
+    );
+    expect(v).toBeNull();
+    await browser.close();
+  });
 });
 
 test("seeds 3102171, 3106234: an edit box that blurs while CodeMirror is measuring (WebKit moves the selection then) commits after the update, with no re-entrant dispatch", async ({

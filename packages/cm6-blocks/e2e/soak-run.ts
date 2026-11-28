@@ -680,17 +680,28 @@ export async function runChromium(
       }
       case "dragSelection": {
         if (!blocks) return;
-        let first: { x: number; y: number } | null = null;
+        let firstA: number | null = null;
         for (let k = 0; k < Number(s.n); k++) {
           const a = (Number(s.a) + k * 0.137) % 1;
           if (await clickBlock(a)) {
             await page.keyboard.press("Space");
-            const t = await blockBox(a);
-            if (t && !first) first = await grabPoint(t);
+            if (firstA === null) firstA = a;
           }
         }
+        // (the press point is taken now, not when the block was selected: the selection's toolbar moves with every later selection and may
+        // cover it, and a press on the toolbar takes the focus away, not a thing the editor does. Seed 5210082, WebKit; the same for the
+        // gap the drag ends on)
+        const t = firstA === null ? null : await blockBox(firstA);
+        const first = t && (await grabPoint(t));
         const dst = await target("gap", s.b);
-        if (first && dst) await drag(first, dst);
+        const onEditor =
+          dst &&
+          (await evaluate(
+            (p: { x: number; y: number }) =>
+              !!document.elementFromPoint(p.x, p.y)?.closest(".cm-content"),
+            dst
+          ));
+        if (first && dst && onEditor) await drag(first, dst);
         editsMade++;
         return;
       }
