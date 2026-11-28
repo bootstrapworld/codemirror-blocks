@@ -58,6 +58,8 @@ export interface EditorChoice {
   skipRoots: boolean;
   /** how many entries the activity log keeps; null: the default (200) */
   activityLimit: number | null;
+  /** 0: the editor parses every edit incrementally (so its guards are soaked on small documents); absent: the default (small documents are parsed fresh) */
+  freshParseBelow?: 0;
 }
 /** the options a sequence had before the choice existed: the demo page has line numbers, the jsdom runner had none */
 export const defaultEditor = (engine: Engine): EditorChoice => ({
@@ -69,6 +71,7 @@ export const defaultEditor = (engine: Engine): EditorChoice => ({
   fastErrors: true,
   skipRoots: true,
   activityLimit: null,
+  freshParseBelow: undefined,
 });
 /** the fraction of sequences with options other than the default (0.5; `CMB6_SOAK_OPTIONS`, 0 turns it off) */
 export function optionShare(): number {
@@ -99,6 +102,11 @@ export function chooseEditor(engine: Engine, seed: number): EditorChoice {
   e.skipRoots = maybe(0.12, e.skipRoots);
   if (rnd() < 0.15) {
     e.activityLimit = pick(rnd, [2, 5, 20]);
+    changed = true;
+  }
+  // (a sequence with options is mostly incremental: the guards against Lezer's divergences keep being soaked on small documents)
+  if (rnd() < 0.8) {
+    e.freshParseBelow = 0;
     changed = true;
   }
   // (a sequence chosen for other options has at least one)

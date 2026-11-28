@@ -247,6 +247,15 @@ describe("soak generator: editor options and touch (forty-seventh round)", () =>
       expect([k, vs.size > 1]).toEqual([k, true]);
     expect(seen.activityLimit.has(null)).toBe(true);
   });
+  test("about 40% of the sequences parse incrementally (freshParseBelow 0) so the guards keep being soaked", () => {
+    let zero = 0;
+    withEnv("CMB6_SOAK_OPTIONS", undefined, () => {
+      for (let seed = 0; seed < 400; seed++)
+        if (chooseEditor("jsdom", seed).freshParseBelow === 0) zero++;
+    });
+    expect(zero / 400).toBeGreaterThan(0.3);
+    expect(zero / 400).toBeLessThan(0.5);
+  });
   test("the options do not change the program or the steps of a seed (the old steps of a seed stay)", () => {
     withEnv("CMB6_SOAK_OPTIONS", "0", () => {
       withEnv("CMB6_SOAK_TOUCH", "0", () => {
