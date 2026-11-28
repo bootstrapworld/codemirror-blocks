@@ -35,10 +35,16 @@ it("soak seed 4525669: an edit inside a comment that makes Lezer hold a name ins
     javascriptParser.parse(doc).toString()
   );
 
-  const ed = createLezerBlockEditor(host(), old, { ...LANGS.javascript.opts });
+  const ed = createLezerBlockEditor(host(), old, {
+    ...LANGS.javascript.opts,
+    freshParseBelow: 0,
+  });
   ed.view.dispatch({ changes: { from: at, insert: INSERT } });
   expect(checkLezerEditor(ed)).toEqual([]);
-  const ref = createLezerBlockEditor(host(), doc, { ...LANGS.javascript.opts });
+  const ref = createLezerBlockEditor(host(), doc, {
+    ...LANGS.javascript.opts,
+    freshParseBelow: 0,
+  });
   expect(ed.roots().length).toBe(ref.roots().length);
   expect(ed.roots().map((r) => shape(r, new Set()))).toEqual(
     ref.roots().map((r) => shape(r, new Set()))

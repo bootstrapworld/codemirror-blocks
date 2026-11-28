@@ -3149,6 +3149,7 @@ test("seed 4525669: broken text typed in text mode, with an unclosed comment in 
         fastErrors: true,
         skipRoots: true,
         activityLimit: null,
+        freshParseBelow: 0,
       },
     } as Sequence,
     { baseURL }

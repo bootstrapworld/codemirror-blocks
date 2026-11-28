@@ -142,6 +142,9 @@ export function editorOptions(
     ...(choice.fastErrors ? {} : { fastErrors: false }),
     ...(choice.skipRoots ? {} : { skipRoots: false }),
     ...(choice.activityLimit ? { activityLimit: choice.activityLimit } : {}),
+    ...(choice.freshParseBelow === undefined
+      ? {}
+      : { freshParseBelow: choice.freshParseBelow }),
   };
 }
 

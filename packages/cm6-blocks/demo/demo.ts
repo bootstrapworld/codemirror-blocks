@@ -86,6 +86,7 @@ interface ShowOptions {
   fastErrors?: boolean;
   skipRoots?: boolean;
   activityLimit?: number | null;
+  freshParseBelow?: number | null;
 }
 
 function show(
@@ -111,6 +112,9 @@ function show(
     ...(more.fastErrors === false ? { fastErrors: false } : {}),
     ...(more.skipRoots === false ? { skipRoots: false } : {}),
     ...(more.activityLimit ? { activityLimit: more.activityLimit } : {}),
+    ...(more.freshParseBelow !== null && more.freshParseBelow !== undefined
+      ? { freshParseBelow: more.freshParseBelow }
+      : {}),
     focusToolbar: () =>
       ($("templates").querySelector("button") as HTMLElement | null)?.focus(),
   });

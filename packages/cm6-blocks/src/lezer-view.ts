@@ -153,6 +153,11 @@ export interface LezerOptions {
   watchUncaughtErrors?: boolean;
   /** how many entries of the activity log are kept (default 200, as the old editor); the oldest are dropped, their changes folded into the log's starting text */
   activityLimit?: number;
+  /**
+   * A document shorter than this (characters) is read again from nothing after every edit, not incrementally: Lezer's incremental parse can differ
+   * from a fresh one, and a small document costs little (about 0.35 ms per KB). Default 10000; 0 always parses incrementally (for testing).
+   */
+  freshParseBelow?: number;
 }
 
 /**
@@ -186,6 +191,8 @@ export interface HeightStats {
 
 export interface LezerStats {
   edits: number;
+  /** edits whose parse started from nothing because the document is shorter than `freshParseBelow` */
+  freshParses: number;
   reparses: number;
   widgetsBuilt: number;
   focusRestores: number;
@@ -1021,6 +1028,7 @@ export function createLezerBlockEditor(
   renderer.mayHaveStrays = hasStrays;
   const stats: LezerStats = {
     edits: 0,
+    freshParses: 0,
     reparses: 0,
     widgetsBuilt: 0,
     focusRestores: 0,
@@ -1092,13 +1100,17 @@ export function createLezerBlockEditor(
       tr.changes.iterChangedRanges((fromA, toA, fromB, toB) =>
         cr.push({ fromA, toA, fromB, toB })
       );
-      let frags = TreeFragment.applyChanges(v.fragments, cr);
+      // (a small document is read from nothing, so the incremental parse's divergences cannot happen; its fresh tree still gives the fragments
+      // for the edit that takes the document past the threshold, and with no fragments the guards below are skipped)
+      const scratch = s.length < (options.freshParseBelow ?? 10_000);
+      if (scratch) stats.freshParses++;
+      let frags = scratch ? [] : TreeFragment.applyChanges(v.fragments, cr);
       const tp = performance.now();
       let tree = parser.parse(s, frags);
       // (a tree that had an error and now has none: Lezer's incremental parse can keep the structure that the recovery gave to the text after
       // the error, and the text that is now right reads differently from a fresh parse (a Python body that goes on past its dedent). It is
       // read again from nothing: one parse, only in the edit that mends the text)
-      if (v.errs.length) {
+      if (!scratch && v.errs.length) {
         let bad = false;
         tree.iterate({
           enter: (n) => {

@@ -32,11 +32,13 @@ it("soak seed 206576: an undo that makes Lezer read a loop's body over the state
 
   const ed = createLezerBlockEditor(host(), old, {
     ...LANGS.python.opts,
+    freshParseBelow: 0,
   });
   ed.view.dispatch({ changes: { from: at, to: old.length } });
   expect(checkLezerEditor(ed)).toEqual([]);
   const ref = createLezerBlockEditor(host(), old.slice(0, at), {
     ...LANGS.python.opts,
+    freshParseBelow: 0,
   });
   expect(ed.roots().length).toBe(ref.roots().length);
 });
@@ -62,9 +64,15 @@ it("soak seed 400160: a statement after the change that Lezer reads over what fo
   // (the fault is Lezer's: if a newer Lezer reads this right, the test no longer shows anything)
   expect(incremental.toString()).not.toBe(pythonParser.parse(doc).toString());
 
-  const ed = createLezerBlockEditor(host(), old, { ...LANGS.python.opts });
+  const ed = createLezerBlockEditor(host(), old, {
+    ...LANGS.python.opts,
+    freshParseBelow: 0,
+  });
   ed.view.dispatch({ changes: { from: at, insert: PASTE_400160 } });
   expect(checkLezerEditor(ed)).toEqual([]);
-  const ref = createLezerBlockEditor(host(), doc, { ...LANGS.python.opts });
+  const ref = createLezerBlockEditor(host(), doc, {
+    ...LANGS.python.opts,
+    freshParseBelow: 0,
+  });
   expect(ed.roots().length).toBe(ref.roots().length);
 });

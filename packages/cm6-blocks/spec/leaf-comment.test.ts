@@ -42,11 +42,13 @@ it("soak seed 255682: a name that Lezer's incremental parse ends after the comme
 
   const ed = createLezerBlockEditor(host(), old, {
     ...LANGS.javascript.opts,
+    freshParseBelow: 0,
   });
   ed.view.dispatch({ changes: { from: a, to, insert: "" } });
   expect(checkLezerEditor(ed)).toEqual([]);
   const ref = createLezerBlockEditor(host(), text, {
     ...LANGS.javascript.opts,
+    freshParseBelow: 0,
   });
   const loose = (e: typeof ed): string =>
     JSON.stringify(
