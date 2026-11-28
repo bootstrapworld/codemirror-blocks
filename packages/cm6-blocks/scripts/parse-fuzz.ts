@@ -965,7 +965,20 @@ function main(): void {
       ] as const)
         for (const [k, c] of Object.entries(b)) add((a[k] ??= zero()), c);
     }
+    // (the same classes without the edit kind: what the divergence is, not what edit found it)
+    const coarse: Record<string, Counts> = {};
+    for (const [k, c] of Object.entries(m.byClass)) {
+      const f = k.split(" ");
+      add((coarse[[f[0], ...f.slice(2)].join(" ")] ??= zero()), c);
+    }
     say(table(m));
+    say(
+      table({ ...m, byLang: {}, byClass: coarse }).replace(
+        "PER LANGUAGE",
+        "COARSE CLASSES (no edit kind)"
+      )
+    );
+
     say("\nrepros:", m.repros.length, "(", m.seconds, "s of run time )");
     return;
   }
